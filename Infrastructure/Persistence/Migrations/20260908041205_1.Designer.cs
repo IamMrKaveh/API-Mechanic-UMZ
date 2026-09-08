@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DBContext))]
-    [Migration("20260804084023_1")]
+    [Migration("20260908041205_1")]
     partial class _1
     {
         /// <inheritdoc />
@@ -151,6 +151,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
@@ -202,6 +203,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
@@ -335,7 +337,9 @@ namespace Infrastructure.Persistence.Migrations
                         .HasDefaultValue(true);
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("LogoPath")
                         .HasMaxLength(1000)
@@ -380,6 +384,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
@@ -389,6 +394,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("UserId1")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Version")
                         .HasColumnType("integer");
 
@@ -396,11 +404,13 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("AppliedDiscountCodeId");
 
+                    b.HasIndex("UserId1");
+
                     b.HasIndex("GuestToken", "IsCheckedOut");
 
                     b.HasIndex("UserId", "IsCheckedOut");
 
-                    b.ToTable("Carts");
+                    b.ToTable("Carts", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Cart.Entities.CartItem", b =>
@@ -425,13 +435,13 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Sku")
+                    b.Property<Guid>("VariantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("VariantSku")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<Guid>("VariantId")
-                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -461,8 +471,9 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("RowVersion");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
@@ -514,6 +525,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
@@ -630,6 +642,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
@@ -692,6 +705,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
@@ -916,6 +930,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("IdempotencyKey")
                         .HasColumnType("uuid");
 
@@ -965,6 +982,8 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("PaymentMethodId");
+
+                    b.HasIndex("PaymentTransactionId");
 
                     b.HasIndex("UserId");
 
@@ -1166,7 +1185,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("Fee")
                         .HasPrecision(18, 4)
-                        .HasColumnType("numeric(18,4)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Gateway")
                         .IsRequired()
@@ -1204,14 +1223,13 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("Authority")
                         .IsUnique();
 
-                    b.HasIndex("OrderId")
-                        .IsUnique();
+                    b.HasIndex("OrderId");
 
                     b.HasIndex("UserId");
 
                     b.HasIndex("Status", "CreatedAt");
 
-                    b.ToTable("PaymentTransactions");
+                    b.ToTable("PaymentTransactions", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Product.Aggregates.Product", b =>
@@ -1317,6 +1335,12 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("RepliedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("Status");
+
                     b.Property<string>("Title")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -1343,6 +1367,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("OrderId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_ProductReviews_Status");
 
                     b.HasIndex("UserId");
 
@@ -1414,6 +1441,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
@@ -1482,6 +1510,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
@@ -1587,7 +1616,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("LastActivityAt")
+                    b.Property<DateTime>("LastActivityAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Priority")
@@ -1608,7 +1637,7 @@ namespace Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("UserId")
@@ -2072,15 +2101,20 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("varchar(32)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
                         .HasColumnName("UserId");
 
                     b.Property<int>("Version")
-                        .IsConcurrencyToken()
                         .HasColumnType("integer");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -2146,7 +2180,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("varchar(32)");
 
                     b.Property<Guid>("ToUserId")
                         .HasColumnType("uuid")
@@ -2212,7 +2246,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("Iban")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
+                        .HasColumnType("varchar(32)")
                         .HasColumnName("Iban");
 
                     b.Property<DateTime?>("PaidAt")
@@ -2235,7 +2269,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("varchar(32)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
@@ -2367,7 +2401,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("TransactionType")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("varchar(50)");
 
                     b.Property<Guid?>("TransferId")
                         .HasColumnType("uuid")
@@ -2416,7 +2450,7 @@ namespace Infrastructure.Persistence.Migrations
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_WalletLedgerEntries_WalletId_OccurredAt");
 
-                    b.ToTable("WalletLedgerEntries");
+                    b.ToTable("WalletLedgerEntries", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Wallet.Entities.WalletReservation", b =>
@@ -2441,7 +2475,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("varchar(20)");
 
                     b.Property<Guid>("WalletId")
                         .HasColumnType("uuid")
@@ -2455,7 +2489,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("WalletId", "Status")
                         .HasDatabaseName("IX_WalletReservations_WalletId_Status");
 
-                    b.ToTable("WalletReservations");
+                    b.ToTable("WalletReservations", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Wishlist.Aggregates.Wishlist", b =>
@@ -2772,12 +2806,6 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.Brand.Aggregates.Brand", b =>
                 {
-                    b.HasOne("Domain.Category.Aggregates.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.OwnsOne("Domain.Brand.ValueObjects.BrandName", "Name", b1 =>
                         {
                             b1.Property<Guid>("BrandId")
@@ -2821,8 +2849,6 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasForeignKey("BrandId");
                         });
 
-                    b.Navigation("Category");
-
                     b.Navigation("Name")
                         .IsRequired();
 
@@ -2836,9 +2862,14 @@ namespace Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("AppliedDiscountCodeId");
 
+                    b.HasOne("Domain.User.Aggregates.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Domain.User.Aggregates.User", "User")
                         .WithMany()
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId1");
 
                     b.Navigation("AppliedDiscountCode");
 
@@ -2851,18 +2882,6 @@ namespace Infrastructure.Persistence.Migrations
                         .WithMany("CartItems")
                         .HasForeignKey("CartId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Product.Aggregates.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Variant.Aggregates.ProductVariant", "Variant")
-                        .WithMany()
-                        .HasForeignKey("VariantId")
-                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.OwnsOne("SharedKernel.ValueObjects.Money", "OriginalPrice", b1 =>
@@ -2918,12 +2937,8 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("OriginalPrice")
                         .IsRequired();
 
-                    b.Navigation("Product");
-
                     b.Navigation("SellingPrice")
                         .IsRequired();
-
-                    b.Navigation("Variant");
                 });
 
             modelBuilder.Entity("Domain.Category.Aggregates.Category", b =>
@@ -3138,6 +3153,10 @@ namespace Infrastructure.Persistence.Migrations
                             b1.Property<Guid>("MediaId")
                                 .HasColumnType("uuid");
 
+                            b1.Property<string>("Directory")
+                                .IsRequired()
+                                .HasColumnType("text");
+
                             b1.Property<string>("Extension")
                                 .IsRequired()
                                 .HasMaxLength(50)
@@ -3210,6 +3229,11 @@ namespace Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("PaymentMethodId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Payment.Aggregates.PaymentTransaction", "PaymentTransaction")
+                        .WithMany()
+                        .HasForeignKey("PaymentTransactionId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Domain.User.Aggregates.User", "User")
                         .WithMany()
@@ -3388,6 +3412,8 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Navigation("PaymentMethod");
 
+                    b.Navigation("PaymentTransaction");
+
                     b.Navigation("ReceiverInfo")
                         .IsRequired();
 
@@ -3508,8 +3534,8 @@ namespace Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Domain.Payment.Aggregates.PaymentTransaction", b =>
                 {
                     b.HasOne("Domain.Order.Aggregates.Order", "Order")
-                        .WithOne("PaymentTransaction")
-                        .HasForeignKey("Domain.Payment.Aggregates.PaymentTransaction", "OrderId")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -3628,41 +3654,11 @@ namespace Infrastructure.Persistence.Migrations
                                 .HasForeignKey("ProductReviewId");
                         });
 
-                    b.OwnsOne("Domain.Review.ValueObjects.ReviewStatus", "Status", b1 =>
-                        {
-                            b1.Property<Guid>("ProductReviewId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("DisplayName")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("character varying(100)")
-                                .HasColumnName("StatusDisplayName");
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasColumnName("Status");
-
-                            b1.HasKey("ProductReviewId");
-
-                            b1.HasIndex("Value");
-
-                            b1.ToTable("ProductReviews");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ProductReviewId");
-                        });
-
                     b.Navigation("Order");
 
                     b.Navigation("Product");
 
                     b.Navigation("Rating")
-                        .IsRequired();
-
-                    b.Navigation("Status")
                         .IsRequired();
 
                     b.Navigation("User");
@@ -4356,7 +4352,7 @@ namespace Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Domain.Wallet.Entities.WalletReservation", b =>
                 {
                     b.HasOne("Domain.Wallet.Aggregates.Wallet", "Wallet")
-                        .WithMany("ActiveReservations")
+                        .WithMany("Reservations")
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -4435,8 +4431,6 @@ namespace Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Domain.Order.Aggregates.Order", b =>
                 {
                     b.Navigation("OrderItems");
-
-                    b.Navigation("PaymentTransaction");
                 });
 
             modelBuilder.Entity("Domain.Product.Aggregates.Product", b =>
@@ -4468,9 +4462,9 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.Wallet.Aggregates.Wallet", b =>
                 {
-                    b.Navigation("ActiveReservations");
-
                     b.Navigation("DebitRequests");
+
+                    b.Navigation("Reservations");
                 });
 #pragma warning restore 612, 618
         }
