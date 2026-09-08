@@ -26,12 +26,36 @@ namespace Infrastructure.Persistence.Migrations
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AttributeTypes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Brands",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Slug = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    LogoPath = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CategoryId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Brands", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -46,7 +70,7 @@ namespace Infrastructure.Persistence.Migrations
                     SortOrder = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -73,7 +97,7 @@ namespace Infrastructure.Persistence.Migrations
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -91,12 +115,12 @@ namespace Infrastructure.Persistence.Migrations
                     Document = table.Column<string>(type: "text", nullable: false),
                     ChangeType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     IdempotencyKey = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     RetryCount = table.Column<int>(type: "integer", nullable: false),
                     ProcessedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    NextAttemptAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Error = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
-                    IsPoisoned = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
+                    IsPoisoned = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    NextAttemptAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -129,6 +153,7 @@ namespace Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FilePath = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    Path_Directory = table.Column<string>(type: "text", nullable: false),
                     FileName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     FileExtension = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     FileSize = table.Column<long>(type: "bigint", nullable: false),
@@ -323,7 +348,7 @@ namespace Infrastructure.Persistence.Migrations
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     VerifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -372,7 +397,7 @@ namespace Infrastructure.Persistence.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     RevokedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     LastActivityAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -435,10 +460,11 @@ namespace Infrastructure.Persistence.Migrations
                     Gateway = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     GatewayAuthority = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     GatewayRefId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Status = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CompletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     FailureReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -456,7 +482,7 @@ namespace Infrastructure.Persistence.Migrations
                     Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Status = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false),
                     OtpHash = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     OtpExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     OtpAttempts = table.Column<int>(type: "integer", nullable: false),
@@ -481,11 +507,11 @@ namespace Infrastructure.Persistence.Migrations
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    Iban = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Iban = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false),
                     AccountHolder = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     ReservationId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Status = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false),
                     RejectionReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     BankReferenceNumber = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     ProcessedBy = table.Column<Guid>(type: "uuid", nullable: true),
@@ -517,7 +543,7 @@ namespace Infrastructure.Persistence.Migrations
                     Priority = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -541,7 +567,7 @@ namespace Infrastructure.Persistence.Migrations
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -555,33 +581,42 @@ namespace Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Brands",
+                name: "Products",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Slug = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    LogoPath = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsFeatured = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    CategoryId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    AverageRating = table.Column<double>(type: "double precision", nullable: false),
+                    ReviewCount = table.Column<int>(type: "integer", nullable: false),
+                    BrandId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CategoryId = table.Column<Guid>(type: "uuid", nullable: false),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Brands", x => x.Id);
+                    table.PrimaryKey("PK_Products", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Brands_Categories_CategoryId",
+                        name: "FK_Products_Brands_BrandId",
+                        column: x => x.BrandId,
+                        principalTable: "Brands",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Products_Categories_CategoryId",
                         column: x => x.CategoryId,
                         principalTable: "Categories",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -644,8 +679,9 @@ namespace Infrastructure.Persistence.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     UserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    UserId1 = table.Column<Guid>(type: "uuid", nullable: true),
                     AppliedDiscountCodeId = table.Column<Guid>(type: "uuid", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -659,6 +695,12 @@ namespace Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_Carts_Users_UserId",
                         column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Carts_Users_UserId1",
+                        column: x => x.UserId1,
                         principalTable: "Users",
                         principalColumn: "Id");
                 });
@@ -692,62 +734,6 @@ namespace Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Orders",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    OrderNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    ReceiverFullName = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
-                    ReceiverPhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    DeliveryProvince = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    DeliveryCity = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    DeliveryStreet = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
-                    DeliveryPostalCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    SubTotalAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    SubTotalCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
-                    ShippingCostAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    ShippingCostCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
-                    DiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    DiscountCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
-                    FinalAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    FinalCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
-                    IdempotencyKey = table.Column<Guid>(type: "uuid", nullable: false),
-                    CancellationReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    AppliedDiscountCodeId = table.Column<Guid>(type: "uuid", nullable: true),
-                    PaymentTransactionId = table.Column<Guid>(type: "uuid", nullable: true),
-                    PaymentMethodId = table.Column<Guid>(type: "uuid", nullable: true),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
-                    Version = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Orders", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Orders_DiscountCodes_AppliedDiscountCodeId",
-                        column: x => x.AppliedDiscountCodeId,
-                        principalTable: "DiscountCodes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_Orders_PaymentMethods_PaymentMethodId",
-                        column: x => x.PaymentMethodId,
-                        principalTable: "PaymentMethods",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Orders_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Tickets",
                 columns: table => new
                 {
@@ -760,9 +746,9 @@ namespace Infrastructure.Persistence.Migrations
                     Priority = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Category = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ResolvedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    LastActivityAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastActivityAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -834,115 +820,87 @@ namespace Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Products",
+                name: "ProductVariants",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Slug = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Sku = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OriginalPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    OriginalPriceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    SellingPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    SellingPriceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    IsFeatured = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    AverageRating = table.Column<double>(type: "double precision", nullable: false),
-                    ReviewCount = table.Column<int>(type: "integer", nullable: false),
-                    BrandId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CategoryId = table.Column<Guid>(type: "uuid", nullable: false),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.PrimaryKey("PK_ProductVariants", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Products_Brands_BrandId",
-                        column: x => x.BrandId,
-                        principalTable: "Brands",
+                        name: "FK_ProductVariants_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Products_Categories_CategoryId",
-                        column: x => x.CategoryId,
-                        principalTable: "Categories",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "DiscountUsageRecords",
+                name: "Wishlists",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    DiscountedAmount = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
-                    UsageCountAtTime = table.Column<int>(type: "integer", nullable: false),
-                    UsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    DiscountCodeId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    OrderId = table.Column<Guid>(type: "uuid", nullable: false)
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DiscountUsageRecords", x => x.Id);
+                    table.PrimaryKey("PK_Wishlists", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_DiscountUsageRecords_DiscountCodes_DiscountCodeId",
-                        column: x => x.DiscountCodeId,
-                        principalTable: "DiscountCodes",
+                        name: "FK_Wishlists_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_DiscountUsageRecords_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_DiscountUsageRecords_Users_UserId",
+                        name: "FK_Wishlists_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "PaymentTransactions",
+                name: "CartItems",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Authority = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Gateway = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    RefId = table.Column<long>(type: "bigint", nullable: true),
-                    Fee = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
-                    ErrorMessage = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    IsVerificationInProgress = table.Column<bool>(type: "boolean", nullable: false),
-                    VerifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    OrderId = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Version = table.Column<int>(type: "integer", nullable: false)
+                    ProductName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    VariantSku = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    SellingPriceAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    SellingPriceCurrency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+                    OriginalPriceAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    OriginalPriceCurrency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    AddedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CartId = table.Column<Guid>(type: "uuid", nullable: false),
+                    VariantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PaymentTransactions", x => x.Id);
+                    table.PrimaryKey("PK_CartItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PaymentTransactions_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_PaymentTransactions_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
+                        name: "FK_CartItems_Carts_CartId",
+                        column: x => x.CartId,
+                        principalTable: "Carts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1011,7 +969,7 @@ namespace Infrastructure.Persistence.Migrations
                     Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
                     AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     Purpose = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Status = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ResolvedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -1025,237 +983,6 @@ namespace Infrastructure.Persistence.Migrations
                         principalTable: "Wallets",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProductReviews",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    OrderId = table.Column<Guid>(type: "uuid", nullable: true),
-                    Rating = table.Column<int>(type: "integer", nullable: false),
-                    Title = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    Comment = table.Column<string>(type: "text", nullable: true),
-                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    StatusDisplayName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    IsVerifiedPurchase = table.Column<bool>(type: "boolean", nullable: false),
-                    LikeCount = table.Column<int>(type: "integer", nullable: false),
-                    DislikeCount = table.Column<int>(type: "integer", nullable: false),
-                    AdminReply = table.Column<string>(type: "text", nullable: true),
-                    RepliedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    RejectionReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
-                    Version = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProductReviews", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ProductReviews_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_ProductReviews_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ProductReviews_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProductVariants",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Sku = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    OriginalPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    OriginalPriceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    SellingPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    SellingPriceCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    Version = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProductVariants", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ProductVariants_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Wishlists",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Version = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Wishlists", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Wishlists_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Wishlists_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "WalletLedgerEntries",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    WalletId = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    AmountDelta = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    BalanceAfter = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
-                    BalanceAfterCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    TransactionType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    ReferenceId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    IdempotencyKey = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    CorrelationId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    DebitRequestId = table.Column<Guid>(type: "uuid", nullable: true),
-                    WithdrawalRequestId = table.Column<Guid>(type: "uuid", nullable: true),
-                    TransferId = table.Column<Guid>(type: "uuid", nullable: true),
-                    TopUpId = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_WalletLedgerEntries", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_WalletLedgerEntries_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_WalletLedgerEntries_WalletDebitRequests_DebitRequestId",
-                        column: x => x.DebitRequestId,
-                        principalTable: "WalletDebitRequests",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_WalletLedgerEntries_WalletTopUps_TopUpId",
-                        column: x => x.TopUpId,
-                        principalTable: "WalletTopUps",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_WalletLedgerEntries_WalletTransfers_TransferId",
-                        column: x => x.TransferId,
-                        principalTable: "WalletTransfers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_WalletLedgerEntries_WalletWithdrawalRequests_WithdrawalRequ~",
-                        column: x => x.WithdrawalRequestId,
-                        principalTable: "WalletWithdrawalRequests",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_WalletLedgerEntries_Wallets_WalletId",
-                        column: x => x.WalletId,
-                        principalTable: "Wallets",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ReviewVotes",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ReviewId = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ReviewVotes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ReviewVotes_ProductReviews_ReviewId",
-                        column: x => x.ReviewId,
-                        principalTable: "ProductReviews",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CartItems",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Sku = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    SellingPriceAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    SellingPriceCurrency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
-                    OriginalPriceAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    OriginalPriceCurrency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: false),
-                    AddedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CartId = table.Column<Guid>(type: "uuid", nullable: false),
-                    VariantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CartItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CartItems_Carts_CartId",
-                        column: x => x.CartId,
-                        principalTable: "Carts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CartItems_ProductVariants_VariantId",
-                        column: x => x.VariantId,
-                        principalTable: "ProductVariants",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_CartItems_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1273,7 +1000,7 @@ namespace Infrastructure.Persistence.Migrations
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false),
                     Version = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -1285,43 +1012,6 @@ namespace Infrastructure.Persistence.Migrations
                         principalTable: "ProductVariants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "OrderItems",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    Sku = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    UnitPriceAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    UnitPriceCurrency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: false),
-                    OrderId = table.Column<Guid>(type: "uuid", nullable: false),
-                    VariantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OrderItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_OrderItems_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OrderItems_ProductVariants_VariantId",
-                        column: x => x.VariantId,
-                        principalTable: "ProductVariants",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OrderItems_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1388,6 +1078,130 @@ namespace Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "WalletLedgerEntries",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    WalletId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AmountDelta = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    AmountCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    BalanceAfter = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    BalanceAfterCurrency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    TransactionType = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ReferenceId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    IdempotencyKey = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    CorrelationId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DebitRequestId = table.Column<Guid>(type: "uuid", nullable: true),
+                    WithdrawalRequestId = table.Column<Guid>(type: "uuid", nullable: true),
+                    TransferId = table.Column<Guid>(type: "uuid", nullable: true),
+                    TopUpId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WalletLedgerEntries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_WalletDebitRequests_DebitRequestId",
+                        column: x => x.DebitRequestId,
+                        principalTable: "WalletDebitRequests",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_WalletTopUps_TopUpId",
+                        column: x => x.TopUpId,
+                        principalTable: "WalletTopUps",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_WalletTransfers_TransferId",
+                        column: x => x.TransferId,
+                        principalTable: "WalletTransfers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_WalletWithdrawalRequests_WithdrawalRequ~",
+                        column: x => x.WithdrawalRequestId,
+                        principalTable: "WalletWithdrawalRequests",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_WalletLedgerEntries_Wallets_WalletId",
+                        column: x => x.WalletId,
+                        principalTable: "Wallets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DiscountUsageRecords",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    DiscountedAmount = table.Column<decimal>(type: "numeric(18,4)", precision: 18, scale: 4, nullable: false),
+                    UsageCountAtTime = table.Column<int>(type: "integer", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DiscountCodeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DiscountUsageRecords", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DiscountUsageRecords_DiscountCodes_DiscountCodeId",
+                        column: x => x.DiscountCodeId,
+                        principalTable: "DiscountCodes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_DiscountUsageRecords_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderItems",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Sku = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    UnitPriceAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    UnitPriceCurrency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    VariantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderItems_ProductVariants_VariantId",
+                        column: x => x.VariantId,
+                        principalTable: "ProductVariants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderItems_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "StockLedgerEntries",
                 columns: table => new
                 {
@@ -1439,6 +1253,171 @@ namespace Infrastructure.Persistence.Migrations
                         principalTable: "Warehouses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ReceiverFullName = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    ReceiverPhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    DeliveryProvince = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    DeliveryCity = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    DeliveryStreet = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    DeliveryPostalCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    SubTotalAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    SubTotalCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
+                    ShippingCostAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    ShippingCostCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    DiscountCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
+                    FinalAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    FinalCurrency = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
+                    IdempotencyKey = table.Column<Guid>(type: "uuid", nullable: false),
+                    CancellationReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeliveredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AppliedDiscountCodeId = table.Column<Guid>(type: "uuid", nullable: true),
+                    PaymentTransactionId = table.Column<Guid>(type: "uuid", nullable: true),
+                    PaymentMethodId = table.Column<Guid>(type: "uuid", nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Orders_DiscountCodes_AppliedDiscountCodeId",
+                        column: x => x.AppliedDiscountCodeId,
+                        principalTable: "DiscountCodes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Orders_PaymentMethods_PaymentMethodId",
+                        column: x => x.PaymentMethodId,
+                        principalTable: "PaymentMethods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Orders_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaymentTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Authority = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Gateway = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    RefId = table.Column<long>(type: "bigint", nullable: true),
+                    Fee = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 4, nullable: false),
+                    ErrorMessage = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsVerificationInProgress = table.Column<bool>(type: "boolean", nullable: false),
+                    VerifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    OrderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PaymentTransactions_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PaymentTransactions_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductReviews",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Rating = table.Column<int>(type: "integer", nullable: false),
+                    Title = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Comment = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    IsVerifiedPurchase = table.Column<bool>(type: "boolean", nullable: false),
+                    LikeCount = table.Column<int>(type: "integer", nullable: false),
+                    DislikeCount = table.Column<int>(type: "integer", nullable: false),
+                    AdminReply = table.Column<string>(type: "text", nullable: true),
+                    RepliedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    RejectionReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductReviews", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductReviews_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_ProductReviews_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProductReviews_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ReviewVotes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ReviewId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReviewVotes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReviewVotes_ProductReviews_ReviewId",
+                        column: x => x.ReviewId,
+                        principalTable: "ProductReviews",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -1531,6 +1510,11 @@ namespace Infrastructure.Persistence.Migrations
                 name: "IX_Carts_UserId_IsCheckedOut",
                 table: "Carts",
                 columns: new[] { "UserId", "IsCheckedOut" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Carts_UserId1",
+                table: "Carts",
+                column: "UserId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Categories_IsActive_SortOrder",
@@ -1671,6 +1655,11 @@ namespace Infrastructure.Persistence.Migrations
                 column: "PaymentMethodId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_PaymentTransactionId",
+                table: "Orders",
+                column: "PaymentTransactionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_Status_CreatedAt",
                 table: "Orders",
                 columns: new[] { "Status", "CreatedAt" });
@@ -1763,8 +1752,7 @@ namespace Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentTransactions_OrderId",
                 table: "PaymentTransactions",
-                column: "OrderId",
-                unique: true);
+                column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentTransactions_Status_CreatedAt",
@@ -2253,11 +2241,51 @@ namespace Infrastructure.Persistence.Migrations
                 table: "Wishlists",
                 columns: new[] { "UserId", "ProductId" },
                 unique: true);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_DiscountUsageRecords_Orders_OrderId",
+                table: "DiscountUsageRecords",
+                column: "OrderId",
+                principalTable: "Orders",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_OrderItems_Orders_OrderId",
+                table: "OrderItems",
+                column: "OrderId",
+                principalTable: "Orders",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Orders_PaymentTransactions_PaymentTransactionId",
+                table: "Orders",
+                column: "PaymentTransactionId",
+                principalTable: "PaymentTransactions",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.SetNull);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_Orders_Users_UserId",
+                table: "Orders");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_PaymentTransactions_Users_UserId",
+                table: "PaymentTransactions");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_Orders_DiscountCodes_AppliedDiscountCodeId",
+                table: "Orders");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_PaymentTransactions_Orders_OrderId",
+                table: "PaymentTransactions");
+
             migrationBuilder.DropTable(
                 name: "AuditLogs");
 
@@ -2293,9 +2321,6 @@ namespace Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "OutboxMessagesArchive");
-
-            migrationBuilder.DropTable(
-                name: "PaymentTransactions");
 
             migrationBuilder.DropTable(
                 name: "ProductVariantAttributes");
@@ -2379,31 +2404,34 @@ namespace Infrastructure.Persistence.Migrations
                 name: "AttributeTypes");
 
             migrationBuilder.DropTable(
-                name: "Orders");
-
-            migrationBuilder.DropTable(
                 name: "ProductVariants");
 
             migrationBuilder.DropTable(
                 name: "Wallets");
 
             migrationBuilder.DropTable(
-                name: "DiscountCodes");
-
-            migrationBuilder.DropTable(
-                name: "PaymentMethods");
-
-            migrationBuilder.DropTable(
                 name: "Products");
-
-            migrationBuilder.DropTable(
-                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "Brands");
 
             migrationBuilder.DropTable(
                 name: "Categories");
+
+            migrationBuilder.DropTable(
+                name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "DiscountCodes");
+
+            migrationBuilder.DropTable(
+                name: "Orders");
+
+            migrationBuilder.DropTable(
+                name: "PaymentMethods");
+
+            migrationBuilder.DropTable(
+                name: "PaymentTransactions");
         }
     }
 }

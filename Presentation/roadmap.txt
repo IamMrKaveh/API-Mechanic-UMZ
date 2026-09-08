@@ -13,7 +13,7 @@ Attribute (3)
 Audit (1)
  Application/Audit/Features/Shared/AuditDtos.cs
 Auth (4)
- Application/Auth/EventHandlers/UserPasswordChangedEventHandler.cs.cs
+ Application/Auth/EventHandlers/UserPasswordChangedEventHandler.cs
  Application/Auth/Features/Shared/AuthDtos.cs
  Application/Auth/Features/Shared/SessionDtos.cs
  Application/Auth/Mapping/AuthMappingConfig.cs
