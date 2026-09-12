@@ -35,14 +35,14 @@ public class WebhookIpWhitelistMiddleware
 
         var featureManager = context.RequestServices.GetRequiredService<IFeatureManager>();
 
-        var signatureRequired = await featureManager.IsEnabledAsync(
-            FeatureFlags.PaymentCallbackSignatureRequired);
+        var ipWhitelistRequired = await featureManager.IsEnabledAsync(
+            FeatureFlags.PaymentCallbackIpWhitelistRequired);
 
-        if (!signatureRequired)
+        if (!ipWhitelistRequired)
         {
             _logger.LogWarning(
                 "Webhook request accepted without IP verification because feature flag '{Flag}' is disabled. RemoteIp: {RemoteIp}",
-                FeatureFlags.PaymentCallbackSignatureRequired,
+                FeatureFlags.PaymentCallbackIpWhitelistRequired,
                 context.Connection.RemoteIpAddress);
             await _next(context);
             return;

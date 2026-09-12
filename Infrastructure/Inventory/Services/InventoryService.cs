@@ -171,7 +171,7 @@ public sealed class InventoryService(
         string referenceNumber, CancellationToken ct)
     {
         var entries = await inventoryRepository
-            .GetByVariantIdsAsync(Enumerable.Empty<VariantId>(), ct);
+            .GetByReferenceNumberAsync(referenceNumber, ct);
         return entries.Where(i => i.LedgerEntries
             .Any(e => e.ReferenceNumber == referenceNumber));
     }

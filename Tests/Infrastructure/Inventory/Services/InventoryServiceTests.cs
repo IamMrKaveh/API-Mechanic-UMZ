@@ -209,7 +209,7 @@ public class InventoryServiceTests
     {
         var inventory = NewInventory(stock: 10);
         inventory.ReserveStock(StockQuantity.Create(4), "ORDER-9");
-        _inventoryRepository.GetByVariantIdsAsync(Arg.Any<IEnumerable<VariantId>>(), Arg.Any<CancellationToken>())
+        _inventoryRepository.GetByReferenceNumberAsync("ORDER-9", Arg.Any<CancellationToken>())
             .Returns([inventory]);
 
         var result = await _sut.RollbackReservationsAsync("ORDER-9", CancellationToken.None);
@@ -221,9 +221,31 @@ public class InventoryServiceTests
     }
 
     [Fact]
+    public async Task RollbackReservationsAsync_PassesReferenceNumberToRepository()
+    {
+        var matching = NewInventory(stock: 10);
+        matching.ReserveStock(StockQuantity.Create(4), "ORDER-9");
+        var other = NewInventory(stock: 10);
+        other.ReserveStock(StockQuantity.Create(3), "ORDER-OTHER");
+        _inventoryRepository.GetByReferenceNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<string>() == "ORDER-9"
+                ? [matching]
+                : [other]);
+
+        var result = await _sut.RollbackReservationsAsync("ORDER-9", CancellationToken.None);
+
+        result.ShouldBeSuccess();
+        await _inventoryRepository.Received(1).GetByReferenceNumberAsync("ORDER-9", Arg.Any<CancellationToken>());
+        matching.AvailableQuantity.ShouldBe(10);
+        other.AvailableQuantity.ShouldBe(7);
+        _inventoryRepository.Received(1).Update(matching);
+        _inventoryRepository.DidNotReceive().Update(other);
+    }
+
+    [Fact]
     public async Task RollbackReservationsAsync_WhenNoReservations_DoesNothingButSaves()
     {
-        _inventoryRepository.GetByVariantIdsAsync(Arg.Any<IEnumerable<VariantId>>(), Arg.Any<CancellationToken>())
+        _inventoryRepository.GetByReferenceNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns([]);
 
         var result = await _sut.RollbackReservationsAsync("UNKNOWN-REF", CancellationToken.None);
@@ -236,7 +258,7 @@ public class InventoryServiceTests
     [Fact]
     public async Task RollbackReservationsAsync_WhenSaveFails_ReturnsFailure()
     {
-        _inventoryRepository.GetByVariantIdsAsync(Arg.Any<IEnumerable<VariantId>>(), Arg.Any<CancellationToken>())
+        _inventoryRepository.GetByReferenceNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns([]);
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Throws(new InvalidOperationException("db down"));

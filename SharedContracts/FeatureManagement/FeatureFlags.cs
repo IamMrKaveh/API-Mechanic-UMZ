@@ -3,6 +3,7 @@ namespace SharedContracts.FeatureManagement;
 public static class FeatureFlags
 {
     public const string PaymentCallbackSignatureRequired = "Payment.Callback.SignatureRequired";
+    public const string PaymentCallbackIpWhitelistRequired = "Payment.Callback.IpWhitelistRequired";
     public const string IdempotencyDistributedLockEnabled = "Idempotency.DistributedLock.Enabled";
     public const string SagaAutoRefundOnCommitFailure = "Saga.AutoRefundOnCommitFailure";
     public const string StoragePresignedUrlEnabled = "Storage.PresignedUrl.Enabled";
@@ -11,6 +12,7 @@ public static class FeatureFlags
     public static IReadOnlyList<string> All { get; } =
     [
         PaymentCallbackSignatureRequired,
+        PaymentCallbackIpWhitelistRequired,
         IdempotencyDistributedLockEnabled,
         SagaAutoRefundOnCommitFailure,
         StoragePresignedUrlEnabled,

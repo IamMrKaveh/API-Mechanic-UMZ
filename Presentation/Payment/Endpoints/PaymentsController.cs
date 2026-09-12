@@ -68,6 +68,6 @@ public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiCon
         [FromBody] WebhookPayloadRequest payload,
         CancellationToken ct)
     {
-        return await Send(new ProcessWebhookCommand(payload.Authority, payload.Status), ct);
+        return await Send(new ProcessWebhookCommand(payload.Authority, payload.Status, payload.Nonce), ct);
     }
 }

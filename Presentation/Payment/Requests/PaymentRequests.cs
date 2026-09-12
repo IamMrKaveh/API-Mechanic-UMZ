@@ -16,4 +16,5 @@ public record InitiatePaymentRequest(
 
 public record WebhookPayloadRequest(
     string Authority,
-    string Status);
+    string Status,
+    string? Nonce = null);
