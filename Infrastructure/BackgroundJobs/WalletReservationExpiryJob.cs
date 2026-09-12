@@ -1,4 +1,5 @@
 ﻿using Application.Wallet.Features.Commands.ReleaseWalletReservation;
+using Domain.Wallet.Enums;
 
 namespace Infrastructure.BackgroundJobs;
 
@@ -52,16 +53,19 @@ public sealed class WalletReservationExpiryJob(
 
         var now = dateTimeProvider.UtcNow;
 
-        var expiredReservations = await context.WalletLedgerEntries
+        var expiredReservations = await context.WalletReservations
             .AsNoTracking()
+            .Where(r => r.Status == WalletReservationStatus.Active
+                && r.ExpiresAt != null
+                && r.ExpiresAt <= now)
             .Join(context.Wallets,
-                le => le.WalletId,
+                r => r.WalletId,
                 w => w.Id,
-                (le, w) => new { LedgerEntry = le, Wallet = w })
+                (r, w) => new { Reservation = r, Wallet = w })
             .Where(x => x.Wallet.OwnerId != null)
-            .OrderBy(x => x.LedgerEntry.OccurredAt)
+            .OrderBy(x => x.Reservation.ExpiresAt)
             .Take(BatchSize)
-            .Select(x => new { UserId = x.Wallet.OwnerId.Value })
+            .Select(x => new { UserId = x.Wallet.OwnerId.Value, ReservationId = x.Reservation.Id.Value })
             .ToListAsync(ct);
 
         foreach (var reservation in expiredReservations)
@@ -70,7 +74,7 @@ public sealed class WalletReservationExpiryJob(
             {
                 var command = new ReleaseWalletReservationCommand(
                     reservation.UserId,
-                    Guid.Empty);
+                    reservation.ReservationId);
 
                 await mediator.Send(command, ct);
             }

@@ -110,7 +110,8 @@ public sealed class Wallet : AggregateRoot<WalletId>
             WalletReservationId.NewId(),
             Id,
             amount,
-            $"AdminDebitRequest:{requestId.Value}");
+            $"AdminDebitRequest:{requestId.Value}",
+            DateTime.UtcNow.Add(expiryDuration));
         _reservations.Add(reservation);
 
         var request = WalletDebitRequest.Create(
@@ -206,7 +207,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
             Id, OwnerId, requestId, request.Amount, cancelledBy));
     }
 
-    public WalletReservation CreateReservation(WalletReservationId reservationId, Money amount, string purpose)
+    public WalletReservation CreateReservation(WalletReservationId reservationId, Money amount, string purpose, DateTime? expiresAt = null)
     {
         EnsureActive();
         Guard.Against.Null(reservationId, nameof(reservationId));
@@ -216,7 +217,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
         if (AvailableBalance.IsLessThan(amount))
             throw new InsufficientWalletBalanceException(Id, amount, AvailableBalance);
 
-        var reservation = WalletReservation.Create(reservationId, Id, amount, purpose);
+        var reservation = WalletReservation.Create(reservationId, Id, amount, purpose, expiresAt);
         _reservations.Add(reservation);
         UpdatedAt = DateTime.UtcNow;
 

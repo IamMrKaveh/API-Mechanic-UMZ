@@ -32,6 +32,16 @@ public sealed class InventoryRepository(DBContext context) : IInventoryRepositor
         return results.AsReadOnly();
     }
 
+    public async Task<IReadOnlyList<Domain.Inventory.Aggregates.Inventory>> GetByReferenceNumberAsync(
+        string referenceNumber, CancellationToken ct = default)
+    {
+        var results = await context.Inventories
+            .Include(i => i.LedgerEntries)
+            .Where(i => i.LedgerEntries.Any(e => e.ReferenceNumber == referenceNumber))
+            .ToListAsync(ct);
+        return results.AsReadOnly();
+    }
+
     public async Task AddAsync(Domain.Inventory.Aggregates.Inventory inventory, CancellationToken ct = default)
         => await context.Inventories.AddAsync(inventory, ct);
 

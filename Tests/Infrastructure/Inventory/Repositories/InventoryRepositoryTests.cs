@@ -160,6 +160,39 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
     }
 
     [Fact]
+    public async Task GetByReferenceNumberAsync_ReturnsOnlyInventoriesWithMatchingLedgerReference()
+    {
+        var variantA = await PersistVariantAsync("SKU-INV-REF-A");
+        var variantB = await PersistVariantAsync("SKU-INV-REF-B");
+
+        var invA = new InventoryBuilder().WithVariantId(variantA.Id).WithInitialStock(10).Build();
+        invA.ReserveStock(StockQuantity.Create(4), "ORDER-REF-1");
+        var invB = new InventoryBuilder().WithVariantId(variantB.Id).WithInitialStock(10).Build();
+        invB.ReserveStock(StockQuantity.Create(3), "ORDER-REF-2");
+        invA.ClearDomainEvents();
+        invB.ClearDomainEvents();
+
+        await _sut.AddAsync(invA);
+        await _sut.AddAsync(invB);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
+
+        var results = await _sut.GetByReferenceNumberAsync("ORDER-REF-1");
+
+        results.Count.ShouldBe(1);
+        results.Single().VariantId.ShouldBe(variantA.Id);
+        results.Single().LedgerEntries.ShouldContain(e => e.ReferenceNumber == "ORDER-REF-1");
+    }
+
+    [Fact]
+    public async Task GetByReferenceNumberAsync_WhenNoMatch_ReturnsEmpty()
+    {
+        var results = await _sut.GetByReferenceNumberAsync("NO-SUCH-REF");
+
+        results.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Update_AfterIncreaseStock_PersistsNewStockQuantity()
     {
         var variant = await PersistVariantAsync("SKU-INV-UP");

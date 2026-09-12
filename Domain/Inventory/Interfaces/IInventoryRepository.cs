@@ -21,6 +21,10 @@ public interface IInventoryRepository
         IEnumerable<VariantId> variantIds,
         CancellationToken ct = default);
 
+    Task<IReadOnlyList<Aggregates.Inventory>> GetByReferenceNumberAsync(
+        string referenceNumber,
+        CancellationToken ct = default);
+
     Task AddAsync(Aggregates.Inventory inventory, CancellationToken ct = default);
 
     void Update(Aggregates.Inventory inventory);

@@ -39,6 +39,10 @@ public class SendOtpHandler(
         var otp = UserOtp.Create(user.Id, otpCode, request.Purpose, TimeSpan.FromMinutes(2));
         await otpRepository.AddAsync(otp, ct);
 
+        var sendResult = await otpService.SendOtpAsync(phoneNumber, otpCode, request.Purpose, ct);
+        if (sendResult.IsFailure)
+            return ServiceResult.Failure(sendResult.Error);
+
         await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();

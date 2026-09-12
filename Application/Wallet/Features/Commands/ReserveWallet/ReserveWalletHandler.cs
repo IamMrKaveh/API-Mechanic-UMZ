@@ -28,7 +28,8 @@ public class ReserveWalletHandler(
             wallet.CreateReservation(
                 reservationId,
                 Money.FromDecimal(request.Amount),
-                $"reservation-{request.WalletId}");
+                $"reservation-{request.WalletId}",
+                request.ExpiresAt);
 
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);

@@ -63,7 +63,7 @@ public class WebhookIpWhitelistMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WebhookPathWhenFlagDisabled_CallsNext()
     {
-        _features.IsEnabledAsync(FeatureFlags.PaymentCallbackSignatureRequired)
+        _features.IsEnabledAsync(FeatureFlags.PaymentCallbackIpWhitelistRequired)
             .Returns(false);
         var called = false;
         var sut = BuildSut(_ => { called = true; return Task.CompletedTask; });
@@ -75,8 +75,7 @@ public class WebhookIpWhitelistMiddlewareTests
 
     [Fact]
     public async Task InvokeAsync_WebhookPathWithAllowedIp_CallsNext()
-    {
-        _features.IsEnabledAsync(FeatureFlags.PaymentCallbackSignatureRequired)
+    {        _features.IsEnabledAsync(FeatureFlags.PaymentCallbackIpWhitelistRequired)
             .Returns(true);
         var called = false;
         var sut = BuildSut(
@@ -91,7 +90,7 @@ public class WebhookIpWhitelistMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WebhookPathWithDisallowedIp_Returns403()
     {
-        _features.IsEnabledAsync(FeatureFlags.PaymentCallbackSignatureRequired)
+        _features.IsEnabledAsync(FeatureFlags.PaymentCallbackIpWhitelistRequired)
             .Returns(true);
         var called = false;
         var sut = BuildSut(
@@ -108,7 +107,7 @@ public class WebhookIpWhitelistMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WebhookPathWithNoAllowedIpsConfigured_Returns403()
     {
-        _features.IsEnabledAsync(FeatureFlags.PaymentCallbackSignatureRequired)
+        _features.IsEnabledAsync(FeatureFlags.PaymentCallbackIpWhitelistRequired)
             .Returns(true);
         var called = false;
         var sut = BuildSut(
@@ -120,5 +119,22 @@ public class WebhookIpWhitelistMiddlewareTests
 
         called.ShouldBeFalse();
         context.Response.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_IpFlagDisabledWhileSignatureFlagEnabled_CallsNext()
+    {
+        _features.IsEnabledAsync(FeatureFlags.PaymentCallbackIpWhitelistRequired)
+            .Returns(false);
+        _features.IsEnabledAsync(FeatureFlags.PaymentCallbackSignatureRequired)
+            .Returns(true);
+        var called = false;
+        var sut = BuildSut(_ => { called = true; return Task.CompletedTask; });
+
+        await sut.InvokeAsync(BuildContext("/api/payment/callback", "9.9.9.9"));
+
+        called.ShouldBeTrue();
+        await _features.Received(1).IsEnabledAsync(FeatureFlags.PaymentCallbackIpWhitelistRequired);
+        await _features.DidNotReceive().IsEnabledAsync(FeatureFlags.PaymentCallbackSignatureRequired);
     }
 }

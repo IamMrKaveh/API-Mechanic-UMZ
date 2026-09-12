@@ -310,6 +310,22 @@ public class WalletTests
     }
 
     [Fact]
+    public void CreateDebitRequest_StampsLinkedReservationWithMatchingExpiry()
+    {
+        var sut = BuildFunded(500);
+        var before = DateTime.UtcNow;
+
+        var request = sut.CreateDebitRequest(
+            WalletDebitRequestId.NewId(), Rial(100), "reason", "desc", UserId.NewId(), TimeSpan.FromHours(1));
+
+        var reservation = sut.Reservations.Single(r => r.Id == request.ReservationId);
+        reservation.Status.ShouldBe(WalletReservationStatus.Active);
+        reservation.ExpiresAt.ShouldNotBeNull();
+        reservation.ExpiresAt!.Value.ShouldBeGreaterThanOrEqualTo(before.AddHours(1));
+        reservation.ExpiresAt!.Value.ShouldBeLessThanOrEqualTo(DateTime.UtcNow.AddHours(1));
+    }
+
+    [Fact]
     public void CreateDebitRequest_OnInactiveWallet_ThrowsWalletInactiveException()
     {
         var sut = BuildFunded(500);

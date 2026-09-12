@@ -4,6 +4,7 @@ using Application.Common.Interfaces;
 using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
+using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
@@ -18,6 +19,9 @@ public class SendOtpHandlerTests
     public SendOtpHandlerTests()
     {
         _initialAdminOptions.PhoneNumbers.Returns(new List<string>());
+        _otpService
+            .SendOtpAsync(Arg.Any<PhoneNumber>(), Arg.Any<OtpCode>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<bool>.Success(true));
         _sut = new SendOtpHandler(_unitOfWork, _otpService, _otpRepository, _userRepository, _initialAdminOptions);
     }
 
@@ -121,5 +125,50 @@ public class SendOtpHandlerTests
             Arg.Is<UserOtp>(o => o!.UserId == existingUser.Id && o!.Purpose == OtpPurpose.Login),
             Arg.Any<CancellationToken>());
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenRateLimitPasses_SendsOtpSms()
+    {
+        var existingUser = Users.RegisterByPhone(PhoneNumber.Create("09123456789"));
+        _userRepository
+            .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
+            .Returns(existingUser);
+        _otpService
+            .ValidateRateLimitAsync(Arg.Any<UserId>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var command = new SendOtpCommand("09123456789", OtpPurpose.Login);
+
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        result.ShouldBeSuccess();
+        await _otpService.Received(1).SendOtpAsync(
+            Arg.Is<PhoneNumber>(p => p.Value == "09123456789"),
+            Arg.Any<OtpCode>(),
+            OtpPurpose.Login,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenSendOtpFails_ReturnsFailureAndDoesNotSaveChanges()
+    {
+        var existingUser = Users.RegisterByPhone(PhoneNumber.Create("09123456789"));
+        _userRepository
+            .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
+            .Returns(existingUser);
+        _otpService
+            .ValidateRateLimitAsync(Arg.Any<UserId>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+        _otpService
+            .SendOtpAsync(Arg.Any<PhoneNumber>(), Arg.Any<OtpCode>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<bool>.Failure("ارسال کد تأیید ناموفق بود."));
+
+        var command = new SendOtpCommand("09123456789", OtpPurpose.Login);
+
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        result.IsFailure.ShouldBeTrue();
+        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 }

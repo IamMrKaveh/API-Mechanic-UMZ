@@ -20,6 +20,7 @@ public class ConfigurationValidationExtensionTests
         ["Storage:AccessKey"] = "key",
         ["Storage:SecretKey"] = "secret",
         [$"FeatureManagement:{FeatureFlags.PaymentCallbackSignatureRequired}"] = "true",
+        [$"FeatureManagement:{FeatureFlags.PaymentCallbackIpWhitelistRequired}"] = "false",
         [$"FeatureManagement:{FeatureFlags.IdempotencyDistributedLockEnabled}"] = "false",
         [$"FeatureManagement:{FeatureFlags.SagaAutoRefundOnCommitFailure}"] = "false",
         [$"FeatureManagement:{FeatureFlags.StoragePresignedUrlEnabled}"] = "false",
