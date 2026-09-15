@@ -3,6 +3,7 @@ using Application.Common.Events;
 using Domain.User.Events;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Auth.EventHandlers;
@@ -12,12 +13,14 @@ public class UserCreatedEventHandlerTests
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ILogger<UserCreatedEventHandler> _logger = Substitute.For<ILogger<UserCreatedEventHandler>>();
     private readonly UserCreatedEventHandler _sut;
 
     public UserCreatedEventHandlerTests()
     {
-        _sut = new UserCreatedEventHandler(_walletRepository, _unitOfWork, _auditService, _logger);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new UserCreatedEventHandler(_walletRepository, _unitOfWork, _auditService, _dateTimeProvider, _logger);
     }
 
     private static DomainEventNotification<UserRegisteredEvent> BuildNotification(UserId? userId = null)

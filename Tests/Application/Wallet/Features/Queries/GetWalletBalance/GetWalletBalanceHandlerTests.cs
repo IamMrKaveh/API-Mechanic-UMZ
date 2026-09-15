@@ -2,6 +2,7 @@ using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Queries.GetWalletBalance;
@@ -10,12 +11,14 @@ public class GetWalletBalanceHandlerTests
 {
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly GetWalletBalanceHandler _sut;
 
     public GetWalletBalanceHandlerTests()
     {
-        _sut = new GetWalletBalanceHandler(_walletRepository, _unitOfWork, _currentUserService);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new GetWalletBalanceHandler(_walletRepository, _unitOfWork, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]

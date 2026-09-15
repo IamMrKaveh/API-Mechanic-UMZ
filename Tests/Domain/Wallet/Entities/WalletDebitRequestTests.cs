@@ -30,7 +30,8 @@ public class WalletDebitRequestTests
             description,
             requestedBy ?? UserId.NewId(),
             reservationId ?? WalletReservationId.NewId(),
-            expiresAt ?? DateTime.UtcNow.AddHours(1));
+            expiresAt ?? DateTime.UtcNow.AddHours(1),
+            DateTime.UtcNow);
     }
 
     // ---------- Create factory ----------
@@ -47,7 +48,7 @@ public class WalletDebitRequestTests
         var expiresAt = DateTime.UtcNow.AddHours(2);
 
         var sut = WalletDebitRequest.Create(
-            id, walletId, ownerId, amount, "reason", "desc", requestedBy, reservationId, expiresAt);
+            id, walletId, ownerId, amount, "reason", "desc", requestedBy, reservationId, expiresAt, DateTime.UtcNow);
 
         sut.Id.ShouldBe(id);
         sut.WalletId.ShouldBe(walletId);
@@ -93,7 +94,7 @@ public class WalletDebitRequestTests
         var approver = UserId.NewId();
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        sut.Approve(approver);
+        sut.Approve(approver, DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.Status.ShouldBe(WalletDebitRequestStatus.Approved);
@@ -112,7 +113,7 @@ public class WalletDebitRequestTests
         var sut = BuildPending();
         var rejecter = UserId.NewId();
 
-        sut.Reject(rejecter, "not approved");
+        sut.Reject(rejecter, "not approved", DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletDebitRequestStatus.Rejected);
         sut.RespondedBy.ShouldBe(rejecter);
@@ -125,7 +126,7 @@ public class WalletDebitRequestTests
     {
         var sut = BuildPending();
 
-        sut.Reject(UserId.NewId(), null);
+        sut.Reject(UserId.NewId(), null, DateTime.UtcNow);
 
         sut.RejectionReason.ShouldBeNull();
         sut.Status.ShouldBe(WalletDebitRequestStatus.Rejected);
@@ -139,7 +140,7 @@ public class WalletDebitRequestTests
         var sut = BuildPending();
         var canceller = UserId.NewId();
 
-        sut.Cancel(canceller);
+        sut.Cancel(canceller, DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletDebitRequestStatus.Cancelled);
         sut.RespondedBy.ShouldBe(canceller);
@@ -154,7 +155,7 @@ public class WalletDebitRequestTests
         var sut = BuildPending();
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        sut.MarkExpired();
+        sut.MarkExpired(DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.Status.ShouldBe(WalletDebitRequestStatus.Expired);
@@ -173,10 +174,10 @@ public class WalletDebitRequestTests
         // responsible for those invariants. We document actual behavior here so
         // future guards would surface as a broken test.
         var sut = BuildPending();
-        sut.Reject(UserId.NewId(), "no");
+        sut.Reject(UserId.NewId(), "no", DateTime.UtcNow);
         var overwriter = UserId.NewId();
 
-        sut.Approve(overwriter);
+        sut.Approve(overwriter, DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletDebitRequestStatus.Approved);
         sut.RespondedBy.ShouldBe(overwriter);
@@ -186,10 +187,10 @@ public class WalletDebitRequestTests
     public void Reject_AfterApprove_OverwritesStatusToRejected()
     {
         var sut = BuildPending();
-        sut.Approve(UserId.NewId());
+        sut.Approve(UserId.NewId(), DateTime.UtcNow);
         var rejecter = UserId.NewId();
 
-        sut.Reject(rejecter, "changed my mind");
+        sut.Reject(rejecter, "changed my mind", DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletDebitRequestStatus.Rejected);
         sut.RespondedBy.ShouldBe(rejecter);
@@ -200,9 +201,9 @@ public class WalletDebitRequestTests
     public void Cancel_AfterMarkExpired_OverwritesStatusToCancelled()
     {
         var sut = BuildPending();
-        sut.MarkExpired();
+        sut.MarkExpired(DateTime.UtcNow);
 
-        sut.Cancel(UserId.NewId());
+        sut.Cancel(UserId.NewId(), DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletDebitRequestStatus.Cancelled);
     }

@@ -1,12 +1,14 @@
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Auth.Features.Commands.Logout;
 
 public class LogoutHandler(
     ISessionRepository sessionRepository,
-    ICurrentUserService currentUser)
+    ICurrentUserService currentUser,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<LogoutCommand>
 {
     public async Task<ServiceResult> Handle(LogoutCommand request, CancellationToken ct)
@@ -27,7 +29,8 @@ public class LogoutHandler(
         if (session.UserId != userId)
             return ServiceResult.Success();
 
-        session.Revoke(SessionRevocationReason.UserRequested);
+        var now = dateTimeProvider.UtcNow;
+        session.Revoke(now, SessionRevocationReason.UserRequested);
         sessionRepository.Update(session);
 
         return ServiceResult.Success();

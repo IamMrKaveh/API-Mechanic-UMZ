@@ -116,7 +116,7 @@ public sealed class InitiateWalletTransferHandlerTests
         _userRepository.GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
             .Returns(BuildUser(PhoneNumber.Create("09121111111")));
         var wallet = new WalletBuilder().WithOwnerId(senderId).Build();
-        wallet.Credit(Money.Create(1_000_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(1_000_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _walletRepository.GetByUserIdAsync(senderId, Arg.Any<CancellationToken>()).Returns(wallet);
 
         var result = await _sut.Handle(
@@ -153,7 +153,7 @@ public sealed class InitiateWalletTransferHandlerTests
         _userRepository.GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
             .Returns(BuildUser(PhoneNumber.Create("09121111111")));
         var wallet = new WalletBuilder().WithOwnerId(senderId).Build();
-        wallet.Credit(Money.Create(1_000_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(1_000_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _walletRepository.GetByUserIdAsync(senderId, Arg.Any<CancellationToken>()).Returns(wallet);
         _transferRepository.SumCompletedAmountForDayAsync(Arg.Any<UserId>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(0m);
@@ -179,7 +179,7 @@ public sealed class InitiateWalletTransferHandlerTests
         _userRepository.GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
             .Returns(BuildUser(PhoneNumber.Create("09121111111")));
         var wallet = new WalletBuilder().WithOwnerId(senderId).Build();
-        wallet.Credit(Money.Create(1_000_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(1_000_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _walletRepository.GetByUserIdAsync(senderId, Arg.Any<CancellationToken>()).Returns(wallet);
         _transferRepository.SumCompletedAmountForDayAsync(Arg.Any<UserId>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(0m);
         _transferRepository.CountRecentPendingByUserAsync(Arg.Any<UserId>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>()).Returns(0);
@@ -202,7 +202,7 @@ public sealed class InitiateWalletTransferHandlerTests
         _userRepository.GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
             .Returns(BuildUser(PhoneNumber.Create("09121111111")));
         var wallet = new WalletBuilder().WithOwnerId(senderId).Build();
-        wallet.Credit(Money.Create(1_000_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(1_000_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _walletRepository.GetByUserIdAsync(senderId, Arg.Any<CancellationToken>()).Returns(wallet);
         _transferRepository.SumCompletedAmountForDayAsync(Arg.Any<UserId>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(0m);
         _transferRepository.CountRecentPendingByUserAsync(Arg.Any<UserId>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())

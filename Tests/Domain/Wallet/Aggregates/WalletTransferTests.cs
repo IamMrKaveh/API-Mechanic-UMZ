@@ -122,7 +122,7 @@ public class WalletTransferTests
         var user = UserId.NewId();
 
         Should.Throw<InvalidWalletTransferException>(() =>
-            WalletTransfer.Initiate(user, user, Rial(50_000m), ValidOtpHash, TimeSpan.FromMinutes(5)));
+            WalletTransfer.Initiate(user, user, Rial(50_000m), ValidOtpHash, TimeSpan.FromMinutes(5), DateTime.UtcNow));
     }
 
     [Theory]
@@ -132,7 +132,7 @@ public class WalletTransferTests
     public void Initiate_WithAmountBelowMinimum_ThrowsInvalidWalletTransferException(decimal amount)
     {
         Should.Throw<InvalidWalletTransferException>(() =>
-            WalletTransfer.Initiate(UserId.NewId(), UserId.NewId(), Rial(amount), ValidOtpHash, TimeSpan.FromMinutes(5)));
+            WalletTransfer.Initiate(UserId.NewId(), UserId.NewId(), Rial(amount), ValidOtpHash, TimeSpan.FromMinutes(5), DateTime.UtcNow));
     }
 
     [Fact]
@@ -147,35 +147,35 @@ public class WalletTransferTests
     public void Initiate_WithZeroTtl_ThrowsInvalidWalletTransferException()
     {
         Should.Throw<InvalidWalletTransferException>(() =>
-            WalletTransfer.Initiate(UserId.NewId(), UserId.NewId(), Rial(50_000m), ValidOtpHash, TimeSpan.Zero));
+            WalletTransfer.Initiate(UserId.NewId(), UserId.NewId(), Rial(50_000m), ValidOtpHash, TimeSpan.Zero, DateTime.UtcNow));
     }
 
     [Fact]
     public void Initiate_WithNegativeTtl_ThrowsInvalidWalletTransferException()
     {
         Should.Throw<InvalidWalletTransferException>(() =>
-            WalletTransfer.Initiate(UserId.NewId(), UserId.NewId(), Rial(50_000m), ValidOtpHash, TimeSpan.FromMinutes(-1)));
+            WalletTransfer.Initiate(UserId.NewId(), UserId.NewId(), Rial(50_000m), ValidOtpHash, TimeSpan.FromMinutes(-1), DateTime.UtcNow));
     }
 
     [Fact]
     public void Initiate_WithNullFromUserId_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            WalletTransfer.Initiate(null!, UserId.NewId(), Rial(50_000m), ValidOtpHash, TimeSpan.FromMinutes(5)));
+            WalletTransfer.Initiate(null!, UserId.NewId(), Rial(50_000m), ValidOtpHash, TimeSpan.FromMinutes(5), DateTime.UtcNow));
     }
 
     [Fact]
     public void Initiate_WithNullToUserId_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            WalletTransfer.Initiate(UserId.NewId(), null!, Rial(50_000m), ValidOtpHash, TimeSpan.FromMinutes(5)));
+            WalletTransfer.Initiate(UserId.NewId(), null!, Rial(50_000m), ValidOtpHash, TimeSpan.FromMinutes(5), DateTime.UtcNow));
     }
 
     [Fact]
     public void Initiate_WithNullAmount_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            WalletTransfer.Initiate(UserId.NewId(), UserId.NewId(), null!, ValidOtpHash, TimeSpan.FromMinutes(5)));
+            WalletTransfer.Initiate(UserId.NewId(), UserId.NewId(), null!, ValidOtpHash, TimeSpan.FromMinutes(5), DateTime.UtcNow));
     }
 
     [Theory]
@@ -185,7 +185,7 @@ public class WalletTransferTests
     public void Initiate_WithBlankOtpHash_ThrowsArgumentException(string? otpHash)
     {
         Should.Throw<ArgumentException>(() =>
-            WalletTransfer.Initiate(UserId.NewId(), UserId.NewId(), Rial(50_000m), otpHash!, TimeSpan.FromMinutes(5)));
+            WalletTransfer.Initiate(UserId.NewId(), UserId.NewId(), Rial(50_000m), otpHash!, TimeSpan.FromMinutes(5), DateTime.UtcNow));
     }
 
     // ---------- VerifyOtp ----------
@@ -197,7 +197,7 @@ public class WalletTransferTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        Should.NotThrow(() => sut.VerifyOtp(ValidOtpHash));
+        Should.NotThrow(() => sut.VerifyOtp(ValidOtpHash, DateTime.UtcNow));
 
         sut.Status.ShouldBe(WalletTransferStatus.PendingOtp);
         sut.OtpAttempts.ShouldBe(0);
@@ -210,7 +210,7 @@ public class WalletTransferTests
     {
         var sut = BuildPending();
 
-        Should.Throw<WalletTransferOtpMismatchException>(() => sut.VerifyOtp("wrong"));
+        Should.Throw<WalletTransferOtpMismatchException>(() => sut.VerifyOtp("wrong", DateTime.UtcNow));
 
         sut.OtpAttempts.ShouldBe(1);
         sut.Status.ShouldBe(WalletTransferStatus.PendingOtp);
@@ -223,13 +223,13 @@ public class WalletTransferTests
 
         for (int i = 1; i < MaxOtpAttempts; i++)
         {
-            Should.Throw<WalletTransferOtpMismatchException>(() => sut.VerifyOtp("wrong"));
+            Should.Throw<WalletTransferOtpMismatchException>(() => sut.VerifyOtp("wrong", DateTime.UtcNow));
             sut.Status.ShouldBe(WalletTransferStatus.PendingOtp);
         }
 
         sut.ClearDomainEvents();
 
-        Should.Throw<WalletTransferOtpMismatchException>(() => sut.VerifyOtp("wrong"));
+        Should.Throw<WalletTransferOtpMismatchException>(() => sut.VerifyOtp("wrong", DateTime.UtcNow));
 
         sut.OtpAttempts.ShouldBe(MaxOtpAttempts);
         sut.Status.ShouldBe(WalletTransferStatus.Failed);
@@ -244,7 +244,7 @@ public class WalletTransferTests
         Thread.Sleep(50);
         sut.ClearDomainEvents();
 
-        Should.Throw<InvalidWalletTransferException>(() => sut.VerifyOtp(ValidOtpHash));
+        Should.Throw<InvalidWalletTransferException>(() => sut.VerifyOtp(ValidOtpHash, DateTime.UtcNow));
 
         sut.Status.ShouldBe(WalletTransferStatus.Expired);
         sut.FailureReason.ShouldNotBeNullOrWhiteSpace();
@@ -256,18 +256,18 @@ public class WalletTransferTests
     {
         var from = UserId.NewId();
         var sut = BuildPending(fromUserId: from);
-        sut.Cancel(from);
+        sut.Cancel(from, DateTime.UtcNow);
 
-        Should.Throw<InvalidWalletTransferException>(() => sut.VerifyOtp(ValidOtpHash));
+        Should.Throw<InvalidWalletTransferException>(() => sut.VerifyOtp(ValidOtpHash, DateTime.UtcNow));
     }
 
     [Fact]
     public void VerifyOtp_AfterCompleted_ThrowsInvalidWalletTransferException()
     {
         var sut = BuildPending();
-        sut.MarkCompleted();
+        sut.MarkCompleted(DateTime.UtcNow);
 
-        Should.Throw<InvalidWalletTransferException>(() => sut.VerifyOtp(ValidOtpHash));
+        Should.Throw<InvalidWalletTransferException>(() => sut.VerifyOtp(ValidOtpHash, DateTime.UtcNow));
     }
 
     [Theory]
@@ -278,7 +278,7 @@ public class WalletTransferTests
     {
         var sut = BuildPending();
 
-        Should.Throw<ArgumentException>(() => sut.VerifyOtp(otpHash!));
+        Should.Throw<ArgumentException>(() => sut.VerifyOtp(otpHash!, DateTime.UtcNow));
     }
 
     // ---------- MarkCompleted ----------
@@ -291,7 +291,7 @@ public class WalletTransferTests
         var versionBefore = sut.Version;
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        sut.MarkCompleted();
+        sut.MarkCompleted(DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.Status.ShouldBe(WalletTransferStatus.Completed);
@@ -311,9 +311,9 @@ public class WalletTransferTests
     public void MarkCompleted_AlreadyCompleted_ThrowsInvalidWalletTransferException()
     {
         var sut = BuildPending();
-        sut.MarkCompleted();
+        sut.MarkCompleted(DateTime.UtcNow);
 
-        Should.Throw<InvalidWalletTransferException>(() => sut.MarkCompleted());
+        Should.Throw<InvalidWalletTransferException>(() => sut.MarkCompleted(DateTime.UtcNow));
     }
 
     [Fact]
@@ -321,9 +321,9 @@ public class WalletTransferTests
     {
         var from = UserId.NewId();
         var sut = BuildPending(fromUserId: from);
-        sut.Cancel(from);
+        sut.Cancel(from, DateTime.UtcNow);
 
-        Should.Throw<InvalidWalletTransferException>(() => sut.MarkCompleted());
+        Should.Throw<InvalidWalletTransferException>(() => sut.MarkCompleted(DateTime.UtcNow));
     }
 
     // ---------- Cancel ----------
@@ -337,7 +337,7 @@ public class WalletTransferTests
         var versionBefore = sut.Version;
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        sut.Cancel(from);
+        sut.Cancel(from, DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.Status.ShouldBe(WalletTransferStatus.Cancelled);
@@ -356,7 +356,7 @@ public class WalletTransferTests
     {
         var sut = BuildPending();
 
-        Should.Throw<InvalidWalletTransferException>(() => sut.Cancel(UserId.NewId()));
+        Should.Throw<InvalidWalletTransferException>(() => sut.Cancel(UserId.NewId(), DateTime.UtcNow));
     }
 
     [Fact]
@@ -364,7 +364,7 @@ public class WalletTransferTests
     {
         var sut = BuildPending();
 
-        Should.Throw<ArgumentNullException>(() => sut.Cancel(null!));
+        Should.Throw<ArgumentNullException>(() => sut.Cancel(null!, DateTime.UtcNow));
     }
 
     [Fact]
@@ -372,9 +372,9 @@ public class WalletTransferTests
     {
         var from = UserId.NewId();
         var sut = BuildPending(fromUserId: from);
-        sut.Cancel(from);
+        sut.Cancel(from, DateTime.UtcNow);
 
-        Should.Throw<InvalidWalletTransferException>(() => sut.Cancel(from));
+        Should.Throw<InvalidWalletTransferException>(() => sut.Cancel(from, DateTime.UtcNow));
     }
 
     [Fact]
@@ -382,9 +382,9 @@ public class WalletTransferTests
     {
         var from = UserId.NewId();
         var sut = BuildPending(fromUserId: from);
-        sut.MarkCompleted();
+        sut.MarkCompleted(DateTime.UtcNow);
 
-        Should.Throw<InvalidWalletTransferException>(() => sut.Cancel(from));
+        Should.Throw<InvalidWalletTransferException>(() => sut.Cancel(from, DateTime.UtcNow));
     }
 
     // ---------- MarkFailed ----------
@@ -396,7 +396,7 @@ public class WalletTransferTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.MarkFailed("technical error");
+        sut.MarkFailed("technical error", DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletTransferStatus.Failed);
         sut.FailureReason.ShouldBe("technical error");
@@ -415,18 +415,18 @@ public class WalletTransferTests
     {
         var sut = BuildPending();
 
-        Should.Throw<ArgumentException>(() => sut.MarkFailed(reason!));
+        Should.Throw<ArgumentException>(() => sut.MarkFailed(reason!, DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkFailed_OnAlreadyCompletedTransfer_IsSilentNoOp()
     {
         var sut = BuildPending();
-        sut.MarkCompleted();
+        sut.MarkCompleted(DateTime.UtcNow);
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        Should.NotThrow(() => sut.MarkFailed("late"));
+        Should.NotThrow(() => sut.MarkFailed("late", DateTime.UtcNow));
 
         sut.Status.ShouldBe(WalletTransferStatus.Completed);
         sut.FailureReason.ShouldBeNull();
@@ -439,11 +439,11 @@ public class WalletTransferTests
     {
         var from = UserId.NewId();
         var sut = BuildPending(fromUserId: from);
-        sut.Cancel(from);
+        sut.Cancel(from, DateTime.UtcNow);
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        Should.NotThrow(() => sut.MarkFailed("late"));
+        Should.NotThrow(() => sut.MarkFailed("late", DateTime.UtcNow));
 
         sut.Status.ShouldBe(WalletTransferStatus.Cancelled);
         sut.Version.ShouldBe(versionBefore);

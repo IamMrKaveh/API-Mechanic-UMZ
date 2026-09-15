@@ -24,6 +24,7 @@ public sealed class WalletReservation : Entity<WalletReservationId>
         WalletId walletId,
         Money amount,
         string purpose,
+        DateTime now,
         DateTime? expiresAt = null)
     {
         Guard.Against.Null(id, nameof(id));
@@ -39,16 +40,16 @@ public sealed class WalletReservation : Entity<WalletReservationId>
             Purpose = purpose,
             Status = WalletReservationStatus.Active,
             ExpiresAt = expiresAt,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now
         };
     }
 
-    internal void Release()
+    internal void Release(DateTime now)
     {
         if (Status != WalletReservationStatus.Active)
             throw new DomainException($"رزرو در وضعیت '{Status}' قابل آزادسازی نیست.");
 
         Status = WalletReservationStatus.Released;
-        ResolvedAt = DateTime.UtcNow;
+        ResolvedAt = now;
     }
 }

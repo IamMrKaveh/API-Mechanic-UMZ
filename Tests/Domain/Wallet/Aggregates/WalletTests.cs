@@ -17,7 +17,7 @@ public class WalletTests
     {
         var wallet = new WalletBuilder().Build();
         if (openingBalance > 0)
-            wallet.Credit(Rial(openingBalance), "seed", "seed-ref");
+            wallet.Credit(Rial(openingBalance), "seed", "seed-ref", DateTime.UtcNow);
         return wallet;
     }
 
@@ -96,7 +96,7 @@ public class WalletTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Credit(Rial(100), "deposit", "ref-1");
+        sut.Credit(Rial(100), "deposit", "ref-1", DateTime.UtcNow);
 
         sut.Balance.Amount.ShouldBe(100m);
         sut.Version.ShouldBe(versionBefore + 1);
@@ -107,9 +107,9 @@ public class WalletTests
     public void Credit_DoesNotEnforceActiveGate_WorksOnFrozenWallet()
     {
         var sut = new WalletBuilder().Build();
-        sut.Freeze("audit", UserId.NewId());
+        sut.Freeze("audit", UserId.NewId(), DateTime.UtcNow);
 
-        Should.NotThrow(() => sut.Credit(Rial(50), "refund", "ref-refund"));
+        Should.NotThrow(() => sut.Credit(Rial(50), "refund", "ref-refund", DateTime.UtcNow));
         sut.Balance.Amount.ShouldBe(50m);
     }
 
@@ -118,7 +118,7 @@ public class WalletTests
     {
         var sut = new WalletBuilder().Build();
 
-        Should.Throw<InvalidWalletAmountException>(() => sut.Credit(Rial(0), "d", "r"));
+        Should.Throw<InvalidWalletAmountException>(() => sut.Credit(Rial(0), "d", "r", DateTime.UtcNow));
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class WalletTests
     {
         var sut = new WalletBuilder().Build();
 
-        Should.Throw<ArgumentException>(() => sut.Credit(null!, "d", "r"));
+        Should.Throw<ArgumentException>(() => sut.Credit(null!, "d", "r", DateTime.UtcNow));
     }
 
     [Theory]
@@ -137,7 +137,7 @@ public class WalletTests
     {
         var sut = new WalletBuilder().Build();
 
-        Should.Throw<ArgumentException>(() => sut.Credit(Rial(50), description!, "r"));
+        Should.Throw<ArgumentException>(() => sut.Credit(Rial(50), description!, "r", DateTime.UtcNow));
     }
 
     [Theory]
@@ -148,7 +148,7 @@ public class WalletTests
     {
         var sut = new WalletBuilder().Build();
 
-        Should.Throw<ArgumentException>(() => sut.Credit(Rial(50), "d", referenceId!));
+        Should.Throw<ArgumentException>(() => sut.Credit(Rial(50), "d", referenceId!, DateTime.UtcNow));
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class WalletTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Debit(Rial(80), "purchase", "order-1");
+        sut.Debit(Rial(80), "purchase", "order-1", DateTime.UtcNow);
 
         sut.Balance.Amount.ShouldBe(120m);
         sut.Version.ShouldBe(versionBefore + 1);
@@ -169,9 +169,9 @@ public class WalletTests
     public void Debit_OnInactiveWallet_ThrowsWalletInactiveException()
     {
         var sut = BuildFunded(200);
-        sut.Freeze("audit", UserId.NewId());
+        sut.Freeze("audit", UserId.NewId(), DateTime.UtcNow);
 
-        Should.Throw<WalletInactiveException>(() => sut.Debit(Rial(50), "d", "r"));
+        Should.Throw<WalletInactiveException>(() => sut.Debit(Rial(50), "d", "r", DateTime.UtcNow));
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public class WalletTests
     {
         var sut = BuildFunded(30);
 
-        Should.Throw<InsufficientWalletBalanceException>(() => sut.Debit(Rial(100), "d", "r"));
+        Should.Throw<InsufficientWalletBalanceException>(() => sut.Debit(Rial(100), "d", "r", DateTime.UtcNow));
     }
 
     [Fact]
@@ -187,17 +187,17 @@ public class WalletTests
     {
         var sut = BuildFunded(100);
 
-        Should.Throw<InvalidWalletAmountException>(() => sut.Debit(Rial(0), "d", "r"));
+        Should.Throw<InvalidWalletAmountException>(() => sut.Debit(Rial(0), "d", "r", DateTime.UtcNow));
     }
 
     [Fact]
     public void Debit_RespectsReservedBalance()
     {
         var sut = BuildFunded(200);
-        sut.CreateReservation(WalletReservationId.NewId(), Rial(150), "hold");
+        sut.CreateReservation(WalletReservationId.NewId(), Rial(150), "hold", DateTime.UtcNow);
 
-        Should.Throw<InsufficientWalletBalanceException>(() => sut.Debit(Rial(100), "d", "r"));
-        Should.NotThrow(() => sut.Debit(Rial(50), "d", "r2"));
+        Should.Throw<InsufficientWalletBalanceException>(() => sut.Debit(Rial(100), "d", "r", DateTime.UtcNow));
+        Should.NotThrow(() => sut.Debit(Rial(50), "d", "r2", DateTime.UtcNow));
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public class WalletTests
     {
         var sut = BuildFunded(500);
 
-        sut.CreateReservation(WalletReservationId.NewId(), Rial(200), "hold-1");
+        sut.CreateReservation(WalletReservationId.NewId(), Rial(200), "hold-1", DateTime.UtcNow);
 
         sut.Balance.Amount.ShouldBe(500m);
         sut.ReservedBalance.Amount.ShouldBe(200m);
@@ -216,10 +216,10 @@ public class WalletTests
     public void CreateReservation_OnInactiveWallet_ThrowsWalletInactiveException()
     {
         var sut = BuildFunded(500);
-        sut.Freeze("audit", UserId.NewId());
+        sut.Freeze("audit", UserId.NewId(), DateTime.UtcNow);
 
         Should.Throw<WalletInactiveException>(() =>
-            sut.CreateReservation(WalletReservationId.NewId(), Rial(50), "hold"));
+            sut.CreateReservation(WalletReservationId.NewId(), Rial(50), "hold", DateTime.UtcNow));
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public class WalletTests
         var sut = BuildFunded(50);
 
         Should.Throw<InsufficientWalletBalanceException>(() =>
-            sut.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold"));
+            sut.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold", DateTime.UtcNow));
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public class WalletTests
         sut.ClearDomainEvents();
         var reservationId = WalletReservationId.NewId();
 
-        var reservation = sut.CreateReservation(reservationId, Rial(100), "hold");
+        var reservation = sut.CreateReservation(reservationId, Rial(100), "hold", DateTime.UtcNow);
 
         reservation.Id.ShouldBe(reservationId);
         reservation.Status.ShouldBe(WalletReservationStatus.Active);
@@ -252,10 +252,10 @@ public class WalletTests
     {
         var sut = BuildFunded(500);
         var reservationId = WalletReservationId.NewId();
-        sut.CreateReservation(reservationId, Rial(100), "hold");
+        sut.CreateReservation(reservationId, Rial(100), "hold", DateTime.UtcNow);
         sut.ClearDomainEvents();
 
-        sut.ReleaseReservation(reservationId);
+        sut.ReleaseReservation(reservationId, DateTime.UtcNow);
 
         sut.ReservedBalance.Amount.ShouldBe(0m);
         sut.AvailableBalance.Amount.ShouldBe(500m);
@@ -270,7 +270,7 @@ public class WalletTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        Should.NotThrow(() => sut.ReleaseReservation(WalletReservationId.NewId()));
+        Should.NotThrow(() => sut.ReleaseReservation(WalletReservationId.NewId(), DateTime.UtcNow));
 
         sut.Version.ShouldBe(versionBefore);
         sut.DomainEvents.ShouldBeEmpty();
@@ -281,11 +281,11 @@ public class WalletTests
     {
         var sut = BuildFunded(500);
         var reservationId = WalletReservationId.NewId();
-        sut.CreateReservation(reservationId, Rial(100), "hold");
-        sut.ReleaseReservation(reservationId);
+        sut.CreateReservation(reservationId, Rial(100), "hold", DateTime.UtcNow);
+        sut.ReleaseReservation(reservationId, DateTime.UtcNow);
         sut.ClearDomainEvents();
 
-        Should.NotThrow(() => sut.ReleaseReservation(reservationId));
+        Should.NotThrow(() => sut.ReleaseReservation(reservationId, DateTime.UtcNow));
         sut.DomainEvents.ShouldBeEmpty();
     }
 
@@ -297,7 +297,7 @@ public class WalletTests
         var requestId = WalletDebitRequestId.NewId();
 
         var request = sut.CreateDebitRequest(
-            requestId, Rial(100), "reason", "desc", UserId.NewId(), TimeSpan.FromHours(1));
+            requestId, Rial(100), "reason", "desc", UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow);
 
         request.Id.ShouldBe(requestId);
         request.Status.ShouldBe(WalletDebitRequestStatus.Pending);
@@ -316,7 +316,7 @@ public class WalletTests
         var before = DateTime.UtcNow;
 
         var request = sut.CreateDebitRequest(
-            WalletDebitRequestId.NewId(), Rial(100), "reason", "desc", UserId.NewId(), TimeSpan.FromHours(1));
+            WalletDebitRequestId.NewId(), Rial(100), "reason", "desc", UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow);
 
         var reservation = sut.Reservations.Single(r => r.Id == request.ReservationId);
         reservation.Status.ShouldBe(WalletReservationStatus.Active);
@@ -329,10 +329,10 @@ public class WalletTests
     public void CreateDebitRequest_OnInactiveWallet_ThrowsWalletInactiveException()
     {
         var sut = BuildFunded(500);
-        sut.Freeze("audit", UserId.NewId());
+        sut.Freeze("audit", UserId.NewId(), DateTime.UtcNow);
 
         Should.Throw<WalletInactiveException>(() =>
-            sut.CreateDebitRequest(WalletDebitRequestId.NewId(), Rial(10), "r", null, UserId.NewId(), TimeSpan.FromHours(1)));
+            sut.CreateDebitRequest(WalletDebitRequestId.NewId(), Rial(10), "r", null, UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow));
     }
 
     [Fact]
@@ -341,7 +341,7 @@ public class WalletTests
         var sut = BuildFunded(50);
 
         Should.Throw<InsufficientWalletBalanceException>(() =>
-            sut.CreateDebitRequest(WalletDebitRequestId.NewId(), Rial(100), "r", null, UserId.NewId(), TimeSpan.FromHours(1)));
+            sut.CreateDebitRequest(WalletDebitRequestId.NewId(), Rial(100), "r", null, UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow));
     }
 
     [Fact]
@@ -349,13 +349,13 @@ public class WalletTests
     {
         var ownerId = UserId.NewId();
         var sut = new WalletBuilder().WithOwnerId(ownerId).Build();
-        sut.Credit(Rial(500), "seed", "seed");
+        sut.Credit(Rial(500), "seed", "seed", DateTime.UtcNow);
         var requestId = WalletDebitRequestId.NewId();
-        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1));
+        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow);
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.ApproveDebitRequest(requestId, ownerId);
+        sut.ApproveDebitRequest(requestId, ownerId, DateTime.UtcNow);
 
         sut.Balance.Amount.ShouldBe(400m);
         sut.ReservedBalance.Amount.ShouldBe(0m);
@@ -373,12 +373,12 @@ public class WalletTests
     {
         var ownerId = UserId.NewId();
         var sut = new WalletBuilder().WithOwnerId(ownerId).Build();
-        sut.Credit(Rial(500), "seed", "seed");
+        sut.Credit(Rial(500), "seed", "seed", DateTime.UtcNow);
         var requestId = WalletDebitRequestId.NewId();
-        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1));
+        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow);
 
         Should.Throw<UnauthorizedWalletDebitApprovalException>(() =>
-            sut.ApproveDebitRequest(requestId, UserId.NewId()));
+            sut.ApproveDebitRequest(requestId, UserId.NewId(), DateTime.UtcNow));
     }
 
     [Fact]
@@ -388,7 +388,7 @@ public class WalletTests
         var sut = new WalletBuilder().WithOwnerId(ownerId).Build();
 
         Should.Throw<WalletDebitRequestNotFoundException>(() =>
-            sut.ApproveDebitRequest(WalletDebitRequestId.NewId(), ownerId));
+            sut.ApproveDebitRequest(WalletDebitRequestId.NewId(), ownerId, DateTime.UtcNow));
     }
 
     [Fact]
@@ -396,12 +396,12 @@ public class WalletTests
     {
         var ownerId = UserId.NewId();
         var sut = new WalletBuilder().WithOwnerId(ownerId).Build();
-        sut.Credit(Rial(500), "seed", "seed");
+        sut.Credit(Rial(500), "seed", "seed", DateTime.UtcNow);
         var requestId = WalletDebitRequestId.NewId();
-        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1));
-        sut.ApproveDebitRequest(requestId, ownerId);
+        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow);
+        sut.ApproveDebitRequest(requestId, ownerId, DateTime.UtcNow);
 
-        Should.Throw<InvalidWalletDebitRequestStatusException>(() => sut.ApproveDebitRequest(requestId, ownerId));
+        Should.Throw<InvalidWalletDebitRequestStatusException>(() => sut.ApproveDebitRequest(requestId, ownerId, DateTime.UtcNow));
     }
 
     [Fact]
@@ -409,12 +409,12 @@ public class WalletTests
     {
         var ownerId = UserId.NewId();
         var sut = new WalletBuilder().WithOwnerId(ownerId).Build();
-        sut.Credit(Rial(500), "seed", "seed");
+        sut.Credit(Rial(500), "seed", "seed", DateTime.UtcNow);
         var requestId = WalletDebitRequestId.NewId();
-        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromSeconds(-1));
+        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromSeconds(-1), DateTime.UtcNow);
         sut.ClearDomainEvents();
 
-        Should.Throw<WalletDebitRequestExpiredException>(() => sut.ApproveDebitRequest(requestId, ownerId));
+        Should.Throw<WalletDebitRequestExpiredException>(() => sut.ApproveDebitRequest(requestId, ownerId, DateTime.UtcNow));
 
         sut.DebitRequests.Single().Status.ShouldBe(WalletDebitRequestStatus.Expired);
         sut.ReservedBalance.Amount.ShouldBe(0m);
@@ -428,13 +428,13 @@ public class WalletTests
     {
         var ownerId = UserId.NewId();
         var sut = new WalletBuilder().WithOwnerId(ownerId).Build();
-        sut.Credit(Rial(500), "seed", "seed");
+        sut.Credit(Rial(500), "seed", "seed", DateTime.UtcNow);
         var requestId = WalletDebitRequestId.NewId();
-        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1));
+        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow);
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.RejectDebitRequest(requestId, ownerId, "not authorized");
+        sut.RejectDebitRequest(requestId, ownerId, "not authorized", DateTime.UtcNow);
 
         sut.Balance.Amount.ShouldBe(500m);
         sut.ReservedBalance.Amount.ShouldBe(0m);
@@ -451,12 +451,12 @@ public class WalletTests
     {
         var ownerId = UserId.NewId();
         var sut = new WalletBuilder().WithOwnerId(ownerId).Build();
-        sut.Credit(Rial(500), "seed", "seed");
+        sut.Credit(Rial(500), "seed", "seed", DateTime.UtcNow);
         var requestId = WalletDebitRequestId.NewId();
-        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1));
+        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow);
 
         Should.Throw<UnauthorizedWalletDebitApprovalException>(() =>
-            sut.RejectDebitRequest(requestId, UserId.NewId(), "no"));
+            sut.RejectDebitRequest(requestId, UserId.NewId(), "no", DateTime.UtcNow));
     }
 
     [Fact]
@@ -464,13 +464,13 @@ public class WalletTests
     {
         var ownerId = UserId.NewId();
         var sut = new WalletBuilder().WithOwnerId(ownerId).Build();
-        sut.Credit(Rial(500), "seed", "seed");
+        sut.Credit(Rial(500), "seed", "seed", DateTime.UtcNow);
         var requestId = WalletDebitRequestId.NewId();
-        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1));
+        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow);
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.CancelDebitRequest(requestId, UserId.NewId());
+        sut.CancelDebitRequest(requestId, UserId.NewId(), DateTime.UtcNow);
 
         sut.Balance.Amount.ShouldBe(500m);
         sut.ReservedBalance.Amount.ShouldBe(0m);
@@ -487,7 +487,7 @@ public class WalletTests
         var sut = new WalletBuilder().Build();
 
         Should.Throw<WalletDebitRequestNotFoundException>(() =>
-            sut.CancelDebitRequest(WalletDebitRequestId.NewId(), UserId.NewId()));
+            sut.CancelDebitRequest(WalletDebitRequestId.NewId(), UserId.NewId(), DateTime.UtcNow));
     }
 
     [Fact]
@@ -495,13 +495,13 @@ public class WalletTests
     {
         var ownerId = UserId.NewId();
         var sut = new WalletBuilder().WithOwnerId(ownerId).Build();
-        sut.Credit(Rial(500), "seed", "seed");
+        sut.Credit(Rial(500), "seed", "seed", DateTime.UtcNow);
         var requestId = WalletDebitRequestId.NewId();
-        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1));
-        sut.CancelDebitRequest(requestId, UserId.NewId());
+        sut.CreateDebitRequest(requestId, Rial(100), "reason", null, UserId.NewId(), TimeSpan.FromHours(1), DateTime.UtcNow);
+        sut.CancelDebitRequest(requestId, UserId.NewId(), DateTime.UtcNow);
 
         Should.Throw<InvalidWalletDebitRequestStatusException>(() =>
-            sut.CancelDebitRequest(requestId, UserId.NewId()));
+            sut.CancelDebitRequest(requestId, UserId.NewId(), DateTime.UtcNow));
     }
 
     [Fact]
@@ -511,7 +511,7 @@ public class WalletTests
         sut.ClearDomainEvents();
         var adminId = UserId.NewId();
 
-        sut.Freeze("suspicious", adminId);
+        sut.Freeze("suspicious", adminId, DateTime.UtcNow);
 
         sut.IsActive.ShouldBeFalse();
         sut.FreezeReason.ShouldBe("suspicious");
@@ -524,12 +524,12 @@ public class WalletTests
     public void Freeze_WhenAlreadyFrozen_IsNoOp()
     {
         var sut = new WalletBuilder().Build();
-        sut.Freeze("first", UserId.NewId());
+        sut.Freeze("first", UserId.NewId(), DateTime.UtcNow);
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
         var reasonBefore = sut.FreezeReason;
 
-        sut.Freeze("second", UserId.NewId());
+        sut.Freeze("second", UserId.NewId(), DateTime.UtcNow);
 
         sut.FreezeReason.ShouldBe(reasonBefore);
         sut.Version.ShouldBe(versionBefore);
@@ -544,7 +544,7 @@ public class WalletTests
     {
         var sut = new WalletBuilder().Build();
 
-        Should.Throw<ArgumentException>(() => sut.Freeze(reason!, UserId.NewId()));
+        Should.Throw<ArgumentException>(() => sut.Freeze(reason!, UserId.NewId(), DateTime.UtcNow));
     }
 
     [Fact]
@@ -552,17 +552,17 @@ public class WalletTests
     {
         var sut = new WalletBuilder().Build();
 
-        Should.Throw<ArgumentException>(() => sut.Freeze("reason", null!));
+        Should.Throw<ArgumentException>(() => sut.Freeze("reason", null!, DateTime.UtcNow));
     }
 
     [Fact]
     public void Unfreeze_OnFrozenWallet_RestoresActiveAndClearsFreezeStateAndRaisesEvent()
     {
         var sut = new WalletBuilder().Build();
-        sut.Freeze("audit", UserId.NewId());
+        sut.Freeze("audit", UserId.NewId(), DateTime.UtcNow);
         sut.ClearDomainEvents();
 
-        sut.Unfreeze(UserId.NewId(), "cleared");
+        sut.Unfreeze(UserId.NewId(), "cleared", DateTime.UtcNow);
 
         sut.IsActive.ShouldBeTrue();
         sut.FreezeReason.ShouldBeNull();
@@ -578,7 +578,7 @@ public class WalletTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Unfreeze(UserId.NewId(), "reason");
+        sut.Unfreeze(UserId.NewId(), "reason", DateTime.UtcNow);
 
         sut.IsActive.ShouldBeTrue();
         sut.Version.ShouldBe(versionBefore);
@@ -589,11 +589,11 @@ public class WalletTests
     public void ReservedBalance_SumsOnlyActiveReservations()
     {
         var sut = BuildFunded(500);
-        sut.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold-1");
+        sut.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold-1", DateTime.UtcNow);
         var second = WalletReservationId.NewId();
-        sut.CreateReservation(second, Rial(150), "hold-2");
-        sut.CreateReservation(WalletReservationId.NewId(), Rial(50), "hold-3");
-        sut.ReleaseReservation(second);
+        sut.CreateReservation(second, Rial(150), "hold-2", DateTime.UtcNow);
+        sut.CreateReservation(WalletReservationId.NewId(), Rial(50), "hold-3", DateTime.UtcNow);
+        sut.ReleaseReservation(second, DateTime.UtcNow);
 
         sut.ReservedBalance.Amount.ShouldBe(150m);
         sut.AvailableBalance.Amount.ShouldBe(350m);
@@ -604,10 +604,10 @@ public class WalletTests
     {
         var sut = new WalletBuilder().Build();
 
-        sut.Credit(Rial(1000), "seed", "seed");
-        sut.CreateReservation(WalletReservationId.NewId(), Rial(300), "hold");
-        sut.Debit(Rial(200), "purchase", "order");
-        sut.Freeze("audit", UserId.NewId());
+        sut.Credit(Rial(1000), "seed", "seed", DateTime.UtcNow);
+        sut.CreateReservation(WalletReservationId.NewId(), Rial(300), "hold", DateTime.UtcNow);
+        sut.Debit(Rial(200), "purchase", "order", DateTime.UtcNow);
+        sut.Freeze("audit", UserId.NewId(), DateTime.UtcNow);
 
         sut.Balance.Amount.ShouldBe(800m);
         sut.ReservedBalance.Amount.ShouldBe(300m);
@@ -621,15 +621,15 @@ public class WalletTests
         var sut = new WalletBuilder().Build();
 
         sut.Version.ShouldBe(1);
-        sut.Credit(Rial(100), "d", "r");
+        sut.Credit(Rial(100), "d", "r", DateTime.UtcNow);
         sut.Version.ShouldBe(2);
-        sut.CreateReservation(WalletReservationId.NewId(), Rial(30), "h");
+        sut.CreateReservation(WalletReservationId.NewId(), Rial(30), "h", DateTime.UtcNow);
         sut.Version.ShouldBe(3);
-        sut.Debit(Rial(50), "d", "r");
+        sut.Debit(Rial(50), "d", "r", DateTime.UtcNow);
         sut.Version.ShouldBe(4);
-        sut.Freeze("reason", UserId.NewId());
+        sut.Freeze("reason", UserId.NewId(), DateTime.UtcNow);
         sut.Version.ShouldBe(5);
-        sut.Unfreeze(UserId.NewId(), "clear");
+        sut.Unfreeze(UserId.NewId(), "clear", DateTime.UtcNow);
         sut.Version.ShouldBe(6);
     }
 

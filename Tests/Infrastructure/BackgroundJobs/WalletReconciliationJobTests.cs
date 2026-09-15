@@ -40,7 +40,7 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
     {
         var user = await SeedUserAsync(ct: ct);
         var wallet = new WalletBuilder().WithOwnerId(user.Id).Build();
-        wallet.Credit(Money.Create(balance), "seed credit", Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(balance), "seed credit", Guid.NewGuid().ToString("N"), DateTime.UtcNow);
         wallet.ClearDomainEvents();
         Context.Wallets.Add(wallet);
         await Context.SaveChangesAsync(ct);

@@ -24,8 +24,8 @@ public sealed class UserSession : AggregateRoot<SessionId>
     public DateTime? RevokedAt { get; private set; }
     public DateTime? LastActivityAt { get; private set; }
 
-    public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
-    public bool IsActive => !IsRevoked && !IsExpired;
+    public bool IsExpired(DateTime now) => now >= ExpiresAt;
+    public bool IsActive(DateTime now) => !IsRevoked && !IsExpired(now);
 
     public static UserSession Create(
         SessionId id,
@@ -33,7 +33,8 @@ public sealed class UserSession : AggregateRoot<SessionId>
         RefreshToken refreshToken,
         DeviceInfo deviceInfo,
         IpAddress ipAddress,
-        DateTime expiresAt)
+        DateTime expiresAt,
+        DateTime now)
     {
         Guard.Against.Null(id, nameof(id));
         Guard.Against.Null(userId, nameof(userId));
@@ -41,10 +42,10 @@ public sealed class UserSession : AggregateRoot<SessionId>
         Guard.Against.Null(deviceInfo, nameof(deviceInfo));
         Guard.Against.Null(ipAddress, nameof(ipAddress));
 
-        if (expiresAt <= DateTime.UtcNow)
+        if (expiresAt <= now)
             throw new DomainException("تاریخ انقضای نشست باید در آینده باشد.");
 
-        if (expiresAt > DateTime.UtcNow.AddDays(MaxSessionDurationDays))
+        if (expiresAt > now.AddDays(MaxSessionDurationDays))
             throw new DomainException($"مدت نشست نمی‌تواند بیش از {MaxSessionDurationDays} روز باشد.");
 
         var session = new UserSession
@@ -56,45 +57,45 @@ public sealed class UserSession : AggregateRoot<SessionId>
             IpAddress = ipAddress,
             IsRevoked = false,
             ExpiresAt = expiresAt,
-            CreatedAt = DateTime.UtcNow,
-            LastActivityAt = DateTime.UtcNow
+            CreatedAt = now,
+            LastActivityAt = now
         };
 
         session.RaiseDomainEvent(new SessionCreatedEvent(id, userId, deviceInfo, ipAddress, expiresAt));
         return session;
     }
 
-    public void Revoke(SessionRevocationReason reason = SessionRevocationReason.UserRequested)
+    public void Revoke(DateTime now, SessionRevocationReason reason = SessionRevocationReason.UserRequested)
     {
         if (IsRevoked)
             return;
 
-        if (IsExpired)
+        if (IsExpired(now))
             throw new SessionExpiredException(Id);
 
         IsRevoked = true;
-        RevokedAt = DateTime.UtcNow;
+        RevokedAt = now;
         RevocationReason = reason;
         RaiseDomainEvent(new SessionRevokedEvent(Id, UserId, reason));
     }
 
-    public void MarkExpired()
+    public void MarkExpired(DateTime now)
     {
         if (IsRevoked)
             return;
 
         IsRevoked = true;
-        RevokedAt = DateTime.UtcNow;
+        RevokedAt = now;
         RevocationReason = SessionRevocationReason.Expired;
         RaiseDomainEvent(new SessionExpiredEvent(Id, UserId));
     }
 
-    public void UpdateActivity(DateTime timestamp)
+    public void UpdateActivity(DateTime timestamp, DateTime now)
     {
         if (IsRevoked)
             return;
 
-        if (IsExpired)
+        if (IsExpired(now))
             return;
 
         if (LastActivityAt.HasValue && timestamp <= LastActivityAt.Value)
@@ -103,9 +104,9 @@ public sealed class UserSession : AggregateRoot<SessionId>
         LastActivityAt = timestamp;
     }
 
-    public bool ValidateRefreshToken(string token)
+    public bool ValidateRefreshToken(string token, DateTime now)
     {
-        if (!IsActive)
+        if (!IsActive(now))
             return false;
 
         return RefreshToken.Matches(token);

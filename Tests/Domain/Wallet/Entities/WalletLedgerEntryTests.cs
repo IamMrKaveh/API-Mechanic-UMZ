@@ -28,7 +28,7 @@ public class WalletLedgerEntryTests
 
         var sut = WalletLedgerEntry.NewCredit(
             walletId, ownerId, amount, balanceAfter,
-            "top-up", referenceId, idempotencyKey, correlationId);
+            "top-up", referenceId, DateTime.UtcNow, idempotencyKey, correlationId);
 
         sut.Id.ShouldNotBeNull();
         sut.WalletId.ShouldBe(walletId);
@@ -69,7 +69,7 @@ public class WalletLedgerEntryTests
         var sut = WalletLedgerEntry.NewCredit(
             WalletId.NewId(), UserId.NewId(),
             Rial(10_000m), Rial(10_000m),
-            "refund", "ref", null, null,
+            "refund", "ref", DateTime.UtcNow, null, null,
             debitRequestId: debitId,
             withdrawalRequestId: withdrawalId,
             transferId: transferId,
@@ -93,7 +93,7 @@ public class WalletLedgerEntryTests
 
         var sut = WalletLedgerEntry.NewDebit(
             walletId, ownerId, amount, balanceAfter,
-            "purchase", "order-123", null);
+            "purchase", "order-123", DateTime.UtcNow, null);
 
         sut.WalletId.ShouldBe(walletId);
         sut.OwnerId.ShouldBe(ownerId);
@@ -115,7 +115,7 @@ public class WalletLedgerEntryTests
         var sut = WalletLedgerEntry.NewCredit(
             WalletId.NewId(), UserId.NewId(),
             Rial(10_000m), Rial(10_000m),
-            longDescription, "ref", null);
+            longDescription, "ref", DateTime.UtcNow, null);
 
         sut.Description!.Length.ShouldBe(500);
     }
@@ -128,7 +128,7 @@ public class WalletLedgerEntryTests
         var sut = WalletLedgerEntry.NewCredit(
             WalletId.NewId(), UserId.NewId(),
             Rial(10_000m), Rial(10_000m),
-            "d", "ref", longKey);
+            "d", "ref", DateTime.UtcNow, longKey);
 
         sut.IdempotencyKey!.Length.ShouldBe(200);
     }
@@ -141,7 +141,7 @@ public class WalletLedgerEntryTests
         var sut = WalletLedgerEntry.NewCredit(
             WalletId.NewId(), UserId.NewId(),
             Rial(10_000m), Rial(10_000m),
-            "d", "ref", null, longCorr);
+            "d", "ref", DateTime.UtcNow, null, longCorr);
 
         sut.CorrelationId!.Length.ShouldBe(128);
     }
@@ -154,6 +154,7 @@ public class WalletLedgerEntryTests
             Rial(10_000m), Rial(10_000m),
             description: null,
             referenceId: "ref",
+            now: DateTime.UtcNow,
             idempotencyKey: null,
             correlationId: null);
 
@@ -168,28 +169,28 @@ public class WalletLedgerEntryTests
     public void NewCredit_WithNullWalletId_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            WalletLedgerEntry.NewCredit(null!, UserId.NewId(), Rial(1m), Rial(1m), "d", "ref", null));
+            WalletLedgerEntry.NewCredit(null!, UserId.NewId(), Rial(1m), Rial(1m), "d", "ref", DateTime.UtcNow, null));
     }
 
     [Fact]
     public void NewCredit_WithNullOwnerId_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            WalletLedgerEntry.NewCredit(WalletId.NewId(), null!, Rial(1m), Rial(1m), "d", "ref", null));
+            WalletLedgerEntry.NewCredit(WalletId.NewId(), null!, Rial(1m), Rial(1m), "d", "ref", DateTime.UtcNow, null));
     }
 
     [Fact]
     public void NewCredit_WithNullAmount_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            WalletLedgerEntry.NewCredit(WalletId.NewId(), UserId.NewId(), null!, Rial(1m), "d", "ref", null));
+            WalletLedgerEntry.NewCredit(WalletId.NewId(), UserId.NewId(), null!, Rial(1m), "d", "ref", DateTime.UtcNow, null));
     }
 
     [Fact]
     public void NewCredit_WithNullBalanceAfter_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            WalletLedgerEntry.NewCredit(WalletId.NewId(), UserId.NewId(), Rial(1m), null!, "d", "ref", null));
+            WalletLedgerEntry.NewCredit(WalletId.NewId(), UserId.NewId(), Rial(1m), null!, "d", "ref", DateTime.UtcNow, null));
     }
 
     [Theory]
@@ -199,7 +200,7 @@ public class WalletLedgerEntryTests
     public void NewCredit_WithBlankReferenceId_ThrowsArgumentException(string? referenceId)
     {
         Should.Throw<ArgumentException>(() =>
-            WalletLedgerEntry.NewCredit(WalletId.NewId(), UserId.NewId(), Rial(1m), Rial(1m), "d", referenceId!, null));
+            WalletLedgerEntry.NewCredit(WalletId.NewId(), UserId.NewId(), Rial(1m), Rial(1m), "d", referenceId!, DateTime.UtcNow, null));
     }
 
     [Fact]
@@ -208,21 +209,21 @@ public class WalletLedgerEntryTests
         var longRef = new string('r', 201);
 
         Should.Throw<DomainException>(() =>
-            WalletLedgerEntry.NewCredit(WalletId.NewId(), UserId.NewId(), Rial(1m), Rial(1m), "d", longRef, null));
+            WalletLedgerEntry.NewCredit(WalletId.NewId(), UserId.NewId(), Rial(1m), Rial(1m), "d", longRef, DateTime.UtcNow, null));
     }
 
     [Fact]
     public void NewCredit_WithZeroAmount_ThrowsDomainException()
     {
         Should.Throw<DomainException>(() =>
-            WalletLedgerEntry.NewCredit(WalletId.NewId(), UserId.NewId(), Rial(0m), Rial(0m), "d", "ref", null));
+            WalletLedgerEntry.NewCredit(WalletId.NewId(), UserId.NewId(), Rial(0m), Rial(0m), "d", "ref", DateTime.UtcNow, null));
     }
 
     [Fact]
     public void NewDebit_WithZeroAmount_ThrowsDomainException()
     {
         Should.Throw<DomainException>(() =>
-            WalletLedgerEntry.NewDebit(WalletId.NewId(), UserId.NewId(), Rial(0m), Rial(0m), "d", "ref", null));
+            WalletLedgerEntry.NewDebit(WalletId.NewId(), UserId.NewId(), Rial(0m), Rial(0m), "d", "ref", DateTime.UtcNow, null));
     }
 
     [Theory]
@@ -232,7 +233,7 @@ public class WalletLedgerEntryTests
     public void NewDebit_WithBlankReferenceId_ThrowsArgumentException(string? referenceId)
     {
         Should.Throw<ArgumentException>(() =>
-            WalletLedgerEntry.NewDebit(WalletId.NewId(), UserId.NewId(), Rial(1m), Rial(1m), "d", referenceId!, null));
+            WalletLedgerEntry.NewDebit(WalletId.NewId(), UserId.NewId(), Rial(1m), Rial(1m), "d", referenceId!, DateTime.UtcNow, null));
     }
 
     // ---------- FromCreditEvent ----------
@@ -251,7 +252,7 @@ public class WalletLedgerEntryTests
             correlationId: "corr",
             topUpId: WalletTopUpId.NewId());
 
-        var sut = WalletLedgerEntry.FromCreditEvent(evt);
+        var sut = WalletLedgerEntry.FromCreditEvent(evt, DateTime.UtcNow);
 
         sut.TransactionType.ShouldBe(WalletTransactionType.Credit);
         sut.WalletId.ShouldBe(walletId);
@@ -268,7 +269,7 @@ public class WalletLedgerEntryTests
     [Fact]
     public void FromCreditEvent_WithNullEvent_ThrowsArgumentNullException()
     {
-        Should.Throw<ArgumentNullException>(() => WalletLedgerEntry.FromCreditEvent(null!));
+        Should.Throw<ArgumentNullException>(() => WalletLedgerEntry.FromCreditEvent(null!, DateTime.UtcNow));
     }
 
     // ---------- FromDebitEvent ----------
@@ -285,7 +286,7 @@ public class WalletLedgerEntryTests
             "debit-desc", "ref-2",
             transferId: WalletTransferId.NewId());
 
-        var sut = WalletLedgerEntry.FromDebitEvent(evt);
+        var sut = WalletLedgerEntry.FromDebitEvent(evt, DateTime.UtcNow);
 
         sut.TransactionType.ShouldBe(WalletTransactionType.Debit);
         sut.WalletId.ShouldBe(walletId);
@@ -300,7 +301,7 @@ public class WalletLedgerEntryTests
     [Fact]
     public void FromDebitEvent_WithNullEvent_ThrowsArgumentNullException()
     {
-        Should.Throw<ArgumentNullException>(() => WalletLedgerEntry.FromDebitEvent(null!));
+        Should.Throw<ArgumentNullException>(() => WalletLedgerEntry.FromDebitEvent(null!, DateTime.UtcNow));
     }
 
     // ---------- Builder-driven parametric checks ----------

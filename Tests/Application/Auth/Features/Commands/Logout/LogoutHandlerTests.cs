@@ -4,6 +4,7 @@ using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using RefreshTokens = Domain.Security.ValueObjects.RefreshToken;
@@ -12,11 +13,12 @@ namespace Tests.Application.Auth.Features.Commands.Logout;
 
 public class LogoutHandlerTests
 {
-    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly LogoutHandler _sut;
+    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly LogoutHandler _sut;
 
     public LogoutHandlerTests()
     {
-        _sut = new LogoutHandler(_sessionRepository, _currentUser);
+        _dateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
+        _sut = new LogoutHandler(_sessionRepository, _currentUser, _dateTimeProvider);
     }
 
     [Theory]

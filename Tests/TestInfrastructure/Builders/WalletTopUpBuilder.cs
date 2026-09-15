@@ -32,5 +32,5 @@ public WalletTopUpBuilder WithGateway(string gateway)
     return this;
 }
 
-public WalletTopUp Build() => WalletTopUp.Initiate(_userId, _amount, _gateway);
+public WalletTopUp Build(DateTime? now = null) => WalletTopUp.Initiate(_userId, _amount, _gateway, now ?? DateTime.UtcNow);
 }

@@ -3,6 +3,7 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Entities;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.ApproveWalletDebit;
@@ -13,17 +14,20 @@ public sealed class ApproveWalletDebitHandlerTests
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly ApproveWalletDebitHandler _sut;
 
     public ApproveWalletDebitHandlerTests()
     {
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new ApproveWalletDebitHandler(
             _debitRequestRepository,
             _walletRepository,
             _unitOfWork,
             _distributedLock,
+            _dateTimeProvider,
             _currentUserService);
     }
 
@@ -130,7 +134,7 @@ public sealed class ApproveWalletDebitHandlerTests
         var ownerId = UserId.NewId();
         _currentUserService.UserId.Returns(ownerId.Value);
         var (wallet, request) = new WalletDebitRequestBuilder().WithOwner(ownerId).WithInitialBalance(500_000m).WithAmount(100_000m).Build();
-        wallet.ApproveDebitRequest(request.Id, ownerId);
+        wallet.ApproveDebitRequest(request.Id, ownerId, DateTime.UtcNow);
 
         _debitRequestRepository.GetByIdAsync(Arg.Any<WalletDebitRequestId>(), Arg.Any<CancellationToken>()).Returns(request);
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())

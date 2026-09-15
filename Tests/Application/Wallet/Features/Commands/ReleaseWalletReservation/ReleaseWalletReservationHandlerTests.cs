@@ -2,6 +2,7 @@ using Application.Wallet.Features.Commands.ReleaseWalletReservation;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.ReleaseWalletReservation;
@@ -10,13 +11,15 @@ public sealed class ReleaseWalletReservationHandlerTests
 {
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
 
     private readonly ReleaseWalletReservationHandler _sut;
 
     public ReleaseWalletReservationHandlerTests()
     {
-        _sut = new ReleaseWalletReservationHandler(_walletRepository, _unitOfWork, _auditService);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new ReleaseWalletReservationHandler(_walletRepository, _unitOfWork, _dateTimeProvider, _auditService);
     }
 
     [Fact]
@@ -37,9 +40,9 @@ public sealed class ReleaseWalletReservationHandlerTests
     {
         var userId = UserId.NewId();
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(200_000m), "test");
+        wallet.CreateReservation(reservationId, Money.Create(200_000m), "test", DateTime.UtcNow);
 
         _walletRepository.GetByUserIdForUpdateAsync(userId, Arg.Any<CancellationToken>()).Returns(wallet);
 
@@ -71,9 +74,9 @@ public sealed class ReleaseWalletReservationHandlerTests
     {
         var userId = UserId.NewId();
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(200_000m), "test");
+        wallet.CreateReservation(reservationId, Money.Create(200_000m), "test", DateTime.UtcNow);
 
         _walletRepository.GetByUserIdForUpdateAsync(userId, Arg.Any<CancellationToken>()).Returns(wallet);
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())

@@ -49,7 +49,8 @@ public sealed class WalletCheckoutPaymentStrategy(
                 wallet.Debit(
                     finalAmount,
                     $"پرداخت سفارش {orderResult.OrderNumber}",
-                    $"ORDER-{orderId.Value}");
+                    $"ORDER-{orderId.Value}",
+                    dateTimeProvider.UtcNow);
 
                 walletRepository.Update(wallet);
             }
@@ -102,6 +103,7 @@ public sealed class WalletCheckoutPaymentStrategy(
             });
         }
 
+        var now = dateTimeProvider.UtcNow;
         var authority = $"WALLET-{idempotencyKey:N}";
         var transaction = PaymentTransaction.Initiate(
             orderId,
@@ -109,12 +111,12 @@ public sealed class WalletCheckoutPaymentStrategy(
             authority,
             finalAmount.Amount,
             "Wallet",
-            dateTimeProvider.UtcNow,
+            now,
             description: $"پرداخت سفارش {order.OrderNumber.Value} از کیف پول");
 
         transaction.MarkAsSuccess(
-            refId: DateTime.UtcNow.Ticks,
-            now: dateTimeProvider.UtcNow,
+            refId: now.Ticks,
+            now: now,
             fee: 0);
 
         await paymentTransactionRepository.AddAsync(transaction, ct);
@@ -158,6 +160,7 @@ public sealed class WalletCheckoutPaymentStrategy(
             });
         }
 
+        var now = dateTimeProvider.UtcNow;
         var authority = $"FREE-{idempotencyKey:N}";
         var transaction = PaymentTransaction.Initiate(
             orderId,
@@ -165,12 +168,12 @@ public sealed class WalletCheckoutPaymentStrategy(
             authority,
             amount: 1m,
             "Wallet",
-            dateTimeProvider.UtcNow,
+            now,
             description: $"سفارش رایگان {order.OrderNumber.Value}");
 
         transaction.MarkAsSuccess(
-            refId: DateTime.UtcNow.Ticks,
-            now: dateTimeProvider.UtcNow,
+            refId: now.Ticks,
+            now: now,
             fee: 0);
 
         await paymentTransactionRepository.AddAsync(transaction, ct);

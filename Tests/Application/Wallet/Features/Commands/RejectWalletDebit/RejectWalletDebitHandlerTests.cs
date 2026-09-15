@@ -3,6 +3,7 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Entities;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.RejectWalletDebit;
@@ -13,6 +14,7 @@ public sealed class RejectWalletDebitHandlerTests
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly RejectWalletDebitHandler _sut;
@@ -22,8 +24,9 @@ public sealed class RejectWalletDebitHandlerTests
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet", true));
 
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new RejectWalletDebitHandler(
-            _debitRequestRepository, _walletRepository, _unitOfWork, _distributedLock, _currentUserService);
+            _debitRequestRepository, _walletRepository, _unitOfWork, _distributedLock, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -107,7 +110,7 @@ public sealed class RejectWalletDebitHandlerTests
         _currentUserService.UserId.Returns(ownerId.Value);
         var (wallet, request) = new WalletDebitRequestBuilder()
             .WithOwner(ownerId).WithInitialBalance(500_000m).WithAmount(100_000m).Build();
-        wallet.RejectDebitRequest(request.Id, ownerId, "first rejection");
+        wallet.RejectDebitRequest(request.Id, ownerId, "first rejection", DateTime.UtcNow);
 
         _debitRequestRepository.GetByIdAsync(Arg.Any<WalletDebitRequestId>(), Arg.Any<CancellationToken>()).Returns(request);
         _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(wallet);

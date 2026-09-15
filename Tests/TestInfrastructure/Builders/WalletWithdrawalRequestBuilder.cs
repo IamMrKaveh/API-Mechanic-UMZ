@@ -53,6 +53,6 @@ public WalletWithdrawalRequestBuilder WithDescription(string? description)
     return this;
 }
 
-public WalletWithdrawalRequest Build() =>
-    WalletWithdrawalRequest.Create(_userId, _amount, _iban, _accountHolder, _reservationId, _description);
+public WalletWithdrawalRequest Build(DateTime? now = null) =>
+    WalletWithdrawalRequest.Create(_userId, _amount, _iban, _accountHolder, _reservationId, now ?? DateTime.UtcNow, _description);
 }

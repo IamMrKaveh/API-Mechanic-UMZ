@@ -48,11 +48,11 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
     {
         var user = await SeedUserAsync();
         var wallet = new WalletBuilder().WithOwnerId(user.Id).Build();
-        wallet.Credit(Money.Create(1_000_000m, "IRT"), "seed", $"seed-{Guid.NewGuid():N}");
+        wallet.Credit(Money.Create(1_000_000m, "IRT"), "seed", $"seed-{Guid.NewGuid():N}", DateTime.UtcNow);
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(100_000m, "IRT"), "test-hold", expiresAt);
+        wallet.CreateReservation(reservationId, Money.Create(100_000m, "IRT"), "test-hold", DateTime.UtcNow, expiresAt);
         if (releaseBeforeSave)
-            wallet.ReleaseReservation(reservationId);
+            wallet.ReleaseReservation(reservationId, DateTime.UtcNow);
         wallet.ClearDomainEvents();
         Context.Wallets.Add(wallet);
         await Context.SaveChangesAsync();

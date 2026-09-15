@@ -137,7 +137,8 @@ public class WalletWithdrawalRequestTests
                 Rial(amount),
                 new IbanNumberBuilder().Build(),
                 "holder",
-                WalletReservationId.NewId()));
+                WalletReservationId.NewId(),
+                DateTime.UtcNow));
     }
 
     [Fact]
@@ -149,7 +150,8 @@ public class WalletWithdrawalRequestTests
                 Rial(200_000m),
                 new IbanNumberBuilder().Build(),
                 "holder",
-                WalletReservationId.NewId()));
+                WalletReservationId.NewId(),
+                DateTime.UtcNow));
     }
 
     [Fact]
@@ -161,7 +163,8 @@ public class WalletWithdrawalRequestTests
                 null!,
                 new IbanNumberBuilder().Build(),
                 "holder",
-                WalletReservationId.NewId()));
+                WalletReservationId.NewId(),
+                DateTime.UtcNow));
     }
 
     [Fact]
@@ -173,7 +176,8 @@ public class WalletWithdrawalRequestTests
                 Rial(200_000m),
                 null!,
                 "holder",
-                WalletReservationId.NewId()));
+                WalletReservationId.NewId(),
+                DateTime.UtcNow));
     }
 
     [Theory]
@@ -188,7 +192,8 @@ public class WalletWithdrawalRequestTests
                 Rial(200_000m),
                 new IbanNumberBuilder().Build(),
                 accountHolder!,
-                WalletReservationId.NewId()));
+                WalletReservationId.NewId(),
+                DateTime.UtcNow));
     }
 
     [Fact]
@@ -200,7 +205,8 @@ public class WalletWithdrawalRequestTests
                 Rial(200_000m),
                 new IbanNumberBuilder().Build(),
                 "holder",
-                null!));
+                null!,
+                DateTime.UtcNow));
     }
 
     // ---------- Approve ----------
@@ -214,7 +220,7 @@ public class WalletWithdrawalRequestTests
         var versionBefore = sut.Version;
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        sut.Approve(admin);
+        sut.Approve(admin, DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.Status.ShouldBe(WalletWithdrawalStatus.Approved);
@@ -233,18 +239,18 @@ public class WalletWithdrawalRequestTests
     public void Approve_AfterApproved_ThrowsDomainException()
     {
         var sut = new WalletWithdrawalRequestBuilder().Build();
-        sut.Approve(UserId.NewId());
+        sut.Approve(UserId.NewId(), DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.Approve(UserId.NewId()));
+        Should.Throw<DomainException>(() => sut.Approve(UserId.NewId(), DateTime.UtcNow));
     }
 
     [Fact]
     public void Approve_AfterRejected_ThrowsDomainException()
     {
         var sut = new WalletWithdrawalRequestBuilder().Build();
-        sut.Reject(UserId.NewId(), "reason");
+        sut.Reject(UserId.NewId(), "reason", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.Approve(UserId.NewId()));
+        Should.Throw<DomainException>(() => sut.Approve(UserId.NewId(), DateTime.UtcNow));
     }
 
     [Fact]
@@ -252,9 +258,9 @@ public class WalletWithdrawalRequestTests
     {
         var owner = UserId.NewId();
         var sut = new WalletWithdrawalRequestBuilder().WithUserId(owner).Build();
-        sut.Cancel(owner);
+        sut.Cancel(owner, DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.Approve(UserId.NewId()));
+        Should.Throw<DomainException>(() => sut.Approve(UserId.NewId(), DateTime.UtcNow));
     }
 
     // ---------- Reject ----------
@@ -267,7 +273,7 @@ public class WalletWithdrawalRequestTests
         var admin = UserId.NewId();
         var versionBefore = sut.Version;
 
-        sut.Reject(admin, "   invalid iban   ");
+        sut.Reject(admin, "   invalid iban   ", DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletWithdrawalStatus.Rejected);
         sut.RejectionReason.ShouldBe("invalid iban");
@@ -288,16 +294,16 @@ public class WalletWithdrawalRequestTests
     {
         var sut = new WalletWithdrawalRequestBuilder().Build();
 
-        Should.Throw<DomainException>(() => sut.Reject(UserId.NewId(), reason!));
+        Should.Throw<DomainException>(() => sut.Reject(UserId.NewId(), reason!, DateTime.UtcNow));
     }
 
     [Fact]
     public void Reject_AfterApproved_ThrowsDomainException()
     {
         var sut = new WalletWithdrawalRequestBuilder().Build();
-        sut.Approve(UserId.NewId());
+        sut.Approve(UserId.NewId(), DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.Reject(UserId.NewId(), "reason"));
+        Should.Throw<DomainException>(() => sut.Reject(UserId.NewId(), "reason", DateTime.UtcNow));
     }
 
     // ---------- MarkPaid ----------
@@ -310,7 +316,7 @@ public class WalletWithdrawalRequestTests
         var admin = UserId.NewId();
         var versionBefore = sut.Version;
 
-        sut.MarkPaid(admin, "  BANK-REF-1  ");
+        sut.MarkPaid(admin, "  BANK-REF-1  ", DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletWithdrawalStatus.Paid);
         sut.BankReferenceNumber.ShouldBe("BANK-REF-1");
@@ -329,10 +335,10 @@ public class WalletWithdrawalRequestTests
     public void MarkPaid_FromApproved_TransitionsToPaidAndRaisesEvent()
     {
         var sut = new WalletWithdrawalRequestBuilder().Build();
-        sut.Approve(UserId.NewId());
+        sut.Approve(UserId.NewId(), DateTime.UtcNow);
         sut.ClearDomainEvents();
 
-        sut.MarkPaid(UserId.NewId(), "BANK-REF-2");
+        sut.MarkPaid(UserId.NewId(), "BANK-REF-2", DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletWithdrawalStatus.Paid);
         sut.DomainEvents.Single().ShouldBeOfType<WithdrawalPaidEvent>();
@@ -345,18 +351,18 @@ public class WalletWithdrawalRequestTests
     public void MarkPaid_WithBlankBankReference_ThrowsDomainException(string? bankRef)
     {
         var sut = new WalletWithdrawalRequestBuilder().Build();
-        sut.Approve(UserId.NewId());
+        sut.Approve(UserId.NewId(), DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkPaid(UserId.NewId(), bankRef!));
+        Should.Throw<DomainException>(() => sut.MarkPaid(UserId.NewId(), bankRef!, DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkPaid_AfterRejected_ThrowsDomainException()
     {
         var sut = new WalletWithdrawalRequestBuilder().Build();
-        sut.Reject(UserId.NewId(), "reason");
+        sut.Reject(UserId.NewId(), "reason", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkPaid(UserId.NewId(), "REF"));
+        Should.Throw<DomainException>(() => sut.MarkPaid(UserId.NewId(), "REF", DateTime.UtcNow));
     }
 
     [Fact]
@@ -364,18 +370,18 @@ public class WalletWithdrawalRequestTests
     {
         var owner = UserId.NewId();
         var sut = new WalletWithdrawalRequestBuilder().WithUserId(owner).Build();
-        sut.Cancel(owner);
+        sut.Cancel(owner, DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkPaid(UserId.NewId(), "REF"));
+        Should.Throw<DomainException>(() => sut.MarkPaid(UserId.NewId(), "REF", DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkPaid_AfterPaid_ThrowsDomainException()
     {
         var sut = new WalletWithdrawalRequestBuilder().Build();
-        sut.MarkPaid(UserId.NewId(), "REF-1");
+        sut.MarkPaid(UserId.NewId(), "REF-1", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkPaid(UserId.NewId(), "REF-2"));
+        Should.Throw<DomainException>(() => sut.MarkPaid(UserId.NewId(), "REF-2", DateTime.UtcNow));
     }
 
     // ---------- Cancel ----------
@@ -388,7 +394,7 @@ public class WalletWithdrawalRequestTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Cancel(owner);
+        sut.Cancel(owner, DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletWithdrawalStatus.Cancelled);
         sut.CancelledAt.ShouldNotBeNull();
@@ -404,7 +410,7 @@ public class WalletWithdrawalRequestTests
         var owner = UserId.NewId();
         var sut = new WalletWithdrawalRequestBuilder().WithUserId(owner).Build();
 
-        Should.Throw<DomainException>(() => sut.Cancel(UserId.NewId()));
+        Should.Throw<DomainException>(() => sut.Cancel(UserId.NewId(), DateTime.UtcNow));
     }
 
     [Fact]
@@ -412,9 +418,9 @@ public class WalletWithdrawalRequestTests
     {
         var owner = UserId.NewId();
         var sut = new WalletWithdrawalRequestBuilder().WithUserId(owner).Build();
-        sut.Approve(UserId.NewId());
+        sut.Approve(UserId.NewId(), DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.Cancel(owner));
+        Should.Throw<DomainException>(() => sut.Cancel(owner, DateTime.UtcNow));
     }
 
     [Fact]
@@ -422,8 +428,8 @@ public class WalletWithdrawalRequestTests
     {
         var owner = UserId.NewId();
         var sut = new WalletWithdrawalRequestBuilder().WithUserId(owner).Build();
-        sut.Cancel(owner);
+        sut.Cancel(owner, DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.Cancel(owner));
+        Should.Throw<DomainException>(() => sut.Cancel(owner, DateTime.UtcNow));
     }
 }

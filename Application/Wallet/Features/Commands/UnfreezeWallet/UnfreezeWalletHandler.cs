@@ -1,5 +1,6 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.UnfreezeWallet;
 
@@ -7,6 +8,7 @@ public sealed class UnfreezeWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<UnfreezeWalletCommand, Unit>
 {
@@ -20,9 +22,10 @@ public sealed class UnfreezeWalletHandler(
             var adminId = UserId.From(currentUserService.UserId!.Value);
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
+            var now = dateTimeProvider.UtcNow;
             if (wallet is null)
             {
-                wallet = Domain.Wallet.Aggregates.Wallet.Create(userId);
+                wallet = Domain.Wallet.Aggregates.Wallet.Create(userId, now);
                 await walletRepository.AddAsync(wallet, ct);
                 await unitOfWork.SaveChangesAsync(ct);
 
@@ -34,7 +37,7 @@ public sealed class UnfreezeWalletHandler(
                 return ServiceResult<Unit>.Success(Unit.Value);
             }
 
-            wallet.Unfreeze(adminId, ManualUnfreezeReason);
+            wallet.Unfreeze(adminId, ManualUnfreezeReason, now);
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);
 

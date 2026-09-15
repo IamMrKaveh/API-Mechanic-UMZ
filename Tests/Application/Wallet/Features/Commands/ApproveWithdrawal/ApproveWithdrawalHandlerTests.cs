@@ -4,6 +4,7 @@ using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Tests.Application.Wallet.Features.Commands.ApproveWithdrawal;
 
@@ -13,6 +14,7 @@ public sealed class ApproveWithdrawalHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly ApproveWithdrawalHandler _sut;
@@ -22,7 +24,8 @@ public sealed class ApproveWithdrawalHandlerTests
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("withdrawal", true));
 
-        _sut = new ApproveWithdrawalHandler(_withdrawalRepository, _unitOfWork, _distributedLock, _auditService, _currentUserService);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new ApproveWithdrawalHandler(_withdrawalRepository, _unitOfWork, _distributedLock, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -66,7 +69,7 @@ public sealed class ApproveWithdrawalHandlerTests
         var adminId = UserId.NewId();
         _currentUserService.UserId.Returns(adminId.Value);
         var withdrawal = new WalletWithdrawalRequestBuilder().Build();
-        withdrawal.Approve(adminId);
+        withdrawal.Approve(adminId, DateTime.UtcNow);
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns(withdrawal);
 

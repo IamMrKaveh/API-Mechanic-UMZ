@@ -1,6 +1,7 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.ApproveWithdrawal;
 
@@ -9,6 +10,7 @@ public sealed class ApproveWithdrawalHandler(
     IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<ApproveWithdrawalCommand, Unit>
 {
@@ -35,7 +37,7 @@ public sealed class ApproveWithdrawalHandler(
             if (withdrawal is null)
                 return ServiceResult<Unit>.NotFound("درخواست برداشت یافت نشد.");
 
-            withdrawal.Approve(adminId);
+            withdrawal.Approve(adminId, dateTimeProvider.UtcNow);
             withdrawalRepository.Update(withdrawal);
             await unitOfWork.SaveChangesAsync(ct);
 

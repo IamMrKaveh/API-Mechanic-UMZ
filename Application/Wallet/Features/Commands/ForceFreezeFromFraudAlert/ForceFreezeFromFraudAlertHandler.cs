@@ -3,6 +3,7 @@ using Domain.Wallet.Enums;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.ForceFreezeFromFraudAlert;
 
@@ -12,6 +13,7 @@ public sealed class ForceFreezeFromFraudAlertHandler(
     IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<ForceFreezeFromFraudAlertCommand, Unit>
 {
@@ -48,9 +50,10 @@ public sealed class ForceFreezeFromFraudAlertHandler(
                 ? $"[Force-Freeze from Alert {alert.Id.Value:N}] {alert.RuleName}: {alert.Description}"
                 : $"[Force-Freeze from Alert {alert.Id.Value:N}] {alert.RuleName}: {alert.Description} | Note: {request.AdditionalNote}";
 
+            var now = dateTimeProvider.UtcNow;
             if (wallet.IsActive)
             {
-                wallet.Freeze(reason, adminId);
+                wallet.Freeze(reason, adminId, now);
                 walletRepository.Update(wallet);
             }
 
@@ -58,7 +61,7 @@ public sealed class ForceFreezeFromFraudAlertHandler(
                 ? "[FORCE-FREEZE-APPLIED]"
                 : $"[FORCE-FREEZE-APPLIED] {request.AdditionalNote}";
 
-            alert.MarkAsReviewed(adminId, reviewNote);
+            alert.MarkAsReviewed(adminId, reviewNote, now);
             alertRepository.Update(alert);
 
             await unitOfWork.SaveChangesAsync(ct);

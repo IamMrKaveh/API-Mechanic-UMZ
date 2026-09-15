@@ -26,7 +26,7 @@ public sealed class PersistWalletLedgerOnCreditHandler(
 
         try
         {
-            var entry = WalletLedgerEntry.FromCreditEvent(evt);
+            var entry = WalletLedgerEntry.FromCreditEvent(evt, evt.OccurredAt);
             await ledgerRepository.AddAsync(entry, ct);
             await unitOfWork.SaveChangesAsync(ct);
         }

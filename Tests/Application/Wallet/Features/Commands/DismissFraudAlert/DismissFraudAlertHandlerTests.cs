@@ -16,13 +16,15 @@ public sealed class DismissFraudAlertHandlerTests
     private readonly IWalletFraudAlertRepository _repository = Substitute.For<IWalletFraudAlertRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly DismissFraudAlertHandler _sut;
 
     public DismissFraudAlertHandlerTests()
     {
-        _sut = new DismissFraudAlertHandler(_repository, _unitOfWork, _auditService, _currentUserService);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new DismissFraudAlertHandler(_repository, _unitOfWork, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -64,7 +66,7 @@ public sealed class DismissFraudAlertHandlerTests
         var adminId = UserId.NewId();
         _currentUserService.UserId.Returns(adminId.Value);
         var alert = new WalletFraudAlertBuilder().Build();
-        alert.MarkAsReviewed(adminId, "already handled");
+        alert.MarkAsReviewed(adminId, "already handled", DateTime.UtcNow);
         _repository.GetByIdAsync(Arg.Any<WalletFraudAlertId>(), Arg.Any<CancellationToken>()).Returns(alert);
 
         var result = await _sut.Handle(new DismissFraudAlertCommand(alert.Id.Value, null), CancellationToken.None);

@@ -25,7 +25,7 @@ public sealed class WalletTopUp : AggregateRoot<WalletTopUpId>
     private WalletTopUp()
     { }
 
-    public static WalletTopUp Initiate(UserId userId, Money amount, string gateway)
+    public static WalletTopUp Initiate(UserId userId, Money amount, string gateway, DateTime now)
     {
         if (userId is null) throw new DomainException("UserId is required.");
         if (amount is null) throw new DomainException("Amount is required.");
@@ -41,7 +41,7 @@ public sealed class WalletTopUp : AggregateRoot<WalletTopUpId>
             Amount = amount,
             Gateway = gateway,
             Status = WalletTopUpStatus.Pending,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now
         };
 
         topUp.RaiseDomainEvent(new WalletTopUpInitiatedEvent(topUp.Id, userId, amount, gateway));
@@ -56,7 +56,7 @@ public sealed class WalletTopUp : AggregateRoot<WalletTopUpId>
         GatewayAuthority = authority;
     }
 
-    public void MarkSucceeded(string refId)
+    public void MarkSucceeded(string refId, DateTime now)
     {
         if (string.IsNullOrWhiteSpace(refId))
             throw new DomainException("Gateway reference id cannot be empty.");
@@ -64,12 +64,12 @@ public sealed class WalletTopUp : AggregateRoot<WalletTopUpId>
 
         Status = WalletTopUpStatus.Succeeded;
         GatewayRefId = refId;
-        CompletedAt = DateTime.UtcNow;
+        CompletedAt = now;
 
         RaiseDomainEvent(new WalletTopUpSucceededEvent(Id, UserId, Amount, refId));
     }
 
-    public void MarkFailed(string reason)
+    public void MarkFailed(string reason, DateTime now)
     {
         EnsurePending();
 
@@ -77,17 +77,17 @@ public sealed class WalletTopUp : AggregateRoot<WalletTopUpId>
 
         Status = WalletTopUpStatus.Failed;
         FailureReason = effectiveReason;
-        CompletedAt = DateTime.UtcNow;
+        CompletedAt = now;
 
         RaiseDomainEvent(new WalletTopUpFailedEvent(Id, UserId, effectiveReason));
     }
 
-    public void MarkCancelled(string reason)
+    public void MarkCancelled(string reason, DateTime now)
     {
         EnsurePending();
         Status = WalletTopUpStatus.Cancelled;
         FailureReason = string.IsNullOrWhiteSpace(reason) ? DefaultFailureMarker : reason;
-        CompletedAt = DateTime.UtcNow;
+        CompletedAt = now;
 
         RaiseDomainEvent(new WalletTopUpFailedEvent(Id, UserId, FailureReason!));
     }

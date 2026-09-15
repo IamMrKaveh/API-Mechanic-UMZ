@@ -1,12 +1,14 @@
 ﻿using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.ReleaseWalletReservation;
 
 public class ReleaseWalletReservationHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider,
     IAuditService auditService)
     : ICommandHandler<ReleaseWalletReservationCommand, Unit>
 {
@@ -23,7 +25,7 @@ public class ReleaseWalletReservationHandler(
             if (wallet is null)
                 return ServiceResult<Unit>.Success(Unit.Value);
 
-            wallet.ReleaseReservation(reservationId);
+            wallet.ReleaseReservation(reservationId, dateTimeProvider.UtcNow);
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);
 

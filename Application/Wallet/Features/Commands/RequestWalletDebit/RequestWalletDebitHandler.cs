@@ -2,6 +2,7 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.RequestWalletDebit;
 
@@ -9,6 +10,7 @@ public sealed class RequestWalletDebitHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<RequestWalletDebitCommand, Guid>
 {
@@ -37,13 +39,15 @@ public sealed class RequestWalletDebitHandler(
             var requestId = WalletDebitRequestId.NewId();
             var amount = Money.Create(request.Amount, DefaultCurrency);
 
+            var now = dateTimeProvider.UtcNow;
             wallet.CreateDebitRequest(
                 requestId,
                 amount,
                 request.Reason,
                 request.Description,
                 adminId,
-                TimeSpan.FromHours(request.ExpiryHours));
+                TimeSpan.FromHours(request.ExpiryHours),
+                now);
 
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);

@@ -1,6 +1,7 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.RejectWithdrawal;
 
@@ -9,6 +10,7 @@ public sealed class RejectWithdrawalHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<RejectWithdrawalCommand, Unit>
 {
@@ -29,8 +31,9 @@ public sealed class RejectWithdrawalHandler(
             if (wallet is null)
                 return ServiceResult<Unit>.NotFound("کیف پول کاربر یافت نشد.");
 
-            wallet.ReleaseReservation(withdrawal.ReservationId);
-            withdrawal.Reject(adminId, request.Reason);
+            var now = dateTimeProvider.UtcNow;
+            wallet.ReleaseReservation(withdrawal.ReservationId, now);
+            withdrawal.Reject(adminId, request.Reason, now);
 
             walletRepository.Update(wallet);
             withdrawalRepository.Update(withdrawal);

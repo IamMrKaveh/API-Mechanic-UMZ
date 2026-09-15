@@ -31,6 +31,7 @@ public sealed class WalletFraudAlert : AggregateRoot<WalletFraudAlertId>
         string ruleName,
         FraudAlertSeverity severity,
         string description,
+        DateTime now,
         string? metadata = null)
     {
         Guard.Against.Null(walletId, nameof(walletId));
@@ -38,7 +39,6 @@ public sealed class WalletFraudAlert : AggregateRoot<WalletFraudAlertId>
         Guard.Against.NullOrWhiteSpace(ruleName, nameof(ruleName));
         Guard.Against.NullOrWhiteSpace(description, nameof(description));
 
-        var now = DateTime.UtcNow;
         var alert = new WalletFraudAlert
         {
             Id = WalletFraudAlertId.NewId(),
@@ -60,7 +60,7 @@ public sealed class WalletFraudAlert : AggregateRoot<WalletFraudAlertId>
         return alert;
     }
 
-    public void MarkAsReviewed(UserId reviewedBy, string? reviewNote)
+    public void MarkAsReviewed(UserId reviewedBy, string? reviewNote, DateTime now)
     {
         Guard.Against.Null(reviewedBy, nameof(reviewedBy));
 
@@ -70,7 +70,6 @@ public sealed class WalletFraudAlert : AggregateRoot<WalletFraudAlertId>
                 $"Fraud alert in status '{Status}' cannot be reviewed.",
                 new Dictionary<string, object?> { ["status"] = Status.ToString() });
 
-        var now = DateTime.UtcNow;
         Status = FraudAlertStatus.Reviewed;
         ReviewedBy = reviewedBy;
         ReviewedAt = now;
@@ -80,7 +79,7 @@ public sealed class WalletFraudAlert : AggregateRoot<WalletFraudAlertId>
         RaiseDomainEvent(new WalletFraudAlertReviewedEvent(Id, reviewedBy, reviewNote, now));
     }
 
-    public void Dismiss(UserId dismissedBy, string? dismissNote)
+    public void Dismiss(UserId dismissedBy, string? dismissNote, DateTime now)
     {
         Guard.Against.Null(dismissedBy, nameof(dismissedBy));
 
@@ -90,7 +89,6 @@ public sealed class WalletFraudAlert : AggregateRoot<WalletFraudAlertId>
                 $"Fraud alert in status '{Status}' cannot be dismissed.",
                 new Dictionary<string, object?> { ["status"] = Status.ToString() });
 
-        var now = DateTime.UtcNow;
         Status = FraudAlertStatus.Dismissed;
         ReviewedBy = dismissedBy;
         ReviewedAt = now;

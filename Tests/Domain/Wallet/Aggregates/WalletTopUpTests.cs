@@ -87,21 +87,21 @@ public class WalletTopUpTests
     public void Initiate_WithAmountBelowMinimum_ThrowsInvalidTopUpAmountException(decimal amount)
     {
         Should.Throw<InvalidTopUpAmountException>(() =>
-            WalletTopUp.Initiate(UserId.NewId(), Rial(amount), "zarinpal"));
+            WalletTopUp.Initiate(UserId.NewId(), Rial(amount), "zarinpal", DateTime.UtcNow));
     }
 
     [Fact]
     public void Initiate_WithNullUserId_ThrowsDomainException()
     {
         Should.Throw<DomainException>(() =>
-            WalletTopUp.Initiate(null!, Rial(50_000m), "zarinpal"));
+            WalletTopUp.Initiate(null!, Rial(50_000m), "zarinpal", DateTime.UtcNow));
     }
 
     [Fact]
     public void Initiate_WithNullAmount_ThrowsDomainException()
     {
         Should.Throw<DomainException>(() =>
-            WalletTopUp.Initiate(UserId.NewId(), null!, "zarinpal"));
+            WalletTopUp.Initiate(UserId.NewId(), null!, "zarinpal", DateTime.UtcNow));
     }
 
     [Theory]
@@ -111,7 +111,7 @@ public class WalletTopUpTests
     public void Initiate_WithBlankGateway_ThrowsDomainException(string? gateway)
     {
         Should.Throw<DomainException>(() =>
-            WalletTopUp.Initiate(UserId.NewId(), Rial(50_000m), gateway!));
+            WalletTopUp.Initiate(UserId.NewId(), Rial(50_000m), gateway!, DateTime.UtcNow));
     }
 
     // ---------- MarkAuthorityIssued ----------
@@ -147,7 +147,7 @@ public class WalletTopUpTests
     public void MarkAuthorityIssued_OnSucceeded_ThrowsDomainException()
     {
         var sut = new WalletTopUpBuilder().Build();
-        sut.MarkSucceeded("REF-1");
+        sut.MarkSucceeded("REF-1", DateTime.UtcNow);
 
         Should.Throw<DomainException>(() => sut.MarkAuthorityIssued("AUTH"));
     }
@@ -156,7 +156,7 @@ public class WalletTopUpTests
     public void MarkAuthorityIssued_OnFailed_ThrowsDomainException()
     {
         var sut = new WalletTopUpBuilder().Build();
-        sut.MarkFailed("timeout");
+        sut.MarkFailed("timeout", DateTime.UtcNow);
 
         Should.Throw<DomainException>(() => sut.MarkAuthorityIssued("AUTH"));
     }
@@ -171,7 +171,7 @@ public class WalletTopUpTests
         var versionBefore = sut.Version;
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        sut.MarkSucceeded("REF-999");
+        sut.MarkSucceeded("REF-999", DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.Status.ShouldBe(WalletTopUpStatus.Succeeded);
@@ -195,34 +195,34 @@ public class WalletTopUpTests
     {
         var sut = new WalletTopUpBuilder().Build();
 
-        Should.Throw<DomainException>(() => sut.MarkSucceeded(refId!));
+        Should.Throw<DomainException>(() => sut.MarkSucceeded(refId!, DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkSucceeded_AlreadySucceeded_ThrowsDomainException()
     {
         var sut = new WalletTopUpBuilder().Build();
-        sut.MarkSucceeded("REF-1");
+        sut.MarkSucceeded("REF-1", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkSucceeded("REF-2"));
+        Should.Throw<DomainException>(() => sut.MarkSucceeded("REF-2", DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkSucceeded_AfterFailed_ThrowsDomainException()
     {
         var sut = new WalletTopUpBuilder().Build();
-        sut.MarkFailed("reason");
+        sut.MarkFailed("reason", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkSucceeded("REF"));
+        Should.Throw<DomainException>(() => sut.MarkSucceeded("REF", DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkSucceeded_AfterCancelled_ThrowsDomainException()
     {
         var sut = new WalletTopUpBuilder().Build();
-        sut.MarkCancelled("user");
+        sut.MarkCancelled("user", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkSucceeded("REF"));
+        Should.Throw<DomainException>(() => sut.MarkSucceeded("REF", DateTime.UtcNow));
     }
 
     // ---------- MarkFailed ----------
@@ -234,7 +234,7 @@ public class WalletTopUpTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.MarkFailed("gateway timeout");
+        sut.MarkFailed("gateway timeout", DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletTopUpStatus.Failed);
         sut.FailureReason.ShouldBe("gateway timeout");
@@ -254,7 +254,7 @@ public class WalletTopUpTests
     {
         var sut = new WalletTopUpBuilder().Build();
 
-        sut.MarkFailed(reason!);
+        sut.MarkFailed(reason!, DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletTopUpStatus.Failed);
         sut.FailureReason.ShouldBe("[UNSPECIFIED]");
@@ -266,18 +266,18 @@ public class WalletTopUpTests
     public void MarkFailed_AlreadyFailed_ThrowsDomainException()
     {
         var sut = new WalletTopUpBuilder().Build();
-        sut.MarkFailed("first");
+        sut.MarkFailed("first", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkFailed("second"));
+        Should.Throw<DomainException>(() => sut.MarkFailed("second", DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkFailed_AfterSucceeded_ThrowsDomainException()
     {
         var sut = new WalletTopUpBuilder().Build();
-        sut.MarkSucceeded("REF");
+        sut.MarkSucceeded("REF", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkFailed("reason"));
+        Should.Throw<DomainException>(() => sut.MarkFailed("reason", DateTime.UtcNow));
     }
 
     // ---------- MarkCancelled ----------
@@ -289,7 +289,7 @@ public class WalletTopUpTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.MarkCancelled("user requested");
+        sut.MarkCancelled("user requested", DateTime.UtcNow);
 
         sut.Status.ShouldBe(WalletTopUpStatus.Cancelled);
         sut.FailureReason.ShouldBe("user requested");
@@ -307,7 +307,7 @@ public class WalletTopUpTests
     {
         var sut = new WalletTopUpBuilder().Build();
 
-        sut.MarkCancelled(reason!);
+        sut.MarkCancelled(reason!, DateTime.UtcNow);
 
         sut.FailureReason.ShouldBe("[UNSPECIFIED]");
     }
@@ -316,26 +316,26 @@ public class WalletTopUpTests
     public void MarkCancelled_AlreadyCancelled_ThrowsDomainException()
     {
         var sut = new WalletTopUpBuilder().Build();
-        sut.MarkCancelled("first");
+        sut.MarkCancelled("first", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkCancelled("second"));
+        Should.Throw<DomainException>(() => sut.MarkCancelled("second", DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkCancelled_AfterSucceeded_ThrowsDomainException()
     {
         var sut = new WalletTopUpBuilder().Build();
-        sut.MarkSucceeded("REF");
+        sut.MarkSucceeded("REF", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkCancelled("reason"));
+        Should.Throw<DomainException>(() => sut.MarkCancelled("reason", DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkCancelled_AfterFailed_ThrowsDomainException()
     {
         var sut = new WalletTopUpBuilder().Build();
-        sut.MarkFailed("reason");
+        sut.MarkFailed("reason", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkCancelled("reason"));
+        Should.Throw<DomainException>(() => sut.MarkCancelled("reason", DateTime.UtcNow));
     }
 }

@@ -1,6 +1,7 @@
 using Application.Wallet.Features.Commands.RequestWalletDebit;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.RequestWalletDebit;
@@ -10,6 +11,7 @@ public sealed class RequestWalletDebitHandlerTests
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly RequestWalletDebitHandler _sut;
@@ -18,7 +20,8 @@ public sealed class RequestWalletDebitHandlerTests
     {
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet", true));
-        _sut = new RequestWalletDebitHandler(_walletRepository, _unitOfWork, _distributedLock, _currentUserService);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new RequestWalletDebitHandler(_walletRepository, _unitOfWork, _distributedLock, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -53,7 +56,7 @@ public sealed class RequestWalletDebitHandlerTests
         _currentUserService.UserId.Returns(Guid.NewGuid());
         var userId = UserId.NewId();
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(wallet);
 
         var result = await _sut.Handle(
@@ -86,8 +89,8 @@ public sealed class RequestWalletDebitHandlerTests
         _currentUserService.UserId.Returns(Guid.NewGuid());
         var userId = UserId.NewId();
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
-        wallet.Freeze("suspicious", UserId.NewId());
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
+        wallet.Freeze("suspicious", UserId.NewId(), DateTime.UtcNow);
         _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(wallet);
 
         var result = await _sut.Handle(
@@ -102,7 +105,7 @@ public sealed class RequestWalletDebitHandlerTests
         _currentUserService.UserId.Returns(Guid.NewGuid());
         var userId = UserId.NewId();
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(wallet);
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new ConcurrencyException());

@@ -3,6 +3,7 @@ using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.User.Features.Commands.ChangePhoneNumber;
 
@@ -10,7 +11,8 @@ public class ChangePhoneNumberHandler(
     IUserRepository userRepository,
     IOtpRepository otpRepository,
     ICurrentUserService currentUser,
-    IAuditService auditService)
+    IAuditService auditService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ChangePhoneNumberCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -38,9 +40,10 @@ public class ChangePhoneNumberHandler(
         if (otp is null)
             return ServiceResult.Failure("کد OTP فعالی یافت نشد.");
 
+        var now = dateTimeProvider.UtcNow;
         try
         {
-            otp.Verify(otpCode);
+            otp.Verify(otpCode, now);
         }
         catch (DomainException ex)
         {

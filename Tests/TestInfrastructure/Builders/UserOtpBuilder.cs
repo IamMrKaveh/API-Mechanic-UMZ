@@ -44,5 +44,5 @@ public class UserOtpBuilder
         return this;
     }
 
-    public UserOtp Build() => UserOtp.Create(_userId, _code, _purpose, _validity);
+    public UserOtp Build(DateTime? now = null) => UserOtp.Create(_userId, _code, _purpose, _validity, now ?? DateTime.UtcNow);
 }

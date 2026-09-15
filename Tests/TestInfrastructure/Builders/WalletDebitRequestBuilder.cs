@@ -62,9 +62,10 @@ public sealed class WalletDebitRequestBuilder
         return this;
     }
 
-    public (Wallet wallet, WalletDebitRequest request) Build()
+    public (Wallet wallet, WalletDebitRequest request) Build(DateTime? now = null)
     {
-        var wallet = _existingWallet ?? new WalletBuilder().WithOwnerId(_ownerId).Build();
+        var effectiveNow = now ?? DateTime.UtcNow;
+        var wallet = _existingWallet ?? new WalletBuilder().WithOwnerId(_ownerId).Build(effectiveNow);
 
         if (_existingWallet is null)
         {
@@ -72,6 +73,7 @@ public sealed class WalletDebitRequestBuilder
                 Money.Create(_initialBalance),
                 "seed",
                 Guid.NewGuid().ToString(),
+                effectiveNow,
                 Guid.NewGuid().ToString("N"));
         }
         else if (wallet.AvailableBalance.IsLessThan(Money.Create(_amount)))
@@ -80,6 +82,7 @@ public sealed class WalletDebitRequestBuilder
                 Money.Create(_amount),
                 "seed-topup",
                 Guid.NewGuid().ToString(),
+                effectiveNow,
                 Guid.NewGuid().ToString("N"));
         }
 
@@ -89,7 +92,8 @@ public sealed class WalletDebitRequestBuilder
             _reason,
             _description,
             _requestedBy,
-            _expiry);
+            _expiry,
+            effectiveNow);
 
         var request = wallet.DebitRequests.Single(r => r.Id == _requestId);
         return (wallet, request);

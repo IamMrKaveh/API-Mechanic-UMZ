@@ -1,6 +1,7 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.DismissFraudAlert;
 
@@ -8,6 +9,7 @@ public sealed class DismissFraudAlertHandler(
     IWalletFraudAlertRepository repository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<DismissFraudAlertCommand, Unit>
 {
@@ -22,7 +24,7 @@ public sealed class DismissFraudAlertHandler(
             if (alert is null)
                 return ServiceResult<Unit>.NotFound("هشدار مورد نظر یافت نشد.");
 
-            alert.Dismiss(adminId, request.Note);
+            alert.Dismiss(adminId, request.Note, dateTimeProvider.UtcNow);
 
             repository.Update(alert);
             await unitOfWork.SaveChangesAsync(ct);

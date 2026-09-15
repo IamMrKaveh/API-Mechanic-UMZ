@@ -55,14 +55,15 @@ public sealed class WalletTopUpCleanupJob(
         var repository = scope.ServiceProvider.GetRequiredService<IWalletTopUpRepository>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-        var cutoff = dateTimeProvider.UtcNow - PendingCutoff;
+        var now = dateTimeProvider.UtcNow;
+        var cutoff = now - PendingCutoff;
         var staleTopUps = await repository.GetPendingOlderThanAsync(cutoff, BatchSize, ct);
 
         if (staleTopUps.Count == 0) return;
 
         foreach (var topUp in staleTopUps)
         {
-            topUp.MarkFailed("زمان درخواست شارژ منقضی شد (Timeout).");
+            topUp.MarkFailed("زمان درخواست شارژ منقضی شد (Timeout).", now);
             repository.Update(topUp);
         }
 

@@ -432,7 +432,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
             .WithUserId(user.Id)
             .WithExpiresAt(DateTime.UtcNow.AddDays(1))
             .Build();
-        revoked.Revoke(SessionRevocationReason.UserRequested);
+        revoked.Revoke(DateTime.UtcNow, SessionRevocationReason.UserRequested);
         revoked.ClearDomainEvents();
 
         _context.UserSessions.AddRange(older, newer, revoked);

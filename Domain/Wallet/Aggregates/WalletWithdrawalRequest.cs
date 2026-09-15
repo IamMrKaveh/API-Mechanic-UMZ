@@ -35,6 +35,7 @@ public sealed class WalletWithdrawalRequest : AggregateRoot<WalletWithdrawalRequ
         IbanNumber iban,
         string accountHolder,
         WalletReservationId reservationId,
+        DateTime now,
         string? description = null)
     {
         if (userId is null) throw new DomainException(DomainErrorCodes.Wallet.WithdrawalUserIdRequired, "UserId is required.");
@@ -61,23 +62,23 @@ public sealed class WalletWithdrawalRequest : AggregateRoot<WalletWithdrawalRequ
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
             ReservationId = reservationId,
             Status = WalletWithdrawalStatus.Pending,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now
         };
 
         request.RaiseDomainEvent(new WithdrawalRequestedEvent(request.Id, userId, amount, reservationId));
         return request;
     }
 
-    public void Approve(UserId adminId)
+    public void Approve(UserId adminId, DateTime now)
     {
         EnsureCanTransition("approve");
         Status = WalletWithdrawalStatus.Approved;
         ProcessedBy = adminId;
-        ApprovedAt = DateTime.UtcNow;
+        ApprovedAt = now;
         RaiseDomainEvent(new WithdrawalApprovedEvent(Id, UserId, adminId));
     }
 
-    public void Reject(UserId adminId, string reason)
+    public void Reject(UserId adminId, string reason, DateTime now)
     {
         if (string.IsNullOrWhiteSpace(reason))
             throw new DomainException(
@@ -88,11 +89,11 @@ public sealed class WalletWithdrawalRequest : AggregateRoot<WalletWithdrawalRequ
         Status = WalletWithdrawalStatus.Rejected;
         RejectionReason = reason.Trim();
         ProcessedBy = adminId;
-        RejectedAt = DateTime.UtcNow;
+        RejectedAt = now;
         RaiseDomainEvent(new WithdrawalRejectedEvent(Id, UserId, adminId, RejectionReason));
     }
 
-    public void MarkPaid(UserId adminId, string bankReferenceNumber)
+    public void MarkPaid(UserId adminId, string bankReferenceNumber, DateTime now)
     {
         if (Status != WalletWithdrawalStatus.Approved && Status != WalletWithdrawalStatus.Pending)
             throw new DomainException(
@@ -108,11 +109,11 @@ public sealed class WalletWithdrawalRequest : AggregateRoot<WalletWithdrawalRequ
         Status = WalletWithdrawalStatus.Paid;
         ProcessedBy = adminId;
         BankReferenceNumber = bankReferenceNumber.Trim();
-        PaidAt = DateTime.UtcNow;
+        PaidAt = now;
         RaiseDomainEvent(new WithdrawalPaidEvent(Id, UserId, Amount, adminId, BankReferenceNumber));
     }
 
-    public void Cancel(UserId requester)
+    public void Cancel(UserId requester, DateTime now)
     {
         if (!UserId.Equals(requester))
             throw new DomainException(
@@ -121,7 +122,7 @@ public sealed class WalletWithdrawalRequest : AggregateRoot<WalletWithdrawalRequ
 
         EnsureCanTransition("cancel");
         Status = WalletWithdrawalStatus.Cancelled;
-        CancelledAt = DateTime.UtcNow;
+        CancelledAt = now;
         RaiseDomainEvent(new WithdrawalCancelledEvent(Id, UserId));
     }
 

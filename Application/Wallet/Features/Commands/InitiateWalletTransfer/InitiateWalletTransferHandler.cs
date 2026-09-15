@@ -84,6 +84,7 @@ public sealed class InitiateWalletTransferHandler(
             var otpCode = OtpCode.Generate(_options.OtpLength);
             var otpHash = otpService.HashOtp(otpCode);
             var otpTtl = TimeSpan.FromSeconds(_options.OtpTtlSeconds);
+            var now = dateTimeProvider.UtcNow;
 
             var transfer = WalletTransfer.Initiate(
                 fromUserId,
@@ -91,6 +92,7 @@ public sealed class InitiateWalletTransferHandler(
                 amount,
                 otpHash,
                 otpTtl,
+                now,
                 request.Description);
 
             await transferRepository.AddAsync(transfer, ct);
@@ -104,7 +106,7 @@ public sealed class InitiateWalletTransferHandler(
             if (sendResult.IsFailure)
             {
                 var errorMessage = sendResult.Error?.Message ?? "ارسال کد تأیید ناموفق بود.";
-                transfer.MarkFailed(errorMessage);
+                transfer.MarkFailed(errorMessage, now);
                 transferRepository.Update(transfer);
                 await unitOfWork.SaveChangesAsync(ct);
                 return ServiceResult<InitiateWalletTransferResultDto>.Failure(errorMessage);

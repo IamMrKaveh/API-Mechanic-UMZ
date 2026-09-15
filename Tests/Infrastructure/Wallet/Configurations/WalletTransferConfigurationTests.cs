@@ -87,7 +87,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
     public async Task Persist_Transfer_CompletedTransitionPersistsCompletedAt()
     {
         var transfer = await SeedTransferAsync();
-        transfer.MarkCompleted();
+        transfer.MarkCompleted(DateTime.UtcNow);
         _context.Set<WalletTransfer>().Update(transfer);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -102,7 +102,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
     public async Task Persist_Transfer_CancelTransitionPersistsCancelledAt()
     {
         var transfer = await SeedTransferAsync();
-        transfer.Cancel(transfer.FromUserId);
+        transfer.Cancel(transfer.FromUserId, DateTime.UtcNow);
         _context.Set<WalletTransfer>().Update(transfer);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -155,7 +155,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         var transfer = await SeedTransferAsync();
         var initialXmin = _context.Entry(transfer).Property<uint>("xmin").CurrentValue;
 
-        transfer.MarkCompleted();
+        transfer.MarkCompleted(DateTime.UtcNow);
         _context.Set<WalletTransfer>().Update(transfer);
         await _context.SaveChangesAsync();
 
@@ -175,11 +175,11 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         var transferA = await contextA.Set<WalletTransfer>().FirstAsync(t => t.Id == transfer.Id);
         var transferB = await contextB.Set<WalletTransfer>().FirstAsync(t => t.Id == transfer.Id);
 
-        transferA.MarkCompleted();
+        transferA.MarkCompleted(DateTime.UtcNow);
         contextA.Set<WalletTransfer>().Update(transferA);
         await contextA.SaveChangesAsync();
 
-        transferB.Cancel(transferB.FromUserId);
+        transferB.Cancel(transferB.FromUserId, DateTime.UtcNow);
         contextB.Set<WalletTransfer>().Update(transferB);
 
         await Should.ThrowAsync<DbUpdateConcurrencyException>(async () => await contextB.SaveChangesAsync());

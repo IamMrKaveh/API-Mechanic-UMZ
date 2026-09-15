@@ -1,6 +1,7 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.DebitWallet;
 
@@ -9,6 +10,7 @@ public class DebitWalletHandler(
     IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider,
     IDistributedLock distributedLock)
     : ICommandHandler<DebitWalletCommand, Unit>
 {
@@ -35,6 +37,7 @@ public class DebitWalletHandler(
             if (wallet is null)
                 return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
 
+            var now = dateTimeProvider.UtcNow;
             var amount = Money.Create(request.Amount, DefaultCurrency);
             var referenceId = string.IsNullOrWhiteSpace(request.ReferenceId)
                 ? currentUserService.UserId!.Value.ToString()
@@ -44,6 +47,7 @@ public class DebitWalletHandler(
                 amount,
                 request.Description ?? request.TransactionType.ToString(),
                 referenceId,
+                now,
                 request.IdempotencyKey);
 
             walletRepository.Update(wallet);

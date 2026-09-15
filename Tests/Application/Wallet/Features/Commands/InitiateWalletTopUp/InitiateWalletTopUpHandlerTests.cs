@@ -7,6 +7,7 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Interfaces;
 using Microsoft.Extensions.Options;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Exceptions;
 
 namespace Tests.Application.Wallet.Features.Commands.InitiateWalletTopUp;
@@ -19,6 +20,7 @@ public sealed class InitiateWalletTopUpHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly IPaymentGateway _gateway = Substitute.For<IPaymentGateway>();
     private readonly IOptions<ApiBaseUrlOptions> _apiOptions = Options.Create(new ApiBaseUrlOptions { PublicBaseUrl = "https://api.example.com" });
 
@@ -31,9 +33,10 @@ public sealed class InitiateWalletTopUpHandlerTests
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet:topup", true));
 
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new InitiateWalletTopUpHandler(
             _topUpRepository, _gatewayFactory, _currentUserService,
-            _unitOfWork, _auditService, _distributedLock, _apiOptions);
+            _unitOfWork, _auditService, _distributedLock, _dateTimeProvider, _apiOptions);
     }
 
     [Fact]

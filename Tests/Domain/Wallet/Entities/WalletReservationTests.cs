@@ -17,7 +17,7 @@ public class WalletReservationTests
     {
         var wallet = new WalletBuilder().Build();
         if (openingBalance > 0)
-            wallet.Credit(Rial(openingBalance), "seed", "seed-ref");
+            wallet.Credit(Rial(openingBalance), "seed", "seed-ref", DateTime.UtcNow);
         return wallet;
     }
 
@@ -30,7 +30,7 @@ public class WalletReservationTests
         var reservationId = WalletReservationId.NewId();
         var amount = Rial(100);
 
-        var reservation = wallet.CreateReservation(reservationId, amount, "hold");
+        var reservation = wallet.CreateReservation(reservationId, amount, "hold", DateTime.UtcNow);
 
         reservation.Id.ShouldBe(reservationId);
         reservation.WalletId.ShouldBe(wallet.Id);
@@ -46,7 +46,7 @@ public class WalletReservationTests
         var wallet = BuildFunded(500);
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        var reservation = wallet.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold");
+        var reservation = wallet.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold", DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         reservation.CreatedAt.ShouldBeGreaterThanOrEqualTo(before);
@@ -58,7 +58,7 @@ public class WalletReservationTests
     {
         var wallet = BuildFunded(500);
 
-        var reservation = wallet.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold");
+        var reservation = wallet.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold", DateTime.UtcNow);
 
         reservation.ExpiresAt.ShouldBeNull();
     }
@@ -69,7 +69,7 @@ public class WalletReservationTests
         var wallet = BuildFunded(500);
         var reservationId = WalletReservationId.NewId();
 
-        var reservation = wallet.CreateReservation(reservationId, Rial(100), "hold");
+        var reservation = wallet.CreateReservation(reservationId, Rial(100), "hold", DateTime.UtcNow);
 
         wallet.ActiveReservations.ShouldContain(reservation);
     }
@@ -79,7 +79,7 @@ public class WalletReservationTests
     {
         var wallet = BuildFunded(500);
 
-        wallet.CreateReservation(WalletReservationId.NewId(), Rial(150), "hold");
+        wallet.CreateReservation(WalletReservationId.NewId(), Rial(150), "hold", DateTime.UtcNow);
 
         wallet.Balance.Amount.ShouldBe(500m);
         wallet.ReservedBalance.Amount.ShouldBe(150m);
@@ -94,7 +94,7 @@ public class WalletReservationTests
         var reservationId = WalletReservationId.NewId();
         var amount = Rial(100);
 
-        wallet.CreateReservation(reservationId, amount, "hold");
+        wallet.CreateReservation(reservationId, amount, "hold", DateTime.UtcNow);
 
         var evt = wallet.DomainEvents.Single().ShouldBeOfType<WalletReservationCreatedEvent>();
         evt.WalletId.ShouldBe(wallet.Id);
@@ -108,8 +108,8 @@ public class WalletReservationTests
     {
         var wallet = BuildFunded(500);
 
-        wallet.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold-1");
-        wallet.CreateReservation(WalletReservationId.NewId(), Rial(150), "hold-2");
+        wallet.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold-1", DateTime.UtcNow);
+        wallet.CreateReservation(WalletReservationId.NewId(), Rial(150), "hold-2", DateTime.UtcNow);
 
         wallet.ReservedBalance.Amount.ShouldBe(250m);
         wallet.AvailableBalance.Amount.ShouldBe(250m);
@@ -123,10 +123,10 @@ public class WalletReservationTests
     {
         var wallet = BuildFunded(500);
         var reservationId = WalletReservationId.NewId();
-        var reservation = wallet.CreateReservation(reservationId, Rial(100), "hold");
+        var reservation = wallet.CreateReservation(reservationId, Rial(100), "hold", DateTime.UtcNow);
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        wallet.ReleaseReservation(reservationId);
+        wallet.ReleaseReservation(reservationId, DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         reservation.Status.ShouldBe(WalletReservationStatus.Released);
@@ -140,9 +140,9 @@ public class WalletReservationTests
     {
         var wallet = BuildFunded(500);
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Rial(100), "hold");
+        wallet.CreateReservation(reservationId, Rial(100), "hold", DateTime.UtcNow);
 
-        wallet.ReleaseReservation(reservationId);
+        wallet.ReleaseReservation(reservationId, DateTime.UtcNow);
 
         wallet.ActiveReservations.ShouldBeEmpty();
         wallet.ReservedBalance.Amount.ShouldBe(0m);
@@ -154,10 +154,10 @@ public class WalletReservationTests
     {
         var wallet = BuildFunded(500);
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Rial(100), "hold");
+        wallet.CreateReservation(reservationId, Rial(100), "hold", DateTime.UtcNow);
         wallet.ClearDomainEvents();
 
-        wallet.ReleaseReservation(reservationId);
+        wallet.ReleaseReservation(reservationId, DateTime.UtcNow);
 
         var evt = wallet.DomainEvents.Single().ShouldBeOfType<WalletReservationReleasedEvent>();
         evt.WalletId.ShouldBe(wallet.Id);
@@ -172,7 +172,7 @@ public class WalletReservationTests
         wallet.ClearDomainEvents();
         var versionBefore = wallet.Version;
 
-        Should.NotThrow(() => wallet.ReleaseReservation(WalletReservationId.NewId()));
+        Should.NotThrow(() => wallet.ReleaseReservation(WalletReservationId.NewId(), DateTime.UtcNow));
 
         wallet.Version.ShouldBe(versionBefore);
         wallet.DomainEvents.ShouldBeEmpty();
@@ -183,12 +183,12 @@ public class WalletReservationTests
     {
         var wallet = BuildFunded(500);
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Rial(100), "hold");
-        wallet.ReleaseReservation(reservationId);
+        wallet.CreateReservation(reservationId, Rial(100), "hold", DateTime.UtcNow);
+        wallet.ReleaseReservation(reservationId, DateTime.UtcNow);
         wallet.ClearDomainEvents();
         var versionBefore = wallet.Version;
 
-        Should.NotThrow(() => wallet.ReleaseReservation(reservationId));
+        Should.NotThrow(() => wallet.ReleaseReservation(reservationId, DateTime.UtcNow));
 
         wallet.Version.ShouldBe(versionBefore);
         wallet.DomainEvents.ShouldBeEmpty();
@@ -200,10 +200,10 @@ public class WalletReservationTests
         var wallet = BuildFunded(500);
         var keepId = WalletReservationId.NewId();
         var releaseId = WalletReservationId.NewId();
-        wallet.CreateReservation(keepId, Rial(100), "keep");
-        var toRelease = wallet.CreateReservation(releaseId, Rial(150), "release");
+        wallet.CreateReservation(keepId, Rial(100), "keep", DateTime.UtcNow);
+        var toRelease = wallet.CreateReservation(releaseId, Rial(150), "release", DateTime.UtcNow);
 
-        wallet.ReleaseReservation(releaseId);
+        wallet.ReleaseReservation(releaseId, DateTime.UtcNow);
 
         toRelease.Status.ShouldBe(WalletReservationStatus.Released);
         wallet.ActiveReservations.Count.ShouldBe(1);
@@ -220,16 +220,16 @@ public class WalletReservationTests
         var wallet = BuildFunded(50);
 
         Should.Throw<DomainException>(() =>
-            wallet.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold"));
+            wallet.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold", DateTime.UtcNow));
     }
 
     [Fact]
     public void CreateReservation_OnInactiveWallet_ThrowsDomainException()
     {
         var wallet = BuildFunded(500);
-        wallet.Freeze("audit", UserId.NewId());
+        wallet.Freeze("audit", UserId.NewId(), DateTime.UtcNow);
 
         Should.Throw<DomainException>(() =>
-            wallet.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold"));
+            wallet.CreateReservation(WalletReservationId.NewId(), Rial(100), "hold", DateTime.UtcNow));
     }
 }

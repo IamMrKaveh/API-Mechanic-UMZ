@@ -11,7 +11,8 @@ namespace Infrastructure.Auth.Services;
 public sealed class SessionService(
     ISessionRepository sessionRepository,
     IOptions<AuthOptions> authOptions,
-    IUnitOfWork unitOfWork) : ISessionService
+    IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider) : ISessionService
 {
     private readonly AuthOptions _authOptions = authOptions.Value;
 
@@ -23,14 +24,15 @@ public sealed class SessionService(
     {
         var token = RefreshToken.Generate();
         var deviceInfo = DeviceInfo.Create(userAgent ?? "Unknown");
-        var expiresAt = DateTime.UtcNow.AddDays(_authOptions.SessionExpirationDays);
+        var now = dateTimeProvider.UtcNow;
+        var expiresAt = now.AddDays(_authOptions.SessionExpirationDays);
 
         var existingSession = await sessionRepository
             .GetActiveByUserAndDeviceAsync(userId, deviceInfo, ct);
 
         if (existingSession is not null)
         {
-            existingSession.Revoke(SessionRevocationReason.UserRequested);
+            existingSession.Revoke(now, SessionRevocationReason.UserRequested);
             sessionRepository.Update(existingSession);
         }
 
@@ -40,7 +42,8 @@ public sealed class SessionService(
             token,
             deviceInfo,
             ipAddress,
-            expiresAt);
+            expiresAt,
+            now);
 
         await sessionRepository.AddAsync(session, ct);
         await unitOfWork.SaveChangesAsync(ct);
@@ -60,18 +63,19 @@ public sealed class SessionService(
     {
         var session = await sessionRepository.GetByRefreshTokenAsync(refreshToken, ct);
 
-        if (session is null || !session.IsActive)
+        var now = dateTimeProvider.UtcNow;
+        if (session is null || !session.IsActive(now))
             return ServiceResult<RefreshTokenResult>.Unauthorized("جلسه نامعتبر یا منقضی است.");
 
-        if (!session.ValidateRefreshToken(refreshToken.Value))
+        if (!session.ValidateRefreshToken(refreshToken.Value, now))
             return ServiceResult<RefreshTokenResult>.Unauthorized("توکن نامعتبر است.");
 
-        session.Revoke(SessionRevocationReason.UserRequested);
+        session.Revoke(now, SessionRevocationReason.UserRequested);
         sessionRepository.Update(session);
 
         var newToken = RefreshToken.Generate();
         var deviceInfo = session.DeviceInfo;
-        var expiresAt = DateTime.UtcNow.AddDays(_authOptions.SessionExpirationDays);
+        var expiresAt = now.AddDays(_authOptions.SessionExpirationDays);
 
         var newSession = UserSession.Create(
             SessionId.NewId(),
@@ -79,7 +83,8 @@ public sealed class SessionService(
             newToken,
             deviceInfo,
             ipAddress,
-            expiresAt);
+            expiresAt,
+            now);
 
         await sessionRepository.AddAsync(newSession, ct);
         await unitOfWork.SaveChangesAsync(ct);

@@ -4,6 +4,7 @@ using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.MarkWithdrawalPaid;
@@ -15,6 +16,7 @@ public sealed class MarkWithdrawalPaidHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly MarkWithdrawalPaidHandler _sut;
@@ -24,9 +26,10 @@ public sealed class MarkWithdrawalPaidHandlerTests
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet", true));
 
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new MarkWithdrawalPaidHandler(
             _withdrawalRepository, _walletRepository, _unitOfWork,
-            _distributedLock, _auditService, _currentUserService);
+            _distributedLock, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -81,16 +84,16 @@ public sealed class MarkWithdrawalPaidHandlerTests
         _currentUserService.UserId.Returns(adminId.Value);
 
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(200_000m), "withdrawal-request");
+        wallet.CreateReservation(reservationId, Money.Create(200_000m), "withdrawal-request", DateTime.UtcNow);
 
         var withdrawal = new WalletWithdrawalRequestBuilder()
             .WithUserId(userId)
             .WithAmount(200_000m)
             .WithReservationId(reservationId)
             .Build();
-        withdrawal.Approve(adminId);
+        withdrawal.Approve(adminId, DateTime.UtcNow);
 
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns(withdrawal);
@@ -114,9 +117,9 @@ public sealed class MarkWithdrawalPaidHandlerTests
         _currentUserService.UserId.Returns(adminId.Value);
 
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(200_000m), "withdrawal-request");
+        wallet.CreateReservation(reservationId, Money.Create(200_000m), "withdrawal-request", DateTime.UtcNow);
 
         var withdrawal = new WalletWithdrawalRequestBuilder()
             .WithUserId(userId).WithAmount(200_000m).WithReservationId(reservationId).Build();

@@ -47,6 +47,6 @@ public WalletFraudAlertBuilder WithMetadata(string? metadata)
     return this;
 }
 
-public WalletFraudAlert Build() =>
-    WalletFraudAlert.Raise(_walletId, _userId, _ruleName, _severity, _description, _metadata);
+public WalletFraudAlert Build(DateTime? now = null) =>
+    WalletFraudAlert.Raise(_walletId, _userId, _ruleName, _severity, _description, now ?? DateTime.UtcNow, _metadata);
 }

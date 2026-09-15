@@ -126,7 +126,7 @@ public sealed class GetMyWalletDebitRequestsHandlerTests
     public async Task Handle_WhenRequestIsNotPending_IsExpiringSoonIsAlwaysFalse()
     {
         var (ownerId, req) = BuildRequest(expiry: TimeSpan.FromHours(1));
-        req.Reject(UserId.NewId(), "not needed");
+        req.Reject(UserId.NewId(), "not needed", DateTime.UtcNow);
         SetCurrentUser(ownerId);
         _debitRequestRepository.GetByOwnerAsync(Arg.Any<UserId>(), Arg.Any<WalletDebitRequestStatus?>(), Arg.Any<CancellationToken>())
             .Returns(new List<WalletDebitRequest> { req });

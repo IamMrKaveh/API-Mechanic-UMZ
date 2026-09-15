@@ -4,6 +4,7 @@ using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
@@ -12,11 +13,12 @@ namespace Tests.Application.Auth.Features.Commands.AdminRevokeSession;
 
 public class AdminRevokeSessionHandlerTests
 {
-    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly AdminRevokeSessionHandler _sut;
+    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AdminRevokeSessionHandler _sut;
 
     public AdminRevokeSessionHandlerTests()
     {
-        _sut = new AdminRevokeSessionHandler(_sessionRepository);
+        _dateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
+        _sut = new AdminRevokeSessionHandler(_sessionRepository, _dateTimeProvider);
     }
 
     [Fact]

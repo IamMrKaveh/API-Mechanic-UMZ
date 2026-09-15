@@ -152,11 +152,11 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         pending.ClearDomainEvents();
 
         var succeeded = new WalletTopUpBuilder().Build();
-        succeeded.MarkSucceeded("BANK-REF-1");
+        succeeded.MarkSucceeded("BANK-REF-1", DateTime.UtcNow);
         succeeded.ClearDomainEvents();
 
         var failed = new WalletTopUpBuilder().Build();
-        failed.MarkFailed("gateway timeout");
+        failed.MarkFailed("gateway timeout", DateTime.UtcNow);
         failed.ClearDomainEvents();
 
         await _sut.AddAsync(pending);
@@ -268,7 +268,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
 
         var loaded = await _sut.GetByIdAsync(topUp.Id);
         loaded.ShouldNotBeNull();
-        loaded!.MarkSucceeded("BANK-REF-99");
+        loaded!.MarkSucceeded("BANK-REF-99", DateTime.UtcNow);
 
         _sut.Update(loaded);
         await _context.SaveChangesAsync();
@@ -290,7 +290,7 @@ public class WalletTopUpRepositoryTests(PostgresContainerFixture fixture) : IAsy
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
 
-        topUp.MarkFailed("connectivity error");
+        topUp.MarkFailed("connectivity error", DateTime.UtcNow);
         topUp.ClearDomainEvents();
 
         _sut.Update(topUp);

@@ -46,9 +46,9 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
     {
         var owner = await SeedActiveUserAsync();
         var wallet = new WalletBuilder().WithOwnerId(owner.Id).Build();
-        wallet.Credit(Money.Create(openingBalance, "IRT"), "seed", "seed-ref");
+        wallet.Credit(Money.Create(openingBalance, "IRT"), "seed", "seed-ref", DateTime.UtcNow);
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(reservationAmount, "IRT"), purpose);
+        wallet.CreateReservation(reservationId, Money.Create(reservationAmount, "IRT"), purpose, DateTime.UtcNow);
         wallet.ClearDomainEvents();
 
         await _context.Wallets.AddAsync(wallet);
@@ -100,7 +100,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
     {
         var (wallet, reservation) = await SeedActiveReservationAsync();
         var loadedWallet = await _context.Wallets.FirstAsync(w => w.Id == wallet.Id);
-        loadedWallet.ReleaseReservation(reservation.Id);
+        loadedWallet.ReleaseReservation(reservation.Id, DateTime.UtcNow);
         _context.Wallets.Update(loadedWallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -118,8 +118,8 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
     {
         var owner = await SeedActiveUserAsync();
         var wallet = new WalletBuilder().WithOwnerId(owner.Id).Build();
-        wallet.Credit(Money.Create(500_000m, "IRT"), "seed", "seed-ref");
-        wallet.CreateReservation(WalletReservationId.NewId(), Money.Create(100_000m, "IRT"), new string('p', 201));
+        wallet.Credit(Money.Create(500_000m, "IRT"), "seed", "seed-ref", DateTime.UtcNow);
+        wallet.CreateReservation(WalletReservationId.NewId(), Money.Create(100_000m, "IRT"), new string('p', 201), DateTime.UtcNow);
         wallet.ClearDomainEvents();
 
         await _context.Wallets.AddAsync(wallet);
@@ -150,9 +150,9 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
     {
         var owner = await SeedActiveUserAsync();
         var wallet = new WalletBuilder().WithOwnerId(owner.Id).Build();
-        wallet.Credit(Money.Create(500_000m, "IRT"), "seed", "seed-ref");
+        wallet.Credit(Money.Create(500_000m, "IRT"), "seed", "seed-ref", DateTime.UtcNow);
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(100_000m, "IRT"), "hold");
+        wallet.CreateReservation(reservationId, Money.Create(100_000m, "IRT"), "hold", DateTime.UtcNow);
         wallet.ClearDomainEvents();
         await _context.Wallets.AddAsync(wallet);
         await _context.SaveChangesAsync();

@@ -1,6 +1,7 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.FreezeWallet;
 
@@ -9,6 +10,7 @@ public sealed class FreezeWalletHandler(
     IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<FreezeWalletCommand, Unit>
 {
@@ -36,7 +38,7 @@ public sealed class FreezeWalletHandler(
             if (wallet is null)
                 return ServiceResult<Unit>.NotFound("کیف پول کاربر یافت نشد.");
 
-            wallet.Freeze(request.Reason, adminId);
+            wallet.Freeze(request.Reason, adminId, dateTimeProvider.UtcNow);
 
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);

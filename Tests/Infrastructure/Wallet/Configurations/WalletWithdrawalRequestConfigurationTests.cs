@@ -94,7 +94,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
     {
         var request = await SeedWithdrawalAsync();
         var admin = UserId.NewId();
-        request.Approve(admin);
+        request.Approve(admin, DateTime.UtcNow);
         _context.WalletWithdrawalRequests.Update(request);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -111,7 +111,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
     {
         var request = await SeedWithdrawalAsync();
         var admin = UserId.NewId();
-        request.Reject(admin, "documents missing");
+        request.Reject(admin, "documents missing", DateTime.UtcNow);
         _context.WalletWithdrawalRequests.Update(request);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -129,7 +129,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
     {
         var request = await SeedWithdrawalAsync();
         var admin = UserId.NewId();
-        request.MarkPaid(admin, "BANK-REF-12345");
+        request.MarkPaid(admin, "BANK-REF-12345", DateTime.UtcNow);
         _context.WalletWithdrawalRequests.Update(request);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -146,7 +146,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
     public async Task Persist_Withdrawal_CancelTransitionPersistsCancelledAt()
     {
         var request = await SeedWithdrawalAsync();
-        request.Cancel(request.UserId);
+        request.Cancel(request.UserId, DateTime.UtcNow);
         _context.WalletWithdrawalRequests.Update(request);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -199,7 +199,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
     public async Task Persist_Withdrawal_RejectionReasonLongerThan500Characters_ThrowsOnSave()
     {
         var request = await SeedWithdrawalAsync();
-        request.Reject(UserId.NewId(), new string('r', 501));
+        request.Reject(UserId.NewId(), new string('r', 501), DateTime.UtcNow);
         _context.WalletWithdrawalRequests.Update(request);
 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
@@ -209,7 +209,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
     public async Task Persist_Withdrawal_BankReferenceLongerThan64Characters_ThrowsOnSave()
     {
         var request = await SeedWithdrawalAsync();
-        request.MarkPaid(UserId.NewId(), new string('b', 65));
+        request.MarkPaid(UserId.NewId(), new string('b', 65), DateTime.UtcNow);
         _context.WalletWithdrawalRequests.Update(request);
 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
@@ -221,7 +221,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         var request = await SeedWithdrawalAsync();
         var initialXmin = _context.Entry(request).Property<uint>("xmin").CurrentValue;
 
-        request.Approve(UserId.NewId());
+        request.Approve(UserId.NewId(), DateTime.UtcNow);
         _context.WalletWithdrawalRequests.Update(request);
         await _context.SaveChangesAsync();
 
@@ -241,11 +241,11 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         var requestA = await contextA.WalletWithdrawalRequests.FirstAsync(w => w.Id == request.Id);
         var requestB = await contextB.WalletWithdrawalRequests.FirstAsync(w => w.Id == request.Id);
 
-        requestA.Approve(UserId.NewId());
+        requestA.Approve(UserId.NewId(), DateTime.UtcNow);
         contextA.WalletWithdrawalRequests.Update(requestA);
         await contextA.SaveChangesAsync();
 
-        requestB.Reject(UserId.NewId(), "duplicated");
+        requestB.Reject(UserId.NewId(), "duplicated", DateTime.UtcNow);
         contextB.WalletWithdrawalRequests.Update(requestB);
 
         await Should.ThrowAsync<DbUpdateConcurrencyException>(async () => await contextB.SaveChangesAsync());

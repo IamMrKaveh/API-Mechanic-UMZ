@@ -1,12 +1,17 @@
 using Application.Auth.Features.Shared;
+using Microsoft.Extensions.Options;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Auth.Features.Commands.RefreshToken;
 
 public class RefreshTokenHandler(
     IAuthService authService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider,
+    IOptions<JwtOptions> jwtOptions)
     : ICommandHandler<RefreshTokenCommand, AuthResult>
 {
+    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     public async Task<ServiceResult<AuthResult>> Handle(
         RefreshTokenCommand request,
         CancellationToken ct)
@@ -30,7 +35,7 @@ public class RefreshTokenHandler(
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken.RefreshToken,
-            AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(15),
+            AccessTokenExpiresAt = dateTimeProvider.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes),
             RefreshTokenExpiresAt = refreshToken.ExpiresAt,
             User = user,
             IsNewUser = isNewUser

@@ -44,9 +44,10 @@ public class VerifyOtpHandler(
         if (otp is null)
             return ServiceResult<AuthResult>.Failure("کد OTP فعالی یافت نشد.");
 
+        var now = dateTimeProvider.UtcNow;
         try
         {
-            otp.Verify(otpCode);
+            otp.Verify(otpCode, now);
         }
         catch (DomainException ex)
         {

@@ -32,7 +32,8 @@ public sealed class WalletDebitRequest : Entity<WalletDebitRequestId>
         string? description,
         UserId requestedBy,
         WalletReservationId reservationId,
-        DateTime expiresAt)
+        DateTime expiresAt,
+        DateTime now)
     {
         return new WalletDebitRequest
         {
@@ -45,36 +46,36 @@ public sealed class WalletDebitRequest : Entity<WalletDebitRequestId>
             RequestedBy = requestedBy,
             ReservationId = reservationId,
             Status = WalletDebitRequestStatus.Pending,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = now,
             ExpiresAt = expiresAt
         };
     }
 
-    public void Approve(UserId approvedBy)
+    public void Approve(UserId approvedBy, DateTime now)
     {
         Status = WalletDebitRequestStatus.Approved;
-        RespondedAt = DateTime.UtcNow;
+        RespondedAt = now;
         RespondedBy = approvedBy;
     }
 
-    public void Reject(UserId rejectedBy, string? rejectionReason)
+    public void Reject(UserId rejectedBy, string? rejectionReason, DateTime now)
     {
         Status = WalletDebitRequestStatus.Rejected;
-        RespondedAt = DateTime.UtcNow;
+        RespondedAt = now;
         RespondedBy = rejectedBy;
         RejectionReason = rejectionReason;
     }
 
-    public void Cancel(UserId cancelledBy)
+    public void Cancel(UserId cancelledBy, DateTime now)
     {
         Status = WalletDebitRequestStatus.Cancelled;
-        RespondedAt = DateTime.UtcNow;
+        RespondedAt = now;
         RespondedBy = cancelledBy;
     }
 
-    public void MarkExpired()
+    public void MarkExpired(DateTime now)
     {
         Status = WalletDebitRequestStatus.Expired;
-        RespondedAt = DateTime.UtcNow;
+        RespondedAt = now;
     }
 }

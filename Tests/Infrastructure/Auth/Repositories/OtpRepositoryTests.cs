@@ -3,6 +3,7 @@ using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Auth.Repositories;
 using Infrastructure.Persistence.Context;
+using SharedKernel.Abstractions.Interfaces;
 using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Infrastructure.Auth.Repositories;
@@ -18,7 +19,9 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
 
         _context = _fixture.CreateContext();
-        _sut = new OtpRepository(_context);
+        var dateTimeProvider = Substitute.For<IDateTimeProvider>();
+        dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new OtpRepository(_context, dateTimeProvider);
 
         await Task.CompletedTask;
     }
@@ -110,7 +113,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
             .WithValidity(TimeSpan.FromMinutes(5))
             .Build();
 
-        verified.Verify(OtpCode.Create(codeValue));
+        verified.Verify(OtpCode.Create(codeValue), DateTime.UtcNow);
 
         await _sut.AddAsync(verified);
         await _context.SaveChangesAsync();
@@ -276,7 +279,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
 
         var loaded = await _sut.GetByIdAsync(otp.Id);
         loaded.ShouldNotBeNull();
-        loaded!.Verify(OtpCode.Create(codeValue));
+        loaded!.Verify(OtpCode.Create(codeValue), DateTime.UtcNow);
 
         _sut.Update(loaded);
         await _context.SaveChangesAsync();

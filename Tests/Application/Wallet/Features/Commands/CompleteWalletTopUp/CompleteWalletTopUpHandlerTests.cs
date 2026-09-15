@@ -4,6 +4,7 @@ using Application.Wallet.Features.Commands.CompleteWalletTopUp;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Exceptions;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
@@ -14,6 +15,7 @@ public sealed class CompleteWalletTopUpHandlerTests
     private readonly IWalletTopUpRepository _topUpRepository = Substitute.For<IWalletTopUpRepository>();
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IPaymentGatewayFactory _gatewayFactory = Substitute.For<IPaymentGatewayFactory>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly IPaymentGateway _gateway = Substitute.For<IPaymentGateway>();
 
@@ -22,7 +24,8 @@ public sealed class CompleteWalletTopUpHandlerTests
     public CompleteWalletTopUpHandlerTests()
     {
         _gatewayFactory.GetGateway(Arg.Any<string>()).Returns(_gateway);
-        _sut = new CompleteWalletTopUpHandler(_topUpRepository, _walletRepository, _gatewayFactory, _auditService);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new CompleteWalletTopUpHandler(_topUpRepository, _walletRepository, _gatewayFactory, _dateTimeProvider, _auditService);
     }
 
     [Fact]
@@ -53,7 +56,7 @@ public sealed class CompleteWalletTopUpHandlerTests
     {
         var topUp = new WalletTopUpBuilder().WithAmount(100_000m).Build();
         topUp.MarkAuthorityIssued("AUTH-1");
-        topUp.MarkSucceeded("REF-9999");
+        topUp.MarkSucceeded("REF-9999", DateTime.UtcNow);
         _topUpRepository.GetByAuthorityAsync("AUTH-1", Arg.Any<CancellationToken>()).Returns(topUp);
 
         var result = await _sut.Handle(new CompleteWalletTopUpCommand("AUTH-1", "OK"), CancellationToken.None);

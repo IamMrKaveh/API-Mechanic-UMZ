@@ -70,7 +70,8 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
         Money balanceAfter,
         string? description,
         string referenceId,
-        string? idempotencyKey,
+        DateTime now,
+        string? idempotencyKey = null,
         string? correlationId = null,
         WalletDebitRequestId? debitRequestId = null,
         WalletWithdrawalRequestId? withdrawalRequestId = null,
@@ -89,7 +90,7 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             referenceId,
             idempotencyKey,
             correlationId,
-            DateTime.UtcNow,
+            now,
             debitRequestId,
             withdrawalRequestId,
             transferId,
@@ -103,7 +104,8 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
         Money balanceAfter,
         string? description,
         string referenceId,
-        string? idempotencyKey,
+        DateTime now,
+        string? idempotencyKey = null,
         string? correlationId = null,
         WalletDebitRequestId? debitRequestId = null,
         WalletWithdrawalRequestId? withdrawalRequestId = null,
@@ -122,14 +124,14 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             referenceId,
             idempotencyKey,
             correlationId,
-            DateTime.UtcNow,
+            now,
             debitRequestId,
             withdrawalRequestId,
             transferId,
             topUpId);
     }
 
-    public static WalletLedgerEntry FromCreditEvent(WalletCreditedEvent evt)
+    public static WalletLedgerEntry FromCreditEvent(WalletCreditedEvent evt, DateTime now)
     {
         Guard.Against.Null(evt, nameof(evt));
         return NewCredit(
@@ -139,6 +141,7 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             evt.NewBalance,
             evt.Description,
             evt.ReferenceId,
+            now,
             evt.IdempotencyKey,
             evt.CorrelationId,
             evt.DebitRequestId,
@@ -147,7 +150,7 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             evt.TopUpId);
     }
 
-    public static WalletLedgerEntry FromDebitEvent(WalletDebitedEvent evt)
+    public static WalletLedgerEntry FromDebitEvent(WalletDebitedEvent evt, DateTime now)
     {
         Guard.Against.Null(evt, nameof(evt));
         return NewDebit(
@@ -157,6 +160,7 @@ public sealed class WalletLedgerEntry : Entity<WalletLedgerEntryId>
             evt.NewBalance,
             evt.Description,
             evt.ReferenceId,
+            now,
             evt.IdempotencyKey,
             evt.CorrelationId,
             evt.DebitRequestId,

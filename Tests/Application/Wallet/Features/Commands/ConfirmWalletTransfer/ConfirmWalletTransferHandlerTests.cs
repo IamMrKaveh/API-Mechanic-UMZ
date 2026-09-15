@@ -119,7 +119,7 @@ public sealed class ConfirmWalletTransferHandlerTests
             .FromUser(fromUser).ToUser(toUser).WithAmount(50_000m).WithOtpHash(hash).Build();
 
         var senderWallet = new WalletBuilder().WithOwnerId(fromUser).Build();
-        senderWallet.Credit(Money.Create(200_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        senderWallet.Credit(Money.Create(200_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         var recipientWallet = new WalletBuilder().WithOwnerId(toUser).Build();
         var recipient = new UserBuilder().WithPhoneNumber(PhoneNumber.Create("09121234567")).Build();
 
@@ -166,7 +166,7 @@ public sealed class ConfirmWalletTransferHandlerTests
         var fromUser = UserId.NewId();
         _currentUserService.UserId.Returns(fromUser.Value);
         var transfer = new WalletTransferBuilder().FromUser(fromUser).ToUser(UserId.NewId()).WithAmount(50_000m).Build();
-        transfer.Cancel(fromUser);
+        transfer.Cancel(fromUser, DateTime.UtcNow);
 
         _transferRepository.GetByIdAsync(Arg.Any<WalletTransferId>(), Arg.Any<CancellationToken>()).Returns(transfer);
         _transferRepository.GetByIdForUpdateAsync(Arg.Any<WalletTransferId>(), Arg.Any<CancellationToken>()).Returns(transfer);
