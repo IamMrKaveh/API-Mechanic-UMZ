@@ -22,15 +22,15 @@ public sealed class UserOtp : AggregateRoot<OtpId>
     public DateTime CreatedAt { get; private set; }
     public DateTime? VerifiedAt { get; private set; }
 
-    public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
-    public bool IsUsable => !IsVerified && !IsExpired && !IsLockedOut;
+    public bool IsExpired(DateTime now) => now >= ExpiresAt;
+    public bool IsUsable(DateTime now) => !IsVerified && !IsExpired(now) && !IsLockedOut;
     public bool IsLockedOut => VerificationAttempts >= MaxVerificationAttempts;
     public int RemainingAttempts => Math.Max(0, MaxVerificationAttempts - VerificationAttempts);
 
-    public TimeSpan? GetTimeUntilExpiry()
+    public TimeSpan? GetTimeUntilExpiry(DateTime now)
     {
-        if (IsExpired) return null;
-        var remaining = ExpiresAt - DateTime.UtcNow;
+        if (IsExpired(now)) return null;
+        var remaining = ExpiresAt - now;
         return remaining > TimeSpan.Zero ? remaining : null;
     }
 
@@ -38,7 +38,8 @@ public sealed class UserOtp : AggregateRoot<OtpId>
         UserId userId,
         OtpCode code,
         OtpPurpose purpose,
-        TimeSpan validity)
+        TimeSpan validity,
+        DateTime now)
     {
         Guard.Against.Null(userId, nameof(userId));
         Guard.Against.Null(code, nameof(code));
@@ -57,20 +58,20 @@ public sealed class UserOtp : AggregateRoot<OtpId>
             Purpose = purpose,
             IsVerified = false,
             VerificationAttempts = 0,
-            ExpiresAt = DateTime.UtcNow.Add(validity),
-            CreatedAt = DateTime.UtcNow
+            ExpiresAt = now.Add(validity),
+            CreatedAt = now
         };
 
         otp.RaiseDomainEvent(new OtpGeneratedEvent(otp.Id, userId, purpose, otp.ExpiresAt));
         return otp;
     }
 
-    public void Verify(OtpCode providedCode)
+    public void Verify(OtpCode providedCode, DateTime now)
     {
         if (IsVerified)
             throw new OtpAlreadyVerifiedException(Id);
 
-        if (IsExpired)
+        if (IsExpired(now))
             throw new OtpExpiredException(Id);
 
         if (IsLockedOut)
@@ -85,13 +86,13 @@ public sealed class UserOtp : AggregateRoot<OtpId>
         }
 
         IsVerified = true;
-        VerifiedAt = DateTime.UtcNow;
+        VerifiedAt = now;
         RaiseDomainEvent(new OtpVerifiedEvent(Id, UserId, Purpose));
     }
 
-    public void MarkExpired()
+    public void MarkExpired(DateTime now)
     {
-        if (IsVerified || IsExpired is false)
+        if (IsVerified || IsExpired(now) is false)
             return;
 
         RaiseDomainEvent(new OtpExpiredEvent(Id, UserId, Purpose));

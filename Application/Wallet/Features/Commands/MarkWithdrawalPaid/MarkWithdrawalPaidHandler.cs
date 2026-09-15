@@ -2,6 +2,7 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.MarkWithdrawalPaid;
 
@@ -11,6 +12,7 @@ public sealed class MarkWithdrawalPaidHandler(
     IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<MarkWithdrawalPaidCommand, Unit>
 {
@@ -47,13 +49,15 @@ public sealed class MarkWithdrawalPaidHandler(
             if (wallet is null)
                 return ServiceResult<Unit>.NotFound("کیف پول کاربر یافت نشد.");
 
-            wallet.ReleaseReservation(withdrawal.ReservationId);
+            var now = dateTimeProvider.UtcNow;
+            wallet.ReleaseReservation(withdrawal.ReservationId, now);
             wallet.Debit(
                 withdrawal.Amount,
                 $"برداشت به شماره پیگیری {request.BankReferenceNumber}",
-                withdrawal.Id.Value.ToString());
+                withdrawal.Id.Value.ToString(),
+                now);
 
-            withdrawal.MarkPaid(adminId, request.BankReferenceNumber);
+            withdrawal.MarkPaid(adminId, request.BankReferenceNumber, now);
 
             walletRepository.Update(wallet);
             withdrawalRepository.Update(withdrawal);

@@ -2,12 +2,14 @@
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.ReserveWallet;
 
 public class ReserveWalletHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider,
     IAuditService auditService)
     : ICommandHandler<ReserveWalletCommand, Unit>
 {
@@ -25,10 +27,12 @@ public class ReserveWalletHandler(
 
             var reservationId = WalletReservationId.NewId();
 
+            var now = dateTimeProvider.UtcNow;
             wallet.CreateReservation(
                 reservationId,
                 Money.FromDecimal(request.Amount),
                 $"reservation-{request.WalletId}",
+                now,
                 request.ExpiresAt);
 
             walletRepository.Update(wallet);

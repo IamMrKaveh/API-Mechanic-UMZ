@@ -3,6 +3,7 @@ using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Auth.Features.Commands.SendOtp;
 
@@ -11,7 +12,8 @@ public class SendOtpHandler(
     IOtpService otpService,
     IOtpRepository otpRepository,
     IUserRepository userRepository,
-    IInitialAdminOptions initialAdminOptions)
+    IInitialAdminOptions initialAdminOptions,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<SendOtpCommand>
 {
     public async Task<ServiceResult> Handle(SendOtpCommand request, CancellationToken ct)
@@ -36,7 +38,8 @@ public class SendOtpHandler(
             return ServiceResult.Failure("تعداد درخواست OTP بیش از حد مجاز است. لطفاً بعداً تلاش کنید.");
 
         var otpCode = OtpCode.Generate(6);
-        var otp = UserOtp.Create(user.Id, otpCode, request.Purpose, TimeSpan.FromMinutes(2));
+        var now = dateTimeProvider.UtcNow;
+        var otp = UserOtp.Create(user.Id, otpCode, request.Purpose, TimeSpan.FromMinutes(2), now);
         await otpRepository.AddAsync(otp, ct);
 
         var sendResult = await otpService.SendOtpAsync(phoneNumber, otpCode, request.Purpose, ct);

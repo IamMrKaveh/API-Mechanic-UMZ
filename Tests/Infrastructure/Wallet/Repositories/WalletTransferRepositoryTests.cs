@@ -109,7 +109,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
 
         var loaded = await _sut.GetByIdAsync(transfer.Id);
         loaded.ShouldNotBeNull();
-        loaded!.MarkCompleted();
+        loaded!.MarkCompleted(DateTime.UtcNow);
 
         _sut.Update(loaded);
         await _context.SaveChangesAsync();
@@ -151,18 +151,18 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         var day = DateTime.UtcNow.Date;
 
         var completed1 = new WalletTransferBuilder().FromUser(target).WithAmount(20_000m).Build();
-        completed1.MarkCompleted();
+        completed1.MarkCompleted(DateTime.UtcNow);
         completed1.ClearDomainEvents();
 
         var completed2 = new WalletTransferBuilder().FromUser(target).WithAmount(35_000m).Build();
-        completed2.MarkCompleted();
+        completed2.MarkCompleted(DateTime.UtcNow);
         completed2.ClearDomainEvents();
 
         var pending = new WalletTransferBuilder().FromUser(target).WithAmount(99_000m).Build();
         pending.ClearDomainEvents();
 
         var otherUser = new WalletTransferBuilder().WithAmount(50_000m).Build();
-        otherUser.MarkCompleted();
+        otherUser.MarkCompleted(DateTime.UtcNow);
         otherUser.ClearDomainEvents();
 
         await _sut.AddAsync(completed1);
@@ -208,7 +208,7 @@ public class WalletTransferRepositoryTests(PostgresContainerFixture fixture) : I
         var inside2 = new WalletTransferBuilder().FromUser(target).Build();
         inside2.ClearDomainEvents();
         var completed = new WalletTransferBuilder().FromUser(target).Build();
-        completed.MarkCompleted();
+        completed.MarkCompleted(DateTime.UtcNow);
         completed.ClearDomainEvents();
 
         await _sut.AddAsync(inside1);

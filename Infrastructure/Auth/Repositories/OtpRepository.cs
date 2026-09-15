@@ -6,7 +6,7 @@ using Domain.User.ValueObjects;
 
 namespace Infrastructure.Auth.Repositories;
 
-public sealed class OtpRepository(DBContext context) : IOtpRepository
+public sealed class OtpRepository(DBContext context, IDateTimeProvider dateTimeProvider) : IOtpRepository
 {
     public async Task<UserOtp?> GetByIdAsync(OtpId otpId, CancellationToken ct = default)
     {
@@ -18,7 +18,7 @@ public sealed class OtpRepository(DBContext context) : IOtpRepository
         OtpPurpose purpose,
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
+        var now = dateTimeProvider.UtcNow;
         return await context.UserOtps
             .Where(o => o.UserId == userId
                      && o.Purpose == purpose
@@ -34,7 +34,7 @@ public sealed class OtpRepository(DBContext context) : IOtpRepository
         TimeSpan window,
         CancellationToken ct = default)
     {
-        var since = DateTime.UtcNow - window;
+        var since = dateTimeProvider.UtcNow - window;
         return await context.UserOtps
             .CountAsync(o => o.UserId == userId
                           && o.Purpose == purpose
@@ -56,7 +56,7 @@ public sealed class OtpRepository(DBContext context) : IOtpRepository
         OtpPurpose purpose,
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
+        var now = dateTimeProvider.UtcNow;
         var activeOtps = await context.UserOtps
             .Where(o => o.UserId == userId
                      && o.Purpose == purpose
@@ -65,6 +65,6 @@ public sealed class OtpRepository(DBContext context) : IOtpRepository
             .ToListAsync(ct);
 
         foreach (var otp in activeOtps)
-            otp.MarkExpired();
+            otp.MarkExpired(now);
     }
 }

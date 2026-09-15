@@ -149,7 +149,7 @@ public class VerifyOtpHandlerTests
         var phoneNumber = PhoneNumber.Create("09123456789");
         var user = BuildUserWithPhone(phoneNumber);
         var otp = BuildOtp(user.Id.Value, ValidCode);
-        otp.Verify(OtpCode.Create(ValidCode));
+        otp.Verify(OtpCode.Create(ValidCode), _now);
 
         _userRepository
             .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
@@ -177,10 +177,7 @@ public class VerifyOtpHandlerTests
         var otp = new UserOtpBuilder()
             .WithUserId(user.Id)
             .WithCode(ValidCode)
-            .WithValidity(TimeSpan.FromMilliseconds(10))
-            .Build();
-
-        await Task.Delay(100);
+            .Build(_now.AddMinutes(-6));
 
         _userRepository
             .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
@@ -209,7 +206,7 @@ public class VerifyOtpHandlerTests
         var wrong = OtpCode.Create(WrongCode);
 
         for (var i = 0; i < 5; i++)
-            Should.Throw<InvalidOtpCodeException>(() => otp.Verify(wrong));
+            Should.Throw<InvalidOtpCodeException>(() => otp.Verify(wrong, _now));
 
         _userRepository
             .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())

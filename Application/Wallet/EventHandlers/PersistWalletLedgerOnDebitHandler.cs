@@ -26,7 +26,7 @@ public sealed class PersistWalletLedgerOnDebitHandler(
 
         try
         {
-            var entry = WalletLedgerEntry.FromDebitEvent(evt);
+            var entry = WalletLedgerEntry.FromDebitEvent(evt, evt.OccurredAt);
             await ledgerRepository.AddAsync(entry, ct);
             await unitOfWork.SaveChangesAsync(ct);
         }

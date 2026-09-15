@@ -51,7 +51,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
 
         var wallet = new WalletBuilder().WithOwnerId(user.Id).Build();
         if (initialCredit > 0)
-            wallet.Credit(Money.Create(initialCredit, "IRT"), "seed", Guid.NewGuid().ToString());
+            wallet.Credit(Money.Create(initialCredit, "IRT"), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow);
         wallet.ClearDomainEvents();
         _context.Wallets.Add(wallet);
 
@@ -282,7 +282,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
     public async Task GetOverviewPageAsync_ReturnsUserWalletsWithBalancesReservationsAndFullName()
     {
         var (user, wallet) = await SeedUserAndWalletAsync("Reza", "Kazemi", "09121213000", initialCredit: 500_000m);
-        wallet.CreateReservation(WalletReservationId.NewId(), Money.Create(100_000m, "IRT"), "test");
+        wallet.CreateReservation(WalletReservationId.NewId(), Money.Create(100_000m, "IRT"), "test", DateTime.UtcNow);
         wallet.ClearDomainEvents();
         _context.Wallets.Update(wallet);
         await _context.SaveChangesAsync();

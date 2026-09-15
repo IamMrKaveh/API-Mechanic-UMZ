@@ -4,6 +4,7 @@ using Domain.Wallet.Enums;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.RequestWithdrawal;
 
@@ -12,6 +13,7 @@ public sealed class RequestWithdrawalHandler(
     IWalletWithdrawalRepository withdrawalRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<RequestWithdrawalCommand, Guid>
 {
@@ -71,10 +73,11 @@ public sealed class RequestWithdrawalHandler(
                 return ServiceResult<Guid>.Conflict(
                     $"شما بیش از {MaxPendingPerUser} درخواست برداشت در انتظار بررسی دارید.");
 
+            var now = dateTimeProvider.UtcNow;
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)
             {
-                wallet = Domain.Wallet.Aggregates.Wallet.Create(userId);
+                wallet = Domain.Wallet.Aggregates.Wallet.Create(userId, now);
                 await walletRepository.AddAsync(wallet, ct);
             }
 
@@ -86,7 +89,7 @@ public sealed class RequestWithdrawalHandler(
                     $"موجودی قابل برداشت کافی نیست. موجودی فعلی: {wallet.AvailableBalance.Amount:N0} تومان.");
 
             var reservationId = WalletReservationId.NewId();
-            wallet.CreateReservation(reservationId, amount, "withdrawal-request");
+            wallet.CreateReservation(reservationId, amount, "withdrawal-request", now);
 
             var withdrawal = WalletWithdrawalRequest.Create(
                 userId,
@@ -94,6 +97,7 @@ public sealed class RequestWithdrawalHandler(
                 iban,
                 accountHolder,
                 reservationId,
+                now,
                 description);
 
             walletRepository.Update(wallet);

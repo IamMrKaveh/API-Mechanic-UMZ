@@ -30,6 +30,7 @@ public sealed class ConfirmWalletTransferHandler(
     {
         try
         {
+            var now = dateTimeProvider.UtcNow;
             var transferId = WalletTransferId.From(request.TransferId);
             var fromUserId = UserId.From(currentUserService.UserId!.Value);
 
@@ -84,7 +85,7 @@ public sealed class ConfirmWalletTransferHandler(
 
             try
             {
-                transfer.VerifyOtp(hash);
+                transfer.VerifyOtp(hash, now);
             }
             catch (WalletTransferOtpMismatchException ex)
             {
@@ -102,7 +103,7 @@ public sealed class ConfirmWalletTransferHandler(
             var senderWallet = await walletRepository.GetByUserIdForUpdateAsync(transfer.FromUserId, ct);
             if (senderWallet is null)
             {
-                transfer.MarkFailed("کیف پول فرستنده یافت نشد.");
+                transfer.MarkFailed("کیف پول فرستنده یافت نشد.", now);
                 transferRepository.Update(transfer);
                 await unitOfWork.SaveChangesAsync(ct);
                 return ServiceResult<ConfirmWalletTransferResultDto>.Failure("کیف پول فرستنده یافت نشد.");
@@ -113,12 +114,13 @@ public sealed class ConfirmWalletTransferHandler(
             {
                 recipientWallet = Domain.Wallet.Aggregates.Wallet.Create(
                     transfer.ToUserId,
+                    now,
                     transfer.Amount.Currency);
                 await walletRepository.AddAsync(recipientWallet, ct);
             }
             else if (!recipientWallet.IsActive)
             {
-                transfer.MarkFailed("کیف پول گیرنده در حال حاضر مسدود است.");
+                transfer.MarkFailed("کیف پول گیرنده در حال حاضر مسدود است.", now);
                 transferRepository.Update(transfer);
                 await unitOfWork.SaveChangesAsync(ct);
                 return ServiceResult<ConfirmWalletTransferResultDto>.Failure("کیف پول گیرنده در حال حاضر مسدود است.");
@@ -128,25 +130,25 @@ public sealed class ConfirmWalletTransferHandler(
             {
                 if (senderWallet.Id.Value.CompareTo(recipientWallet.Id.Value) < 0)
                 {
-                    senderWallet.Debit(transfer.Amount, BuildDebitDescription(transfer), transfer.CorrelationId);
-                    recipientWallet.Credit(transfer.Amount, BuildCreditDescription(transfer), transfer.CorrelationId);
+                    senderWallet.Debit(transfer.Amount, BuildDebitDescription(transfer), transfer.CorrelationId, now);
+                    recipientWallet.Credit(transfer.Amount, BuildCreditDescription(transfer), transfer.CorrelationId, now);
                 }
                 else
                 {
-                    recipientWallet.Credit(transfer.Amount, BuildCreditDescription(transfer), transfer.CorrelationId);
-                    senderWallet.Debit(transfer.Amount, BuildDebitDescription(transfer), transfer.CorrelationId);
+                    recipientWallet.Credit(transfer.Amount, BuildCreditDescription(transfer), transfer.CorrelationId, now);
+                    senderWallet.Debit(transfer.Amount, BuildDebitDescription(transfer), transfer.CorrelationId, now);
                 }
             }
             catch (InsufficientWalletBalanceException ex)
             {
-                transfer.MarkFailed(ex.Message);
+                transfer.MarkFailed(ex.Message, now);
                 transferRepository.Update(transfer);
                 await unitOfWork.SaveChangesAsync(ct);
                 return ServiceResult<ConfirmWalletTransferResultDto>.Failure(ex.Message);
             }
             catch (WalletInactiveException ex)
             {
-                transfer.MarkFailed(ex.Message);
+                transfer.MarkFailed(ex.Message, now);
                 transferRepository.Update(transfer);
                 await unitOfWork.SaveChangesAsync(ct);
                 return ServiceResult<ConfirmWalletTransferResultDto>.Failure(ex.Message);
@@ -155,7 +157,7 @@ public sealed class ConfirmWalletTransferHandler(
             walletRepository.Update(senderWallet);
             walletRepository.Update(recipientWallet);
 
-            transfer.MarkCompleted();
+            transfer.MarkCompleted(now);
             transferRepository.Update(transfer);
 
             await unitOfWork.SaveChangesAsync(ct);
@@ -177,7 +179,7 @@ public sealed class ConfirmWalletTransferHandler(
                 Amount = transfer.Amount.Amount,
                 RecipientDisplayName = recipientName,
                 CorrelationId = transfer.CorrelationId,
-                CompletedAt = transfer.CompletedAt ?? dateTimeProvider.UtcNow
+                CompletedAt = transfer.CompletedAt ?? now
             });
         }
         catch (ConcurrencyException)

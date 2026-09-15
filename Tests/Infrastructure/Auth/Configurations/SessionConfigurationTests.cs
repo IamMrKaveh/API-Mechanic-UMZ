@@ -133,7 +133,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
         await _context.UserSessions.AddAsync(first);
         await _context.SaveChangesAsync();
 
-        first.Revoke(SessionRevocationReason.UserRequested);
+        first.Revoke(DateTime.UtcNow, SessionRevocationReason.UserRequested);
         first.ClearDomainEvents();
         await _context.SaveChangesAsync();
 
@@ -170,7 +170,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
         await _context.UserSessions.AddAsync(session);
         await _context.SaveChangesAsync();
 
-        session.Revoke(reason);
+        session.Revoke(DateTime.UtcNow, reason);
         session.ClearDomainEvents();
         await _context.SaveChangesAsync();
 
@@ -200,7 +200,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
         var initialRowVersion = _context.Entry(session).Property<byte[]>("RowVersion").CurrentValue;
         initialRowVersion.ShouldNotBeNull();
 
-        session.UpdateActivity(DateTime.UtcNow.AddMinutes(1));
+        session.UpdateActivity(DateTime.UtcNow.AddMinutes(1), DateTime.UtcNow);
         await _context.SaveChangesAsync();
 
         var updatedRowVersion = _context.Entry(session).Property<byte[]>("RowVersion").CurrentValue;

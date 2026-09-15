@@ -6,7 +6,7 @@ using Domain.User.ValueObjects;
 
 namespace Infrastructure.Auth.Repositories;
 
-public sealed class SessionRepository(DBContext context) : ISessionRepository
+public sealed class SessionRepository(DBContext context, IDateTimeProvider dateTimeProvider) : ISessionRepository
 {
     public async Task<UserSession?> GetByIdAsync(SessionId sessionId, CancellationToken ct = default)
     {
@@ -37,8 +37,9 @@ public sealed class SessionRepository(DBContext context) : ISessionRepository
             .Where(s => s.UserId == userId && !s.IsRevoked)
             .ToListAsync(ct);
 
+        var now = dateTimeProvider.UtcNow;
         foreach (var session in sessions)
-            session.Revoke(reason);
+            session.Revoke(now, reason);
     }
 
     public async Task RevokeAllExceptAsync(UserId userId, SessionId exceptSessionId, SessionRevocationReason reason, CancellationToken ct = default)
@@ -47,13 +48,14 @@ public sealed class SessionRepository(DBContext context) : ISessionRepository
             .Where(s => s.UserId == userId && !s.IsRevoked && s.Id != exceptSessionId)
             .ToListAsync(ct);
 
+        var now = dateTimeProvider.UtcNow;
         foreach (var session in sessions)
-            session.Revoke(reason);
+            session.Revoke(now, reason);
     }
 
     public async Task<IReadOnlyList<UserSession>> GetActiveByUserIdAsync(UserId userId, CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
+        var now = dateTimeProvider.UtcNow;
         var results = await context.UserSessions
             .Where(s => s.UserId == userId && !s.IsRevoked && s.ExpiresAt > now)
             .OrderByDescending(s => s.CreatedAt)

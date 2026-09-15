@@ -2,6 +2,7 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.RejectWalletDebit;
 
@@ -10,6 +11,7 @@ public sealed class RejectWalletDebitHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<RejectWalletDebitCommand, Unit>
 {
@@ -41,7 +43,8 @@ public sealed class RejectWalletDebitHandler(
             if (wallet is null)
                 return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
 
-            wallet.RejectDebitRequest(requestId, currentUserId, request.RejectionReason?.Trim());
+            var now = dateTimeProvider.UtcNow;
+            wallet.RejectDebitRequest(requestId, currentUserId, request.RejectionReason?.Trim(), now);
             walletRepository.Update(wallet);
             await unitOfWork.SaveChangesAsync(ct);
 

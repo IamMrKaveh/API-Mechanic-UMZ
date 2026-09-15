@@ -2,6 +2,7 @@
 using Application.Common.Interfaces;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Presentation.Common.Middleware;
 
@@ -36,14 +37,16 @@ public sealed class SessionActivityMiddleware(
 
             var sessionRepository = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var dateTimeProvider = scope.ServiceProvider.GetRequiredService<IDateTimeProvider>();
 
             var sessionId = SessionId.From(currentUser.SessionId.Value);
             var session = await sessionRepository.GetByIdAsync(sessionId, context.RequestAborted);
 
-            if (session is null || !session.IsActive)
+            var now = dateTimeProvider.UtcNow;
+            if (session is null || !session.IsActive(now))
                 return;
 
-            session.UpdateActivity(DateTime.UtcNow);
+            session.UpdateActivity(now, now);
             sessionRepository.Update(session);
             await unitOfWork.SaveChangesAsync(context.RequestAborted);
             await cache.SetAsync(cacheKey, true, ThrottleWindow, context.RequestAborted);

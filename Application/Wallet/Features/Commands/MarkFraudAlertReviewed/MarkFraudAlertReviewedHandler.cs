@@ -1,6 +1,7 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.MarkFraudAlertReviewed;
 
@@ -8,6 +9,7 @@ public sealed class MarkFraudAlertReviewedHandler(
     IWalletFraudAlertRepository repository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<MarkFraudAlertReviewedCommand, Unit>
 {
@@ -22,7 +24,7 @@ public sealed class MarkFraudAlertReviewedHandler(
             if (alert is null)
                 return ServiceResult<Unit>.NotFound("هشدار مورد نظر یافت نشد.");
 
-            alert.MarkAsReviewed(adminId, request.Note);
+            alert.MarkAsReviewed(adminId, request.Note, dateTimeProvider.UtcNow);
 
             repository.Update(alert);
             await unitOfWork.SaveChangesAsync(ct);

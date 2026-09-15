@@ -1,12 +1,14 @@
 using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Queries.GetWalletBalance;
 
 public sealed class GetWalletBalanceHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : IQueryHandler<GetWalletBalanceQuery, WalletDto>
 {
@@ -20,7 +22,7 @@ public sealed class GetWalletBalanceHandler(
 
         if (wallet is null)
         {
-            wallet = Domain.Wallet.Aggregates.Wallet.Create(userId);
+            wallet = Domain.Wallet.Aggregates.Wallet.Create(userId, dateTimeProvider.UtcNow);
             await walletRepository.AddAsync(wallet, ct);
             await unitOfWork.SaveChangesAsync(ct);
         }

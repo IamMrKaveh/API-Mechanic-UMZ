@@ -43,7 +43,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
     public Money AvailableBalance => Balance.Subtract(ReservedBalance);
 
-    public static Wallet Create(UserId ownerId, string currency = "IRT")
+    public static Wallet Create(UserId ownerId, DateTime now, string currency = "IRT")
     {
         Guard.Against.Null(ownerId, nameof(ownerId));
         Guard.Against.NullOrWhiteSpace(currency, nameof(currency));
@@ -54,8 +54,8 @@ public sealed class Wallet : AggregateRoot<WalletId>
             OwnerId = ownerId,
             Balance = Money.Zero(currency),
             IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         wallet.RaiseDomainEvent(new WalletCreatedEvent(wallet.Id, ownerId, currency));
@@ -63,21 +63,21 @@ public sealed class Wallet : AggregateRoot<WalletId>
     }
 
     public void Credit(Money amount, string description, string referenceId,
-        string? idempotencyKey = null, string? correlationId = null)
+        DateTime now, string? idempotencyKey = null, string? correlationId = null)
     {
         ValidateAmount(amount);
         Guard.Against.NullOrWhiteSpace(description, nameof(description));
         Guard.Against.NullOrWhiteSpace(referenceId, nameof(referenceId));
 
         Balance = Balance.Add(amount);
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
 
         RaiseDomainEvent(new WalletCreditedEvent(
             Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey, correlationId));
     }
 
     public void Debit(Money amount, string description, string referenceId,
-        string? idempotencyKey = null, string? correlationId = null)
+        DateTime now, string? idempotencyKey = null, string? correlationId = null)
     {
         EnsureActive();
         ValidateAmount(amount);
@@ -88,14 +88,14 @@ public sealed class Wallet : AggregateRoot<WalletId>
             throw new InsufficientWalletBalanceException(Id, amount, AvailableBalance);
 
         Balance = Balance.Subtract(amount);
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
 
         RaiseDomainEvent(new WalletDebitedEvent(
             Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey, correlationId));
     }
 
     public WalletDebitRequest CreateDebitRequest(WalletDebitRequestId requestId, Money amount,
-        string reason, string? description, UserId requestedBy, TimeSpan expiryDuration)
+        string reason, string? description, UserId requestedBy, TimeSpan expiryDuration, DateTime now)
     {
         EnsureActive();
         Guard.Against.Null(requestId, nameof(requestId));
@@ -111,14 +111,15 @@ public sealed class Wallet : AggregateRoot<WalletId>
             Id,
             amount,
             $"AdminDebitRequest:{requestId.Value}",
-            DateTime.UtcNow.Add(expiryDuration));
+            now,
+            now.Add(expiryDuration));
         _reservations.Add(reservation);
 
         var request = WalletDebitRequest.Create(
             requestId, Id, OwnerId, amount, reason, description,
-            requestedBy, reservation.Id, DateTime.UtcNow.Add(expiryDuration));
+            requestedBy, reservation.Id, now.Add(expiryDuration), now);
         _debitRequests.Add(request);
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
 
         RaiseDomainEvent(new WalletDebitRequestCreatedEvent(
             Id, OwnerId, requestId, amount, reason, requestedBy));
@@ -126,7 +127,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
         return request;
     }
 
-    public void ApproveDebitRequest(WalletDebitRequestId requestId, UserId approvedBy)
+    public void ApproveDebitRequest(WalletDebitRequestId requestId, UserId approvedBy, DateTime now)
     {
         Guard.Against.Null(requestId, nameof(requestId));
         Guard.Against.Null(approvedBy, nameof(approvedBy));
@@ -140,19 +141,19 @@ public sealed class Wallet : AggregateRoot<WalletId>
         if (request.Status != WalletDebitRequestStatus.Pending)
             throw new InvalidWalletDebitRequestStatusException(request.Status.ToString());
 
-        if (request.ExpiresAt <= DateTime.UtcNow)
+        if (request.ExpiresAt <= now)
         {
-            request.MarkExpired();
-            ReleaseReservationInternal(request.ReservationId);
-            UpdatedAt = DateTime.UtcNow;
+            request.MarkExpired(now);
+            ReleaseReservationInternal(request.ReservationId, now);
+            UpdatedAt = now;
             throw new WalletDebitRequestExpiredException();
         }
 
-        ReleaseReservationInternal(request.ReservationId);
+        ReleaseReservationInternal(request.ReservationId, now);
 
         Balance = Balance.Subtract(request.Amount);
-        request.Approve(approvedBy);
-        UpdatedAt = DateTime.UtcNow;
+        request.Approve(approvedBy, now);
+        UpdatedAt = now;
 
         var deterministicIdempotencyKey = $"debit-req-approve:{requestId.Value:N}";
 
@@ -166,7 +167,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
             Id, OwnerId, requestId, request.Amount, approvedBy));
     }
 
-    public void RejectDebitRequest(WalletDebitRequestId requestId, UserId rejectedBy, string? rejectionReason)
+    public void RejectDebitRequest(WalletDebitRequestId requestId, UserId rejectedBy, string? rejectionReason, DateTime now)
     {
         Guard.Against.Null(requestId, nameof(requestId));
         Guard.Against.Null(rejectedBy, nameof(rejectedBy));
@@ -180,15 +181,15 @@ public sealed class Wallet : AggregateRoot<WalletId>
         if (request.Status != WalletDebitRequestStatus.Pending)
             throw new InvalidWalletDebitRequestStatusException(request.Status.ToString());
 
-        ReleaseReservationInternal(request.ReservationId);
-        request.Reject(rejectedBy, rejectionReason);
-        UpdatedAt = DateTime.UtcNow;
+        ReleaseReservationInternal(request.ReservationId, now);
+        request.Reject(rejectedBy, rejectionReason, now);
+        UpdatedAt = now;
 
         RaiseDomainEvent(new WalletDebitRequestRejectedEvent(
             Id, OwnerId, requestId, request.Amount, rejectedBy, rejectionReason));
     }
 
-    public void CancelDebitRequest(WalletDebitRequestId requestId, UserId cancelledBy)
+    public void CancelDebitRequest(WalletDebitRequestId requestId, UserId cancelledBy, DateTime now)
     {
         Guard.Against.Null(requestId, nameof(requestId));
         Guard.Against.Null(cancelledBy, nameof(cancelledBy));
@@ -199,15 +200,15 @@ public sealed class Wallet : AggregateRoot<WalletId>
         if (request.Status != WalletDebitRequestStatus.Pending)
             throw new InvalidWalletDebitRequestStatusException(request.Status.ToString());
 
-        ReleaseReservationInternal(request.ReservationId);
-        request.Cancel(cancelledBy);
-        UpdatedAt = DateTime.UtcNow;
+        ReleaseReservationInternal(request.ReservationId, now);
+        request.Cancel(cancelledBy, now);
+        UpdatedAt = now;
 
         RaiseDomainEvent(new WalletDebitRequestCancelledEvent(
             Id, OwnerId, requestId, request.Amount, cancelledBy));
     }
 
-    public WalletReservation CreateReservation(WalletReservationId reservationId, Money amount, string purpose, DateTime? expiresAt = null)
+    public WalletReservation CreateReservation(WalletReservationId reservationId, Money amount, string purpose, DateTime now, DateTime? expiresAt = null)
     {
         EnsureActive();
         Guard.Against.Null(reservationId, nameof(reservationId));
@@ -217,34 +218,34 @@ public sealed class Wallet : AggregateRoot<WalletId>
         if (AvailableBalance.IsLessThan(amount))
             throw new InsufficientWalletBalanceException(Id, amount, AvailableBalance);
 
-        var reservation = WalletReservation.Create(reservationId, Id, amount, purpose, expiresAt);
+        var reservation = WalletReservation.Create(reservationId, Id, amount, purpose, now, expiresAt);
         _reservations.Add(reservation);
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
 
         RaiseDomainEvent(new WalletReservationCreatedEvent(Id, OwnerId, reservationId, amount, purpose));
         return reservation;
     }
 
-    public void ReleaseReservation(WalletReservationId reservationId)
+    public void ReleaseReservation(WalletReservationId reservationId, DateTime now)
     {
         Guard.Against.Null(reservationId, nameof(reservationId));
-        ReleaseReservationInternal(reservationId);
-        UpdatedAt = DateTime.UtcNow;
+        ReleaseReservationInternal(reservationId, now);
+        UpdatedAt = now;
     }
 
-    private void ReleaseReservationInternal(WalletReservationId reservationId)
+    private void ReleaseReservationInternal(WalletReservationId reservationId, DateTime now)
     {
         var reservation = _reservations.FirstOrDefault(r =>
             r.Id == reservationId && r.Status == WalletReservationStatus.Active);
         if (reservation is null)
             return;
 
-        reservation.Release();
+        reservation.Release(now);
 
         RaiseDomainEvent(new WalletReservationReleasedEvent(Id, OwnerId, reservationId, reservation.Amount));
     }
 
-    public void Freeze(string reason, UserId adminId)
+    public void Freeze(string reason, UserId adminId, DateTime now)
     {
         Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
         Guard.Against.Null(adminId, nameof(adminId));
@@ -253,14 +254,14 @@ public sealed class Wallet : AggregateRoot<WalletId>
 
         IsActive = false;
         FreezeReason = reason;
-        FrozenAt = DateTime.UtcNow;
+        FrozenAt = now;
         FrozenBy = adminId;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
 
         RaiseDomainEvent(new WalletFrozenEvent(Id, OwnerId, reason, adminId));
     }
 
-    public void Unfreeze(UserId adminId, string reason)
+    public void Unfreeze(UserId adminId, string reason, DateTime now)
     {
         Guard.Against.Null(adminId, nameof(adminId));
         Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
@@ -271,7 +272,7 @@ public sealed class Wallet : AggregateRoot<WalletId>
         FreezeReason = null;
         FrozenAt = null;
         FrozenBy = null;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
 
         RaiseDomainEvent(new WalletUnfrozenEvent(Id, OwnerId, adminId, reason));
     }

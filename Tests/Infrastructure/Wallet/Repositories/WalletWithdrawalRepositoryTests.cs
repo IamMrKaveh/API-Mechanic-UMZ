@@ -123,7 +123,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         var admin = UserId.NewId();
         var loaded = await _sut.GetByIdAsync(withdrawal.Id);
         loaded.ShouldNotBeNull();
-        loaded!.Approve(admin);
+        loaded!.Approve(admin, DateTime.UtcNow);
 
         _sut.Update(loaded);
         await _context.SaveChangesAsync();
@@ -150,7 +150,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         var pending2 = new WalletWithdrawalRequestBuilder().WithUserId(target).Build();
         pending2.ClearDomainEvents();
         var approved = new WalletWithdrawalRequestBuilder().WithUserId(target).Build();
-        approved.Approve(admin);
+        approved.Approve(admin, DateTime.UtcNow);
         approved.ClearDomainEvents();
 
         var otherUserPending = new WalletWithdrawalRequestBuilder().WithUserId(other).Build();
@@ -188,7 +188,7 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         var admin = UserId.NewId();
         var loaded = await _sut.GetByIdAsync(withdrawal.Id);
         loaded.ShouldNotBeNull();
-        loaded!.Reject(admin, "invalid IBAN owner");
+        loaded!.Reject(admin, "invalid IBAN owner", DateTime.UtcNow);
 
         _sut.Update(loaded);
         await _context.SaveChangesAsync();
@@ -213,8 +213,8 @@ public class WalletWithdrawalRepositoryTests(PostgresContainerFixture fixture) :
         var admin = UserId.NewId();
         var loaded = await _sut.GetByIdAsync(withdrawal.Id);
         loaded.ShouldNotBeNull();
-        loaded!.Approve(admin);
-        loaded.MarkPaid(admin, "BANK-TXN-100200");
+        loaded!.Approve(admin, DateTime.UtcNow);
+        loaded.MarkPaid(admin, "BANK-TXN-100200", DateTime.UtcNow);
 
         _sut.Update(loaded);
         await _context.SaveChangesAsync();

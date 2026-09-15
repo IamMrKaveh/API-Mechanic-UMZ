@@ -6,6 +6,7 @@ using Application.Wallet.Features.Commands.DebitWallet;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
@@ -16,7 +17,7 @@ namespace Tests.Application.Wallet.Features.Commands.DebitWallet;
 
 public class DebitWalletHandlerTests
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly DebitWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly DebitWalletHandler _sut;
 
     public DebitWalletHandlerTests()
     {
@@ -27,12 +28,14 @@ public class DebitWalletHandlerTests
             .Returns(_lockHandle);
 
         _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
 
         _sut = new DebitWalletHandler(
             _walletRepository,
             _unitOfWork,
             _auditService,
             _currentUserService,
+            _dateTimeProvider,
             _distributedLock);
     }
 
@@ -55,7 +58,7 @@ public class DebitWalletHandlerTests
     {
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(ownerId)).Build();
         if (balance > 0)
-            wallet.Credit(Money.Create(balance), "initial-fund", "seed-ref");
+            wallet.Credit(Money.Create(balance), "initial-fund", "seed-ref", DateTime.UtcNow);
         return wallet;
     }
 
@@ -181,7 +184,7 @@ public class DebitWalletHandlerTests
     {
         var command = ValidCommand(amount: 10_000m);
         var wallet = FundedWallet(command.UserId, balance: 100_000m);
-        wallet.Freeze("compliance-hold", UserId.NewId());
+        wallet.Freeze("compliance-hold", UserId.NewId(), DateTime.UtcNow);
 
         _walletRepository
             .HasIdempotencyKeyAsync(Arg.Any<UserId>(), command.IdempotencyKey, Arg.Any<CancellationToken>())

@@ -5,6 +5,7 @@ using Application.Common.Interfaces;
 using Application.Wallet.Features.Commands.FreezeWallet;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
@@ -15,7 +16,7 @@ namespace Tests.Application.Wallet.Features.Commands.FreezeWallet;
 
 public class FreezeWalletHandlerTests
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly FreezeWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly FreezeWalletHandler _sut;
 
     public FreezeWalletHandlerTests()
     {
@@ -26,12 +27,14 @@ public class FreezeWalletHandlerTests
             .Returns(_lockHandle);
 
         _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
 
         _sut = new FreezeWalletHandler(
             _walletRepository,
             _unitOfWork,
             _distributedLock,
             _auditService,
+            _dateTimeProvider,
             _currentUserService);
     }
 
@@ -98,7 +101,7 @@ public class FreezeWalletHandlerTests
         var command = ValidCommand(reason: "compliance-hold");
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
         var initialAdmin = UserId.NewId();
-        wallet.Freeze("original-freeze", initialAdmin);
+        wallet.Freeze("original-freeze", initialAdmin, DateTime.UtcNow);
 
         _walletRepository
             .GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())

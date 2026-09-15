@@ -1,5 +1,6 @@
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.CreditWallet;
 
@@ -8,6 +9,7 @@ public class CreditWalletHandler(
     IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : ICommandHandler<CreditWalletCommand, Unit>
 {
@@ -33,10 +35,11 @@ public class CreditWalletHandler(
             if (alreadyProcessed)
                 return ServiceResult<Unit>.Success(Unit.Value);
 
+            var now = dateTimeProvider.UtcNow;
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
             if (wallet is null)
             {
-                wallet = Domain.Wallet.Aggregates.Wallet.Create(userId);
+                wallet = Domain.Wallet.Aggregates.Wallet.Create(userId, now);
                 await walletRepository.AddAsync(wallet, ct);
             }
 
@@ -46,7 +49,7 @@ public class CreditWalletHandler(
             if (wallet.IsActive is false && currentUserService.IsAdmin)
             {
                 adminIdForUnfreeze = UserId.From(currentUserService.UserId!.Value);
-                wallet.Unfreeze(adminIdForUnfreeze, AutoUnfreezeReason);
+                wallet.Unfreeze(adminIdForUnfreeze, AutoUnfreezeReason, now);
                 autoUnfrozen = true;
             }
 
@@ -57,6 +60,7 @@ public class CreditWalletHandler(
                 amount,
                 effectiveDescription,
                 request.ReferenceId,
+                now,
                 request.IdempotencyKey,
                 request.CorrelationId);
 

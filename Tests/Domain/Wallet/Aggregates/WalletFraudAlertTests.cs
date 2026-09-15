@@ -97,14 +97,14 @@ public class WalletFraudAlertTests
     public void Raise_WithNullWalletId_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            WalletFraudAlert.Raise(null!, UserId.NewId(), "R", FraudAlertSeverity.Low, "D"));
+            WalletFraudAlert.Raise(null!, UserId.NewId(), "R", FraudAlertSeverity.Low, "D", DateTime.UtcNow));
     }
 
     [Fact]
     public void Raise_WithNullUserId_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            WalletFraudAlert.Raise(WalletId.NewId(), null!, "R", FraudAlertSeverity.Low, "D"));
+            WalletFraudAlert.Raise(WalletId.NewId(), null!, "R", FraudAlertSeverity.Low, "D", DateTime.UtcNow));
     }
 
     [Theory]
@@ -114,7 +114,7 @@ public class WalletFraudAlertTests
     public void Raise_WithBlankRuleName_ThrowsArgumentException(string? ruleName)
     {
         Should.Throw<ArgumentException>(() =>
-            WalletFraudAlert.Raise(WalletId.NewId(), UserId.NewId(), ruleName!, FraudAlertSeverity.Low, "D"));
+            WalletFraudAlert.Raise(WalletId.NewId(), UserId.NewId(), ruleName!, FraudAlertSeverity.Low, "D", DateTime.UtcNow));
     }
 
     [Theory]
@@ -124,7 +124,7 @@ public class WalletFraudAlertTests
     public void Raise_WithBlankDescription_ThrowsArgumentException(string? description)
     {
         Should.Throw<ArgumentException>(() =>
-            WalletFraudAlert.Raise(WalletId.NewId(), UserId.NewId(), "R", FraudAlertSeverity.Low, description!));
+            WalletFraudAlert.Raise(WalletId.NewId(), UserId.NewId(), "R", FraudAlertSeverity.Low, description!, DateTime.UtcNow));
     }
 
     [Theory]
@@ -150,7 +150,7 @@ public class WalletFraudAlertTests
         var versionBefore = sut.Version;
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        sut.MarkAsReviewed(reviewer, "looked into it");
+        sut.MarkAsReviewed(reviewer, "looked into it", DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.Status.ShouldBe(FraudAlertStatus.Reviewed);
@@ -173,7 +173,7 @@ public class WalletFraudAlertTests
     {
         var sut = new WalletFraudAlertBuilder().Build();
 
-        sut.MarkAsReviewed(UserId.NewId(), null);
+        sut.MarkAsReviewed(UserId.NewId(), null, DateTime.UtcNow);
 
         sut.ReviewNote.ShouldBeNull();
     }
@@ -183,25 +183,25 @@ public class WalletFraudAlertTests
     {
         var sut = new WalletFraudAlertBuilder().Build();
 
-        Should.Throw<ArgumentNullException>(() => sut.MarkAsReviewed(null!, "note"));
+        Should.Throw<ArgumentNullException>(() => sut.MarkAsReviewed(null!, "note", DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkAsReviewed_OnAlreadyReviewedAlert_ThrowsDomainException()
     {
         var sut = new WalletFraudAlertBuilder().Build();
-        sut.MarkAsReviewed(UserId.NewId(), "first");
+        sut.MarkAsReviewed(UserId.NewId(), "first", DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkAsReviewed(UserId.NewId(), "second"));
+        Should.Throw<DomainException>(() => sut.MarkAsReviewed(UserId.NewId(), "second", DateTime.UtcNow));
     }
 
     [Fact]
     public void MarkAsReviewed_OnDismissedAlert_ThrowsDomainException()
     {
         var sut = new WalletFraudAlertBuilder().Build();
-        sut.Dismiss(UserId.NewId(), null);
+        sut.Dismiss(UserId.NewId(), null, DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.MarkAsReviewed(UserId.NewId(), "note"));
+        Should.Throw<DomainException>(() => sut.MarkAsReviewed(UserId.NewId(), "note", DateTime.UtcNow));
     }
 
     // ---------- Dismiss ----------
@@ -215,7 +215,7 @@ public class WalletFraudAlertTests
         var versionBefore = sut.Version;
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        sut.Dismiss(dismisser, "false positive");
+        sut.Dismiss(dismisser, "false positive", DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.Status.ShouldBe(FraudAlertStatus.Dismissed);
@@ -238,7 +238,7 @@ public class WalletFraudAlertTests
     {
         var sut = new WalletFraudAlertBuilder().Build();
 
-        sut.Dismiss(UserId.NewId(), null);
+        sut.Dismiss(UserId.NewId(), null, DateTime.UtcNow);
 
         sut.ReviewNote.ShouldBeNull();
     }
@@ -248,24 +248,24 @@ public class WalletFraudAlertTests
     {
         var sut = new WalletFraudAlertBuilder().Build();
 
-        Should.Throw<ArgumentNullException>(() => sut.Dismiss(null!, "note"));
+        Should.Throw<ArgumentNullException>(() => sut.Dismiss(null!, "note", DateTime.UtcNow));
     }
 
     [Fact]
     public void Dismiss_OnAlreadyDismissedAlert_ThrowsDomainException()
     {
         var sut = new WalletFraudAlertBuilder().Build();
-        sut.Dismiss(UserId.NewId(), null);
+        sut.Dismiss(UserId.NewId(), null, DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.Dismiss(UserId.NewId(), null));
+        Should.Throw<DomainException>(() => sut.Dismiss(UserId.NewId(), null, DateTime.UtcNow));
     }
 
     [Fact]
     public void Dismiss_OnReviewedAlert_ThrowsDomainException()
     {
         var sut = new WalletFraudAlertBuilder().Build();
-        sut.MarkAsReviewed(UserId.NewId(), null);
+        sut.MarkAsReviewed(UserId.NewId(), null, DateTime.UtcNow);
 
-        Should.Throw<DomainException>(() => sut.Dismiss(UserId.NewId(), null));
+        Should.Throw<DomainException>(() => sut.Dismiss(UserId.NewId(), null, DateTime.UtcNow));
     }
 }

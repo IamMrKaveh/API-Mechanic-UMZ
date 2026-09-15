@@ -3,6 +3,7 @@ using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Auth.Repositories;
 using Infrastructure.Persistence.Context;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Builders;
 
@@ -19,7 +20,9 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
 
         _context = _fixture.CreateContext();
-        _sut = new SessionRepository(_context);
+        var dateTimeProvider = Substitute.For<IDateTimeProvider>();
+        dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new SessionRepository(_context, dateTimeProvider);
 
         await Task.CompletedTask;
     }
@@ -112,7 +115,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
             .WithDeviceInfo("device-c")
             .WithExpiresAt(DateTime.UtcNow.AddDays(7))
             .Build();
-        revoked.Revoke(SessionRevocationReason.UserRequested);
+        revoked.Revoke(DateTime.UtcNow, SessionRevocationReason.UserRequested);
 
         await _sut.AddAsync(active1);
         await _sut.AddAsync(active2);
@@ -194,7 +197,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
             .WithDeviceInfo(deviceInfo)
             .WithExpiresAt(DateTime.UtcNow.AddDays(7))
             .Build();
-        session.Revoke(SessionRevocationReason.UserRequested);
+        session.Revoke(DateTime.UtcNow, SessionRevocationReason.UserRequested);
 
         await _sut.AddAsync(session);
         await _context.SaveChangesAsync();
@@ -237,7 +240,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
             .WithDeviceInfo("revoked")
             .WithExpiresAt(DateTime.UtcNow.AddMinutes(1))
             .Build();
-        revoked.Revoke(SessionRevocationReason.UserRequested);
+        revoked.Revoke(DateTime.UtcNow, SessionRevocationReason.UserRequested);
 
         await _sut.AddAsync(revoked);
         await _context.SaveChangesAsync();
@@ -356,7 +359,7 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
     public async Task RevocationReason_IsStoredAsString_RoundTripPreservesEnumValue()
     {
         var session = new UserSessionBuilder().WithDeviceInfo("d1").Build();
-        session.Revoke(SessionRevocationReason.AdminRevoked);
+        session.Revoke(DateTime.UtcNow, SessionRevocationReason.AdminRevoked);
 
         await _sut.AddAsync(session);
         await _context.SaveChangesAsync();

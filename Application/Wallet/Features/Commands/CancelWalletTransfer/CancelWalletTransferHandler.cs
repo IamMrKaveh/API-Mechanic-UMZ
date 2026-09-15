@@ -2,11 +2,13 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.CancelWalletTransfer;
 
 public sealed class CancelWalletTransferHandler(
     IWalletTransferRepository transferRepository,
+    IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
     : IRequestHandler<CancelWalletTransferCommand, ServiceResult<Unit>>
 {
@@ -26,7 +28,7 @@ public sealed class CancelWalletTransferHandler(
             if (!transfer.FromUserId.Equals(fromUserId))
                 return ServiceResult<Unit>.Forbidden("دسترسی به این درخواست انتقال مجاز نیست.");
 
-            transfer.Cancel(fromUserId);
+            transfer.Cancel(fromUserId, dateTimeProvider.UtcNow);
             transferRepository.Update(transfer);
 
             return ServiceResult<Unit>.Success(Unit.Value);

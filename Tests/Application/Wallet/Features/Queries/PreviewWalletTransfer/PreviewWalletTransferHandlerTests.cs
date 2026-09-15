@@ -112,7 +112,7 @@ public class PreviewWalletTransferHandlerTests
     {
         var recipient = NewRecipient();
         var recipientWallet = new WalletBuilder().WithOwnerId(recipient.Id).Build();
-        recipientWallet.Freeze("suspicious", UserId.NewId());
+        recipientWallet.Freeze("suspicious", UserId.NewId(), DateTime.UtcNow);
 
         _userRepository
             .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
@@ -250,6 +250,7 @@ public class PreviewWalletTransferHandlerTests
             Money.Create(1_000_000m, "IRT"),
             "seed",
             "seed-ref-" + Guid.NewGuid().ToString("N"),
+            DateTime.UtcNow,
             "idem-" + Guid.NewGuid().ToString("N"));
 
         var amount = 100_000m;

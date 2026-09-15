@@ -3,6 +3,7 @@ using Domain.User.Events;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
 using Microsoft.Extensions.Logging;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Auth.EventHandlers;
 
@@ -10,6 +11,7 @@ public sealed class UserCreatedEventHandler(
     IWalletRepository walletRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
+    IDateTimeProvider dateTimeProvider,
     ILogger<UserCreatedEventHandler> logger)
     : INotificationHandler<DomainEventNotification<UserRegisteredEvent>>
 {
@@ -30,7 +32,7 @@ public sealed class UserCreatedEventHandler(
             try
             {
                 var userId = domainEvent.UserId;
-                var wallet = Domain.Wallet.Aggregates.Wallet.Create(userId, "IRR");
+                var wallet = Domain.Wallet.Aggregates.Wallet.Create(userId, dateTimeProvider.UtcNow, "IRR");
 
                 await walletRepository.AddAsync(wallet, ct);
                 await unitOfWork.SaveChangesAsync(ct);

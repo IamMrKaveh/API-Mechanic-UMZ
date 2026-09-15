@@ -48,7 +48,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
     {
         var owner = await SeedActiveUserAsync();
         var wallet = new WalletBuilder().WithOwnerId(owner.Id).Build();
-        wallet.Credit(Money.Create(openingBalance, "IRT"), "seed", "seed-ref");
+        wallet.Credit(Money.Create(openingBalance, "IRT"), "seed", "seed-ref", DateTime.UtcNow);
         var requestId = WalletDebitRequestId.NewId();
         wallet.CreateDebitRequest(
             requestId,
@@ -56,7 +56,8 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
             reason,
             description,
             owner.Id,
-            expiry ?? TimeSpan.FromHours(24));
+            expiry ?? TimeSpan.FromHours(24),
+            DateTime.UtcNow);
         wallet.ClearDomainEvents();
 
         await _context.Wallets.AddAsync(wallet);
@@ -131,7 +132,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
     {
         var (wallet, request) = await SeedPendingRequestAsync();
         var loadedWallet = await _context.Wallets.FirstAsync(w => w.Id == wallet.Id);
-        loadedWallet.ApproveDebitRequest(request.Id, loadedWallet.OwnerId);
+        loadedWallet.ApproveDebitRequest(request.Id, loadedWallet.OwnerId, DateTime.UtcNow);
         _context.Wallets.Update(loadedWallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -148,7 +149,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
     {
         var (wallet, request) = await SeedPendingRequestAsync();
         var loadedWallet = await _context.Wallets.FirstAsync(w => w.Id == wallet.Id);
-        loadedWallet.RejectDebitRequest(request.Id, loadedWallet.OwnerId, "not authorized");
+        loadedWallet.RejectDebitRequest(request.Id, loadedWallet.OwnerId, "not authorized", DateTime.UtcNow);
         _context.Wallets.Update(loadedWallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -164,7 +165,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
     {
         var (wallet, request) = await SeedPendingRequestAsync();
         var loadedWallet = await _context.Wallets.FirstAsync(w => w.Id == wallet.Id);
-        loadedWallet.RejectDebitRequest(request.Id, loadedWallet.OwnerId, new string('x', 501));
+        loadedWallet.RejectDebitRequest(request.Id, loadedWallet.OwnerId, new string('x', 501), DateTime.UtcNow);
         _context.Wallets.Update(loadedWallet);
 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
@@ -175,14 +176,15 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
     {
         var owner = await SeedActiveUserAsync();
         var wallet = new WalletBuilder().WithOwnerId(owner.Id).Build();
-        wallet.Credit(Money.Create(500_000m, "IRT"), "seed", "seed-ref");
+        wallet.Credit(Money.Create(500_000m, "IRT"), "seed", "seed-ref", DateTime.UtcNow);
         wallet.CreateDebitRequest(
             WalletDebitRequestId.NewId(),
             Money.Create(100_000m, "IRT"),
             new string('r', 501),
             null,
             owner.Id,
-            TimeSpan.FromHours(1));
+            TimeSpan.FromHours(1),
+            DateTime.UtcNow);
         wallet.ClearDomainEvents();
 
         await _context.Wallets.AddAsync(wallet);
@@ -195,14 +197,15 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
     {
         var owner = await SeedActiveUserAsync();
         var wallet = new WalletBuilder().WithOwnerId(owner.Id).Build();
-        wallet.Credit(Money.Create(500_000m, "IRT"), "seed", "seed-ref");
+        wallet.Credit(Money.Create(500_000m, "IRT"), "seed", "seed-ref", DateTime.UtcNow);
         wallet.CreateDebitRequest(
             WalletDebitRequestId.NewId(),
             Money.Create(100_000m, "IRT"),
             "reason",
             new string('d', 1001),
             owner.Id,
-            TimeSpan.FromHours(1));
+            TimeSpan.FromHours(1),
+            DateTime.UtcNow);
         wallet.ClearDomainEvents();
 
         await _context.Wallets.AddAsync(wallet);

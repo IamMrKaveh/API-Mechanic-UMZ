@@ -36,6 +36,7 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
         Money amount,
         string otpHash,
         TimeSpan otpTtl,
+        DateTime now,
         string? description = null)
     {
         Guard.Against.Null(fromUserId, nameof(fromUserId));
@@ -70,10 +71,10 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
             Status = WalletTransferStatus.PendingOtp,
             OtpHash = otpHash,
-            OtpExpiresAt = DateTime.UtcNow.Add(otpTtl),
+            OtpExpiresAt = now.Add(otpTtl),
             OtpAttempts = 0,
             CorrelationId = id.Value.ToString("N"),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now
         };
 
         transfer.RaiseDomainEvent(new WalletTransferInitiatedEvent(
@@ -82,13 +83,13 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
         return transfer;
     }
 
-    public void VerifyOtp(string otpHash)
+    public void VerifyOtp(string otpHash, DateTime now)
     {
         Guard.Against.NullOrWhiteSpace(otpHash, nameof(otpHash));
 
         EnsurePendingOtp();
 
-        if (DateTime.UtcNow > OtpExpiresAt)
+        if (now > OtpExpiresAt)
         {
             Status = WalletTransferStatus.Expired;
             FailureReason = DomainErrorCodes.Wallet.TransferOtpExpired;
@@ -114,18 +115,18 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
         }
     }
 
-    public void MarkCompleted()
+    public void MarkCompleted(DateTime now)
     {
         EnsurePendingOtp();
 
         Status = WalletTransferStatus.Completed;
-        CompletedAt = DateTime.UtcNow;
+        CompletedAt = now;
 
         RaiseDomainEvent(new WalletTransferCompletedEvent(
             Id, FromUserId, ToUserId, Amount, CorrelationId));
     }
 
-    public void Cancel(UserId requester)
+    public void Cancel(UserId requester, DateTime now)
     {
         Guard.Against.Null(requester, nameof(requester));
 
@@ -141,12 +142,12 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
                 new Dictionary<string, object?> { ["status"] = Status.ToString() });
 
         Status = WalletTransferStatus.Cancelled;
-        CancelledAt = DateTime.UtcNow;
+        CancelledAt = now;
 
         RaiseDomainEvent(new WalletTransferCancelledEvent(Id, FromUserId, ToUserId));
     }
 
-    public void MarkFailed(string reason)
+    public void MarkFailed(string reason, DateTime now)
     {
         Guard.Against.NullOrWhiteSpace(reason, nameof(reason));
 
@@ -155,7 +156,7 @@ public sealed class WalletTransfer : AggregateRoot<WalletTransferId>
 
         Status = WalletTransferStatus.Failed;
         FailureReason = reason;
-        CompletedAt = DateTime.UtcNow;
+        CompletedAt = now;
 
         RaiseDomainEvent(new WalletTransferFailedEvent(Id, FromUserId, ToUserId, reason));
     }

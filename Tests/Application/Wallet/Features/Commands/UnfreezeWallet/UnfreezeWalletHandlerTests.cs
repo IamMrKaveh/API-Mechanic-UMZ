@@ -4,6 +4,7 @@ using Application.Common.Interfaces;
 using Application.Wallet.Features.Commands.UnfreezeWallet;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
@@ -14,16 +15,18 @@ namespace Tests.Application.Wallet.Features.Commands.UnfreezeWallet;
 
 public class UnfreezeWalletHandlerTests
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly UnfreezeWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly UnfreezeWalletHandler _sut;
 
     public UnfreezeWalletHandlerTests()
     {
         _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
 
         _sut = new UnfreezeWalletHandler(
             _walletRepository,
             _unitOfWork,
             _auditService,
+            _dateTimeProvider,
             _currentUserService);
     }
 
@@ -61,7 +64,7 @@ public class UnfreezeWalletHandlerTests
     {
         var command = ValidCommand();
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
-        wallet.Freeze("prior-freeze", UserId.NewId());
+        wallet.Freeze("prior-freeze", UserId.NewId(), DateTime.UtcNow);
 
         _walletRepository
             .GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
@@ -105,7 +108,7 @@ public class UnfreezeWalletHandlerTests
     {
         var command = ValidCommand();
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
-        wallet.Freeze("prior", UserId.NewId());
+        wallet.Freeze("prior", UserId.NewId(), DateTime.UtcNow);
 
         _walletRepository
             .GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())

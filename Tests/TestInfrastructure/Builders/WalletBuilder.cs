@@ -20,5 +20,5 @@ public sealed class WalletBuilder
         return this;
     }
 
-    public Wallet Build() => Wallet.Create(_ownerId, _currency);
+    public Wallet Build(DateTime? now = null) => Wallet.Create(_ownerId, now ?? DateTime.UtcNow, _currency);
 }

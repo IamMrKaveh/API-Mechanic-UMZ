@@ -4,6 +4,7 @@ using Application.Common.Interfaces;
 using Application.Wallet.Features.Commands.ReserveWallet;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
@@ -14,13 +15,15 @@ namespace Tests.Application.Wallet.Features.Commands.ReserveWallet;
 
 public class ReserveWalletHandlerTests
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ReserveWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ReserveWalletHandler _sut;
 
     public ReserveWalletHandlerTests()
     {
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new ReserveWalletHandler(
             _walletRepository,
             _unitOfWork,
+            _dateTimeProvider,
             _auditService);
     }
 
@@ -37,7 +40,7 @@ public class ReserveWalletHandlerTests
     {
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(ownerId)).Build();
         if (balance > 0)
-            wallet.Credit(Money.Create(balance), "seed-fund", "seed-ref");
+            wallet.Credit(Money.Create(balance), "seed-fund", "seed-ref", DateTime.UtcNow);
         return wallet;
     }
 
@@ -99,7 +102,7 @@ public class ReserveWalletHandlerTests
     {
         var command = ValidCommand(amount: 10_000m);
         var wallet = FundedWallet(command.UserId, balance: 100_000m);
-        wallet.Freeze("hold", UserId.NewId());
+        wallet.Freeze("hold", UserId.NewId(), DateTime.UtcNow);
 
         _walletRepository
             .GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())

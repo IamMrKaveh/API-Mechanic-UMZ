@@ -77,8 +77,8 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
 
-        wallet.Credit(Money.Create(200_000m, "IRT"), "seed", "seed-ref-1");
-        wallet.CreateReservation(WalletReservationId.NewId(), Money.Create(50_000m, "IRT"), "test-reservation");
+        wallet.Credit(Money.Create(200_000m, "IRT"), "seed", "seed-ref-1", DateTime.UtcNow);
+        wallet.CreateReservation(WalletReservationId.NewId(), Money.Create(50_000m, "IRT"), "test-reservation", DateTime.UtcNow);
         _context.Wallets.Update(wallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -180,7 +180,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
 
         var loaded = await _sut.GetByUserIdForUpdateAsync(owner.Id);
         loaded.ShouldNotBeNull();
-        loaded!.Credit(Money.Create(75_000m, "IRT"), "credit-desc", "ref-credit-1");
+        loaded!.Credit(Money.Create(75_000m, "IRT"), "credit-desc", "ref-credit-1", DateTime.UtcNow);
 
         _sut.Update(loaded);
         await _context.SaveChangesAsync();
@@ -201,7 +201,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
 
         var loaded = await _sut.GetByUserIdAsync(owner.Id);
         loaded.ShouldNotBeNull();
-        loaded!.Freeze("suspicious activity", admin);
+        loaded!.Freeze("suspicious activity", admin, DateTime.UtcNow);
 
         _sut.Update(loaded);
         await _context.SaveChangesAsync();
@@ -236,7 +236,7 @@ public class WalletRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
     public async Task GetByUserIdAsync_AfterCreditingSpecificAmount_ReturnsWalletWithExpectedBalance(decimal amount)
     {
         var (owner, wallet) = await SeedActiveUserAndWalletAsync();
-        wallet.Credit(Money.Create(amount, "IRT"), "credit", $"ref-{amount}");
+        wallet.Credit(Money.Create(amount, "IRT"), "credit", $"ref-{amount}", DateTime.UtcNow);
         _context.Wallets.Update(wallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();

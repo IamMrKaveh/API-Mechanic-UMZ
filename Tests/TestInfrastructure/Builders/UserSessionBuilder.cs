@@ -64,6 +64,6 @@ public class UserSessionBuilder
         return this;
     }
 
-    public UserSession Build() =>
-        UserSession.Create(_id, _userId, _refreshToken, _deviceInfo, _ipAddress, _expiresAt);
+    public UserSession Build(DateTime? now = null) =>
+        UserSession.Create(_id, _userId, _refreshToken, _deviceInfo, _ipAddress, _expiresAt, now ?? DateTime.UtcNow);
 }

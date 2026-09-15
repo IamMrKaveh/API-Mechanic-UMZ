@@ -4,6 +4,7 @@ using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.ForceFreezeFromFraudAlert;
@@ -15,6 +16,7 @@ public sealed class ForceFreezeFromFraudAlertHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly ForceFreezeFromFraudAlertHandler _sut;
@@ -23,8 +25,9 @@ public sealed class ForceFreezeFromFraudAlertHandlerTests
     {
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet", true));
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new ForceFreezeFromFraudAlertHandler(
-            _alertRepository, _walletRepository, _unitOfWork, _distributedLock, _auditService, _currentUserService);
+            _alertRepository, _walletRepository, _unitOfWork, _distributedLock, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -45,7 +48,7 @@ public sealed class ForceFreezeFromFraudAlertHandlerTests
         var adminId = UserId.NewId();
         _currentUserService.UserId.Returns(adminId.Value);
         var alert = new WalletFraudAlertBuilder().Build();
-        alert.Dismiss(adminId, "test");
+        alert.Dismiss(adminId, "test", DateTime.UtcNow);
         _alertRepository.GetByIdAsync(Arg.Any<WalletFraudAlertId>(), Arg.Any<CancellationToken>()).Returns(alert);
 
         var result = await _sut.Handle(new ForceFreezeFromFraudAlertCommand(alert.Id.Value, null), CancellationToken.None);
@@ -114,7 +117,7 @@ public sealed class ForceFreezeFromFraudAlertHandlerTests
         _currentUserService.UserId.Returns(adminId.Value);
         var alert = new WalletFraudAlertBuilder().WithUserId(ownerId).Build();
         var wallet = new WalletBuilder().WithOwnerId(ownerId).Build();
-        wallet.Freeze("prior freeze", UserId.NewId());
+        wallet.Freeze("prior freeze", UserId.NewId(), DateTime.UtcNow);
 
         _alertRepository.GetByIdAsync(Arg.Any<WalletFraudAlertId>(), Arg.Any<CancellationToken>()).Returns(alert);
         _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(wallet);

@@ -83,7 +83,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
     {
         var topUp = await SeedTopUpAsync();
         topUp.MarkAuthorityIssued("auth-abc123");
-        topUp.MarkSucceeded("gateway-ref-987");
+        topUp.MarkSucceeded("gateway-ref-987", DateTime.UtcNow);
         _context.WalletTopUps.Update(topUp);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -100,7 +100,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
     public async Task Persist_TopUp_FailedTransitionPersistsFailureReason()
     {
         var topUp = await SeedTopUpAsync();
-        topUp.MarkFailed("gateway declined");
+        topUp.MarkFailed("gateway declined", DateTime.UtcNow);
         _context.WalletTopUps.Update(topUp);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -153,7 +153,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
     public async Task Persist_TopUp_FailureReasonLongerThan500Characters_ThrowsOnSave()
     {
         var topUp = await SeedTopUpAsync();
-        topUp.MarkFailed(new string('r', 501));
+        topUp.MarkFailed(new string('r', 501), DateTime.UtcNow);
         _context.WalletTopUps.Update(topUp);
 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());

@@ -107,7 +107,7 @@ public class OtpConfigurationTests(PostgresContainerFixture fixture) : IAsyncLif
         var initialRowVersion = _context.Entry(otp).Property<byte[]>("RowVersion").CurrentValue;
         initialRowVersion.ShouldNotBeNull();
 
-        otp.Verify(OtpCode.Create("654321"));
+        otp.Verify(OtpCode.Create("654321"), DateTime.UtcNow);
         otp.ClearDomainEvents();
         await _context.SaveChangesAsync();
 
@@ -128,7 +128,7 @@ public class OtpConfigurationTests(PostgresContainerFixture fixture) : IAsyncLif
         await _context.UserOtps.AddAsync(otp);
         await _context.SaveChangesAsync();
 
-        otp.Verify(OtpCode.Create("111111"));
+        otp.Verify(OtpCode.Create("111111"), DateTime.UtcNow);
         otp.ClearDomainEvents();
         await _context.SaveChangesAsync();
 

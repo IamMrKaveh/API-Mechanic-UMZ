@@ -97,7 +97,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
         await SeedAdditionalCreditAsync(wallet, 200_000m);
         var toApprove = SeedAdditionalDebitRequestForWallet(wallet, owner.Id, amount: 30_000m);
 
-        wallet.ApproveDebitRequest(toApprove.Id, owner.Id);
+        wallet.ApproveDebitRequest(toApprove.Id, owner.Id, DateTime.UtcNow);
         _context.Wallets.Update(wallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -127,7 +127,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
 
         var newPending = SeedAdditionalDebitRequestForWallet(wallet, owner.Id, amount: 30_000m);
         var toApprove = SeedAdditionalDebitRequestForWallet(wallet, owner.Id, amount: 40_000m);
-        wallet.ApproveDebitRequest(toApprove.Id, owner.Id);
+        wallet.ApproveDebitRequest(toApprove.Id, owner.Id, DateTime.UtcNow);
         _context.Wallets.Update(wallet);
         await _context.SaveChangesAsync();
 
@@ -151,7 +151,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
     public async Task GetPendingByOwnerAsync_WhenOnlyNonPendingExist_ReturnsEmpty()
     {
         var (owner, wallet, request) = await SeedWalletAndDebitRequestAsync(amount: 20_000m);
-        wallet.CancelDebitRequest(request.Id, owner.Id);
+        wallet.CancelDebitRequest(request.Id, owner.Id, DateTime.UtcNow);
         _context.Wallets.Update(wallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -182,7 +182,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
         await _context.Users.AddAsync(owner);
 
         var wallet = new WalletBuilder().WithOwnerId(owner.Id).Build();
-        wallet.Credit(Money.Create(amount + 1_000_000m, "IRT"), "seed-credit", $"seed-{Guid.NewGuid():N}");
+        wallet.Credit(Money.Create(amount + 1_000_000m, "IRT"), "seed-credit", $"seed-{Guid.NewGuid():N}", DateTime.UtcNow);
         wallet.ClearDomainEvents();
         await _context.Wallets.AddAsync(wallet);
         await _context.SaveChangesAsync();
@@ -193,7 +193,8 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
             reason,
             description: null,
             requestedBy: owner.Id,
-            expiryDuration: TimeSpan.FromHours(1));
+            expiryDuration: TimeSpan.FromHours(1),
+            now: DateTime.UtcNow);
 
         wallet.ClearDomainEvents();
         _context.Wallets.Update(wallet);
@@ -213,7 +214,8 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
             "extra-reason",
             description: null,
             requestedBy: requestedBy,
-            expiryDuration: TimeSpan.FromHours(1));
+            expiryDuration: TimeSpan.FromHours(1),
+            now: DateTime.UtcNow);
 
         wallet.ClearDomainEvents();
         _context.Wallets.Update(wallet);
@@ -222,7 +224,7 @@ public class WalletDebitRequestRepositoryTests(PostgresContainerFixture fixture)
 
     private Task SeedAdditionalCreditAsync(Wallets wallet, decimal amount)
     {
-        wallet.Credit(Money.Create(amount, "IRT"), "extra-credit", $"seed-{Guid.NewGuid():N}");
+        wallet.Credit(Money.Create(amount, "IRT"), "extra-credit", $"seed-{Guid.NewGuid():N}", DateTime.UtcNow);
         wallet.ClearDomainEvents();
         _context.Wallets.Update(wallet);
         return Task.CompletedTask;

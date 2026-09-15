@@ -7,6 +7,7 @@ using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 using Infrastructure.Auth.Services;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
@@ -21,7 +22,9 @@ public class AuthServiceTests
 
     public AuthServiceTests()
     {
-        _sut = new AuthService(_userRepository, _sessionRepository, _sessionService, _jwtTokenGenerator);
+        var dateTimeProvider = Substitute.For<IDateTimeProvider>();
+        dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new AuthService(_userRepository, _sessionRepository, _sessionService, _jwtTokenGenerator, dateTimeProvider);
     }
 
     [Fact]
@@ -50,7 +53,7 @@ public class AuthServiceTests
             .WithRefreshToken(refreshToken)
             .WithExpiresAt(DateTime.UtcNow.AddDays(7))
             .Build();
-        session.Revoke(SessionRevocationReason.UserRequested);
+        session.Revoke(DateTime.UtcNow, SessionRevocationReason.UserRequested);
 
         _sessionRepository
             .GetByRefreshTokenAsync(refreshToken, Arg.Any<CancellationToken>())

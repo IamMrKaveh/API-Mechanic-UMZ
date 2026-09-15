@@ -12,6 +12,8 @@ namespace Tests.Domain.Security.Aggregates;
 
 public class UserSessionTests
 {
+    private static readonly DateTime Now = new(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc);
+
     [Fact]
     public void Create_WithValidInput_InitializesAllStateFields()
     {
@@ -20,8 +22,7 @@ public class UserSessionTests
         var refreshToken = RefreshToken.Generate();
         var deviceInfo = DeviceInfo.Create("Chrome 120");
         var ip = IpAddress.Create("192.168.1.10");
-        var expiresAt = DateTime.UtcNow.AddDays(7);
-        var before = DateTime.UtcNow.AddSeconds(-1);
+        var expiresAt = Now.AddDays(7);
 
         var sut = new UserSessionBuilder()
             .WithId(id)
@@ -30,9 +31,8 @@ public class UserSessionTests
             .WithDeviceInfo(deviceInfo)
             .WithIpAddress(ip)
             .WithExpiresAt(expiresAt)
-            .Build();
+            .Build(Now);
 
-        var after = DateTime.UtcNow.AddSeconds(1);
         sut.Id.ShouldBe(id);
         sut.UserId.ShouldBe(userId);
         sut.RefreshToken.ShouldBe(refreshToken);
@@ -42,12 +42,11 @@ public class UserSessionTests
         sut.IsRevoked.ShouldBeFalse();
         sut.RevocationReason.ShouldBeNull();
         sut.RevokedAt.ShouldBeNull();
-        sut.IsExpired.ShouldBeFalse();
-        sut.IsActive.ShouldBeTrue();
-        sut.CreatedAt.ShouldBeGreaterThanOrEqualTo(before);
-        sut.CreatedAt.ShouldBeLessThanOrEqualTo(after);
+        sut.IsExpired(Now).ShouldBeFalse();
+        sut.IsActive(Now).ShouldBeTrue();
+        sut.CreatedAt.ShouldBe(Now);
         sut.LastActivityAt.ShouldNotBeNull();
-        sut.LastActivityAt!.Value.ShouldBeGreaterThanOrEqualTo(before);
+        sut.LastActivityAt!.Value.ShouldBe(Now);
     }
 
     [Fact]
@@ -57,7 +56,7 @@ public class UserSessionTests
         var userId = UserId.NewId();
         var deviceInfo = DeviceInfo.Create("Firefox 121");
         var ip = IpAddress.Create("10.0.0.5");
-        var expiresAt = DateTime.UtcNow.AddDays(3);
+        var expiresAt = Now.AddDays(3);
 
         var sut = new UserSessionBuilder()
             .WithId(id)
@@ -65,7 +64,7 @@ public class UserSessionTests
             .WithDeviceInfo(deviceInfo)
             .WithIpAddress(ip)
             .WithExpiresAt(expiresAt)
-            .Build();
+            .Build(Now);
 
         sut.DomainEvents.Count.ShouldBe(1);
         var evt = sut.DomainEvents.Single().ShouldBeOfType<SessionCreatedEvent>();
@@ -81,7 +80,7 @@ public class UserSessionTests
     {
         Should.Throw<ArgumentNullException>(() =>
             UserSession.Create(null!, UserId.NewId(), RefreshToken.Generate(),
-                DeviceInfo.Unknown, IpAddress.Unknown, DateTime.UtcNow.AddDays(1)));
+                DeviceInfo.Unknown, IpAddress.Unknown, Now.AddDays(1), Now));
     }
 
     [Fact]
@@ -89,7 +88,7 @@ public class UserSessionTests
     {
         Should.Throw<ArgumentNullException>(() =>
             UserSession.Create(SessionId.NewId(), null!, RefreshToken.Generate(),
-                DeviceInfo.Unknown, IpAddress.Unknown, DateTime.UtcNow.AddDays(1)));
+                DeviceInfo.Unknown, IpAddress.Unknown, Now.AddDays(1), Now));
     }
 
     [Fact]
@@ -97,7 +96,7 @@ public class UserSessionTests
     {
         Should.Throw<ArgumentNullException>(() =>
             UserSession.Create(SessionId.NewId(), UserId.NewId(), null!,
-                DeviceInfo.Unknown, IpAddress.Unknown, DateTime.UtcNow.AddDays(1)));
+                DeviceInfo.Unknown, IpAddress.Unknown, Now.AddDays(1), Now));
     }
 
     [Fact]
@@ -105,7 +104,7 @@ public class UserSessionTests
     {
         Should.Throw<ArgumentNullException>(() =>
             UserSession.Create(SessionId.NewId(), UserId.NewId(), RefreshToken.Generate(),
-                null!, IpAddress.Unknown, DateTime.UtcNow.AddDays(1)));
+                null!, IpAddress.Unknown, Now.AddDays(1), Now));
     }
 
     [Fact]
@@ -113,14 +112,14 @@ public class UserSessionTests
     {
         Should.Throw<ArgumentNullException>(() =>
             UserSession.Create(SessionId.NewId(), UserId.NewId(), RefreshToken.Generate(),
-                DeviceInfo.Unknown, null!, DateTime.UtcNow.AddDays(1)));
+                DeviceInfo.Unknown, null!, Now.AddDays(1), Now));
     }
 
     [Fact]
     public void Create_WithExpiresAtInPast_ThrowsDomainException()
     {
         Should.Throw<DomainException>(() =>
-            new UserSessionBuilder().WithExpiresAt(DateTime.UtcNow.AddMinutes(-1)).Build());
+            new UserSessionBuilder().WithExpiresAt(Now.AddMinutes(-1)).Build(Now));
     }
 
     [Fact]
@@ -128,33 +127,33 @@ public class UserSessionTests
     {
         Should.Throw<DomainException>(() =>
             UserSession.Create(SessionId.NewId(), UserId.NewId(), RefreshToken.Generate(),
-                DeviceInfo.Unknown, IpAddress.Unknown, DateTime.UtcNow));
+                DeviceInfo.Unknown, IpAddress.Unknown, Now, Now));
     }
 
     [Fact]
     public void Create_WithExpiresAtAboveNinetyDays_ThrowsDomainException()
     {
         Should.Throw<DomainException>(() =>
-            new UserSessionBuilder().WithExpiresAt(DateTime.UtcNow.AddDays(91)).Build());
+            new UserSessionBuilder().WithExpiresAt(Now.AddDays(91)).Build(Now));
     }
 
     [Fact]
     public void Create_WithExpiresAtAtEightyNineDays_Succeeds()
     {
-        Should.NotThrow(() => new UserSessionBuilder().WithExpiresAt(DateTime.UtcNow.AddDays(89)).Build());
+        Should.NotThrow(() => new UserSessionBuilder().WithExpiresAt(Now.AddDays(89)).Build(Now));
     }
 
     [Fact]
     public void Revoke_OnActiveSession_SetsRevokedStateAndRaisesSessionRevokedEvent()
     {
-        var sut = new UserSessionBuilder().Build();
+        var sut = new UserSessionBuilder().Build(Now);
         sut.ClearDomainEvents();
 
-        sut.Revoke(SessionRevocationReason.PasswordChanged);
+        sut.Revoke(Now, SessionRevocationReason.PasswordChanged);
 
         sut.IsRevoked.ShouldBeTrue();
-        sut.IsActive.ShouldBeFalse();
-        sut.RevokedAt.ShouldNotBeNull();
+        sut.IsActive(Now).ShouldBeFalse();
+        sut.RevokedAt.ShouldBe(Now);
         sut.RevocationReason.ShouldBe(SessionRevocationReason.PasswordChanged);
         sut.DomainEvents.Count.ShouldBe(1);
         var evt = sut.DomainEvents.Single().ShouldBeOfType<SessionRevokedEvent>();
@@ -166,10 +165,10 @@ public class UserSessionTests
     [Fact]
     public void Revoke_DefaultReason_IsUserRequested()
     {
-        var sut = new UserSessionBuilder().Build();
+        var sut = new UserSessionBuilder().Build(Now);
         sut.ClearDomainEvents();
 
-        sut.Revoke();
+        sut.Revoke(Now);
 
         sut.RevocationReason.ShouldBe(SessionRevocationReason.UserRequested);
         sut.DomainEvents.Single().ShouldBeOfType<SessionRevokedEvent>()
@@ -179,12 +178,12 @@ public class UserSessionTests
     [Fact]
     public void Revoke_WhenAlreadyRevoked_IsNoOp()
     {
-        var sut = new UserSessionBuilder().Build();
-        sut.Revoke(SessionRevocationReason.UserRequested);
+        var sut = new UserSessionBuilder().Build(Now);
+        sut.Revoke(Now, SessionRevocationReason.UserRequested);
         var revokedAt = sut.RevokedAt;
         sut.ClearDomainEvents();
 
-        sut.Revoke(SessionRevocationReason.AdminRevoked);
+        sut.Revoke(Now, SessionRevocationReason.AdminRevoked);
 
         sut.RevocationReason.ShouldBe(SessionRevocationReason.UserRequested);
         sut.RevokedAt.ShouldBe(revokedAt);
@@ -192,12 +191,11 @@ public class UserSessionTests
     }
 
     [Fact]
-    public async Task Revoke_WhenExpired_ThrowsSessionExpiredException()
+    public void Revoke_WhenExpired_ThrowsSessionExpiredException()
     {
-        var sut = new UserSessionBuilder().WithExpiresAt(DateTime.UtcNow.AddMilliseconds(10)).Build();
-        await Task.Delay(100);
+        var sut = new UserSessionBuilder().WithExpiresAt(Now.AddMinutes(1)).Build(Now);
 
-        var ex = Should.Throw<SessionExpiredException>(() => sut.Revoke());
+        var ex = Should.Throw<SessionExpiredException>(() => sut.Revoke(Now.AddMinutes(2)));
 
         ex.SessionId.ShouldBe(sut.Id);
     }
@@ -212,10 +210,10 @@ public class UserSessionTests
     [InlineData(SessionRevocationReason.PhoneChanged)]
     public void Revoke_AcceptsAnyReasonAndPropagatesItIntoEvent(SessionRevocationReason reason)
     {
-        var sut = new UserSessionBuilder().Build();
+        var sut = new UserSessionBuilder().Build(Now);
         sut.ClearDomainEvents();
 
-        sut.Revoke(reason);
+        sut.Revoke(Now, reason);
 
         sut.RevocationReason.ShouldBe(reason);
         sut.DomainEvents.Single().ShouldBeOfType<SessionRevokedEvent>().Reason.ShouldBe(reason);
@@ -224,14 +222,14 @@ public class UserSessionTests
     [Fact]
     public void MarkExpired_OnActiveSession_MarksRevokedAsExpiredAndRaisesSessionExpiredEvent()
     {
-        var sut = new UserSessionBuilder().Build();
+        var sut = new UserSessionBuilder().Build(Now);
         sut.ClearDomainEvents();
 
-        sut.MarkExpired();
+        sut.MarkExpired(Now.AddMinutes(1));
 
         sut.IsRevoked.ShouldBeTrue();
         sut.RevocationReason.ShouldBe(SessionRevocationReason.Expired);
-        sut.RevokedAt.ShouldNotBeNull();
+        sut.RevokedAt.ShouldBe(Now.AddMinutes(1));
         sut.DomainEvents.Count.ShouldBe(1);
         var evt = sut.DomainEvents.Single().ShouldBeOfType<SessionExpiredEvent>();
         evt.SessionId.ShouldBe(sut.Id);
@@ -241,11 +239,11 @@ public class UserSessionTests
     [Fact]
     public void MarkExpired_WhenAlreadyRevoked_IsNoOp()
     {
-        var sut = new UserSessionBuilder().Build();
-        sut.Revoke(SessionRevocationReason.UserRequested);
+        var sut = new UserSessionBuilder().Build(Now);
+        sut.Revoke(Now, SessionRevocationReason.UserRequested);
         sut.ClearDomainEvents();
 
-        sut.MarkExpired();
+        sut.MarkExpired(Now);
 
         sut.RevocationReason.ShouldBe(SessionRevocationReason.UserRequested);
         sut.DomainEvents.ShouldBeEmpty();
@@ -254,10 +252,10 @@ public class UserSessionTests
     [Fact]
     public void UpdateActivity_WithNewerTimestamp_UpdatesLastActivityAt()
     {
-        var sut = new UserSessionBuilder().Build();
-        var newer = DateTime.UtcNow.AddHours(1);
+        var sut = new UserSessionBuilder().Build(Now);
+        var newer = Now.AddHours(1);
 
-        sut.UpdateActivity(newer);
+        sut.UpdateActivity(newer, Now);
 
         sut.LastActivityAt.ShouldBe(newer);
     }
@@ -265,11 +263,11 @@ public class UserSessionTests
     [Fact]
     public void UpdateActivity_WithOlderOrEqualTimestamp_IsNoOp()
     {
-        var sut = new UserSessionBuilder().Build();
+        var sut = new UserSessionBuilder().Build(Now);
         var original = sut.LastActivityAt!.Value;
 
-        sut.UpdateActivity(original);
-        sut.UpdateActivity(original.AddSeconds(-1));
+        sut.UpdateActivity(original, Now);
+        sut.UpdateActivity(original.AddSeconds(-1), Now);
 
         sut.LastActivityAt.ShouldBe(original);
     }
@@ -277,23 +275,22 @@ public class UserSessionTests
     [Fact]
     public void UpdateActivity_OnRevokedSession_IsNoOp()
     {
-        var sut = new UserSessionBuilder().Build();
-        sut.Revoke(SessionRevocationReason.UserRequested);
+        var sut = new UserSessionBuilder().Build(Now);
+        sut.Revoke(Now, SessionRevocationReason.UserRequested);
         var last = sut.LastActivityAt;
 
-        sut.UpdateActivity(DateTime.UtcNow.AddHours(1));
+        sut.UpdateActivity(Now.AddHours(1), Now);
 
         sut.LastActivityAt.ShouldBe(last);
     }
 
     [Fact]
-    public async Task UpdateActivity_OnExpiredSession_IsNoOp()
+    public void UpdateActivity_OnExpiredSession_IsNoOp()
     {
-        var sut = new UserSessionBuilder().WithExpiresAt(DateTime.UtcNow.AddMilliseconds(10)).Build();
-        await Task.Delay(100);
+        var sut = new UserSessionBuilder().WithExpiresAt(Now.AddMinutes(1)).Build(Now);
         var last = sut.LastActivityAt;
 
-        sut.UpdateActivity(DateTime.UtcNow.AddHours(1));
+        sut.UpdateActivity(Now.AddHours(1), Now.AddMinutes(2));
 
         sut.LastActivityAt.ShouldBe(last);
     }
@@ -303,40 +300,39 @@ public class UserSessionTests
     {
         var payload = new string('a', 64);
         var token = RefreshToken.Create(payload);
-        var sut = new UserSessionBuilder().WithRefreshToken(token).Build();
+        var sut = new UserSessionBuilder().WithRefreshToken(token).Build(Now);
 
-        sut.ValidateRefreshToken(payload).ShouldBeTrue();
+        sut.ValidateRefreshToken(payload, Now).ShouldBeTrue();
     }
 
     [Fact]
     public void ValidateRefreshToken_OnActiveSessionWithDifferentToken_ReturnsFalse()
     {
-        var sut = new UserSessionBuilder().WithRefreshToken(RefreshToken.Create(new string('a', 64))).Build();
+        var sut = new UserSessionBuilder().WithRefreshToken(RefreshToken.Create(new string('a', 64))).Build(Now);
 
-        sut.ValidateRefreshToken(new string('b', 64)).ShouldBeFalse();
+        sut.ValidateRefreshToken(new string('b', 64), Now).ShouldBeFalse();
     }
 
     [Fact]
     public void ValidateRefreshToken_OnRevokedSession_ReturnsFalseEvenForMatchingToken()
     {
         var payload = new string('a', 64);
-        var sut = new UserSessionBuilder().WithRefreshToken(RefreshToken.Create(payload)).Build();
-        sut.Revoke(SessionRevocationReason.UserRequested);
+        var sut = new UserSessionBuilder().WithRefreshToken(RefreshToken.Create(payload)).Build(Now);
+        sut.Revoke(Now, SessionRevocationReason.UserRequested);
 
-        sut.ValidateRefreshToken(payload).ShouldBeFalse();
+        sut.ValidateRefreshToken(payload, Now).ShouldBeFalse();
     }
 
     [Fact]
-    public async Task ValidateRefreshToken_OnExpiredSession_ReturnsFalseEvenForMatchingToken()
+    public void ValidateRefreshToken_OnExpiredSession_ReturnsFalseEvenForMatchingToken()
     {
         var payload = new string('a', 64);
         var sut = new UserSessionBuilder()
             .WithRefreshToken(RefreshToken.Create(payload))
-            .WithExpiresAt(DateTime.UtcNow.AddMilliseconds(10))
-            .Build();
-        await Task.Delay(100);
+            .WithExpiresAt(Now.AddMinutes(1))
+            .Build(Now);
 
-        sut.ValidateRefreshToken(payload).ShouldBeFalse();
+        sut.ValidateRefreshToken(payload, Now.AddMinutes(2)).ShouldBeFalse();
     }
 
     [Theory]
@@ -345,8 +341,8 @@ public class UserSessionTests
     [InlineData("   ")]
     public void ValidateRefreshToken_OnActiveSessionWithNullOrWhitespaceProvided_ReturnsFalse(string? provided)
     {
-        var sut = new UserSessionBuilder().Build();
+        var sut = new UserSessionBuilder().Build(Now);
 
-        sut.ValidateRefreshToken(provided!).ShouldBeFalse();
+        sut.ValidateRefreshToken(provided!, Now).ShouldBeFalse();
     }
 }

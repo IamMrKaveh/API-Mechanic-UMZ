@@ -2,12 +2,14 @@ using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Auth.Features.Commands.RevokeSession;
 
 public class RevokeSessionHandler(
     ISessionRepository sessionRepository,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<RevokeSessionCommand>
 {
     public async Task<ServiceResult> Handle(RevokeSessionCommand request, CancellationToken ct)
@@ -23,7 +25,8 @@ public class RevokeSessionHandler(
         if (session.UserId != userId)
             return ServiceResult.Forbidden("دسترسی غیرمجاز.");
 
-        session.Revoke(SessionRevocationReason.UserRequested);
+        var now = dateTimeProvider.UtcNow;
+        session.Revoke(now, SessionRevocationReason.UserRequested);
         sessionRepository.Update(session);
 
         return ServiceResult.Success();

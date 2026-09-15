@@ -16,13 +16,15 @@ public sealed class MarkFraudAlertReviewedHandlerTests
     private readonly IWalletFraudAlertRepository _repository = Substitute.For<IWalletFraudAlertRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly MarkFraudAlertReviewedHandler _sut;
 
     public MarkFraudAlertReviewedHandlerTests()
     {
-        _sut = new MarkFraudAlertReviewedHandler(_repository, _unitOfWork, _auditService, _currentUserService);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new MarkFraudAlertReviewedHandler(_repository, _unitOfWork, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -63,7 +65,7 @@ public sealed class MarkFraudAlertReviewedHandlerTests
         var adminId = UserId.NewId();
         _currentUserService.UserId.Returns(adminId.Value);
         var alert = new WalletFraudAlertBuilder().Build();
-        alert.Dismiss(adminId, null);
+        alert.Dismiss(adminId, null, DateTime.UtcNow);
         _repository.GetByIdAsync(Arg.Any<WalletFraudAlertId>(), Arg.Any<CancellationToken>()).Returns(alert);
 
         var result = await _sut.Handle(new MarkFraudAlertReviewedCommand(alert.Id.Value, null), CancellationToken.None);

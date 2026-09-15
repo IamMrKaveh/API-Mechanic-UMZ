@@ -6,6 +6,7 @@ using Application.Wallet.Features.Commands.CreditWallet;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
@@ -16,7 +17,7 @@ namespace Tests.Application.Wallet.Features.Commands.CreditWallet;
 
 public class CreditWalletHandlerTests
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly CreditWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly CreditWalletHandler _sut;
 
     public CreditWalletHandlerTests()
     {
@@ -28,12 +29,14 @@ public class CreditWalletHandlerTests
 
         _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _currentUserService.IsAdmin.Returns(false);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
 
         _sut = new CreditWalletHandler(
             _walletRepository,
             _unitOfWork,
             _distributedLock,
             _auditService,
+            _dateTimeProvider,
             _currentUserService);
     }
 
@@ -162,7 +165,7 @@ public class CreditWalletHandlerTests
     {
         var command = ValidCommand(amount: 10_000m);
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
-        wallet.Freeze("initial-freeze", UserId.NewId());
+        wallet.Freeze("initial-freeze", UserId.NewId(), DateTime.UtcNow);
 
         _currentUserService.IsAdmin.Returns(true);
         _walletRepository
@@ -190,7 +193,7 @@ public class CreditWalletHandlerTests
     {
         var command = ValidCommand(amount: 10_000m);
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
-        wallet.Freeze("initial-freeze", UserId.NewId());
+        wallet.Freeze("initial-freeze", UserId.NewId(), DateTime.UtcNow);
 
         _currentUserService.IsAdmin.Returns(false);
         _walletRepository

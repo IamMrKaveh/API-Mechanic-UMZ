@@ -206,6 +206,7 @@ public sealed class FraudDetectionJob(
                 result.RuleName,
                 result.Severity,
                 result.Description,
+                evaluatedAt,
                 result.Metadata);
 
             await alertRepository.AddAsync(alert, ct);

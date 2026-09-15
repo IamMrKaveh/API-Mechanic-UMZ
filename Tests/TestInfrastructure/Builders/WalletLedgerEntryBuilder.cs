@@ -74,7 +74,7 @@ public WalletLedgerEntryBuilder AsDebit()
     return this;
 }
 
-public WalletLedgerEntry Build() => _isCredit
-    ? WalletLedgerEntry.NewCredit(_walletId, _ownerId, _amount, _balanceAfter, _description, _referenceId, _idempotencyKey, _correlationId)
-    : WalletLedgerEntry.NewDebit(_walletId, _ownerId, _amount, _balanceAfter, _description, _referenceId, _idempotencyKey, _correlationId);
+public WalletLedgerEntry Build(DateTime? now = null) => _isCredit
+    ? WalletLedgerEntry.NewCredit(_walletId, _ownerId, _amount, _balanceAfter, _description, _referenceId, now ?? DateTime.UtcNow, _idempotencyKey, _correlationId)
+    : WalletLedgerEntry.NewDebit(_walletId, _ownerId, _amount, _balanceAfter, _description, _referenceId, now ?? DateTime.UtcNow, _idempotencyKey, _correlationId);
 }

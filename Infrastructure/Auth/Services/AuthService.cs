@@ -12,7 +12,8 @@ public sealed class AuthService(
     IUserRepository userRepository,
     ISessionRepository sessionRepository,
     ISessionService sessionService,
-    IJwtTokenGenerator jwtTokenGenerator) : IAuthService
+    IJwtTokenGenerator jwtTokenGenerator,
+    IDateTimeProvider dateTimeProvider) : IAuthService
 {
     public async Task<ServiceResult<(string AccessToken, RefreshTokenResult RefreshToken, UserProfileDto User, bool IsNewUser)>>
         RefreshTokenAsync(
@@ -22,7 +23,8 @@ public sealed class AuthService(
         CancellationToken ct = default)
     {
         var existingSession = await sessionRepository.GetByRefreshTokenAsync(refreshToken, ct);
-        if (existingSession is null || !existingSession.IsActive)
+        var now = dateTimeProvider.UtcNow;
+        if (existingSession is null || !existingSession.IsActive(now))
             return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Unauthorized("جلسه نامعتبر است.");
 
         var userId = existingSession.UserId;

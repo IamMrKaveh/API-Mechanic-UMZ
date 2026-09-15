@@ -3,6 +3,7 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.RequestWithdrawal;
@@ -15,14 +16,16 @@ public sealed class RequestWithdrawalHandlerTests
     private readonly IWalletWithdrawalRepository _withdrawalRepository = Substitute.For<IWalletWithdrawalRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly RequestWithdrawalHandler _sut;
 
     public RequestWithdrawalHandlerTests()
     {
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new RequestWithdrawalHandler(
-            _walletRepository, _withdrawalRepository, _unitOfWork, _auditService, _currentUserService);
+            _walletRepository, _withdrawalRepository, _unitOfWork, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -86,8 +89,8 @@ public sealed class RequestWithdrawalHandlerTests
         var userId = UserId.NewId();
         _currentUserService.UserId.Returns(userId.Value);
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
-        wallet.Freeze("suspicious", UserId.NewId());
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
+        wallet.Freeze("suspicious", UserId.NewId(), DateTime.UtcNow);
         _withdrawalRepository
             .CountByUserAndStatusAsync(userId, WalletWithdrawalStatus.Pending, Arg.Any<CancellationToken>())
             .Returns(0);
@@ -105,7 +108,7 @@ public sealed class RequestWithdrawalHandlerTests
         var userId = UserId.NewId();
         _currentUserService.UserId.Returns(userId.Value);
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(50_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(50_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _withdrawalRepository
             .CountByUserAndStatusAsync(userId, WalletWithdrawalStatus.Pending, Arg.Any<CancellationToken>())
             .Returns(0);
@@ -123,7 +126,7 @@ public sealed class RequestWithdrawalHandlerTests
         var userId = UserId.NewId();
         _currentUserService.UserId.Returns(userId.Value);
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _withdrawalRepository
             .CountByUserAndStatusAsync(userId, WalletWithdrawalStatus.Pending, Arg.Any<CancellationToken>())
             .Returns(0);
@@ -147,7 +150,7 @@ public sealed class RequestWithdrawalHandlerTests
         var userId = UserId.NewId();
         _currentUserService.UserId.Returns(userId.Value);
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _withdrawalRepository
             .CountByUserAndStatusAsync(userId, WalletWithdrawalStatus.Pending, Arg.Any<CancellationToken>())
             .Returns(0);

@@ -30,7 +30,7 @@ public sealed class ExpiredSessionCleanupJob(
                     var expiredSessions = await sessionRepo.GetExpiredActiveSessionsAsync(cutoff, stoppingToken);
 
                     foreach (var session in expiredSessions)
-                        session.MarkExpired();
+                        session.MarkExpired(cutoff);
 
                     if (expiredSessions.Any())
                     {

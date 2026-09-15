@@ -4,6 +4,7 @@ using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.CancelWithdrawal;
@@ -13,13 +14,15 @@ public sealed class CancelWithdrawalHandlerTests
     private readonly IWalletWithdrawalRepository _withdrawalRepository = Substitute.For<IWalletWithdrawalRepository>();
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly CancelWithdrawalHandler _sut;
 
     public CancelWithdrawalHandlerTests()
     {
-        _sut = new CancelWithdrawalHandler(_withdrawalRepository, _walletRepository, _auditService, _currentUserService);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new CancelWithdrawalHandler(_withdrawalRepository, _walletRepository, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -73,9 +76,9 @@ public sealed class CancelWithdrawalHandlerTests
         _currentUserService.UserId.Returns(userId.Value);
 
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(100_000m), "withdrawal-request");
+        wallet.CreateReservation(reservationId, Money.Create(100_000m), "withdrawal-request", DateTime.UtcNow);
 
         var withdrawal = new WalletWithdrawalRequestBuilder()
             .WithUserId(userId)
@@ -109,16 +112,16 @@ public sealed class CancelWithdrawalHandlerTests
         _currentUserService.UserId.Returns(userId.Value);
 
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(100_000m), "withdrawal-request");
+        wallet.CreateReservation(reservationId, Money.Create(100_000m), "withdrawal-request", DateTime.UtcNow);
 
         var withdrawal = new WalletWithdrawalRequestBuilder()
             .WithUserId(userId)
             .WithAmount(100_000m)
             .WithReservationId(reservationId)
             .Build();
-        withdrawal.Approve(userId);
+        withdrawal.Approve(userId, DateTime.UtcNow);
 
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns(withdrawal);

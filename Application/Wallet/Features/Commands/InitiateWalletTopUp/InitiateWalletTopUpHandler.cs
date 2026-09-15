@@ -6,6 +6,7 @@ using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Interfaces;
 using Microsoft.Extensions.Options;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.InitiateWalletTopUp;
 
@@ -16,6 +17,7 @@ public sealed class InitiateWalletTopUpHandler(
     IUnitOfWork unitOfWork,
     IAuditService auditService,
     IDistributedLock distributedLock,
+    IDateTimeProvider dateTimeProvider,
     IOptions<ApiBaseUrlOptions> apiOptions)
     : IRequestHandler<InitiateWalletTopUpCommand, ServiceResult<InitiateTopUpResultDto>>
 {
@@ -40,7 +42,8 @@ public sealed class InitiateWalletTopUpHandler(
             var amount = Money.Create(request.Amount);
             var gatewayName = string.IsNullOrWhiteSpace(request.Gateway) ? "zarinpal" : request.Gateway;
 
-            var topUp = WalletTopUp.Initiate(userId, amount, gatewayName);
+            var now = dateTimeProvider.UtcNow;
+            var topUp = WalletTopUp.Initiate(userId, amount, gatewayName, now);
             await topUpRepository.AddAsync(topUp, ct);
             await unitOfWork.SaveChangesAsync(ct);
 
@@ -68,7 +71,7 @@ public sealed class InitiateWalletTopUpHandler(
 
             if (initValue is null)
             {
-                topUp.MarkFailed(initError ?? "خطا در ارتباط با درگاه.");
+                topUp.MarkFailed(initError ?? "خطا در ارتباط با درگاه.", now);
                 topUpRepository.Update(topUp);
                 await unitOfWork.SaveChangesAsync(ct);
 

@@ -1,6 +1,7 @@
 ﻿using Application.Payment.Features.Shared;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.CompleteWalletTopUp;
 
@@ -8,6 +9,7 @@ public sealed class CompleteWalletTopUpHandler(
     IWalletTopUpRepository topUpRepository,
     IWalletRepository walletRepository,
     IPaymentGatewayFactory gatewayFactory,
+    IDateTimeProvider dateTimeProvider,
     IAuditService auditService)
     : IRequestHandler<CompleteWalletTopUpCommand, ServiceResult<CompleteWalletTopUpResult>>
 {
@@ -43,11 +45,12 @@ public sealed class CompleteWalletTopUpHandler(
                     topUp.GatewayRefId));
         }
 
+        var now = dateTimeProvider.UtcNow;
         try
         {
             if (!string.Equals(request.Status, "OK", StringComparison.OrdinalIgnoreCase))
             {
-                topUp.MarkCancelled("پرداخت توسط کاربر لغو شد.");
+                topUp.MarkCancelled("پرداخت توسط کاربر لغو شد.", now);
                 topUpRepository.Update(topUp);
                 return ServiceResult<CompleteWalletTopUpResult>.Success(
                     new CompleteWalletTopUpResult(topUp.Id.Value, false, "cancelled",
@@ -63,7 +66,7 @@ public sealed class CompleteWalletTopUpHandler(
             }
             catch (ExternalServiceException ex)
             {
-                topUp.MarkFailed(ex.Message);
+                topUp.MarkFailed(ex.Message, now);
                 topUpRepository.Update(topUp);
                 return ServiceResult<CompleteWalletTopUpResult>.Success(
                     new CompleteWalletTopUpResult(topUp.Id.Value, false, "failed",
@@ -73,7 +76,7 @@ public sealed class CompleteWalletTopUpHandler(
             if (!verifyValue.IsVerified)
             {
                 const string reason = "تأیید تراکنش با شکست مواجه شد.";
-                topUp.MarkFailed(reason);
+                topUp.MarkFailed(reason, now);
                 topUpRepository.Update(topUp);
                 return ServiceResult<CompleteWalletTopUpResult>.Success(
                     new CompleteWalletTopUpResult(topUp.Id.Value, false, "failed",
@@ -81,19 +84,20 @@ public sealed class CompleteWalletTopUpHandler(
             }
 
             var refId = verifyValue.RefId?.ToString() ?? request.Authority;
-            topUp.MarkSucceeded(refId);
+            topUp.MarkSucceeded(refId, now);
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(topUp.UserId, ct);
             if (wallet is null)
             {
-                wallet = Domain.Wallet.Aggregates.Wallet.Create(topUp.UserId);
+                wallet = Domain.Wallet.Aggregates.Wallet.Create(topUp.UserId, now);
                 await walletRepository.AddAsync(wallet, ct);
             }
 
             wallet.Credit(
                 topUp.Amount,
                 $"شارژ کیف پول - شماره پیگیری: {refId}",
-                topUp.Id.Value.ToString());
+                topUp.Id.Value.ToString(),
+                now);
 
             topUpRepository.Update(topUp);
             walletRepository.Update(wallet);

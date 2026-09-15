@@ -79,7 +79,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         var reviewer = UserId.NewId();
         var loaded = await _sut.GetByIdAsync(alert.Id);
         loaded.ShouldNotBeNull();
-        loaded!.MarkAsReviewed(reviewer, "checked manually");
+        loaded!.MarkAsReviewed(reviewer, "checked manually", DateTime.UtcNow);
 
         _sut.Update(loaded);
         await _context.SaveChangesAsync();
@@ -105,7 +105,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
         var reviewer = UserId.NewId();
         var loaded = await _sut.GetByIdAsync(alert.Id);
         loaded.ShouldNotBeNull();
-        loaded!.Dismiss(reviewer, "false positive");
+        loaded!.Dismiss(reviewer, "false positive", DateTime.UtcNow);
 
         _sut.Update(loaded);
         await _context.SaveChangesAsync();
@@ -169,7 +169,7 @@ public class WalletFraudAlertRepositoryTests(PostgresContainerFixture fixture) :
             .WithWalletId(walletId)
             .WithRuleName("VelocityRule")
             .Build();
-        alert.Dismiss(UserId.NewId(), "handled");
+        alert.Dismiss(UserId.NewId(), "handled", DateTime.UtcNow);
         alert.ClearDomainEvents();
 
         await _sut.AddAsync(alert);

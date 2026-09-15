@@ -53,5 +53,5 @@ public WalletTransferBuilder WithDescription(string? description)
     return this;
 }
 
-public WalletTransfer Build() => WalletTransfer.Initiate(_fromUserId, _toUserId, _amount, _otpHash, _otpTtl, _description);
+public WalletTransfer Build(DateTime? now = null) => WalletTransfer.Initiate(_fromUserId, _toUserId, _amount, _otpHash, _otpTtl, now ?? DateTime.UtcNow, _description);
 }

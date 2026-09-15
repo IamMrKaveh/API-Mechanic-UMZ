@@ -107,7 +107,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
     {
         var alert = await SeedAlertAsync();
         var reviewer = UserId.NewId();
-        alert.MarkAsReviewed(reviewer, "confirmed suspicious");
+        alert.MarkAsReviewed(reviewer, "confirmed suspicious", DateTime.UtcNow);
         _context.WalletFraudAlerts.Update(alert);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -125,7 +125,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
     {
         var alert = await SeedAlertAsync();
         var dismisser = UserId.NewId();
-        alert.Dismiss(dismisser, "false positive");
+        alert.Dismiss(dismisser, "false positive", DateTime.UtcNow);
         _context.WalletFraudAlerts.Update(alert);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -172,7 +172,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
     public async Task Persist_FraudAlert_ReviewNoteLongerThan500Characters_ThrowsOnSave()
     {
         var alert = await SeedAlertAsync();
-        alert.MarkAsReviewed(UserId.NewId(), new string('n', 501));
+        alert.MarkAsReviewed(UserId.NewId(), new string('n', 501), DateTime.UtcNow);
         _context.WalletFraudAlerts.Update(alert);
 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
@@ -184,7 +184,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         var alert = await SeedAlertAsync();
         var initialXmin = _context.Entry(alert).Property<uint>("xmin").CurrentValue;
 
-        alert.MarkAsReviewed(UserId.NewId(), "note");
+        alert.MarkAsReviewed(UserId.NewId(), "note", DateTime.UtcNow);
         _context.WalletFraudAlerts.Update(alert);
         await _context.SaveChangesAsync();
 
@@ -204,11 +204,11 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         var alertA = await contextA.WalletFraudAlerts.FirstAsync(a => a.Id == alert.Id);
         var alertB = await contextB.WalletFraudAlerts.FirstAsync(a => a.Id == alert.Id);
 
-        alertA.MarkAsReviewed(UserId.NewId(), "reviewer-a");
+        alertA.MarkAsReviewed(UserId.NewId(), "reviewer-a", DateTime.UtcNow);
         contextA.WalletFraudAlerts.Update(alertA);
         await contextA.SaveChangesAsync();
 
-        alertB.Dismiss(UserId.NewId(), "dismisser-b");
+        alertB.Dismiss(UserId.NewId(), "dismisser-b", DateTime.UtcNow);
         contextB.WalletFraudAlerts.Update(alertB);
 
         await Should.ThrowAsync<DbUpdateConcurrencyException>(async () => await contextB.SaveChangesAsync());

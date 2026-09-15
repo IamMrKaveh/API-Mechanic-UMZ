@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Presentation.Common.Middleware;
+using SharedKernel.Abstractions.Interfaces;
 using System.Security.Claims;
 using Tests.TestInfrastructure.Builders;
 
@@ -18,14 +19,18 @@ public class SessionActivityMiddlewareTests
     private readonly ICacheService _cache = Substitute.For<ICacheService>();
     private readonly ISessionRepository _sessions = Substitute.For<ISessionRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
+    private static readonly DateTime Now = new(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc);
 
     private SessionActivityMiddleware BuildSut(RequestDelegate next)
     {
+        _dateTimeProvider.UtcNow.Returns(Now);
         var services = new ServiceCollection();
         services.AddSingleton(_currentUser);
         services.AddSingleton(_cache);
         services.AddSingleton(_sessions);
         services.AddSingleton(_unitOfWork);
+        services.AddSingleton(_dateTimeProvider);
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         scopeFactory.CreateScope().Returns(_ => services.BuildServiceProvider().CreateScope());
         return new SessionActivityMiddleware(
@@ -106,7 +111,7 @@ public class SessionActivityMiddlewareTests
         _cache.ExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         var session = new UserSessionBuilder()
             .WithId(SessionId.From(sessionId))
-            .Build();
+            .Build(Now.AddMinutes(-10));
         _sessions.GetByIdAsync(SessionId.From(sessionId), Arg.Any<CancellationToken>())
             .Returns(session);
         var called = false;
@@ -147,7 +152,7 @@ public class SessionActivityMiddlewareTests
         var revoked = new UserSessionBuilder()
             .WithId(SessionId.From(sessionId))
             .Build();
-        revoked.Revoke();
+        revoked.Revoke(DateTime.UtcNow);
         _sessions.GetByIdAsync(Arg.Any<SessionId>(), Arg.Any<CancellationToken>())
             .Returns(revoked);
         var sut = BuildSut(_ => Task.CompletedTask);

@@ -73,7 +73,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
     {
         var owner = await SeedActiveUserAsync();
         var wallet = await SeedWalletAsync(owner);
-        wallet.Credit(Money.Create(250_000m, "IRT"), "seed", "seed-ref-1");
+        wallet.Credit(Money.Create(250_000m, "IRT"), "seed", "seed-ref-1", DateTime.UtcNow);
         _context.Wallets.Update(wallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -141,7 +141,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         var admin = await SeedActiveUserAsync();
         var wallet = await SeedWalletAsync(owner);
 
-        wallet.Freeze("suspicious activity", admin.Id);
+        wallet.Freeze("suspicious activity", admin.Id, DateTime.UtcNow);
         _context.Wallets.Update(wallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -161,7 +161,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         var admin = await SeedActiveUserAsync();
         var wallet = await SeedWalletAsync(owner);
 
-        wallet.Freeze(new string('x', 501), admin.Id);
+        wallet.Freeze(new string('x', 501), admin.Id, DateTime.UtcNow);
         _context.Wallets.Update(wallet);
 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
@@ -175,7 +175,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
 
         var initialXmin = _context.Entry(wallet).Property<uint>("xmin").CurrentValue;
 
-        wallet.Credit(Money.Create(10_000m, "IRT"), "top-up", "ref-1");
+        wallet.Credit(Money.Create(10_000m, "IRT"), "top-up", "ref-1", DateTime.UtcNow);
         _context.Wallets.Update(wallet);
         await _context.SaveChangesAsync();
 
@@ -197,11 +197,11 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         var walletA = await contextA.Wallets.FirstAsync(w => w.Id == wallet.Id);
         var walletB = await contextB.Wallets.FirstAsync(w => w.Id == wallet.Id);
 
-        walletA.Credit(Money.Create(100m, "IRT"), "credit-a", "ref-a");
+        walletA.Credit(Money.Create(100m, "IRT"), "credit-a", "ref-a", DateTime.UtcNow);
         contextA.Wallets.Update(walletA);
         await contextA.SaveChangesAsync();
 
-        walletB.Credit(Money.Create(200m, "IRT"), "credit-b", "ref-b");
+        walletB.Credit(Money.Create(200m, "IRT"), "credit-b", "ref-b", DateTime.UtcNow);
         contextB.Wallets.Update(walletB);
 
         await Should.ThrowAsync<DbUpdateConcurrencyException>(async () => await contextB.SaveChangesAsync());
@@ -267,9 +267,9 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
     {
         var owner = await SeedActiveUserAsync();
         var wallet = await SeedWalletAsync(owner);
-        wallet.Credit(Money.Create(500_000m, "IRT"), "seed", "seed-ref");
+        wallet.Credit(Money.Create(500_000m, "IRT"), "seed", "seed-ref", DateTime.UtcNow);
         var requestId = WalletDebitRequestId.NewId();
-        wallet.CreateDebitRequest(requestId, Money.Create(100_000m, "IRT"), "reason", null, UserId.From(owner.Id.Value), TimeSpan.FromHours(1));
+        wallet.CreateDebitRequest(requestId, Money.Create(100_000m, "IRT"), "reason", null, UserId.From(owner.Id.Value), TimeSpan.FromHours(1), DateTime.UtcNow);
         _context.Wallets.Update(wallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();

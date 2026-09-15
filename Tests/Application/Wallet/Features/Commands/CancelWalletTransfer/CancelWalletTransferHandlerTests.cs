@@ -15,13 +15,15 @@ namespace Tests.Application.Wallet.Features.Commands.CancelWalletTransfer;
 public sealed class CancelWalletTransferHandlerTests
 {
     private readonly IWalletTransferRepository _transferRepository = Substitute.For<IWalletTransferRepository>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
 
     private readonly CancelWalletTransferHandler _sut;
 
     public CancelWalletTransferHandlerTests()
     {
-        _sut = new CancelWalletTransferHandler(_transferRepository, _currentUserService);
+        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        _sut = new CancelWalletTransferHandler(_transferRepository, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -75,7 +77,7 @@ public sealed class CancelWalletTransferHandlerTests
         var fromUser = UserId.NewId();
         _currentUserService.UserId.Returns(fromUser.Value);
         var transfer = new WalletTransferBuilder().FromUser(fromUser).ToUser(UserId.NewId()).WithAmount(50_000m).Build();
-        transfer.MarkCompleted();
+        transfer.MarkCompleted(DateTime.UtcNow);
         _transferRepository.GetByIdForUpdateAsync(Arg.Any<WalletTransferId>(), Arg.Any<CancellationToken>())
             .Returns(transfer);
 

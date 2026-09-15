@@ -60,6 +60,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
             Money.Create(balanceAfter, "IRT"),
             description,
             Guid.NewGuid().ToString("N"),
+            DateTime.UtcNow,
             idempotencyKey,
             correlationId);
         await _context.WalletLedgerEntries.AddAsync(entry);
@@ -157,6 +158,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
             wallet.Id, owner.Id,
             Money.Create(1_000m, "IRT"), Money.Create(2_000m, "IRT"),
             "desc", Guid.NewGuid().ToString("N"),
+            DateTime.UtcNow,
             duplicateKey);
         await _context.WalletLedgerEntries.AddAsync(duplicate);
 
@@ -173,6 +175,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
             wallet.Id, owner.Id,
             Money.Create(1_000m, "IRT"), Money.Create(2_000m, "IRT"),
             "desc", Guid.NewGuid().ToString("N"),
+            DateTime.UtcNow,
             null);
         await _context.WalletLedgerEntries.AddAsync(second);
 
@@ -196,7 +199,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         var entry = WalletLedgerEntry.NewDebit(
             wallet.Id, owner.Id,
             Money.Create(5_000m, "IRT"), Money.Create(0m, "IRT"),
-            "purchase", "order-123", null);
+            "purchase", "order-123", DateTime.UtcNow, null);
         await _context.WalletLedgerEntries.AddAsync(entry);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -238,7 +241,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
             WalletId.NewId(),
             owner.Id,
             Money.Create(1_000m, "IRT"), Money.Create(1_000m, "IRT"),
-            "d", Guid.NewGuid().ToString("N"), null);
+            "d", Guid.NewGuid().ToString("N"), DateTime.UtcNow, null);
         await _context.WalletLedgerEntries.AddAsync(entry);
 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
@@ -297,7 +300,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
             wallet.Id, owner.Id,
             Money.Create(50_000m, "IRT"), Money.Create(50_000m, "IRT"),
             "top-up", Guid.NewGuid().ToString("N"),
-            null, null,
+            DateTime.UtcNow, null, null,
             topUpId: topUp.Id);
         await _context.WalletLedgerEntries.AddAsync(entry);
         await _context.SaveChangesAsync();
