@@ -1,6 +1,7 @@
 using Application.Auth.Contracts;
 using Application.Common.Interfaces;
 using Presentation.Auth.Services;
+using Presentation.Common.Cookies;
 using Presentation.Common.Services;
 using SharedKernel.Extensions;
 
@@ -32,6 +33,7 @@ public static class PresentationServiceExtensions
     {
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IGoogleAuthenticationService, HttpGoogleAuthenticationService>();
+        services.AddScoped<IAuthCookieService, AuthCookieService>();
         services.AddScoped<OtpRateLimitFilter>();
         services.AddScoped<ReviewRateLimitFilter>();
         services.AddScoped<IMapper, ServiceMapper>();

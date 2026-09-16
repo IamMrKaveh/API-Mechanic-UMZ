@@ -28,11 +28,14 @@ public static class AntiforgeryExtensions
         return app.Use(async (context, next) =>
         {
             var path = context.Request.Path.Value ?? string.Empty;
-            var needsToken = context.User?.Identity?.IsAuthenticated == true
+            var isExcluded = path.StartsWith("/health", StringComparison.OrdinalIgnoreCase)
+                             || path.StartsWith("/metrics", StringComparison.OrdinalIgnoreCase)
+                             || path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase);
+
+            var needsToken = !isExcluded
                              && HttpMethods.IsGet(context.Request.Method)
-                             && !path.StartsWith("/health", StringComparison.OrdinalIgnoreCase)
-                             && !path.StartsWith("/metrics", StringComparison.OrdinalIgnoreCase)
-                             && !path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase);
+                             && (context.User?.Identity?.IsAuthenticated == true
+                                 || IsVersionedAuthPath(path));
 
             if (needsToken)
             {
@@ -55,5 +58,16 @@ public static class AntiforgeryExtensions
 
             await next(context);
         });
+    }
+
+    private static bool IsVersionedAuthPath(string path)
+    {
+        var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        return segments.Length >= 3
+               && segments[0].Equals("api", StringComparison.OrdinalIgnoreCase)
+               && segments[1].StartsWith('v')
+               && int.TryParse(segments[1].AsSpan(1), out _)
+               && segments[2].Equals("auth", StringComparison.OrdinalIgnoreCase);
     }
 }
