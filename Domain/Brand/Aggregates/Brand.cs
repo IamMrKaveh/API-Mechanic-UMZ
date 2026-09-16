@@ -37,7 +37,8 @@ public sealed class Brand : AggregateRoot<BrandId>, ISoftDeletable
         BrandSlug slug,
         CategoryId categoryId,
         string? description,
-        string? logoPath) : base(id)
+        string? logoPath,
+        DateTime now) : base(id)
     {
         Name = name;
         Slug = slug;
@@ -45,7 +46,7 @@ public sealed class Brand : AggregateRoot<BrandId>, ISoftDeletable
         Description = description;
         LogoPath = logoPath;
         IsActive = true;
-        CreatedAt = DateTime.UtcNow;
+        CreatedAt = now;
 
         RaiseDomainEvent(new BrandCreatedEvent(id, name, slug, categoryId));
     }
@@ -57,6 +58,7 @@ public sealed class Brand : AggregateRoot<BrandId>, ISoftDeletable
         IBrandUniquenessChecker uniquenessChecker,
         string? description,
         string? logoPath,
+        DateTime now,
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(categoryId);
@@ -65,7 +67,7 @@ public sealed class Brand : AggregateRoot<BrandId>, ISoftDeletable
         if (!await uniquenessChecker.IsUniqueAsync(name, slug, categoryId, null, ct))
             throw new BrandNameAlreadyExistsException(name);
 
-        return new Brand(BrandId.NewId(), name, slug, categoryId, description, logoPath);
+        return new Brand(BrandId.NewId(), name, slug, categoryId, description, logoPath, now);
     }
 
     public async Task UpdateDetails(
@@ -74,6 +76,7 @@ public sealed class Brand : AggregateRoot<BrandId>, ISoftDeletable
         IBrandUniquenessChecker uniquenessChecker,
         string? description,
         string? logoPath,
+        DateTime now,
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
@@ -85,13 +88,13 @@ public sealed class Brand : AggregateRoot<BrandId>, ISoftDeletable
         Slug = slug;
         Description = description;
         LogoPath = logoPath;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         RaiseDomainEvent(new BrandUpdatedEvent(Id, name, slug, description));
     }
 
-    public void ChangeCategory(CategoryId newCategoryId)
+    public void ChangeCategory(CategoryId newCategoryId, DateTime now)
     {
         ArgumentNullException.ThrowIfNull(newCategoryId);
 
@@ -100,41 +103,39 @@ public sealed class Brand : AggregateRoot<BrandId>, ISoftDeletable
 
         var previousCategoryId = CategoryId;
         CategoryId = newCategoryId;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         RaiseDomainEvent(new BrandCategoryChangedEvent(Id, previousCategoryId, newCategoryId));
     }
 
-    public void Activate()
+    public void Activate(DateTime now)
     {
         if (IsActive)
             throw new BrandAlreadyActiveException(Id);
 
         IsActive = true;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         RaiseDomainEvent(new BrandActivatedEvent(Id, Name, CategoryId));
     }
 
-    public void Deactivate()
+    public void Deactivate(DateTime now)
     {
         if (!IsActive)
             throw new BrandAlreadyDeactivatedException(Id);
 
         IsActive = false;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         RaiseDomainEvent(new BrandDeactivatedEvent(Id, Name, CategoryId));
     }
 
-    public void RequestDeletion(UserId? deletedBy = null)
+    public void RequestDeletion(DateTime now, UserId? deletedBy = null)
     {
         if (IsDeleted) return;
-
-        var now = DateTime.UtcNow;
 
         IsActive = false;
         IsDeleted = true;

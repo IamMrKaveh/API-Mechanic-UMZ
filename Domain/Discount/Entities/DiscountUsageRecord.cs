@@ -26,7 +26,8 @@ public sealed class DiscountUsageRecord : Entity<DiscountUsageId>
         UserId userId,
         OrderId orderId,
         decimal discountedAmount,
-        int usageCountAtTime)
+        int usageCountAtTime,
+        DateTime now)
     {
         return new DiscountUsageRecord
         {
@@ -37,7 +38,7 @@ public sealed class DiscountUsageRecord : Entity<DiscountUsageId>
             OrderId = orderId,
             DiscountedAmount = discountedAmount,
             UsageCountAtTime = usageCountAtTime,
-            UsedAt = DateTime.UtcNow
+            UsedAt = now
         };
     }
 }

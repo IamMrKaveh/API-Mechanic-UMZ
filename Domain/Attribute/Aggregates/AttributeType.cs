@@ -25,13 +25,13 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
     private AttributeType()
     { }
 
-    private AttributeType(AttributeTypeId id, string name, string displayName, int sortOrder, bool isActive) : base(id)
+    private AttributeType(AttributeTypeId id, string name, string displayName, int sortOrder, bool isActive, DateTime now) : base(id)
     {
         Name = name;
         DisplayName = displayName;
         SortOrder = sortOrder;
         IsActive = isActive;
-        CreatedAt = DateTime.UtcNow;
+        CreatedAt = now;
     }
 
     public static async Task<AttributeType> Create(
@@ -40,6 +40,7 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         int sortOrder,
         bool isActive,
         IAttributeTypeUniquenessChecker uniquenessChecker,
+        DateTime now,
         CancellationToken ct = default)
     {
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
@@ -53,7 +54,7 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
             throw new DuplicateAttributeException(trimmedName);
 
         var id = AttributeTypeId.NewId();
-        var attributeType = new AttributeType(id, trimmedName, trimmedDisplayName, sortOrder, isActive);
+        var attributeType = new AttributeType(id, trimmedName, trimmedDisplayName, sortOrder, isActive, now);
 
         attributeType.RaiseDomainEvent(new AttributeTypeCreatedEvent(id, trimmedName, trimmedDisplayName, sortOrder));
         return attributeType;
@@ -65,6 +66,7 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         int sortOrder,
         bool isActive,
         IAttributeTypeUniquenessChecker uniquenessChecker,
+        DateTime now,
         CancellationToken ct = default)
     {
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
@@ -82,10 +84,10 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         DisplayName = trimmedDisplayName;
         SortOrder = sortOrder;
         IsActive = isActive;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
     }
 
-    public AttributeValue AddValue(string value, string displayValue, string? hexCode = null, int sortOrder = 0)
+    public AttributeValue AddValue(string value, string displayValue, DateTime now, string? hexCode = null, int sortOrder = 0)
     {
         Guard.Against.NullOrWhiteSpace(value, nameof(value));
         Guard.Against.Negative(sortOrder, nameof(sortOrder));
@@ -95,9 +97,9 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         if (_values.Any(v => v.Value.Equals(trimmedValue, StringComparison.OrdinalIgnoreCase)))
             throw new DuplicateAttributeException(trimmedValue);
 
-        var attributeValue = AttributeValue.Create(this, trimmedValue, displayValue, hexCode, sortOrder);
+        var attributeValue = AttributeValue.Create(this, trimmedValue, displayValue, hexCode, sortOrder, now);
         _values.Add(attributeValue);
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
 
         RaiseDomainEvent(new AttributeValueAddedEvent(Id, attributeValue.Id, trimmedValue, attributeValue.DisplayValue));
         return attributeValue;
@@ -109,7 +111,8 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
         string displayValue,
         string? hexCode,
         int sortOrder,
-        bool isActive)
+        bool isActive,
+        DateTime now)
     {
         Guard.Against.NullOrWhiteSpace(newValue, nameof(newValue));
         Guard.Against.Negative(sortOrder, nameof(sortOrder));
@@ -125,19 +128,19 @@ public sealed class AttributeType : AggregateRoot<AttributeTypeId>, IAuditable, 
                 throw new DuplicateAttributeException(trimmedValue);
         }
 
-        attrValue.Update(trimmedValue, displayValue, hexCode, sortOrder, isActive);
-        UpdatedAt = DateTime.UtcNow;
+        attrValue.Update(trimmedValue, displayValue, hexCode, sortOrder, isActive, now);
+        UpdatedAt = now;
     }
 
-    public void MarkAsDeleted(Guid? deletedBy)
+    public void MarkAsDeleted(Guid? deletedBy, DateTime now)
     {
         if (IsDeleted)
             return;
 
         IsDeleted = true;
         IsActive = false;
-        DeletedAt = DateTime.UtcNow;
+        DeletedAt = now;
         DeletedBy = deletedBy;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
     }
 }

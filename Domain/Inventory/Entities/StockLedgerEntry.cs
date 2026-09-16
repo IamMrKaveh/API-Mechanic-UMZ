@@ -40,6 +40,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         int quantity,
         int balanceAfter,
         decimal unitCost,
+        DateTime now,
         string? referenceNumber = null,
         string? note = null,
         WarehouseId? warehouseId = null,
@@ -47,7 +48,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         return Create(variantId, StockEventType.StockIn, quantity, balanceAfter,
-            unitCost, referenceNumber, note, warehouseId, userId);
+            unitCost, referenceNumber, note, warehouseId, userId, now);
     }
 
     public static StockLedgerEntry Reserve(
@@ -55,6 +56,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         int quantity,
         int balanceAfter,
         string referenceNumber,
+        DateTime now,
         string? correlationId = null,
         WarehouseId? warehouseId = null,
         UserId? userId = null,
@@ -62,7 +64,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         var entry = Create(variantId, StockEventType.Reservation, -quantity, balanceAfter,
-            0, referenceNumber, null, warehouseId, userId);
+            0, referenceNumber, null, warehouseId, userId, now);
         entry.CorrelationId = correlationId;
         entry.OrderItemId = orderItemId;
         return entry;
@@ -73,12 +75,13 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         int quantity,
         int balanceAfter,
         string referenceNumber,
+        DateTime now,
         string? reason = null,
         WarehouseId? warehouseId = null)
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         return Create(variantId, StockEventType.ReservationRelease, quantity, balanceAfter,
-            0, referenceNumber, reason, warehouseId);
+            0, referenceNumber, reason, warehouseId, now: now);
     }
 
     public static StockLedgerEntry CommitReservation(
@@ -86,12 +89,13 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         int quantity,
         int balanceAfter,
         string referenceNumber,
+        DateTime now,
         OrderItemId? orderItemId = null,
         WarehouseId? warehouseId = null)
     {
         Guard.Against.NegativeOrZero(quantity, nameof(quantity));
         var entry = Create(variantId, StockEventType.ReservationCommit, -quantity, balanceAfter,
-            0, referenceNumber, null, warehouseId);
+            0, referenceNumber, null, warehouseId, now: now);
         entry.OrderItemId = orderItemId;
         return entry;
     }
@@ -101,11 +105,12 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         int delta,
         int balanceAfter,
         string reason,
+        DateTime now,
         UserId? userId = null,
         WarehouseId? warehouseId = null)
     {
         return Create(variantId, StockEventType.Adjustment, delta, balanceAfter,
-            0, null, reason, warehouseId, userId);
+            0, null, reason, warehouseId, userId, now);
     }
 
     private static StockLedgerEntry Create(
@@ -117,7 +122,8 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
         string? referenceNumber,
         string? note,
         WarehouseId? warehouseId = null,
-        UserId? userId = null)
+        UserId? userId = null,
+        DateTime now = default)
     {
         if (balanceAfter < 0)
             throw new DomainException("موجودی پس از این رویداد نمی‌تواند منفی باشد.");
@@ -136,7 +142,7 @@ public sealed class StockLedgerEntry : Entity<StockLedgerEntryId>, IAuditable
             Note = note,
             IdempotencyKey =
                 $"{variantId}:{eventType}:{referenceNumber ?? Guid.NewGuid().ToString("N")}",
-            CreatedAt = TruncateToMicroseconds(DateTime.UtcNow)
+            CreatedAt = TruncateToMicroseconds(now)
         };
     }
 

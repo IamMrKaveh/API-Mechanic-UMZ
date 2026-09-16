@@ -18,20 +18,20 @@ public sealed class Wishlist : AggregateRoot<WishlistId>, IAuditable
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    private Wishlist(WishlistId id, UserId userId, ProductId productId) : base(id)
+    private Wishlist(WishlistId id, UserId userId, ProductId productId, DateTime now) : base(id)
     {
         UserId = userId;
         ProductId = productId;
-        CreatedAt = DateTime.UtcNow;
+        CreatedAt = now;
 
         RaiseDomainEvent(new WishlistItemAddedEvent(id, userId, productId));
     }
 
-    public static Wishlist Create(UserId userId, ProductId productId)
+    public static Wishlist Create(UserId userId, ProductId productId, DateTime now)
     {
         Guard.Against.Null(userId, nameof(userId));
         Guard.Against.Null(productId, nameof(productId));
 
-        return new Wishlist(WishlistId.NewId(), userId, productId);
+        return new Wishlist(WishlistId.NewId(), userId, productId, now);
     }
 }

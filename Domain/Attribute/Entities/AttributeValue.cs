@@ -29,7 +29,8 @@ public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActi
         string value,
         string displayValue,
         string? hexCode,
-        int sortOrder) : base(id)
+        int sortOrder,
+        DateTime now) : base(id)
     {
         AttributeType = attributeType;
         AttributeTypeId = attributeType.Id;
@@ -37,11 +38,11 @@ public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActi
         DisplayValue = displayValue;
         HexCode = hexCode;
         SortOrder = sortOrder;
-        CreatedAt = DateTime.UtcNow;
+        CreatedAt = now;
         IsActive = true;
     }
 
-    internal static AttributeValue Create(AttributeType attributeType, string value, string displayValue, string? hexCode, int sortOrder)
+    internal static AttributeValue Create(AttributeType attributeType, string value, string displayValue, string? hexCode, int sortOrder, DateTime now)
     {
         Guard.Against.Null(attributeType, nameof(attributeType));
         Guard.Against.NullOrWhiteSpace(value, nameof(value));
@@ -56,10 +57,11 @@ public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActi
             trimmedValue,
             trimmedDisplay,
             hexCode?.Trim(),
-            sortOrder);
+            sortOrder,
+            now);
     }
 
-    public void Update(string value, string displayValue, string? hexCode, int sortOrder, bool isActive)
+    public void Update(string value, string displayValue, string? hexCode, int sortOrder, bool isActive, DateTime now)
     {
         Guard.Against.NullOrWhiteSpace(value, nameof(value));
         Guard.Against.Negative(sortOrder, nameof(sortOrder));
@@ -69,6 +71,6 @@ public sealed class AttributeValue : Entity<AttributeValueId>, IAuditable, IActi
         HexCode = hexCode?.Trim();
         SortOrder = sortOrder;
         IsActive = isActive;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
     }
 }

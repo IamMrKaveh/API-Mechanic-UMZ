@@ -35,7 +35,8 @@ public sealed class CartItem : Entity<CartItemId>
         Sku sku,
         Money unitPrice,
         Money originalPrice,
-        int quantity) : base(id)
+        int quantity,
+        DateTime now) : base(id)
     {
         CartId = cartId;
         VariantId = variantId;
@@ -45,7 +46,7 @@ public sealed class CartItem : Entity<CartItemId>
         SellingPrice = unitPrice;
         OriginalPrice = originalPrice;
         Quantity = quantity;
-        AddedAt = DateTime.UtcNow;
+        AddedAt = now;
     }
 
     internal static CartItem Create(
@@ -56,7 +57,8 @@ public sealed class CartItem : Entity<CartItemId>
         Sku sku,
         Money unitPrice,
         Money originalPrice,
-        int quantity)
+        int quantity,
+        DateTime now)
     {
         if (quantity <= 0)
             throw new InvalidCartQuantityException(quantity);
@@ -73,7 +75,8 @@ public sealed class CartItem : Entity<CartItemId>
             sku,
             unitPrice.Copy(),
             originalPrice.Copy(),
-            quantity);
+            quantity,
+            now);
     }
 
     internal void UpdateQuantity(int newQuantity)

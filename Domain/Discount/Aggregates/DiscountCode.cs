@@ -31,10 +31,10 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>, ISoftDeletable
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
-    public bool IsExpired => ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value;
-    public bool HasStarted => !StartsAt.HasValue || DateTime.UtcNow >= StartsAt.Value;
+    public bool IsExpired(DateTime now) => ExpiresAt.HasValue && now > ExpiresAt.Value;
+    public bool HasStarted(DateTime now) => !StartsAt.HasValue || now >= StartsAt.Value;
     public bool HasReachedUsageLimit => UsageLimit.HasValue && UsageCount >= UsageLimit.Value;
-    public bool IsRedeemable => IsActive && HasStarted && !IsExpired && !HasReachedUsageLimit;
+    public bool IsRedeemable(DateTime now) => IsActive && HasStarted(now) && !IsExpired(now) && !HasReachedUsageLimit;
 
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
@@ -44,6 +44,7 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>, ISoftDeletable
         DiscountCodeId id,
         string code,
         DiscountValue value,
+        DateTime now,
         Money? maximumDiscountAmount = null,
         int? usageLimit = null,
         DateTime? startsAt = null,
@@ -66,8 +67,8 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>, ISoftDeletable
             StartsAt = startsAt,
             ExpiresAt = expiresAt,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         discountCode.RaiseDomainEvent(new DiscountCodeCreatedEvent(
@@ -80,7 +81,8 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>, ISoftDeletable
         Money? maximumDiscountAmount,
         int? usageLimit,
         DateTime? startsAt,
-        DateTime? expiresAt)
+        DateTime? expiresAt,
+        DateTime now)
     {
         if (expiresAt.HasValue && startsAt.HasValue && expiresAt.Value <= startsAt.Value)
             throw new InvalidDiscountException("تاریخ انقضا باید بعد از تاریخ شروع باشد.");
@@ -90,19 +92,19 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>, ISoftDeletable
         UsageLimit = usageLimit;
         StartsAt = startsAt;
         ExpiresAt = expiresAt;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
     }
 
-    public DiscountValidation ValidateForApplication(Money orderAmount)
+    public DiscountValidation ValidateForApplication(Money orderAmount, DateTime now)
     {
         if (!IsActive)
             return DiscountValidation.Fail("کد تخفیف غیرفعال است.");
 
-        if (!HasStarted)
+        if (!HasStarted(now))
             return DiscountValidation.Fail("کد تخفیف هنوز فعال نشده است.");
 
-        if (IsExpired)
+        if (IsExpired(now))
             return DiscountValidation.Fail("کد تخفیف منقضی شده است.");
 
         if (HasReachedUsageLimit)
@@ -137,17 +139,17 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>, ISoftDeletable
         return discountAmount;
     }
 
-    public DiscountUsageRecord RecordUsage(UserId userId, OrderId orderId, Money discountedAmount)
+    public DiscountUsageRecord RecordUsage(UserId userId, OrderId orderId, Money discountedAmount, DateTime now)
     {
-        if (!IsRedeemable)
+        if (!IsRedeemable(now))
             throw new DiscountCodeNotRedeemableException(Id, Code);
 
         UsageCount++;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         var usage = DiscountUsageRecord.Create(
-            Id, Code, userId, orderId, discountedAmount.Amount, UsageCount);
+            Id, Code, userId, orderId, discountedAmount.Amount, UsageCount, now);
         _usages.Add(usage);
 
         RaiseDomainEvent(new DiscountCodeAppliedEvent(
@@ -155,22 +157,22 @@ public sealed class DiscountCode : AggregateRoot<DiscountCodeId>, ISoftDeletable
         return usage;
     }
 
-    public void Activate()
+    public void Activate(DateTime now)
     {
         if (IsActive) return;
 
         IsActive = true;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
         RaiseDomainEvent(new DiscountCodeActivatedEvent(Id, Code));
     }
 
-    public void Deactivate()
+    public void Deactivate(DateTime now)
     {
         if (!IsActive) return;
 
         IsActive = false;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
         RaiseDomainEvent(new DiscountCodeDeactivatedEvent(Id, Code));
     }
