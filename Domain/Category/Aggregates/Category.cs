@@ -29,6 +29,7 @@ public sealed class Category : AggregateRoot<CategoryId>
         ICategoryUniquenessChecker uniquenessChecker,
         string? description,
         int sortOrder,
+        DateTime now,
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
@@ -44,8 +45,8 @@ public sealed class Category : AggregateRoot<CategoryId>
             Description = description,
             IsActive = true,
             SortOrder = sortOrder,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         category.RaiseDomainEvent(new CategoryCreatedEvent(id, name, slug));
@@ -58,6 +59,7 @@ public sealed class Category : AggregateRoot<CategoryId>
         ICategoryUniquenessChecker? uniquenessChecker,
         string? description,
         int sortOrder,
+        DateTime now,
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(uniquenessChecker);
@@ -69,31 +71,31 @@ public sealed class Category : AggregateRoot<CategoryId>
         Slug = slug;
         Description = description;
         SortOrder = sortOrder;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         RaiseDomainEvent(new CategoryUpdatedEvent(Id, name, slug, description));
     }
 
-    public void Activate()
+    public void Activate(DateTime now)
     {
         if (IsActive)
             return;
 
         IsActive = true;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         RaiseDomainEvent(new CategoryActivatedEvent(Id));
     }
 
-    public void Deactivate()
+    public void Deactivate(DateTime now)
     {
         if (!IsActive)
             return;
 
         IsActive = false;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         RaiseDomainEvent(new CategoryDeactivatedEvent(Id));

@@ -34,6 +34,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
 
     public static Inventory Create(
         VariantId variantId,
+        DateTime now,
         int initialStock = 0,
         bool isUnlimited = false,
         int lowStockThreshold = 5,
@@ -53,8 +54,8 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
             ReservedQuantity = StockQuantity.Create(0),
             IsUnlimited = isUnlimited,
             LowStockThreshold = lowStockThreshold,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         if (initialStock > 0 && !isUnlimited)
@@ -64,6 +65,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
                 initialStock,
                 StockQuantity.Create(initialStock),
                 0,
+                now,
                 null,
                 "ایجاد موجودی اولیه برای واریانت",
                 userId: createdBy);
@@ -81,6 +83,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
     public ServiceResult IncreaseStock(
         int quantity,
         string reason,
+        DateTime now,
         UserId? userId = null,
         string? referenceNumber = null)
     {
@@ -90,11 +93,11 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
         StockQuantity = currentStock.Add(quantity);
 
         IsUnlimited = false;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         var entry = StockLedgerEntry.StockIn(
-            VariantId, quantity, StockQuantity, 0, referenceNumber, reason, userId: userId);
+            VariantId, quantity, StockQuantity, 0, now, referenceNumber, reason, userId: userId);
 
         _ledgerEntries.Add(entry);
         RaiseDomainEvent(new StockIncreasedEvent(Id, VariantId, quantity, StockQuantity, reason));
@@ -105,6 +108,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
     public ServiceResult DecreaseStock(
         int quantity,
         string reason,
+        DateTime now,
         UserId? userId = null,
         string? referenceNumber = null)
     {
@@ -119,11 +123,11 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
             StockQuantity = subtractResult.Value;
         }
 
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         var entry = StockLedgerEntry.Adjustment(
-            VariantId, -quantity, IsUnlimited ? 0 : StockQuantity, reason, userId);
+            VariantId, -quantity, IsUnlimited ? 0 : StockQuantity, reason, now, userId);
 
         _ledgerEntries.Add(entry);
         RaiseDomainEvent(
@@ -132,26 +136,27 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
         return ServiceResult.Success();
     }
 
-    public void SetUnlimited()
+    public void SetUnlimited(DateTime now)
     {
         IsUnlimited = true;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
         RaiseDomainEvent(new StockSetUnlimitedEvent(Id, VariantId));
     }
 
-    public void SetLowStockThreshold(int threshold)
+    public void SetLowStockThreshold(int threshold, DateTime now)
     {
         if (threshold < 0)
             throw new DomainException("آستانه کمبود موجودی نمی‌تواند منفی باشد.");
         LowStockThreshold = threshold;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
     }
 
     public ServiceResult ReserveStock(
         StockQuantity quantity,
         string referenceNumber,
+        DateTime now,
         OrderItemId? orderItemId = null,
         UserId? userId = null,
         string? correlationId = null)
@@ -168,12 +173,12 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
             ReservedQuantity = ReservedQuantity.Add(quantity);
         }
 
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         var entry = StockLedgerEntry.Reserve(
             VariantId, quantity, IsUnlimited ? 0 : AvailableQuantity,
-            referenceNumber, correlationId, userId: userId, orderItemId: orderItemId);
+            referenceNumber, now, correlationId, userId: userId, orderItemId: orderItemId);
 
         _ledgerEntries.Add(entry);
         RaiseDomainEvent(new StockReservedEvent(Id, VariantId, quantity, ReservedQuantity));
@@ -181,7 +186,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
         return ServiceResult.Success();
     }
 
-    public ServiceResult ReleaseReservation(StockQuantity quantity, string referenceNumber, string? reason = null)
+    public ServiceResult ReleaseReservation(StockQuantity quantity, string referenceNumber, DateTime now, string? reason = null)
     {
         if (quantity <= 0)
             return ServiceResult.Failure(new Error("Inventory.InvalidQuantity", "مقدار باید بزرگتر از صفر باشد."));
@@ -193,11 +198,11 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
             return ServiceResult.Success();
 
         ReservedQuantity = ReservedQuantity.Subtract(actualRelease);
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         var entry = StockLedgerEntry.ReleaseReservation(
-            VariantId, actualRelease, AvailableQuantity, referenceNumber, reason);
+            VariantId, actualRelease, AvailableQuantity, referenceNumber, now, reason);
 
         _ledgerEntries.Add(entry);
         RaiseDomainEvent(
@@ -209,6 +214,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
     public ServiceResult ConfirmReservation(
         StockQuantity quantity,
         string referenceNumber,
+        DateTime now,
         OrderItemId? orderItemId = null)
     {
         if (quantity <= 0) return ServiceResult.Failure(new Error("Inventory.InvalidQuantity", "مقدار باید بزرگتر از صفر باشد."));
@@ -220,11 +226,11 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
         ReservedQuantity = ReservedQuantity.Subtract(quantity.Value);
         StockQuantity = StockQuantity.Subtract(quantity.Value);
 
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         var entry = StockLedgerEntry.CommitReservation(
-            VariantId, quantity, StockQuantity, referenceNumber, orderItemId);
+            VariantId, quantity, StockQuantity, referenceNumber, now, orderItemId);
 
         _ledgerEntries.Add(entry);
         RaiseDomainEvent(new StockCommittedEvent(Id, VariantId, OrderItemId.NewId(), quantity));

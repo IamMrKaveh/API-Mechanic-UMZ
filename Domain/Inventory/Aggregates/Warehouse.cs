@@ -26,6 +26,7 @@ public sealed class Warehouse : AggregateRoot<WarehouseId>, IActivatable, IAudit
         string? address,
         string? phone,
         int priority,
+        DateTime now,
         bool isDefault = false)
     {
         return new Warehouse
@@ -39,43 +40,43 @@ public sealed class Warehouse : AggregateRoot<WarehouseId>, IActivatable, IAudit
             Priority = priority,
             IsActive = true,
             IsDefault = isDefault,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now
         };
     }
 
-    public void Update(string name, string city, string? address, string? phone, int priority)
+    public void Update(string name, string city, string? address, string? phone, int priority, DateTime now)
     {
         Name = name;
         City = city;
         Address = address;
         Phone = phone;
         Priority = priority;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
     }
 
-    public void SetAsDefault()
+    public void SetAsDefault(DateTime now)
     {
         IsDefault = true;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
     }
 
-    public void ClearDefault()
+    public void ClearDefault(DateTime now)
     {
         IsDefault = false;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
     }
 
-    public void Activate()
+    public void Activate(DateTime now)
     {
         if (IsActive) return;
         IsActive = true;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
     }
 
-    public void Deactivate()
+    public void Deactivate(DateTime now)
     {
         if (!IsActive) return;
         IsActive = false;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
     }
 }
