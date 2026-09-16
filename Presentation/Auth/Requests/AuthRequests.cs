@@ -6,5 +6,3 @@ public record VerifyOtpRequest(
     string PhoneNumber,
     string Code,
     string? DeviceInfo = null);
-
-public record RefreshRequest(string RefreshToken);

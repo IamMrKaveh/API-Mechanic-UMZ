@@ -94,6 +94,61 @@ public class AntiforgeryExtensionsTests
     }
 
     [Theory]
+    [InlineData("/api/v1/auth/config")]
+    [InlineData("/api/v1/auth")]
+    [InlineData("/api/v12/auth/config")]
+    [InlineData("/API/V1/Auth/config")]
+    public async Task UseApplicationAntiforgery_AnonymousGetOnAuthPath_SetsXsrfCookie(string path)
+    {
+        var (app, antiforgery) = BuildApp(new AntiforgeryTokenSet("req-token", "cookie", "field", "header"));
+        app.UseApplicationAntiforgery();
+        var called = false;
+        app.Run(_ => { called = true; return Task.CompletedTask; });
+        var context = BuildContext(app.ApplicationServices, authenticated: false, path: path);
+
+        await app.Build()(context);
+
+        called.ShouldBeTrue();
+        antiforgery.Received(1).GetAndStoreTokens(Arg.Any<HttpContext>());
+        context.Response.Headers.SetCookie.ToString().ShouldContain("XSRF-TOKEN=req-token");
+    }
+
+    [Theory]
+    [InlineData("/api/v1/orders")]
+    [InlineData("/api/auth/config")]
+    [InlineData("/api/v1/notauth/config")]
+    [InlineData("/api/vx/auth/config")]
+    [InlineData("/api/v1x/auth/config")]
+    public async Task UseApplicationAntiforgery_AnonymousGetOnNonAuthPath_SkipsToken(string path)
+    {
+        var (app, antiforgery) = BuildApp(new AntiforgeryTokenSet("req-token", "cookie", "field", "header"));
+        app.UseApplicationAntiforgery();
+        app.Run(_ => Task.CompletedTask);
+        var context = BuildContext(app.ApplicationServices, authenticated: false, path: path);
+
+        await app.Build()(context);
+
+        antiforgery.DidNotReceiveWithAnyArgs().GetAndStoreTokens(Arg.Any<HttpContext>());
+    }
+
+    [Fact]
+    public async Task UseApplicationAntiforgery_AnonymousPostOnAuthPath_SkipsToken()
+    {
+        var (app, antiforgery) = BuildApp(new AntiforgeryTokenSet("req-token", "cookie", "field", "header"));
+        app.UseApplicationAntiforgery();
+        app.Run(_ => Task.CompletedTask);
+        var context = BuildContext(
+            app.ApplicationServices,
+            authenticated: false,
+            method: "POST",
+            path: "/api/v1/auth/token/refresh");
+
+        await app.Build()(context);
+
+        antiforgery.DidNotReceiveWithAnyArgs().GetAndStoreTokens(Arg.Any<HttpContext>());
+    }
+
+    [Theory]
     [InlineData("/health/live")]
     [InlineData("/metrics")]
     [InlineData("/swagger/index.html")]

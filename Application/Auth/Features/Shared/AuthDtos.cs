@@ -12,6 +12,21 @@ public record AuthResult
     public bool IsNewUser { get; init; }
 }
 
+public record AuthResultResponse(
+    string AccessToken,
+    DateTime AccessTokenExpiresAt,
+    DateTime RefreshTokenExpiresAt,
+    UserProfileDto User,
+    bool IsNewUser)
+{
+    public static AuthResultResponse FromAuthResult(AuthResult result) => new(
+        result.AccessToken,
+        result.AccessTokenExpiresAt,
+        result.RefreshTokenExpiresAt,
+        result.User,
+        result.IsNewUser);
+}
+
 public record TokenResultDto(string AccessToken, string RefreshToken);
 
 public record RefreshTokenResult(

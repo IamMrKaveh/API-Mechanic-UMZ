@@ -7,6 +7,7 @@ using Application.Auth.Features.Commands.SendOtp;
 using Application.Auth.Features.Commands.VerifyOtp;
 using Application.Auth.Features.Shared;
 using Presentation.Auth.Requests;
+using Presentation.Common.Cookies;
 
 namespace Presentation.Auth.Endpoints;
 
@@ -15,7 +16,8 @@ namespace Presentation.Auth.Endpoints;
 public class AuthController(
     IMediator mediator,
     IMapper mapper,
-    IGoogleAuthenticationService googleAuthService)
+    IGoogleAuthenticationService googleAuthService,
+    IAuthCookieService cookieService)
     : BaseApiController(mediator, mapper)
 {
     [HttpGet("google")]
@@ -33,7 +35,7 @@ public class AuthController(
 
     [HttpGet("google/callback")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<AuthResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GoogleCallback(CancellationToken ct)
     {
         var profile = await googleAuthService.AuthenticateAsync(ct);
@@ -47,7 +49,9 @@ public class AuthController(
             profile.LastName,
             profile.ProviderKey);
 
-        return await Send(command, ct);
+        var result = await Mediator.Send(command, ct);
+
+        return HandleAuthResult(result);
     }
 
     [HttpPost("otp")]
@@ -70,7 +74,7 @@ public class AuthController(
     [HttpPost("otp/verify")]
     [AllowAnonymous]
     [OtpRateLimit]
-    [ProducesResponseType(typeof(ApiResponse<AuthResult>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResultResponse>), StatusCodes.Status201Created)]
     public async Task<IActionResult> VerifyOtp(
         [FromBody] VerifyOtpRequest request,
         CancellationToken ct)
@@ -78,44 +82,72 @@ public class AuthController(
         var command = new VerifyOtpCommand(request.PhoneNumber, request.Code, request.DeviceInfo);
         var result = await Mediator.Send(command, ct);
 
-        if (result.IsSuccess)
-            return StatusCode(StatusCodes.Status201Created, new ApiResponse<AuthResult>(result.Value, true, null));
-
-        return ToActionResult(result);
+        return HandleAuthResult(result, StatusCodes.Status201Created);
     }
 
     [HttpPost("token/refresh")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<AuthResult>), StatusCodes.Status201Created)]
-    public async Task<IActionResult> RefreshToken(
-        [FromBody] RefreshRequest request,
-        CancellationToken ct)
+    [ValidateAntiForgeryToken]
+    [ProducesResponseType(typeof(ApiResponse<AuthResultResponse>), StatusCodes.Status201Created)]
+    public async Task<IActionResult> RefreshToken(CancellationToken ct)
     {
-        var command = new RefreshTokenCommand(request.RefreshToken);
+        var refreshToken = cookieService.ReadRefreshToken(Request);
+
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            return Unauthorized(new ApiResponse(false, "توکن به‌روزرسانی یافت نشد."));
+
+        var command = new RefreshTokenCommand(refreshToken);
         var result = await Mediator.Send(command, ct);
 
-        if (result.IsSuccess)
-            return StatusCode(StatusCodes.Status201Created, new ApiResponse<AuthResult>(result.Value, true, null));
-
-        return ToCreatedActionResult(result);
+        return HandleAuthResult(result, StatusCodes.Status201Created);
     }
 
     [HttpDelete("session")]
     [Authorize]
+    [ValidateAntiForgeryToken]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Logout(
-        [FromBody] RefreshRequest request,
-        CancellationToken ct)
+    public async Task<IActionResult> Logout(CancellationToken ct)
     {
-        return await Send(new LogoutCommand(request.RefreshToken), ct);
+        var refreshToken = cookieService.ReadRefreshToken(Request);
+        var result = await Send(new LogoutCommand(refreshToken), ct);
+
+        cookieService.ClearRefreshToken(Response);
+
+        return result;
     }
 
     [HttpDelete("sessions")]
     [Authorize]
+    [ValidateAntiForgeryToken]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> LogoutAll(CancellationToken ct)
     {
-        return await Send(new LogoutAllCommand(), ct);
+        var result = await Send(new LogoutAllCommand(), ct);
+
+        cookieService.ClearRefreshToken(Response);
+
+        return result;
+    }
+
+    private IActionResult HandleAuthResult(ServiceResult<AuthResult> result, int statusCode = StatusCodes.Status200OK)
+    {
+        if (!result.IsSuccess)
+            return ToActionResult(result);
+
+        var auth = result.Value;
+        cookieService.WriteRefreshToken(Response, auth.RefreshToken, auth.RefreshTokenExpiresAt);
+
+        return StatusCode(statusCode, new ApiResponse<AuthResultResponse>(AuthResultResponse.FromAuthResult(auth), true, null));
+    }
+
+    private IActionResult HandleAuthResult(ServiceResult<TokenResultDto> result)
+    {
+        if (!result.IsSuccess)
+            return ToActionResult(result);
+
+        cookieService.WriteRefreshToken(Response, result.Value.RefreshToken);
+
+        return Ok(new ApiResponse(true, null));
     }
 }

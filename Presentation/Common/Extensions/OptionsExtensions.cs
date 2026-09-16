@@ -23,6 +23,8 @@ public static class OptionsExtensions
 
         services.Configure<ReviewSettings>(configuration.GetSection(ReviewSettings.SectionName));
 
+        services.Configure<AuthCookieOptions>(configuration.GetSection(AuthCookieOptions.SectionName));
+
         return services;
     }
 }
