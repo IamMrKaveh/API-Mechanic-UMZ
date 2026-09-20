@@ -127,7 +127,7 @@ public class CartItemTests
         var variantId = VariantId.NewId();
         new CartItemParametersBuilder().WithVariantId(variantId).WithQuantity(1).AddTo(cart);
 
-        cart.UpdateItemQuantity(variantId, 10);
+        cart.UpdateItemQuantity(variantId, 10, DateTime.UtcNow);
 
         cart.CartItems.Single().Quantity.ShouldBe(10);
     }
@@ -141,7 +141,7 @@ public class CartItemTests
         var variantId = VariantId.NewId();
         new CartItemParametersBuilder().WithVariantId(variantId).AddTo(cart);
 
-        Should.Throw<InvalidCartQuantityException>(() => cart.UpdateItemQuantity(variantId, newQuantity));
+        Should.Throw<InvalidCartQuantityException>(() => cart.UpdateItemQuantity(variantId, newQuantity, DateTime.UtcNow));
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class CartItemTests
         var newUnit = Money.Create(90m, "IRT");
         var newOriginal = Money.Create(110m, "IRT");
 
-        cart.RefreshItemPrice(variantId, newUnit, newOriginal);
+        cart.RefreshItemPrice(variantId, newUnit, newOriginal, DateTime.UtcNow);
         var sut = cart.CartItems.Single();
 
         sut.SellingPrice.Amount.ShouldBe(90m);
@@ -169,7 +169,7 @@ public class CartItemTests
         var newUnit = Money.Create(90m, "IRT");
         var newOriginal = Money.Create(110m, "IRT");
 
-        cart.RefreshItemPrice(variantId, newUnit, newOriginal);
+        cart.RefreshItemPrice(variantId, newUnit, newOriginal, DateTime.UtcNow);
         var sut = cart.CartItems.Single();
 
         sut.SellingPrice.ShouldNotBeSameAs(newUnit);
@@ -183,7 +183,7 @@ public class CartItemTests
         var variantId = VariantId.NewId();
         new CartItemParametersBuilder().WithVariantId(variantId).WithUnitPrice(50m).WithQuantity(1).AddTo(cart);
 
-        cart.UpdateItemQuantity(variantId, 6);
+        cart.UpdateItemQuantity(variantId, 6, DateTime.UtcNow);
         var sut = cart.CartItems.Single();
 
         sut.TotalPrice.Amount.ShouldBe(300m);
@@ -207,7 +207,7 @@ public class CartItemTests
         var variantId = VariantId.NewId();
         new CartItemParametersBuilder().WithVariantId(variantId).AddTo(cart);
 
-        cart.RemoveItem(variantId);
+        cart.RemoveItem(variantId, DateTime.UtcNow);
 
         cart.CartItems.ShouldBeEmpty();
     }

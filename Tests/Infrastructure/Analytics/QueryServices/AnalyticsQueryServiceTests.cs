@@ -1,4 +1,4 @@
-using Application.Analytics.Contracts;
+﻿using Application.Analytics.Contracts;
 using Infrastructure.Analytics.QueryServices;
 using Tests.TestInfrastructure.Base;
 using Inventories = Domain.Inventory.Aggregates.Inventory;
@@ -84,10 +84,10 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         Context.ProductVariants.AddRange(v1, v2, v3, v4);
         await Context.SaveChangesAsync();
 
-        var inStock = Inventories.Create(v1.Id, initialStock: 50);
-        var outOfStock = Inventories.Create(v2.Id, initialStock: 0);
-        var lowStock = Inventories.Create(v3.Id, initialStock: 3);
-        var unlimited = Inventories.Create(v4.Id, initialStock: 0, isUnlimited: true);
+        var inStock = Inventories.Create(v1.Id, DateTime.UtcNow, initialStock: 50);
+        var outOfStock = Inventories.Create(v2.Id, DateTime.UtcNow, initialStock: 0);
+        var lowStock = Inventories.Create(v3.Id, DateTime.UtcNow, initialStock: 3);
+        var unlimited = Inventories.Create(v4.Id, DateTime.UtcNow, initialStock: 0, isUnlimited: true);
 
         Context.Inventories.AddRange(inStock, outOfStock, lowStock, unlimited);
         await Context.SaveChangesAsync();
@@ -168,3 +168,4 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Items.Count.ShouldBe(0);
     }
 }
+

@@ -150,7 +150,7 @@ public class AttributeTypeTests
         var checker = new StubAttributeTypeUniquenessChecker();
         var sut = await new AttributeTypeBuilder().WithName("color").WithUniquenessChecker(checker).BuildAsync();
 
-        await sut.Update("  size  ", "  Size  ", 9, false, checker);
+        await sut.Update("  size  ", "  Size  ", 9, false, checker, DateTime.UtcNow);
 
         sut.Name.ShouldBe("size");
         sut.DisplayName.ShouldBe("Size");
@@ -166,7 +166,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().WithName("color").WithUniquenessChecker(checker).BuildAsync();
         var callsAfterCreate = checker.CallCount;
 
-        await sut.Update("size", "Size", 0, true, checker);
+        await sut.Update("size", "Size", 0, true, checker, DateTime.UtcNow);
 
         checker.CallCount.ShouldBe(callsAfterCreate + 1);
         checker.LastName.ShouldBe("size");
@@ -180,7 +180,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().WithName("Color").WithUniquenessChecker(checker).BuildAsync();
         var callsAfterCreate = checker.CallCount;
 
-        await sut.Update("COLOR", "Color", 5, true, checker);
+        await sut.Update("COLOR", "Color", 5, true, checker, DateTime.UtcNow);
 
         checker.CallCount.ShouldBe(callsAfterCreate);
         sut.Name.ShouldBe("COLOR");
@@ -194,7 +194,7 @@ public class AttributeTypeTests
         checker.WithIsUnique(false);
 
         await Should.ThrowAsync<DuplicateAttributeException>(
-            () => sut.Update("size", "Size", 0, true, checker));
+            () => sut.Update("size", "Size", 0, true, checker, DateTime.UtcNow));
     }
 
     [Fact]
@@ -204,7 +204,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().WithUniquenessChecker(checker).BuildAsync();
         var eventsBefore = sut.DomainEvents.Count;
 
-        await sut.Update("newname", "New Name", 0, true, checker);
+        await sut.Update("newname", "New Name", 0, true, checker, DateTime.UtcNow);
 
         sut.DomainEvents.Count.ShouldBe(eventsBefore);
     }
@@ -216,7 +216,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().WithUniquenessChecker(checker).BuildAsync();
         var versionBefore = sut.Version;
 
-        await sut.Update("newname", "New Name", 0, true, checker);
+        await sut.Update("newname", "New Name", 0, true, checker, DateTime.UtcNow);
 
         sut.Version.ShouldBe(versionBefore);
     }
@@ -230,7 +230,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
         await Should.ThrowAsync<ArgumentException>(
-            () => sut.Update(name!, "d", 0, true, new StubAttributeTypeUniquenessChecker()));
+            () => sut.Update(name!, "d", 0, true, new StubAttributeTypeUniquenessChecker(), DateTime.UtcNow));
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
         await Should.ThrowAsync<ArgumentException>(
-            () => sut.Update("newname", "d", 0, true, null!));
+            () => sut.Update("newname", "d", 0, true, null!, DateTime.UtcNow));
     }
 
     [Fact]
@@ -248,7 +248,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
         await Should.ThrowAsync<ArgumentException>(
-            () => sut.Update("newname", "d", -1, true, new StubAttributeTypeUniquenessChecker()));
+            () => sut.Update("newname", "d", -1, true, new StubAttributeTypeUniquenessChecker(), DateTime.UtcNow));
     }
 
     [Fact]
@@ -256,7 +256,7 @@ public class AttributeTypeTests
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
-        var added = sut.AddValue("red", "Red", "#FF0000", 1);
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow, "#FF0000", 1);
 
         sut.Values.Count.ShouldBe(1);
         added.Value.ShouldBe("red");
@@ -271,7 +271,7 @@ public class AttributeTypeTests
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
-        var added = sut.AddValue("  red  ", "  Red  ", "  #FF0000  ", 0);
+        var added = sut.AddValue("  red  ", "  Red  ", DateTime.UtcNow, "  #FF0000  ", 0);
 
         added.Value.ShouldBe("red");
         added.DisplayValue.ShouldBe("Red");
@@ -286,7 +286,7 @@ public class AttributeTypeTests
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
-        var added = sut.AddValue("  red  ", displayValue!);
+        var added = sut.AddValue("  red  ", displayValue!, DateTime.UtcNow);
 
         added.DisplayValue.ShouldBe("red");
     }
@@ -296,7 +296,7 @@ public class AttributeTypeTests
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
-        var added = sut.AddValue("red", "Red");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
 
         added.HexCode.ShouldBeNull();
     }
@@ -306,7 +306,7 @@ public class AttributeTypeTests
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
-        var added = sut.AddValue("red", "Red");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
 
         added.AttributeTypeId.ShouldBe(sut.Id);
         added.AttributeType.ShouldBeSameAs(sut);
@@ -316,9 +316,9 @@ public class AttributeTypeTests
     public async Task AddValue_TwiceWithSameValueCaseInsensitive_ThrowsDuplicateAttributeException()
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
-        sut.AddValue("red", "Red");
+        sut.AddValue("red", "Red", DateTime.UtcNow);
 
-        Should.Throw<DuplicateAttributeException>(() => sut.AddValue("RED", "Rouge"));
+        Should.Throw<DuplicateAttributeException>(() => sut.AddValue("RED", "Rouge", DateTime.UtcNow));
     }
 
     [Theory]
@@ -329,7 +329,7 @@ public class AttributeTypeTests
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
-        Should.Throw<ArgumentException>(() => sut.AddValue(value!, "Red"));
+        Should.Throw<ArgumentException>(() => sut.AddValue(value!, "Red", DateTime.UtcNow));
     }
 
     [Fact]
@@ -337,7 +337,7 @@ public class AttributeTypeTests
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
-        Should.Throw<ArgumentException>(() => sut.AddValue("red", "Red", null, -1));
+        Should.Throw<ArgumentException>(() => sut.AddValue("red", "Red", DateTime.UtcNow, null, -1));
     }
 
     [Fact]
@@ -346,7 +346,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().BuildAsync();
         sut.ClearDomainEvents();
 
-        var added = sut.AddValue("red", "Red");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
 
         sut.DomainEvents.Count.ShouldBe(1);
         var evt = sut.DomainEvents.Single().ShouldBeOfType<AttributeValueAddedEvent>();
@@ -362,7 +362,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().BuildAsync();
         var versionBefore = sut.Version;
 
-        sut.AddValue("red", "Red");
+        sut.AddValue("red", "Red", DateTime.UtcNow);
 
         sut.Version.ShouldBe(versionBefore + 1);
     }
@@ -371,9 +371,9 @@ public class AttributeTypeTests
     public async Task UpdateValue_WithExistingId_AppliesTrimmedFieldsToChildEntity()
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
-        var added = sut.AddValue("red", "Red", "#FF0000", 1);
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow, "#FF0000", 1);
 
-        sut.UpdateValue(added.Id, "  crimson  ", "  Crimson  ", "  #DC143C  ", 2, false);
+        sut.UpdateValue(added.Id, "  crimson  ", "  Crimson  ", "  #DC143C  ", 2, false, DateTime.UtcNow);
 
         added.Value.ShouldBe("crimson");
         added.DisplayValue.ShouldBe("Crimson");
@@ -386,11 +386,11 @@ public class AttributeTypeTests
     public async Task UpdateValue_SetsAggregateUpdatedAt()
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
-        var added = sut.AddValue("red", "Red");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
         var updatedAtBefore = sut.UpdatedAt;
         await Task.Delay(2);
 
-        sut.UpdateValue(added.Id, "crimson", "Crimson", null, 0, true);
+        sut.UpdateValue(added.Id, "crimson", "Crimson", null, 0, true, DateTime.UtcNow);
 
         sut.UpdatedAt.ShouldNotBeNull();
         sut.UpdatedAt.Value.ShouldBeGreaterThan(updatedAtBefore!.Value);
@@ -400,10 +400,10 @@ public class AttributeTypeTests
     public async Task UpdateValue_WhenValueSameCaseInsensitive_DoesNotThrow()
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
-        var added = sut.AddValue("red", "Red");
-        sut.AddValue("blue", "Blue");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
+        sut.AddValue("blue", "Blue", DateTime.UtcNow);
 
-        Should.NotThrow(() => sut.UpdateValue(added.Id, "RED", "Red", null, 0, true));
+        Should.NotThrow(() => sut.UpdateValue(added.Id, "RED", "Red", null, 0, true, DateTime.UtcNow));
         added.Value.ShouldBe("RED");
     }
 
@@ -411,11 +411,11 @@ public class AttributeTypeTests
     public async Task UpdateValue_WhenNewValueCollidesWithSiblingCaseInsensitive_ThrowsDuplicateAttributeException()
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
-        var added = sut.AddValue("red", "Red");
-        sut.AddValue("blue", "Blue");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
+        sut.AddValue("blue", "Blue", DateTime.UtcNow);
 
         Should.Throw<DuplicateAttributeException>(
-            () => sut.UpdateValue(added.Id, "BLUE", "Blue", null, 0, true));
+            () => sut.UpdateValue(added.Id, "BLUE", "Blue", null, 0, true, DateTime.UtcNow));
     }
 
     [Fact]
@@ -424,7 +424,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
         Should.Throw<AttributeValueNotFoundException>(
-            () => sut.UpdateValue(AttributeValueId.NewId(), "red", "Red", null, 0, true));
+            () => sut.UpdateValue(AttributeValueId.NewId(), "red", "Red", null, 0, true, DateTime.UtcNow));
     }
 
     [Theory]
@@ -434,30 +434,30 @@ public class AttributeTypeTests
     public async Task UpdateValue_WithNullOrWhitespaceValue_ThrowsArgumentException(string? value)
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
-        var added = sut.AddValue("red", "Red");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
 
         Should.Throw<ArgumentException>(
-            () => sut.UpdateValue(added.Id, value!, "d", null, 0, true));
+            () => sut.UpdateValue(added.Id, value!, "d", null, 0, true, DateTime.UtcNow));
     }
 
     [Fact]
     public async Task UpdateValue_WithNegativeSortOrder_ThrowsArgumentException()
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
-        var added = sut.AddValue("red", "Red");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
 
         Should.Throw<ArgumentException>(
-            () => sut.UpdateValue(added.Id, "red", "Red", null, -1, true));
+            () => sut.UpdateValue(added.Id, "red", "Red", null, -1, true, DateTime.UtcNow));
     }
 
     [Fact]
     public async Task UpdateValue_DoesNotRaiseAnyDomainEvent()
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
-        var added = sut.AddValue("red", "Red");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
         var eventsBefore = sut.DomainEvents.Count;
 
-        sut.UpdateValue(added.Id, "crimson", "Crimson", null, 0, true);
+        sut.UpdateValue(added.Id, "crimson", "Crimson", null, 0, true, DateTime.UtcNow);
 
         sut.DomainEvents.Count.ShouldBe(eventsBefore);
     }
@@ -466,10 +466,10 @@ public class AttributeTypeTests
     public async Task UpdateValue_DoesNotIncrementVersion()
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
-        var added = sut.AddValue("red", "Red");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
         var versionBefore = sut.Version;
 
-        sut.UpdateValue(added.Id, "crimson", "Crimson", null, 0, true);
+        sut.UpdateValue(added.Id, "crimson", "Crimson", null, 0, true, DateTime.UtcNow);
 
         sut.Version.ShouldBe(versionBefore);
     }
@@ -480,7 +480,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().WithIsActive(true).BuildAsync();
         var deletedBy = Guid.NewGuid();
 
-        sut.MarkAsDeleted(deletedBy);
+        sut.MarkAsDeleted(deletedBy, DateTime.UtcNow);
 
         sut.IsDeleted.ShouldBeTrue();
         sut.IsActive.ShouldBeFalse();
@@ -494,7 +494,7 @@ public class AttributeTypeTests
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
 
-        sut.MarkAsDeleted(null);
+        sut.MarkAsDeleted(null, DateTime.UtcNow);
 
         sut.IsDeleted.ShouldBeTrue();
         sut.DeletedBy.ShouldBeNull();
@@ -505,11 +505,11 @@ public class AttributeTypeTests
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
         var firstUserId = Guid.NewGuid();
-        sut.MarkAsDeleted(firstUserId);
+        sut.MarkAsDeleted(firstUserId, DateTime.UtcNow);
         var firstDeletedAt = sut.DeletedAt;
         var firstUpdatedAt = sut.UpdatedAt;
 
-        sut.MarkAsDeleted(Guid.NewGuid());
+        sut.MarkAsDeleted(Guid.NewGuid(), DateTime.UtcNow);
 
         sut.DeletedBy.ShouldBe(firstUserId);
         sut.DeletedAt.ShouldBe(firstDeletedAt);
@@ -522,7 +522,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().BuildAsync();
         var eventsBefore = sut.DomainEvents.Count;
 
-        sut.MarkAsDeleted(Guid.NewGuid());
+        sut.MarkAsDeleted(Guid.NewGuid(), DateTime.UtcNow);
 
         sut.DomainEvents.Count.ShouldBe(eventsBefore);
     }
@@ -533,7 +533,7 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().BuildAsync();
         var versionBefore = sut.Version;
 
-        sut.MarkAsDeleted(Guid.NewGuid());
+        sut.MarkAsDeleted(Guid.NewGuid(), DateTime.UtcNow);
 
         sut.Version.ShouldBe(versionBefore);
     }
@@ -542,10 +542,10 @@ public class AttributeTypeTests
     public async Task LifecycleSequence_CreateAddValueAddValueUpdateValue_ProducesTwoValues()
     {
         var sut = await new AttributeTypeBuilder().BuildAsync();
-        var red = sut.AddValue("red", "Red");
-        sut.AddValue("blue", "Blue");
+        var red = sut.AddValue("red", "Red", DateTime.UtcNow);
+        sut.AddValue("blue", "Blue", DateTime.UtcNow);
 
-        sut.UpdateValue(red.Id, "crimson", "Crimson", null, 0, true);
+        sut.UpdateValue(red.Id, "crimson", "Crimson", null, 0, true, DateTime.UtcNow);
 
         sut.Values.Count.ShouldBe(2);
         sut.Values.ShouldContain(v => v.Value == "crimson");
@@ -559,16 +559,16 @@ public class AttributeTypeTests
         var sut = await new AttributeTypeBuilder().WithUniquenessChecker(checker).BuildAsync();
         sut.Version.ShouldBe(1);
 
-        var added = sut.AddValue("red", "Red");
+        var added = sut.AddValue("red", "Red", DateTime.UtcNow);
         sut.Version.ShouldBe(2);
 
-        await sut.Update("newname", "New Name", 0, true, checker);
+        await sut.Update("newname", "New Name", 0, true, checker, DateTime.UtcNow);
         sut.Version.ShouldBe(2);
 
-        sut.UpdateValue(added.Id, "crimson", "Crimson", null, 0, true);
+        sut.UpdateValue(added.Id, "crimson", "Crimson", null, 0, true, DateTime.UtcNow);
         sut.Version.ShouldBe(2);
 
-        sut.MarkAsDeleted(Guid.NewGuid());
+        sut.MarkAsDeleted(Guid.NewGuid(), DateTime.UtcNow);
         sut.Version.ShouldBe(2);
     }
 

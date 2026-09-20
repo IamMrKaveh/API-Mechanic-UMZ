@@ -2,12 +2,14 @@ using Application.Category.Adapters;
 using Application.Category.Features.Shared;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Category.Features.Commands.CreateCategory;
 
 public sealed class CreateCategoryHandler(
     ICategoryRepository categoryRepository,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateCategoryCommand, CategoryDto>
 {
     public async Task<ServiceResult<CategoryDto>> Handle(CreateCategoryCommand request, CancellationToken ct)
@@ -27,6 +29,7 @@ public sealed class CreateCategoryHandler(
             uniquenessChecker,
             request.Description,
             request.SortOrder,
+            dateTimeProvider.UtcNow,
             ct);
 
         await categoryRepository.AddAsync(category, ct);

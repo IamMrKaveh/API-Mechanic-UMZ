@@ -4,6 +4,7 @@ using Application.Cache.Contracts;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
@@ -12,7 +13,7 @@ namespace Tests.Application.Attribute.Features.Commands.UpdateAttributeType;
 
 public class UpdateAttributeTypeHandlerTests
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateAttributeTypeHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly UpdateAttributeTypeHandler _sut;
 
     public UpdateAttributeTypeHandlerTests()
     {
@@ -20,7 +21,7 @@ public class UpdateAttributeTypeHandlerTests
             .AttributeTypeExistsAsync(Arg.Any<string>(), Arg.Any<AttributeTypeId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new UpdateAttributeTypeHandler(_repository, _cacheService);
+        _sut = new UpdateAttributeTypeHandler(_repository, _cacheService, _dateTimeProvider);
     }
 
     [Fact]

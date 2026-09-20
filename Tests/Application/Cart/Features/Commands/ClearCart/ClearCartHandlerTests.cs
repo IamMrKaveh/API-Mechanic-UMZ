@@ -1,4 +1,4 @@
-using Application.Cart.Features.Commands.ClearCart;
+﻿using Application.Cart.Features.Commands.ClearCart;
 using Application.Common.Interfaces;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
@@ -7,16 +7,18 @@ using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Carts = Domain.Cart.Aggregates.Cart;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.ClearCart;
 
 public class ClearCartHandlerTests
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ClearCartHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ClearCartHandler _sut;
 
     public ClearCartHandlerTests()
     {
-        _sut = new ClearCartHandler(_cartRepository, _currentUserService);
+        _sut = new ClearCartHandler(_cartRepository, _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -102,3 +104,4 @@ public class ClearCartHandlerTests
         _cartRepository.Received(1).Update(cart);
     }
 }
+

@@ -5,6 +5,7 @@ using Domain.Inventory.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Cart.Features.Commands.UpdateCartItemQuantity;
 
@@ -14,7 +15,8 @@ public class UpdateCartItemQuantityHandler(
     IInventoryRepository inventoryRepository,
     ICartQueryService cartQueryService,
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<UpdateCartItemQuantityCommand, CartDetailDto>
 {
     public async Task<ServiceResult<CartDetailDto>> Handle(
@@ -47,7 +49,7 @@ public class UpdateCartItemQuantityHandler(
         if (cart is null)
             return ServiceResult<CartDetailDto>.NotFound("سبد خرید یافت نشد.");
 
-        cart.UpdateItemQuantity(variantId, request.Quantity);
+        cart.UpdateItemQuantity(variantId, request.Quantity, dateTimeProvider.UtcNow);
         cartRepository.Update(cart);
         await unitOfWork.SaveChangesAsync(ct);
 

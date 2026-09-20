@@ -2,12 +2,14 @@ using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Brand.Features.Commands.MoveBrand;
 
 public class MoveBrandHandler(
     IBrandRepository brandRepository,
-    ICategoryRepository categoryRepository)
+    ICategoryRepository categoryRepository,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<MoveBrandCommand>
 {
     public async Task<ServiceResult> Handle(MoveBrandCommand request, CancellationToken ct)
@@ -24,7 +26,7 @@ public class MoveBrandHandler(
         if (category is null)
             return ServiceResult.NotFound("دسته‌بندی مقصد یافت نشد.");
 
-        brand.ChangeCategory(targetCategoryId);
+        brand.ChangeCategory(targetCategoryId, dateTimeProvider.UtcNow);
         brandRepository.Update(brand);
 
         return ServiceResult.Success();

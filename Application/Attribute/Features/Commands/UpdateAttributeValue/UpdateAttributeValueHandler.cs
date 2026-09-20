@@ -1,12 +1,14 @@
 using Application.Attribute.Constants;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
 
 public class UpdateAttributeValueHandler(
     IAttributeRepository repository,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<UpdateAttributeValueCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -43,7 +45,8 @@ public class UpdateAttributeValueHandler(
             request.DisplayValue ?? attributeValue.DisplayValue,
             request.HexCode ?? attributeValue.HexCode,
             request.SortOrder ?? attributeValue.SortOrder,
-            request.IsActive ?? attributeValue.IsActive);
+            request.IsActive ?? attributeValue.IsActive,
+            dateTimeProvider.UtcNow);
 
         await repository.UpdateAttributeTypeAsync(type, ct);
         await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);

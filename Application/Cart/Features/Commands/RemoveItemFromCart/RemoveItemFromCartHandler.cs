@@ -3,6 +3,7 @@ using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Cart.Features.Commands.RemoveItemFromCart;
 
@@ -10,7 +11,8 @@ public class RemoveItemFromCartHandler(
     ICartRepository cartRepository,
     ICartQueryService cartQueryService,
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<RemoveItemFromCartCommand, CartDetailDto>
 {
     public async Task<ServiceResult<CartDetailDto>> Handle(
@@ -31,7 +33,7 @@ public class RemoveItemFromCartHandler(
             return ServiceResult<CartDetailDto>.NotFound("سبد خرید یافت نشد.");
 
         var variantId = VariantId.From(request.VariantId);
-        cart.RemoveItem(variantId);
+        cart.RemoveItem(variantId, dateTimeProvider.UtcNow);
         cartRepository.Update(cart);
         await unitOfWork.SaveChangesAsync(ct);
 

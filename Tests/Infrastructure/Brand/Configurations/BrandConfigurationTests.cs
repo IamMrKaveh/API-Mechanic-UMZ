@@ -93,7 +93,7 @@ public class BrandConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         initialRowVersion.ShouldNotBeNull();
         initialRowVersion!.Length.ShouldBe(sizeof(uint));
 
-        brand.Deactivate();
+        brand.Deactivate(DateTime.UtcNow);
         brand.ClearDomainEvents();
         repo.Update(brand);
         await _context.SaveChangesAsync();

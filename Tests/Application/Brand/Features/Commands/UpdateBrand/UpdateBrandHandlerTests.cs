@@ -7,6 +7,7 @@ using Application.Media.Contracts;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
@@ -16,7 +17,7 @@ namespace Tests.Application.Brand.Features.Commands.UpdateBrand;
 
 public class UpdateBrandHandlerTests
 {
-    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly IBrandQueryService _brandQueryService = Substitute.For<IBrandQueryService>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateBrandHandler _sut;
+    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly IBrandQueryService _brandQueryService = Substitute.For<IBrandQueryService>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly UpdateBrandHandler _sut;
 
     public UpdateBrandHandlerTests()
     {
@@ -30,7 +31,8 @@ public class UpdateBrandHandlerTests
             _uniquenessChecker,
             _unitOfWork,
             _storageService,
-            _cacheService);
+            _cacheService,
+            _dateTimeProvider);
     }
 
     private async Task<Brands> BuildBrandAsync()

@@ -241,7 +241,8 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
     public ServiceResult ReverseStockChange(
         string idempotencyKey,
         string reason,
-        UserId userId)
+        UserId userId,
+        DateTime now)
     {
         if (IsUnlimited) return ServiceResult.Failure(new Error("Inventory.NotApplicable", "امکان برگشت تراکنش برای واریانت نامحدود وجود ندارد."));
 
@@ -262,12 +263,12 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
             StockQuantity = currentStock.Add(reversalDelta);
         }
 
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         var entry = StockLedgerEntry.Adjustment(
             VariantId, reversalDelta, StockQuantity,
-            $"برگشت تراکنش: {reason}", userId);
+            $"برگشت تراکنش: {reason}", now, userId);
 
         _ledgerEntries.Add(entry);
         RaiseDomainEvent(new StockAdjustedEvent(Id, VariantId, StockQuantity, reversalDelta, reason));
@@ -278,6 +279,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
     public ServiceResult ReturnStock(
         StockQuantity quantity,
         string reason,
+        DateTime now,
         UserId? userId = null)
     {
         if (quantity <= 0) return ServiceResult.Failure(new Error("Inventory.InvalidQuantity", "مقدار باید بزرگتر از صفر باشد."));
@@ -286,11 +288,11 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
         var currentStock = StockQuantity.Create(StockQuantity);
         StockQuantity = currentStock.Add(quantity);
 
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         var entry = StockLedgerEntry.StockIn(
-            VariantId, quantity, StockQuantity, 0, null, reason, userId: userId);
+            VariantId, quantity, StockQuantity, 0, now, null, reason, userId: userId);
 
         _ledgerEntries.Add(entry);
         RaiseDomainEvent(new StockRestoredEvent(Id, VariantId, StockQuantity, quantity, reason));
@@ -298,7 +300,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
         return ServiceResult.Success();
     }
 
-    public ServiceResult AdjustStock(int quantityChange, UserId userId, string reason)
+    public ServiceResult AdjustStock(int quantityChange, UserId userId, string reason, DateTime now)
     {
         if (IsUnlimited) return ServiceResult.Failure(new Error("Inventory.NotApplicable", "واریانت نامحدود قابل تنظیم دستی نیست."));
 
@@ -315,10 +317,10 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
             StockQuantity = currentStock.Add(quantityChange);
         }
 
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
-        var entry = StockLedgerEntry.Adjustment(VariantId, quantityChange, StockQuantity, reason, userId);
+        var entry = StockLedgerEntry.Adjustment(VariantId, quantityChange, StockQuantity, reason, now, userId);
         _ledgerEntries.Add(entry);
 
         RaiseDomainEvent(new StockAdjustedEvent(Id, VariantId, StockQuantity, quantityChange, reason));
@@ -329,6 +331,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
     public ServiceResult AdjustStockTo(
     int targetQuantity,
     string reason,
+    DateTime now,
     UserId? userId = null,
     string? referenceNumber = null)
     {
@@ -346,14 +349,15 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
             return ServiceResult.Success();
 
         return diff > 0
-            ? IncreaseStock(diff, reason, userId, referenceNumber)
-            : DecreaseStock(-diff, reason, userId, referenceNumber);
+            ? IncreaseStock(diff, reason, now, userId, referenceNumber)
+            : DecreaseStock(-diff, reason, now, userId, referenceNumber);
     }
 
     public ServiceResult RecordDamage(
         int quantity,
         UserId userId,
-        string reason)
+        string reason,
+        DateTime now)
     {
         if (quantity <= 0) return ServiceResult.Failure(new Error("Inventory.InvalidQuantity", "مقدار باید بزرگتر از صفر باشد."));
         if (IsUnlimited) return ServiceResult.Failure(new Error("Inventory.NotApplicable", "واریانت نامحدود قابل ثبت خسارت نیست."));
@@ -363,18 +367,18 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
         if (subtractResult.IsFailure) return ServiceResult.Failure(subtractResult.Error);
 
         StockQuantity = subtractResult.Value;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         var entry = StockLedgerEntry.Adjustment(
-            VariantId, -quantity, StockQuantity, $"ضایعات: {reason}", userId);
+            VariantId, -quantity, StockQuantity, $"ضایعات: {reason}", now, userId);
 
         _ledgerEntries.Add(entry);
 
         return ServiceResult.Success();
     }
 
-    public ServiceResult Reconcile(StockQuantity calculatedStockFromLedger, UserId userId)
+    public ServiceResult Reconcile(StockQuantity calculatedStockFromLedger, UserId userId, DateTime now)
     {
         if (IsUnlimited) return ServiceResult.Success();
 
@@ -382,12 +386,12 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
         if (difference == 0) return ServiceResult.Success();
 
         StockQuantity = calculatedStockFromLedger;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = now;
         IncrementVersion();
 
         var entry = StockLedgerEntry.Adjustment(
             VariantId, difference, StockQuantity,
-            $"انبارگردانی: اختلاف {difference} واحد", userId);
+            $"انبارگردانی: اختلاف {difference} واحد", now, userId);
 
         _ledgerEntries.Add(entry);
 

@@ -1,4 +1,4 @@
-using Domain.Inventory.Aggregates;
+﻿using Domain.Inventory.Aggregates;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
 using Infrastructure.Inventory.Repositories;
@@ -169,7 +169,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
 
         var loaded = await _sut.GetByIdAsync(w.Id);
         loaded.ShouldNotBeNull();
-        loaded!.Deactivate();
+        loaded!.Deactivate(DateTime.UtcNow);
         _sut.Update(loaded);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -215,4 +215,5 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 }
+
 

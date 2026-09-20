@@ -1,10 +1,11 @@
 ﻿using Application.Discount.Contracts;
 using Application.Discount.Features.Shared;
 using Domain.Discount.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Infrastructure.Discount.QueryServices;
 
-public sealed class DiscountQueryService(DBContext context) : IDiscountQueryService
+public sealed class DiscountQueryService(DBContext context, IDateTimeProvider dateTimeProvider) : IDiscountQueryService
 {
     public async Task<(IReadOnlyCollection<DiscountCodeDto> Items, int Total)> GetPagedAsync(
         bool includeExpired,
@@ -19,8 +20,9 @@ public sealed class DiscountQueryService(DBContext context) : IDiscountQueryServ
 
         if (!includeExpired)
         {
+            var cutoff = dateTimeProvider.UtcNow;
             query = query.Where(d =>
-                !d.ExpiresAt.HasValue || d.ExpiresAt > DateTime.UtcNow);
+                !d.ExpiresAt.HasValue || d.ExpiresAt > cutoff);
         }
 
         var total = await query.CountAsync(ct);
@@ -41,7 +43,7 @@ public sealed class DiscountQueryService(DBContext context) : IDiscountQueryServ
                 UsageLimit = d.UsageLimit,
                 UsageCount = d.UsageCount,
                 IsActive = d.IsActive,
-                IsRedeemable = d.IsRedeemable,
+                IsRedeemable = d.IsRedeemable(dateTimeProvider.UtcNow),
                 ExpiresAt = d.ExpiresAt,
                 CreatedAt = d.CreatedAt
             })
@@ -78,8 +80,8 @@ public sealed class DiscountQueryService(DBContext context) : IDiscountQueryServ
             StartsAt = discount.StartsAt,
             ExpiresAt = discount.ExpiresAt,
             IsActive = discount.IsActive,
-            IsExpired = discount.IsExpired,
-            IsRedeemable = discount.IsRedeemable,
+            IsExpired = discount.IsExpired(dateTimeProvider.UtcNow),
+            IsRedeemable = discount.IsRedeemable(dateTimeProvider.UtcNow),
             CreatedAt = discount.CreatedAt,
             Restrictions = discount.Restrictions.Select(r => new DiscountRestrictionDto
             {
@@ -111,7 +113,7 @@ public sealed class DiscountQueryService(DBContext context) : IDiscountQueryServ
             DiscountValue = discount.Value.Amount,
             MaximumDiscountAmount = discount.MaximumDiscountAmount?.Amount,
             ExpiresAt = discount.ExpiresAt,
-            IsRedeemable = discount.IsRedeemable
+            IsRedeemable = discount.IsRedeemable(dateTimeProvider.UtcNow)
         };
     }
 
@@ -135,7 +137,7 @@ public sealed class DiscountQueryService(DBContext context) : IDiscountQueryServ
                 Error = "کد تخفیف یافت نشد."
             };
 
-        var validation = discount.ValidateForApplication(orderAmount);
+        var validation = discount.ValidateForApplication(orderAmount, dateTimeProvider.UtcNow);
 
         if (!validation.IsValid)
             return new DiscountValidationResult

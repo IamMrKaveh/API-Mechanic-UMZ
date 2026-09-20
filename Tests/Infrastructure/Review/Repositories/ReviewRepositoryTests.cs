@@ -46,6 +46,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
             new StubCategoryUniquenessChecker(),
             null,
             0,
+            DateTime.UtcNow,
             CancellationToken.None);
 
         category.ClearDomainEvents();
@@ -64,6 +65,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
             new StubBrandUniquenessChecker(),
             null,
             null,
+            DateTime.UtcNow,
             CancellationToken.None);
 
         brand.ClearDomainEvents();

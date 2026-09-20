@@ -1,13 +1,15 @@
 using Domain.Inventory.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.AdjustStock;
 
 public class AdjustStockHandler(
     IInventoryRepository inventoryRepository,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<AdjustStockCommand>
 {
     public async Task<ServiceResult> Handle(AdjustStockCommand request, CancellationToken ct)
@@ -19,7 +21,7 @@ public class AdjustStockHandler(
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        var result = inventory.AdjustStock(request.QuantityChange, userId, request.Reason);
+        var result = inventory.AdjustStock(request.QuantityChange, userId, request.Reason, dateTimeProvider.UtcNow);
 
         if (result.IsFailure)
             return ServiceResult.Failure(result.Error.Message);

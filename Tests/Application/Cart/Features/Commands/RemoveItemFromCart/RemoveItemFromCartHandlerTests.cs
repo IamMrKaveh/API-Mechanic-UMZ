@@ -1,4 +1,4 @@
-using Application.Cart.Contracts;
+﻿using Application.Cart.Contracts;
 using Application.Cart.Features.Commands.RemoveItemFromCart;
 using Application.Cart.Features.Shared;
 using Application.Common.Interfaces;
@@ -10,12 +10,14 @@ using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Carts = Domain.Cart.Aggregates.Cart;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.RemoveItemFromCart;
 
 public class RemoveItemFromCartHandlerTests
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly RemoveItemFromCartHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly RemoveItemFromCartHandler _sut;
 
     public RemoveItemFromCartHandlerTests()
     {
@@ -23,7 +25,7 @@ public class RemoveItemFromCartHandlerTests
             _cartRepository,
             _cartQueryService,
             _unitOfWork,
-            _currentUserService);
+            _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -143,3 +145,4 @@ public class RemoveItemFromCartHandlerTests
         result.Value.Items.ShouldBeEmpty();
     }
 }
+

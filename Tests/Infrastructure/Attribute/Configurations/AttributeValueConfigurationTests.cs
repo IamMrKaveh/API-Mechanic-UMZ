@@ -35,7 +35,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
             .WithName("Color")
             .WithDisplayName("Color")
             .BuildAsync();
-        var value = attributeType.AddValue("Red", "قرمز", "#FF0000", 5);
+        var value = attributeType.AddValue("Red", "قرمز", DateTime.UtcNow, "#FF0000", 5);
         attributeType.ClearDomainEvents();
 
         _context.AttributeTypes.Add(attributeType);
@@ -67,7 +67,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
             .WithName("Material")
             .WithDisplayName("Material")
             .BuildAsync();
-        var value = attributeType.AddValue("Wood", "چوب");
+        var value = attributeType.AddValue("Wood", "چوب", DateTime.UtcNow);
         attributeType.ClearDomainEvents();
 
         _context.AttributeTypes.Add(attributeType);
@@ -86,14 +86,14 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
             .WithName("SoftFilterableSize")
             .WithDisplayName("SoftFilterableSize")
             .BuildAsync();
-        var value = attributeType.AddValue("M", "M");
+        var value = attributeType.AddValue("M", "M", DateTime.UtcNow);
         attributeType.ClearDomainEvents();
 
         _context.AttributeTypes.Add(attributeType);
         await _context.SaveChangesAsync();
 
-        attributeType.MarkAsDeleted(Guid.NewGuid());
-        value.Update("M", "M", null, 0, false);
+        attributeType.MarkAsDeleted(Guid.NewGuid(), DateTime.UtcNow);
+        value.Update("M", "M", null, 0, false, DateTime.UtcNow);
         var entry = _context.Entry(value);
         entry.Property(nameof(AttributeValue.IsDeleted)).CurrentValue = true;
         await _context.SaveChangesAsync();
@@ -112,7 +112,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
             .WithName("IgnoreFilterSize")
             .WithDisplayName("IgnoreFilterSize")
             .BuildAsync();
-        var value = attributeType.AddValue("L", "L");
+        var value = attributeType.AddValue("L", "L", DateTime.UtcNow);
         attributeType.ClearDomainEvents();
 
         _context.AttributeTypes.Add(attributeType);

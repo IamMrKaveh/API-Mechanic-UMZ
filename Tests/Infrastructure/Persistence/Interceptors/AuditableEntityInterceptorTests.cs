@@ -86,7 +86,7 @@ public class AuditableEntityInterceptorTests(PostgresContainerFixture fixture) :
         await using (var updateContext = CreateContextWithProvider(updateProvider))
         {
             stored = (await updateContext.AttributeTypes.FirstAsync())!;
-            stored.MarkAsDeleted(deletedBy: null);
+            stored.MarkAsDeleted(null, DateTime.UtcNow);
             updateContext.AttributeTypes.Update(stored);
             await updateContext.SaveChangesAsync();
         }

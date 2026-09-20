@@ -59,11 +59,11 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
             .Build();
 
         if (finalStatus == WalletTransferStatus.Completed)
-            transfer.MarkCompleted();
+            transfer.MarkCompleted(DateTime.UtcNow);
         else if (finalStatus == WalletTransferStatus.Cancelled)
-            transfer.Cancel(fromUserId);
+            transfer.Cancel(fromUserId, DateTime.UtcNow);
         else if (finalStatus == WalletTransferStatus.Failed)
-            transfer.MarkFailed("simulated failure");
+            transfer.MarkFailed("simulated failure", DateTime.UtcNow);
 
         transfer.ClearDomainEvents();
         _context.Set<WalletTransfer>().Add(transfer);

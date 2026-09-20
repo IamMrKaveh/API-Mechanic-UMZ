@@ -2,6 +2,7 @@ using Application.Cache.Contracts;
 using Application.Category.Features.Commands.DeleteCategory;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
@@ -12,11 +13,11 @@ namespace Tests.Application.Category.Features.Commands.DeleteCategory;
 
 public class DeleteCategoryHandlerTests
 {
-    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteCategoryHandler _sut;
+    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly DeleteCategoryHandler _sut;
 
     public DeleteCategoryHandlerTests()
     {
-        _sut = new DeleteCategoryHandler(_repository, _cacheService);
+        _sut = new DeleteCategoryHandler(_repository, _cacheService, _dateTimeProvider);
     }
 
     private static Task<Categories> BuildCategoryAsync() =>

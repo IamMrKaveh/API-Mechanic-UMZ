@@ -60,9 +60,9 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
             .Build();
 
         if (finalStatus == FraudAlertStatus.Reviewed)
-            alert.MarkAsReviewed(UserId.NewId(), "handled");
+            alert.MarkAsReviewed(UserId.NewId(), "handled", DateTime.UtcNow);
         else if (finalStatus == FraudAlertStatus.Dismissed)
-            alert.Dismiss(UserId.NewId(), "false positive");
+            alert.Dismiss(UserId.NewId(), "false positive", DateTime.UtcNow);
 
         alert.ClearDomainEvents();
         _context.Set<WalletFraudAlert>().Add(alert);

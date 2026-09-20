@@ -353,7 +353,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
     {
         var (activeUser, _) = await SeedUserAndWalletAsync(phone: "09121217001");
         var (frozenUser, frozenWallet) = await SeedUserAndWalletAsync(phone: "09121217002");
-        frozenWallet.Freeze("suspicious", UserId.NewId());
+        frozenWallet.Freeze("suspicious", UserId.NewId(), DateTime.UtcNow);
         _context.Wallets.Update(frozenWallet);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -387,7 +387,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         var (_, wallet1) = await SeedUserAndWalletAsync(phone: "09121218001", initialCredit: 100_000m);
         var (_, wallet2) = await SeedUserAndWalletAsync(phone: "09121218002", initialCredit: 200_000m);
         var (_, wallet3) = await SeedUserAndWalletAsync(phone: "09121218003", initialCredit: 50_000m);
-        wallet3.Freeze("audit", UserId.NewId());
+        wallet3.Freeze("audit", UserId.NewId(), DateTime.UtcNow);
         _context.Wallets.Update(wallet3);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -408,7 +408,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         var openAlert = new WalletFraudAlertBuilder().WithUserId(user.Id).WithWalletId(wallet.Id).Build();
         openAlert.ClearDomainEvents();
         var reviewedAlert = new WalletFraudAlertBuilder().WithUserId(user.Id).WithWalletId(wallet.Id).Build();
-        reviewedAlert.MarkAsReviewed(UserId.NewId(), "ok");
+        reviewedAlert.MarkAsReviewed(UserId.NewId(), "ok", DateTime.UtcNow);
         reviewedAlert.ClearDomainEvents();
 
         _context.Set<WalletFraudAlert>().AddRange(openAlert, reviewedAlert);

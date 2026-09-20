@@ -1,4 +1,4 @@
-using Domain.Cart.Interfaces;
+﻿using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Cart.Repositories;
@@ -99,7 +99,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
             .WithQuantity(1)
             .AddTo(cart);
 
-        cart.Checkout();
+        cart.Checkout(DateTime.UtcNow);
         cart.ClearDomainEvents();
 
         _sut.Add(cart);
@@ -148,7 +148,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
             .WithQuantity(1)
             .AddTo(cart);
 
-        cart.Checkout();
+        cart.Checkout(DateTime.UtcNow);
         cart.ClearDomainEvents();
 
         _sut.Add(cart);
@@ -245,3 +245,4 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 }
+

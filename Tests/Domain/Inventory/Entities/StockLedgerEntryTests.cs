@@ -14,7 +14,7 @@ public class StockLedgerEntryTests
     {
         var variantId = VariantId.NewId();
 
-        var sut = StockLedgerEntry.StockIn(variantId, 10, 10, 0m);
+        var sut = StockLedgerEntry.StockIn(variantId, 10, 10, 0m, DateTime.UtcNow);
 
         sut.EventType.ShouldBe(StockEventType.StockIn);
         sut.VariantId.ShouldBe(variantId);
@@ -26,7 +26,7 @@ public class StockLedgerEntryTests
     [Fact]
     public void StockIn_AssignsGeneratedNonEmptyId()
     {
-        var sut = StockLedgerEntry.StockIn(VariantId.NewId(), 1, 1, 0m);
+        var sut = StockLedgerEntry.StockIn(VariantId.NewId(), 1, 1, 0m, DateTime.UtcNow);
 
         sut.Id.ShouldNotBeNull();
         sut.Id.Value.ShouldNotBe(Guid.Empty);
@@ -37,7 +37,7 @@ public class StockLedgerEntryTests
     {
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        var sut = StockLedgerEntry.StockIn(VariantId.NewId(), 1, 1, 0m);
+        var sut = StockLedgerEntry.StockIn(VariantId.NewId(), 1, 1, 0m, DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.CreatedAt.ShouldBeGreaterThanOrEqualTo(before);
@@ -49,7 +49,7 @@ public class StockLedgerEntryTests
     {
         var variantId = VariantId.NewId();
 
-        var sut = StockLedgerEntry.StockIn(variantId, 1, 1, 0m, referenceNumber: "REF-42");
+        var sut = StockLedgerEntry.StockIn(variantId, 1, 1, 0m, DateTime.UtcNow, referenceNumber: "REF-42");
 
         sut.IdempotencyKey.ShouldBe($"{variantId}:{StockEventType.StockIn}:REF-42");
     }
@@ -59,8 +59,8 @@ public class StockLedgerEntryTests
     {
         var variantId = VariantId.NewId();
 
-        var a = StockLedgerEntry.StockIn(variantId, 1, 1, 0m);
-        var b = StockLedgerEntry.StockIn(variantId, 1, 1, 0m);
+        var a = StockLedgerEntry.StockIn(variantId, 1, 1, 0m, DateTime.UtcNow);
+        var b = StockLedgerEntry.StockIn(variantId, 1, 1, 0m, DateTime.UtcNow);
 
         a.IdempotencyKey.ShouldNotBe(b.IdempotencyKey);
         a.IdempotencyKey.ShouldStartWith($"{variantId}:{StockEventType.StockIn}:");
@@ -73,14 +73,14 @@ public class StockLedgerEntryTests
     public void StockIn_WithNonPositiveQuantity_ThrowsArgumentOutOfRangeException(int quantity)
     {
         Should.Throw<ArgumentOutOfRangeException>(
-            () => StockLedgerEntry.StockIn(VariantId.NewId(), quantity, 0, 0m));
+            () => StockLedgerEntry.StockIn(VariantId.NewId(), quantity, 0, 0m, DateTime.UtcNow));
     }
 
     [Fact]
     public void StockIn_WithNegativeBalanceAfter_ThrowsDomainException()
     {
         var ex = Should.Throw<DomainException>(
-            () => StockLedgerEntry.StockIn(VariantId.NewId(), 1, -1, 0m));
+            () => StockLedgerEntry.StockIn(VariantId.NewId(), 1, -1, 0m, DateTime.UtcNow));
 
         ex.Message.ShouldBe("موجودی پس از این رویداد نمی‌تواند منفی باشد.");
     }
@@ -91,7 +91,7 @@ public class StockLedgerEntryTests
         var variantId = VariantId.NewId();
         var orderItemId = OrderItemId.NewId();
 
-        var sut = StockLedgerEntry.Reserve(variantId, 5, 5, "REF", correlationId: "CORR", orderItemId: orderItemId);
+        var sut = StockLedgerEntry.Reserve(variantId, 5, 5, "REF", DateTime.UtcNow, correlationId: "CORR", orderItemId: orderItemId);
 
         sut.EventType.ShouldBe(StockEventType.Reservation);
         sut.QuantityDelta.ShouldBe(-5);
@@ -105,13 +105,13 @@ public class StockLedgerEntryTests
     public void Reserve_WithNonPositiveQuantity_ThrowsArgumentOutOfRangeException(int quantity)
     {
         Should.Throw<ArgumentOutOfRangeException>(
-            () => StockLedgerEntry.Reserve(VariantId.NewId(), quantity, 0, "REF"));
+            () => StockLedgerEntry.Reserve(VariantId.NewId(), quantity, 0, "REF", DateTime.UtcNow));
     }
 
     [Fact]
     public void ReleaseReservation_WithPositiveQuantity_ReturnsEntryWithPositiveDelta()
     {
-        var sut = StockLedgerEntry.ReleaseReservation(VariantId.NewId(), 3, 3, "REF", "reason");
+        var sut = StockLedgerEntry.ReleaseReservation(VariantId.NewId(), 3, 3, "REF", DateTime.UtcNow, "reason");
 
         sut.EventType.ShouldBe(StockEventType.ReservationRelease);
         sut.QuantityDelta.ShouldBe(3);
@@ -124,7 +124,7 @@ public class StockLedgerEntryTests
     public void ReleaseReservation_WithNonPositiveQuantity_ThrowsArgumentOutOfRangeException(int quantity)
     {
         Should.Throw<ArgumentOutOfRangeException>(
-            () => StockLedgerEntry.ReleaseReservation(VariantId.NewId(), quantity, 0, "REF"));
+            () => StockLedgerEntry.ReleaseReservation(VariantId.NewId(), quantity, 0, "REF", DateTime.UtcNow));
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class StockLedgerEntryTests
     {
         var orderItemId = OrderItemId.NewId();
 
-        var sut = StockLedgerEntry.CommitReservation(VariantId.NewId(), 4, 0, "REF", orderItemId);
+        var sut = StockLedgerEntry.CommitReservation(VariantId.NewId(), 4, 0, "REF", DateTime.UtcNow, orderItemId);
 
         sut.EventType.ShouldBe(StockEventType.ReservationCommit);
         sut.QuantityDelta.ShouldBe(-4);
@@ -145,7 +145,7 @@ public class StockLedgerEntryTests
     public void CommitReservation_WithNonPositiveQuantity_ThrowsArgumentOutOfRangeException(int quantity)
     {
         Should.Throw<ArgumentOutOfRangeException>(
-            () => StockLedgerEntry.CommitReservation(VariantId.NewId(), quantity, 0, "REF"));
+            () => StockLedgerEntry.CommitReservation(VariantId.NewId(), quantity, 0, "REF", DateTime.UtcNow));
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class StockLedgerEntryTests
     {
         var userId = UserId.NewId();
 
-        var sut = StockLedgerEntry.Adjustment(VariantId.NewId(), 5, 15, "manual correction", userId);
+        var sut = StockLedgerEntry.Adjustment(VariantId.NewId(), 5, 15, "manual correction", DateTime.UtcNow, userId);
 
         sut.EventType.ShouldBe(StockEventType.Adjustment);
         sut.QuantityDelta.ShouldBe(5);
@@ -165,7 +165,7 @@ public class StockLedgerEntryTests
     [Fact]
     public void Adjustment_WithNegativeDelta_AllowedAndPersistsSignedDelta()
     {
-        var sut = StockLedgerEntry.Adjustment(VariantId.NewId(), -3, 7, "damage");
+        var sut = StockLedgerEntry.Adjustment(VariantId.NewId(), -3, 7, "damage", DateTime.UtcNow);
 
         sut.QuantityDelta.ShouldBe(-3);
     }
@@ -174,7 +174,7 @@ public class StockLedgerEntryTests
     public void Adjustment_WithNegativeBalanceAfter_ThrowsDomainException()
     {
         var ex = Should.Throw<DomainException>(
-            () => StockLedgerEntry.Adjustment(VariantId.NewId(), -1, -1, "x"));
+            () => StockLedgerEntry.Adjustment(VariantId.NewId(), -1, -1, "x", DateTime.UtcNow));
 
         ex.Message.ShouldBe("موجودی پس از این رویداد نمی‌تواند منفی باشد.");
     }
@@ -182,7 +182,7 @@ public class StockLedgerEntryTests
     [Fact]
     public void EventTypeName_ReturnsEnumMemberName()
     {
-        var sut = StockLedgerEntry.StockIn(VariantId.NewId(), 1, 1, 0m);
+        var sut = StockLedgerEntry.StockIn(VariantId.NewId(), 1, 1, 0m, DateTime.UtcNow);
 
         sut.EventTypeName.ShouldBe("StockIn");
     }

@@ -64,5 +64,5 @@ public sealed class BrandBuilder
     }
 
     public Task<Brand> BuildAsync(CancellationToken ct = default) =>
-        Brand.Create(_name, _slug, _categoryId, _uniquenessChecker, _description, _logoPath, ct);
+        Brand.Create(_name, _slug, _categoryId, _uniquenessChecker, _description, _logoPath, DateTime.UtcNow, ct);
 }

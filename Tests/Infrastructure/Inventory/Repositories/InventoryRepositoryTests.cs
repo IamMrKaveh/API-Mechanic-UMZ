@@ -1,4 +1,4 @@
-using Domain.Brand.ValueObjects;
+﻿using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
@@ -166,9 +166,9 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         var variantB = await PersistVariantAsync("SKU-INV-REF-B");
 
         var invA = new InventoryBuilder().WithVariantId(variantA.Id).WithInitialStock(10).Build();
-        invA.ReserveStock(StockQuantity.Create(4), "ORDER-REF-1");
+        invA.ReserveStock(StockQuantity.Create(4), "ORDER-REF-1", DateTime.UtcNow);
         var invB = new InventoryBuilder().WithVariantId(variantB.Id).WithInitialStock(10).Build();
-        invB.ReserveStock(StockQuantity.Create(3), "ORDER-REF-2");
+        invB.ReserveStock(StockQuantity.Create(3), "ORDER-REF-2", DateTime.UtcNow);
         invA.ClearDomainEvents();
         invB.ClearDomainEvents();
 
@@ -208,7 +208,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
 
         var reloaded = await _sut.GetByVariantIdWithLedgerAsync(variant.Id);
         reloaded.ShouldNotBeNull();
-        var result = reloaded!.IncreaseStock(5, "restock");
+        var result = reloaded!.IncreaseStock(5, "restock", DateTime.UtcNow);
         result.IsSuccess.ShouldBeTrue();
         reloaded.ClearDomainEvents();
 
@@ -243,3 +243,4 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         await Should.ThrowAsync<DbUpdateException>(async () => await Context.SaveChangesAsync());
     }
 }
+

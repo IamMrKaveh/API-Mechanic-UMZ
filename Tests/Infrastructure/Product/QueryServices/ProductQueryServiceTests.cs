@@ -53,6 +53,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
             new StubCategoryUniquenessChecker(),
             "test category",
             0,
+            DateTime.UtcNow,
             CancellationToken.None);
 
         _context.Categories.Add(category);
@@ -70,6 +71,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
             new StubBrandUniquenessChecker(),
             "test brand",
             null,
+            DateTime.UtcNow,
             CancellationToken.None);
 
         _context.Brands.Add(brand);

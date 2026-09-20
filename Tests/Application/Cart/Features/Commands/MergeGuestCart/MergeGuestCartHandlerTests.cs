@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Cart.Features.Commands.MergeGuestCart;
 using Application.Common.Interfaces;
 using Domain.Cart.Enum;
@@ -10,16 +10,18 @@ using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Carts = Domain.Cart.Aggregates.Cart;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.MergeGuestCart;
 
 public class MergeGuestCartHandlerTests
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly MergeGuestCartHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly MergeGuestCartHandler _sut;
 
     public MergeGuestCartHandlerTests()
     {
-        _sut = new MergeGuestCartHandler(_cartRepository, _auditService, _currentUserService);
+        _sut = new MergeGuestCartHandler(_cartRepository, _auditService, _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -138,3 +140,4 @@ public class MergeGuestCartHandlerTests
             Arg.Any<CancellationToken>());
     }
 }
+

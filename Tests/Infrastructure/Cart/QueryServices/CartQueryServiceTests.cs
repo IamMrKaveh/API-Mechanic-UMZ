@@ -1,4 +1,4 @@
-using Application.Cart.Contracts;
+﻿using Application.Cart.Contracts;
 using Application.Media.Contracts;
 using Application.Media.Features.Shared;
 using Domain.Product.ValueObjects;
@@ -64,7 +64,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         UserId userId,
         params (VariantId variantId, ProductId productId, string productName, string sku, decimal unitPrice, decimal originalPrice, int quantity)[] items)
     {
-        var cart = Carts.CreateForUser(userId);
+        var cart = Carts.CreateForUser(userId, DateTime.UtcNow);
         foreach (var item in items)
         {
             cart.AddItem(
@@ -74,7 +74,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
                 Sku.Create(item.sku),
                 Money.Create(item.unitPrice, "IRT"),
                 Money.Create(item.originalPrice, "IRT"),
-                item.quantity);
+                item.quantity, DateTime.UtcNow);
         }
         return cart;
     }
@@ -190,7 +190,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     public async Task ValidateCartForCheckoutAsync_UserWithEmptyCart_ReturnsCartEmptyError()
     {
         var userId = await SeedUserAsync();
-        var cart = Carts.CreateForUser(userId);
+        var cart = Carts.CreateForUser(userId, DateTime.UtcNow);
         _context.Carts.Add(cart);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
@@ -219,3 +219,4 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.Errors.Count.ShouldBe(0);
     }
 }
+

@@ -57,5 +57,5 @@ public sealed class WarehouseBuilder
     }
 
     public Warehouse Build() =>
-        Warehouse.Create(_code, _name, _city, _address, _phone, _priority, _isDefault);
+        Warehouse.Create(_code, _name, _city, _address, _phone, _priority, DateTime.UtcNow, _isDefault);
 }

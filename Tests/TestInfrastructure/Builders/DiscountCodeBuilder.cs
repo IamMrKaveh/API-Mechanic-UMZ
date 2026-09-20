@@ -63,5 +63,5 @@ public sealed class DiscountCodeBuilder
     }
 
     public DiscountCode Build() =>
-        DiscountCode.Create(_id, _code, _value, _maximumDiscountAmount, _usageLimit, _startsAt, _expiresAt);
+        DiscountCode.Create(_id, _code, _value, DateTime.UtcNow, _maximumDiscountAmount, _usageLimit, _startsAt, _expiresAt);
 }

@@ -3,6 +3,7 @@ using Domain.Inventory.Services;
 using Domain.Inventory.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.BulkStockIn;
 
@@ -10,7 +11,8 @@ public class BulkStockInHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<BulkStockInCommand>
 {
     public async Task<ServiceResult> Handle(BulkStockInCommand request, CancellationToken ct)
@@ -41,6 +43,7 @@ public class BulkStockInHandler(
                     inventory,
                     stockQuantity,
                     request.Reason,
+                    dateTimeProvider.UtcNow,
                     userId);
 
                 if (result.IsFailure)

@@ -1,6 +1,7 @@
 using Application.Brand.Features.Shared;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Brand.Features.Commands.UpdateBrand;
 
@@ -10,7 +11,8 @@ public sealed class UpdateBrandHandler(
     IBrandUniquenessChecker brandUniquenessChecker,
     IUnitOfWork unitOfWork,
     IStorageService storageService,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<UpdateBrandCommand, BrandDetailDto>
 {
     private const long MaxFileSizeBytes = 2 * 1024 * 1024;
@@ -53,6 +55,7 @@ public sealed class UpdateBrandHandler(
             brandUniquenessChecker,
             string.IsNullOrWhiteSpace(request.Description) ? null : request.Description,
             logoPath,
+            dateTimeProvider.UtcNow,
             ct);
 
         var rowVersion = !string.IsNullOrWhiteSpace(request.RowVersion)

@@ -340,7 +340,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         _context.Users.Update(user);
 
         var wallet = new WalletBuilder().WithOwnerId(user.Id).Build();
-        wallet.Credit(Money.Create(250_000m, "IRT"), "seed", Guid.NewGuid().ToString());
+        wallet.Credit(Money.Create(250_000m, "IRT"), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow);
         wallet.ClearDomainEvents();
         _context.Wallets.Add(wallet);
 

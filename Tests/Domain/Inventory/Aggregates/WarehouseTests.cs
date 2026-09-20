@@ -72,7 +72,7 @@ public class WarehouseTests
     {
         var sut = new WarehouseBuilder().Build();
 
-        sut.Update("New", "Shiraz", "Addr 2", "021-22", 42);
+        sut.Update("New", "Shiraz", "Addr 2", "021-22", 42, DateTime.UtcNow);
 
         sut.Name.ShouldBe("New");
         sut.City.ShouldBe("Shiraz");
@@ -87,7 +87,7 @@ public class WarehouseTests
     {
         var sut = new WarehouseBuilder().WithCode("wh-01").Build();
 
-        sut.Update("N", "C", null, null, 1);
+        sut.Update("N", "C", null, null, 1, DateTime.UtcNow);
 
         sut.Code.Value.ShouldBe("WH-01");
         sut.IsActive.ShouldBeTrue();
@@ -98,7 +98,7 @@ public class WarehouseTests
     {
         var sut = new WarehouseBuilder().Build();
 
-        sut.SetAsDefault();
+        sut.SetAsDefault(DateTime.UtcNow);
 
         sut.IsDefault.ShouldBeTrue();
         sut.UpdatedAt.ShouldNotBeNull();
@@ -109,7 +109,7 @@ public class WarehouseTests
     {
         var sut = new WarehouseBuilder().AsDefault().Build();
 
-        sut.ClearDefault();
+        sut.ClearDefault(DateTime.UtcNow);
 
         sut.IsDefault.ShouldBeFalse();
         sut.UpdatedAt.ShouldNotBeNull();
@@ -120,7 +120,7 @@ public class WarehouseTests
     {
         var sut = new WarehouseBuilder().Build();
 
-        sut.Activate();
+        sut.Activate(DateTime.UtcNow);
 
         sut.IsActive.ShouldBeTrue();
         sut.UpdatedAt.ShouldBeNull();
@@ -131,7 +131,7 @@ public class WarehouseTests
     {
         var sut = new WarehouseBuilder().Build();
 
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
 
         sut.IsActive.ShouldBeFalse();
         sut.UpdatedAt.ShouldNotBeNull();
@@ -141,10 +141,10 @@ public class WarehouseTests
     public void Deactivate_WhenAlreadyInactive_IsNoOp()
     {
         var sut = new WarehouseBuilder().Build();
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
         var updatedAtBefore = sut.UpdatedAt;
 
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
 
         sut.IsActive.ShouldBeFalse();
         sut.UpdatedAt.ShouldBe(updatedAtBefore);
@@ -154,9 +154,9 @@ public class WarehouseTests
     public void Activate_AfterDeactivate_RestoresActiveAndUpdatesTimestamp()
     {
         var sut = new WarehouseBuilder().Build();
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
 
-        sut.Activate();
+        sut.Activate(DateTime.UtcNow);
 
         sut.IsActive.ShouldBeTrue();
         sut.UpdatedAt.ShouldNotBeNull();

@@ -112,8 +112,8 @@ public class CategoryConfigurationTests(PostgresContainerFixture fixture) : IAsy
 
         var initialRowVersion = _context.Entry(category).Property<byte[]>("RowVersion").CurrentValue!.ToArray();
 
-        category.Activate();
-        category.Deactivate();
+        category.Activate(DateTime.UtcNow);
+        category.Deactivate(DateTime.UtcNow);
         await _context.SaveChangesAsync();
 
         var updatedRowVersion = _context.Entry(category).Property<byte[]>("RowVersion").CurrentValue!;

@@ -2,6 +2,7 @@ using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Cart.Features.Commands.SyncCartPrices;
 
@@ -9,7 +10,8 @@ public class SyncCartPricesHandler(
     ICartRepository cartRepository,
     IVariantRepository variantRepository,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<SyncCartPricesCommand>
 {
     public async Task<ServiceResult> Handle(SyncCartPricesCommand request, CancellationToken ct)
@@ -40,7 +42,7 @@ public class SyncCartPricesHandler(
         {
             var variant = await variantRepository.GetByIdAsync(item.VariantId, ct);
             if (variant is not null)
-                cart.RefreshItemPrice(item.VariantId, variant.SellingPrice, variant.OriginalPrice);
+                cart.RefreshItemPrice(item.VariantId, variant.SellingPrice, variant.OriginalPrice, dateTimeProvider.UtcNow);
         }
 
         cartRepository.Update(cart);

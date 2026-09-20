@@ -4,6 +4,7 @@ using Domain.Attribute.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Attribute.Repositories;
 using Infrastructure.Persistence.Context;
+using SharedKernel.Abstractions.Interfaces;
 using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Infrastructure.Attribute.Repositories;
@@ -12,14 +13,14 @@ namespace Tests.Infrastructure.Attribute.Repositories;
 [Collection(nameof(DatabaseCollection))]
 public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private AttributeRepository _sut = null!;
+    private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private AttributeRepository _sut = null!;
 
     public Task InitializeAsync()
     {
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
 
         _context = _fixture.CreateContext();
-        _sut = new AttributeRepository(_context);
+        _sut = new AttributeRepository(_context, _dateTimeProvider);
         return Task.CompletedTask;
     }
 
@@ -64,7 +65,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         var persisted = await PersistTypeAsync("color", "Color");
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.GetAttributeTypeByIdAsync(persisted.Id);
 
@@ -87,12 +88,12 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     {
         var persisted = await PersistTypeAsync("size", "Size");
 
-        persisted.MarkAsDeleted(deletedBy: null);
+        persisted.MarkAsDeleted(deletedBy: null, now: DateTime.UtcNow);
         _context.AttributeTypes.Update(persisted);
         await _context.SaveChangesAsync();
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.GetAttributeTypeByIdAsync(persisted.Id);
 
@@ -103,13 +104,13 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task GetAttributeTypeWithValuesAsync_WhenTypeHasValues_IncludesValuesCollection()
     {
         var type = await BuildTypeAsync("color", "Color");
-        type.AddValue("red", "Red");
-        type.AddValue("blue", "Blue");
+        type.AddValue("red", "Red", DateTime.UtcNow);
+        type.AddValue("blue", "Blue", DateTime.UtcNow);
         _context.AttributeTypes.Add(type);
         await _context.SaveChangesAsync();
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.GetAttributeTypeWithValuesAsync(type.Id);
 
@@ -131,12 +132,12 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task GetAttributeValueByIdAsync_WhenValueExists_ReturnsValueWithAttributeType()
     {
         var type = await BuildTypeAsync("color", "Color");
-        var addedValue = type.AddValue("red", "Red", "#FF0000");
+        var addedValue = type.AddValue("red", "Red", DateTime.UtcNow, "#FF0000");
         _context.AttributeTypes.Add(type);
         await _context.SaveChangesAsync();
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.GetAttributeValueByIdAsync(addedValue.Id);
 
@@ -162,14 +163,14 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task GetAttributeValuesByIdsAsync_WithMatchingIds_ReturnsMatchingValues()
     {
         var type = await BuildTypeAsync("color", "Color");
-        var red = type.AddValue("red", "Red");
-        var blue = type.AddValue("blue", "Blue");
-        var green = type.AddValue("green", "Green");
+        var red = type.AddValue("red", "Red", DateTime.UtcNow);
+        var blue = type.AddValue("blue", "Blue", DateTime.UtcNow);
+        var green = type.AddValue("green", "Green", DateTime.UtcNow);
         _context.AttributeTypes.Add(type);
         await _context.SaveChangesAsync();
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.GetAttributeValuesByIdsAsync(new[] { red.Id, green.Id });
 
@@ -184,7 +185,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task GetAttributeValuesByIdsAsync_WithEmptyIdList_ReturnsEmpty()
     {
         var type = await BuildTypeAsync("color", "Color");
-        type.AddValue("red", "Red");
+        type.AddValue("red", "Red", DateTime.UtcNow);
         _context.AttributeTypes.Add(type);
         await _context.SaveChangesAsync();
 
@@ -201,7 +202,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         await PersistTypeAsync("material", "Material", sortOrder: 20);
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.GetAllAttributeTypesAsync();
 
@@ -215,12 +216,12 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         var alive = await PersistTypeAsync("color", "Color", sortOrder: 1);
         var deleted = await PersistTypeAsync("size", "Size", sortOrder: 2);
 
-        deleted.MarkAsDeleted(deletedBy: null);
+        deleted.MarkAsDeleted(deletedBy: null, now: DateTime.UtcNow);
         _context.AttributeTypes.Update(deleted);
         await _context.SaveChangesAsync();
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.GetAllAttributeTypesAsync();
 
@@ -232,18 +233,18 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task GetAllAttributeTypesAsync_IncludesValuesForEachType()
     {
         var color = await BuildTypeAsync("color", "Color", sortOrder: 1);
-        color.AddValue("red", "Red");
-        color.AddValue("blue", "Blue");
+        color.AddValue("red", "Red", DateTime.UtcNow);
+        color.AddValue("blue", "Blue", DateTime.UtcNow);
         _context.AttributeTypes.Add(color);
 
         var size = await BuildTypeAsync("size", "Size", sortOrder: 2);
-        size.AddValue("small", "Small");
+        size.AddValue("small", "Small", DateTime.UtcNow);
         _context.AttributeTypes.Add(size);
 
         await _context.SaveChangesAsync();
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.GetAllAttributeTypesAsync();
 
@@ -258,7 +259,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         await PersistTypeAsync("color", "Color");
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.AttributeTypeExistsAsync("color", excludeId: null);
 
@@ -271,7 +272,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         await PersistTypeAsync("color", "Color");
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.AttributeTypeExistsAsync("material", excludeId: null);
 
@@ -284,7 +285,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         var persisted = await PersistTypeAsync("color", "Color");
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.AttributeTypeExistsAsync("color", excludeId: persisted.Id);
 
@@ -295,12 +296,12 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task AttributeValueExistsAsync_WhenValueExistsForType_ReturnsTrue()
     {
         var type = await BuildTypeAsync("color", "Color");
-        type.AddValue("red", "Red");
+        type.AddValue("red", "Red", DateTime.UtcNow);
         _context.AttributeTypes.Add(type);
         await _context.SaveChangesAsync();
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.AttributeValueExistsAsync(type.Id, "red", excludeId: null);
 
@@ -311,12 +312,12 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task AttributeValueExistsAsync_WhenValueDoesNotExistForType_ReturnsFalse()
     {
         var type = await BuildTypeAsync("color", "Color");
-        type.AddValue("red", "Red");
+        type.AddValue("red", "Red", DateTime.UtcNow);
         _context.AttributeTypes.Add(type);
         await _context.SaveChangesAsync();
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.AttributeValueExistsAsync(type.Id, "green", excludeId: null);
 
@@ -327,7 +328,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task AttributeValueExistsAsync_WhenValueExistsForDifferentType_ReturnsFalse()
     {
         var color = await BuildTypeAsync("color", "Color");
-        color.AddValue("red", "Red");
+        color.AddValue("red", "Red", DateTime.UtcNow);
         _context.AttributeTypes.Add(color);
 
         var mood = await BuildTypeAsync("mood", "Mood");
@@ -336,7 +337,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         await _context.SaveChangesAsync();
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.AttributeValueExistsAsync(mood.Id, "red", excludeId: null);
 
@@ -347,12 +348,12 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task AttributeValueExistsAsync_WhenValueMatchesExcludedId_ReturnsFalse()
     {
         var type = await BuildTypeAsync("color", "Color");
-        var red = type.AddValue("red", "Red");
+        var red = type.AddValue("red", "Red", DateTime.UtcNow);
         _context.AttributeTypes.Add(type);
         await _context.SaveChangesAsync();
 
         await using var queryContext = _fixture.CreateContext();
-        var sut = new AttributeRepository(queryContext);
+        var sut = new AttributeRepository(queryContext, _dateTimeProvider);
 
         var result = await sut.AttributeValueExistsAsync(type.Id, "red", excludeId: red.Id);
 
@@ -382,8 +383,8 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task AddAttributeTypeAsync_WithValues_PersistsValuesCascade()
     {
         var type = await BuildTypeAsync("color", "Color");
-        type.AddValue("red", "Red", "#FF0000", sortOrder: 1);
-        type.AddValue("blue", "Blue", "#0000FF", sortOrder: 2);
+        type.AddValue("red", "Red", DateTime.UtcNow, "#FF0000", sortOrder: 1);
+        type.AddValue("blue", "Blue", DateTime.UtcNow, "#0000FF", sortOrder: 2);
 
         await _sut.AddAttributeTypeAsync(type);
         await _context.SaveChangesAsync();
@@ -411,7 +412,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
         checker.IsUniqueAsync(Arg.Any<string>(), Arg.Any<AttributeTypeId?>(), Arg.Any<CancellationToken>())
             .Returns(true);
 
-        await persisted.Update("shade", "Shade", 42, false, checker);
+        await persisted.Update("shade", "Shade", 42, false, checker, DateTime.UtcNow);
 
         await _sut.UpdateAttributeTypeAsync(persisted);
         await _context.SaveChangesAsync();
@@ -466,7 +467,7 @@ public class AttributeRepositoryTests(PostgresContainerFixture fixture) : IAsync
     public async Task DeleteAttributeValueAsync_WithExistingValue_DeactivatesValue()
     {
         var type = await BuildTypeAsync("color", "Color");
-        var red = type.AddValue("red", "Red");
+        var red = type.AddValue("red", "Red", DateTime.UtcNow);
         _context.AttributeTypes.Add(type);
         await _context.SaveChangesAsync();
 

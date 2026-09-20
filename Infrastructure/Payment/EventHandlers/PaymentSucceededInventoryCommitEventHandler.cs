@@ -3,13 +3,15 @@ using Domain.Inventory.Services;
 using Domain.Inventory.ValueObjects;
 using Domain.Order.Interfaces;
 using Domain.Payment.Events;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Infrastructure.Payment.EventHandlers;
 
 public class PaymentSucceededInventoryCommitEventHandler(
     IOrderRepository orderRepository,
     IInventoryRepository inventoryRepository,
-    IUnitOfWork unitOfWork) : INotificationHandler<DomainEventNotification<PaymentSucceededEvent>>
+    IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider) : INotificationHandler<DomainEventNotification<PaymentSucceededEvent>>
 {
     public async Task Handle(DomainEventNotification<PaymentSucceededEvent> notification, CancellationToken ct)
     {
@@ -29,6 +31,7 @@ public class PaymentSucceededInventoryCommitEventHandler(
                     inventory,
                     quantity,
                     order.OrderNumber.Value,
+                    dateTimeProvider.UtcNow,
                     item.Id);
 
                 if (result.IsSuccess)

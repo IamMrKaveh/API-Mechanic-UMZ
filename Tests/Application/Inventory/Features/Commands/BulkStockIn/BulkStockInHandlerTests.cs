@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Common.Interfaces;
 using Application.Inventory.Features.Commands.BulkStockIn;
 using Domain.Inventory.Interfaces;
@@ -9,12 +9,14 @@ using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Inv = Domain.Inventory.Aggregates.Inventory;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.BulkStockIn;
 
 public class BulkStockInHandlerTests
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly BulkStockInHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly BulkStockInHandler _sut;
 
     public BulkStockInHandlerTests()
     {
@@ -32,7 +34,7 @@ public class BulkStockInHandlerTests
             _inventoryRepository,
             _unitOfWork,
             _auditService,
-            _currentUserService);
+            _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -93,3 +95,4 @@ public class BulkStockInHandlerTests
             () => _sut.Handle(command, CancellationToken.None));
     }
 }
+

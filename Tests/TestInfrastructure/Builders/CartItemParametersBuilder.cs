@@ -82,7 +82,7 @@ public sealed class CartItemParametersBuilder
     }
 
     public void AddTo(Cart cart) =>
-        cart.AddItem(_variantId, _productId, _productName, _sku, _unitPrice, _originalPrice, _quantity);
+        cart.AddItem(_variantId, _productId, _productName, _sku, _unitPrice, _originalPrice, _quantity, DateTime.UtcNow);
 
     public VariantId VariantId => _variantId;
     public ProductId ProductId => _productId;

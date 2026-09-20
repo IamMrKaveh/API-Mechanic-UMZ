@@ -3,6 +3,7 @@ using Domain.Discount.Aggregates;
 using Domain.Discount.Interfaces;
 using Domain.Discount.ValueObjects;
 using Infrastructure.Order.Services;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
@@ -13,11 +14,12 @@ public class CheckoutDiscountApplicatorServiceTests
 {
     private readonly IDiscountRepository _discountRepository = Substitute.For<IDiscountRepository>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly CheckoutDiscountApplicatorService _sut;
 
     public CheckoutDiscountApplicatorServiceTests()
     {
-        _sut = new CheckoutDiscountApplicatorService(_discountRepository, _auditService);
+        _sut = new CheckoutDiscountApplicatorService(_discountRepository, _auditService, _dateTimeProvider);
     }
 
     [Theory]
@@ -72,7 +74,7 @@ public class CheckoutDiscountApplicatorServiceTests
             .WithCode("OFF10")
             .WithValue(DiscountValue.Percentage(10m))
             .Build();
-        discount.Deactivate();
+        discount.Deactivate(DateTime.UtcNow);
         _discountRepository
             .GetByCodeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(discount);
@@ -116,7 +118,8 @@ public class CheckoutDiscountApplicatorServiceTests
         discount.RecordUsage(
             global::Domain.User.ValueObjects.UserId.NewId(),
             global::Domain.Order.ValueObjects.OrderId.NewId(),
-            Money.FromDecimal(10_000m));
+            Money.FromDecimal(10_000m),
+            DateTime.UtcNow);
         _discountRepository
             .GetByCodeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(discount);

@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Application.Inventory.Features.Commands.CreateWarehouse;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
@@ -6,16 +6,18 @@ using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Wh = Domain.Inventory.Aggregates.Warehouse;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.CreateWarehouse;
 
 public class CreateWarehouseHandlerTests
 {
-    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateWarehouseHandler _sut;
+    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CreateWarehouseHandler _sut;
 
     public CreateWarehouseHandlerTests()
     {
-        _sut = new CreateWarehouseHandler(_warehouseRepository, _cacheService);
+        _sut = new CreateWarehouseHandler(_warehouseRepository, _cacheService, _dateTimeProvider);
     }
 
     [Fact]
@@ -76,3 +78,4 @@ public class CreateWarehouseHandlerTests
             Arg.Any<CancellationToken>());
     }
 }
+

@@ -1,4 +1,4 @@
-using Domain.Inventory.Aggregates;
+﻿using Domain.Inventory.Aggregates;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
 using Domain.Order.Interfaces;
@@ -7,6 +7,8 @@ using Domain.Variant.ValueObjects;
 using Infrastructure.Inventory.Services;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Infrastructure.Inventory.Services;
 
@@ -16,11 +18,11 @@ public class InventoryServiceTests
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly InventoryService _sut;
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly InventoryService _sut;
 
     public InventoryServiceTests()
     {
-        _sut = new InventoryService(_inventoryRepository, _orderRepository, _unitOfWork, _auditService);
+        _sut = new InventoryService(_inventoryRepository, _orderRepository, _unitOfWork, _auditService, _dateTimeProvider);
     }
 
     private static global::Domain.Inventory.Aggregates.Inventory NewInventory(int stock = 10) =>
@@ -89,7 +91,7 @@ public class InventoryServiceTests
     public async Task ReleaseReservationAsync_WhenReserved_ReleasesAndSaves()
     {
         var inventory = NewInventory(stock: 10);
-        inventory.ReserveStock(StockQuantity.Create(4), "ORDER-7");
+        inventory.ReserveStock(StockQuantity.Create(4), "ORDER-7", DateTime.UtcNow);
         _inventoryRepository.GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(inventory);
 
@@ -208,7 +210,7 @@ public class InventoryServiceTests
     public async Task RollbackReservationsAsync_WhenReservationsExist_ReleasesThem()
     {
         var inventory = NewInventory(stock: 10);
-        inventory.ReserveStock(StockQuantity.Create(4), "ORDER-9");
+        inventory.ReserveStock(StockQuantity.Create(4), "ORDER-9", DateTime.UtcNow);
         _inventoryRepository.GetByReferenceNumberAsync("ORDER-9", Arg.Any<CancellationToken>())
             .Returns([inventory]);
 
@@ -224,9 +226,9 @@ public class InventoryServiceTests
     public async Task RollbackReservationsAsync_PassesReferenceNumberToRepository()
     {
         var matching = NewInventory(stock: 10);
-        matching.ReserveStock(StockQuantity.Create(4), "ORDER-9");
+        matching.ReserveStock(StockQuantity.Create(4), "ORDER-9", DateTime.UtcNow);
         var other = NewInventory(stock: 10);
-        other.ReserveStock(StockQuantity.Create(3), "ORDER-OTHER");
+        other.ReserveStock(StockQuantity.Create(3), "ORDER-OTHER", DateTime.UtcNow);
         _inventoryRepository.GetByReferenceNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<string>() == "ORDER-9"
                 ? [matching]
@@ -268,3 +270,5 @@ public class InventoryServiceTests
         result.ShouldFailWith(ErrorCode.Failure);
     }
 }
+
+

@@ -26,6 +26,6 @@ public sealed class CartBuilder
 
     public Cart Build() =>
         _asUser
-            ? Cart.CreateForUser(_userId)
-            : Cart.CreateForGuest(_guestToken);
+            ? Cart.CreateForUser(_userId, DateTime.UtcNow)
+            : Cart.CreateForGuest(_guestToken, DateTime.UtcNow);
 }

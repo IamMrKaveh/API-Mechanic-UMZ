@@ -3,6 +3,7 @@ using Application.Cache.Contracts;
 using Domain.Brand.Exceptions;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
@@ -12,11 +13,11 @@ namespace Tests.Application.Brand.Features.Commands.DeleteBrand;
 
 public class DeleteBrandHandlerTests
 {
-    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteBrandHandler _sut;
+    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly DeleteBrandHandler _sut;
 
     public DeleteBrandHandlerTests()
     {
-        _sut = new DeleteBrandHandler(_brandRepository, _cacheService);
+        _sut = new DeleteBrandHandler(_brandRepository, _cacheService, _dateTimeProvider);
     }
 
     [Fact]
@@ -69,7 +70,7 @@ public class DeleteBrandHandlerTests
     public async Task Handle_WhenBrandAlreadyDeactivated_ThrowsBrandAlreadyDeactivatedException()
     {
         var brand = await new BrandBuilder().BuildAsync();
-        brand.Deactivate();
+        brand.Deactivate(DateTime.UtcNow);
         _brandRepository
             .GetByIdAsync(Arg.Any<BrandId>(), Arg.Any<CancellationToken>())
             .Returns(brand);

@@ -2,12 +2,14 @@ using Application.Discount.Contracts;
 using Domain.Discount.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Infrastructure.Discount.Services;
 
 public sealed class DiscountService(
     IDiscountRepository discountRepository,
-    IAuditService auditService) : IDiscountService
+    IAuditService auditService,
+    IDateTimeProvider dateTimeProvider) : IDiscountService
 {
     public async Task<ServiceResult> ApplyDiscountAsync(
         string code,
@@ -20,12 +22,12 @@ public sealed class DiscountService(
         if (discount is null)
             return ServiceResult.Failure("کد تخفیف نامعتبر است.");
 
-        var validation = discount.ValidateForApplication(orderAmount);
+        var validation = discount.ValidateForApplication(orderAmount, dateTimeProvider.UtcNow);
         if (validation.IsValid is false)
             return ServiceResult.Failure(validation.FailureReason!);
 
         var discountAmount = discount.CalculateDiscount(orderAmount);
-        discount.RecordUsage(userId, orderId, discountAmount);
+        discount.RecordUsage(userId, orderId, discountAmount, dateTimeProvider.UtcNow);
         discountRepository.Update(discount);
 
         await auditService.LogOrderEventAsync(

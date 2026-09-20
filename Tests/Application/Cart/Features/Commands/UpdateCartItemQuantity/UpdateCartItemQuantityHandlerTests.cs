@@ -1,4 +1,4 @@
-using Application.Cart.Contracts;
+﻿using Application.Cart.Contracts;
 using Application.Cart.Features.Commands.UpdateCartItemQuantity;
 using Application.Cart.Features.Shared;
 using Application.Common.Interfaces;
@@ -14,12 +14,14 @@ using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Carts = Domain.Cart.Aggregates.Cart;
 using Inventories = Domain.Inventory.Aggregates.Inventory;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.UpdateCartItemQuantity;
 
 public class UpdateCartItemQuantityHandlerTests
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly UpdateCartItemQuantityHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly UpdateCartItemQuantityHandler _sut;
 
     public UpdateCartItemQuantityHandlerTests()
     {
@@ -29,7 +31,7 @@ public class UpdateCartItemQuantityHandlerTests
             _inventoryRepository,
             _cartQueryService,
             _unitOfWork,
-            _currentUserService);
+            _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -89,7 +91,7 @@ public class UpdateCartItemQuantityHandlerTests
     {
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
-        var inventory = Inventories.Create(variantId, initialStock: 1, isUnlimited: false);
+        var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 1, isUnlimited: false);
 
         _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _variantRepository
@@ -112,7 +114,7 @@ public class UpdateCartItemQuantityHandlerTests
     {
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
-        var inventory = Inventories.Create(variantId, initialStock: 100);
+        var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 100);
 
         _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _variantRepository
@@ -139,7 +141,7 @@ public class UpdateCartItemQuantityHandlerTests
         var userId = UserId.NewId();
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
-        var inventory = Inventories.Create(variantId, initialStock: 100);
+        var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 100);
         var cart = new CartBuilder().ForUser(userId).Build();
         new CartItemParametersBuilder().WithVariantId(variantId).WithQuantity(2).AddTo(cart);
         var expectedDto = new CartDetailDto { Id = cart.Id.Value, TotalItems = 7 };
@@ -176,7 +178,7 @@ public class UpdateCartItemQuantityHandlerTests
         var guestToken = GuestToken.Create(guestTokenValue);
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
-        var inventory = Inventories.Create(variantId, initialStock: 100);
+        var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 100);
         var cart = new CartBuilder().ForGuest(guestToken).Build();
         new CartItemParametersBuilder().WithVariantId(variantId).WithQuantity(1).AddTo(cart);
 
@@ -205,3 +207,5 @@ public class UpdateCartItemQuantityHandlerTests
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }
+
+

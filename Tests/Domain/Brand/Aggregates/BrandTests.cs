@@ -152,7 +152,7 @@ public class BrandTests
         var newName = BrandName.Create("Renamed");
         var newSlug = BrandSlug.Create("renamed");
 
-        await brand.UpdateDetails(newName, newSlug, checker, "new desc", "new/path.png", CancellationToken.None);
+        await brand.UpdateDetails(newName, newSlug, checker, "new desc", "new/path.png", DateTime.UtcNow, CancellationToken.None);
 
         brand.Name.ShouldBe(newName);
         brand.Slug.ShouldBe(newSlug);
@@ -175,7 +175,7 @@ public class BrandTests
             BrandName.Create("Renamed"),
             BrandSlug.Create("renamed"),
             checker,
-            null, null, CancellationToken.None);
+            null, null, DateTime.UtcNow, CancellationToken.None);
 
         brand.CategoryId.ShouldBe(originalCategory);
     }
@@ -190,7 +190,7 @@ public class BrandTests
             BrandName.Create("Renamed"),
             BrandSlug.Create("renamed"),
             checker,
-            null, null, CancellationToken.None);
+            null, null, DateTime.UtcNow, CancellationToken.None);
 
         checker.CallCount.ShouldBe(2);
         checker.LastExcludeId.ShouldBe(brand.Id);
@@ -207,7 +207,7 @@ public class BrandTests
             () => brand.UpdateDetails(
                 BrandName.Create("Renamed"),
                 BrandSlug.Create("renamed"),
-                checker, null, null, CancellationToken.None));
+                checker, null, null, DateTime.UtcNow, CancellationToken.None));
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public class BrandTests
             () => brand.UpdateDetails(
                 BrandName.Create("Renamed"),
                 BrandSlug.Create("renamed"),
-                null!, null, null, CancellationToken.None));
+                null!, null, null, DateTime.UtcNow, CancellationToken.None));
     }
 
     [Fact]
@@ -232,7 +232,7 @@ public class BrandTests
         await brand.UpdateDetails(
             BrandName.Create("Renamed"),
             BrandSlug.Create("renamed"),
-            checker, null, null, CancellationToken.None);
+            checker, null, null, DateTime.UtcNow, CancellationToken.None);
 
         brand.DomainEvents.Count.ShouldBe(1);
         brand.DomainEvents.ShouldContain(e => e is BrandUpdatedEvent);
@@ -248,7 +248,7 @@ public class BrandTests
         await brand.UpdateDetails(
             BrandName.Create("Renamed"),
             BrandSlug.Create("renamed"),
-            checker, null, null, CancellationToken.None);
+            checker, null, null, DateTime.UtcNow, CancellationToken.None);
 
         brand.Version.ShouldBe(versionBefore + 2);
     }
@@ -259,7 +259,7 @@ public class BrandTests
         var brand = await new BrandBuilder().BuildAsync();
         var newCategory = CategoryId.NewId();
 
-        brand.ChangeCategory(newCategory);
+        brand.ChangeCategory(newCategory, DateTime.UtcNow);
 
         brand.CategoryId.ShouldBe(newCategory);
         brand.UpdatedAt.ShouldNotBeNull();
@@ -271,7 +271,7 @@ public class BrandTests
         var brand = await new BrandBuilder().BuildAsync();
         brand.ClearDomainEvents();
 
-        brand.ChangeCategory(CategoryId.NewId());
+        brand.ChangeCategory(CategoryId.NewId(), DateTime.UtcNow);
 
         brand.DomainEvents.Count.ShouldBe(1);
         brand.DomainEvents.ShouldContain(e => e is BrandCategoryChangedEvent);
@@ -283,7 +283,7 @@ public class BrandTests
         var brand = await new BrandBuilder().BuildAsync();
         var versionBefore = brand.Version;
 
-        brand.ChangeCategory(CategoryId.NewId());
+        brand.ChangeCategory(CategoryId.NewId(), DateTime.UtcNow);
 
         brand.Version.ShouldBe(versionBefore + 2);
     }
@@ -296,7 +296,7 @@ public class BrandTests
         var versionBefore = brand.Version;
         brand.ClearDomainEvents();
 
-        brand.ChangeCategory(categoryId);
+        brand.ChangeCategory(categoryId, DateTime.UtcNow);
 
         brand.CategoryId.ShouldBe(categoryId);
         brand.UpdatedAt.ShouldBeNull();
@@ -314,7 +314,7 @@ public class BrandTests
         var versionBefore = brand.Version;
         brand.ClearDomainEvents();
 
-        brand.ChangeCategory(equalButDifferentInstance);
+        brand.ChangeCategory(equalButDifferentInstance, DateTime.UtcNow);
 
         brand.Version.ShouldBe(versionBefore);
         brand.DomainEvents.ShouldBeEmpty();
@@ -325,7 +325,7 @@ public class BrandTests
     {
         var brand = await new BrandBuilder().BuildAsync();
 
-        Should.Throw<ArgumentNullException>(() => brand.ChangeCategory(null!));
+        Should.Throw<ArgumentNullException>(() => brand.ChangeCategory(null!, DateTime.UtcNow));
     }
 
     [Fact]
@@ -333,7 +333,7 @@ public class BrandTests
     {
         var brand = await new BrandBuilder().BuildAsync();
 
-        Should.Throw<BrandAlreadyActiveException>(brand.Activate);
+        Should.Throw<BrandAlreadyActiveException>(() => brand.Activate(DateTime.UtcNow));
     }
 
     [Fact]
@@ -341,7 +341,7 @@ public class BrandTests
     {
         var brand = await new BrandBuilder().BuildAsync();
 
-        var ex = Should.Throw<BrandAlreadyActiveException>(brand.Activate);
+        var ex = Should.Throw<BrandAlreadyActiveException>(() => brand.Activate(DateTime.UtcNow));
 
         ex.ShouldBeAssignableTo<DomainException>();
     }
@@ -350,11 +350,11 @@ public class BrandTests
     public async Task Activate_OnPreviouslyDeactivatedBrand_SetsIsActiveTrueAndRaisesEvent()
     {
         var brand = await new BrandBuilder().BuildAsync();
-        brand.Deactivate();
+        brand.Deactivate(DateTime.UtcNow);
         brand.ClearDomainEvents();
         var versionBefore = brand.Version;
 
-        brand.Activate();
+        brand.Activate(DateTime.UtcNow);
 
         brand.IsActive.ShouldBeTrue();
         brand.UpdatedAt.ShouldNotBeNull();
@@ -370,7 +370,7 @@ public class BrandTests
         brand.ClearDomainEvents();
         var versionBefore = brand.Version;
 
-        brand.Deactivate();
+        brand.Deactivate(DateTime.UtcNow);
 
         brand.IsActive.ShouldBeFalse();
         brand.UpdatedAt.ShouldNotBeNull();
@@ -383,18 +383,18 @@ public class BrandTests
     public async Task Deactivate_WhenAlreadyInactive_ThrowsBrandAlreadyDeactivatedException()
     {
         var brand = await new BrandBuilder().BuildAsync();
-        brand.Deactivate();
+        brand.Deactivate(DateTime.UtcNow);
 
-        Should.Throw<BrandAlreadyDeactivatedException>(brand.Deactivate);
+        Should.Throw<BrandAlreadyDeactivatedException>(() => brand.Deactivate(DateTime.UtcNow));
     }
 
     [Fact]
     public async Task Deactivate_WhenAlreadyInactive_ExceptionInheritsFromDomainException()
     {
         var brand = await new BrandBuilder().BuildAsync();
-        brand.Deactivate();
+        brand.Deactivate(DateTime.UtcNow);
 
-        var ex = Should.Throw<BrandAlreadyDeactivatedException>(brand.Deactivate);
+        var ex = Should.Throw<BrandAlreadyDeactivatedException>(() => brand.Deactivate(DateTime.UtcNow));
 
         ex.ShouldBeAssignableTo<DomainException>();
     }
@@ -415,13 +415,13 @@ public class BrandTests
         var checker = new StubBrandUniquenessChecker();
         var brand = await new BrandBuilder().WithUniquenessChecker(checker).BuildAsync();
 
-        brand.Deactivate();
-        brand.Activate();
-        brand.ChangeCategory(CategoryId.NewId());
+        brand.Deactivate(DateTime.UtcNow);
+        brand.Activate(DateTime.UtcNow);
+        brand.ChangeCategory(CategoryId.NewId(), DateTime.UtcNow);
         await brand.UpdateDetails(
             BrandName.Create("Renamed"),
             BrandSlug.Create("renamed"),
-            checker, null, null, CancellationToken.None);
+            checker, null, null, DateTime.UtcNow, CancellationToken.None);
 
         brand.DomainEvents.Count.ShouldBe(5);
         brand.DomainEvents.ElementAt(0).ShouldBeOfType<BrandCreatedEvent>();
@@ -438,16 +438,16 @@ public class BrandTests
         var brand = await new BrandBuilder().WithUniquenessChecker(checker).BuildAsync();
 
         brand.Version.ShouldBe(1);
-        brand.Deactivate();
+        brand.Deactivate(DateTime.UtcNow);
         brand.Version.ShouldBe(3);
-        brand.Activate();
+        brand.Activate(DateTime.UtcNow);
         brand.Version.ShouldBe(5);
-        brand.ChangeCategory(CategoryId.NewId());
+        brand.ChangeCategory(CategoryId.NewId(), DateTime.UtcNow);
         brand.Version.ShouldBe(7);
         await brand.UpdateDetails(
             BrandName.Create("Renamed"),
             BrandSlug.Create("renamed"),
-            checker, null, null, CancellationToken.None);
+            checker, null, null, DateTime.UtcNow, CancellationToken.None);
         brand.Version.ShouldBe(9);
     }
 

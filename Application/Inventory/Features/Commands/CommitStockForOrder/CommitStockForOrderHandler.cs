@@ -3,13 +3,15 @@ using Domain.Inventory.Services;
 using Domain.Inventory.ValueObjects;
 using Domain.Order.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.CommitStockForOrder;
 
 public class CommitStockForOrderHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService)
+    IAuditService auditService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CommitStockForOrderCommand>
 {
     public async Task<ServiceResult> Handle(CommitStockForOrderCommand request, CancellationToken ct)
@@ -37,6 +39,7 @@ public class CommitStockForOrderHandler(
                     inventory,
                     quantity,
                     request.OrderNumber,
+                    dateTimeProvider.UtcNow,
                     orderItemId);
 
                 if (result.IsFailure)

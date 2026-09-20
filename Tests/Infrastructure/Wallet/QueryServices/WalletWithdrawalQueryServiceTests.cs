@@ -57,16 +57,16 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
 
         var admin = adminId ?? UserId.NewId();
         if (finalStatus == WalletWithdrawalStatus.Approved)
-            withdrawal.Approve(admin);
+            withdrawal.Approve(admin, DateTime.UtcNow);
         else if (finalStatus == WalletWithdrawalStatus.Rejected)
-            withdrawal.Reject(admin, "invalid iban");
+            withdrawal.Reject(admin, "invalid iban", DateTime.UtcNow);
         else if (finalStatus == WalletWithdrawalStatus.Paid)
         {
-            withdrawal.Approve(admin);
-            withdrawal.MarkPaid(admin, "BANK-REF-123");
+            withdrawal.Approve(admin, DateTime.UtcNow);
+            withdrawal.MarkPaid(admin, "BANK-REF-123", DateTime.UtcNow);
         }
         else if (finalStatus == WalletWithdrawalStatus.Cancelled)
-            withdrawal.Cancel(userId);
+            withdrawal.Cancel(userId, DateTime.UtcNow);
 
         withdrawal.ClearDomainEvents();
         _context.Set<WalletWithdrawalRequest>().Add(withdrawal);

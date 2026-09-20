@@ -6,6 +6,7 @@ using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Infrastructure.Inventory.Services;
 
@@ -13,7 +14,8 @@ public sealed class InventoryService(
     IInventoryRepository inventoryRepository,
     IOrderRepository orderRepository,
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : IInventoryService
+    IAuditService auditService,
+    IDateTimeProvider dateTimeProvider) : IInventoryService
 {
     public async Task<ServiceResult> ReserveStockAsync(
         VariantId variantId,
@@ -26,7 +28,7 @@ public sealed class InventoryService(
         if (inventory is null)
             return ServiceResult.NotFound($"موجودی واریانت {variantId.Value} یافت نشد.");
 
-        var result = inventory.ReserveStock(quantity, referenceNumber, orderItemId);
+        var result = inventory.ReserveStock(quantity, referenceNumber, dateTimeProvider.UtcNow, orderItemId);
         if (result.IsFailure)
             return ServiceResult.Failure(result.Error.Message);
 
@@ -54,7 +56,7 @@ public sealed class InventoryService(
         if (inventory is null)
             return ServiceResult.NotFound($"موجودی واریانت {variantId.Value} یافت نشد.");
 
-        var result = inventory.ReleaseReservation(quantity, referenceNumber, reason);
+        var result = inventory.ReleaseReservation(quantity, referenceNumber, dateTimeProvider.UtcNow, reason);
         if (result.IsFailure)
             return ServiceResult.Failure(result.Error.Message);
 
@@ -82,7 +84,7 @@ public sealed class InventoryService(
         if (inventory is null)
             return ServiceResult.NotFound($"موجودی واریانت {variantId.Value} یافت نشد.");
 
-        var result = inventory.AdjustStock(quantityChange, userId, reason);
+        var result = inventory.AdjustStock(quantityChange, userId, reason, dateTimeProvider.UtcNow);
         if (result.IsFailure)
             return ServiceResult.Failure(result.Error.Message);
 
@@ -117,7 +119,7 @@ public sealed class InventoryService(
             if (inventory is null || inventory.IsUnlimited) continue;
 
             var quantity = StockQuantity.Create(item.Quantity);
-            var result = inventory.ReturnStock(quantity, reason, adminUserIdVo);
+            var result = inventory.ReturnStock(quantity, reason, dateTimeProvider.UtcNow, adminUserIdVo);
 
             if (result.IsSuccess)
                 inventoryRepository.Update(inventory);
@@ -150,7 +152,7 @@ public sealed class InventoryService(
             if (reservedQty <= 0) continue;
 
             var quantity = StockQuantity.Create(reservedQty);
-            var result = inventory.ReleaseReservation(quantity, referenceNumber, "آزادسازی خودکار رزرو");
+            var result = inventory.ReleaseReservation(quantity, referenceNumber, dateTimeProvider.UtcNow, "آزادسازی خودکار رزرو");
 
             if (result.IsSuccess)
                 inventoryRepository.Update(inventory);

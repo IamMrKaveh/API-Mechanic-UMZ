@@ -4,6 +4,7 @@ using Domain.Inventory.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.RemoveStock;
 
@@ -12,7 +13,8 @@ public class RemoveStockHandler(
     IInventoryRepository inventoryRepository,
     IAuditService auditService,
     ICacheService cacheService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<RemoveStockCommand>
 {
     public async Task<ServiceResult> Handle(RemoveStockCommand request, CancellationToken ct)
@@ -29,7 +31,7 @@ public class RemoveStockHandler(
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        var result = InventoryDomainService.DecreaseStock(inventory, stock, request.Notes, userId);
+        var result = InventoryDomainService.DecreaseStock(inventory, stock, request.Notes, dateTimeProvider.UtcNow, userId);
 
         if (result.IsFailure)
             return ServiceResult.Failure(result.Error.Message);

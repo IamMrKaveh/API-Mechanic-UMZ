@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Application.Inventory.Features.Commands.ToggleWarehouseActive;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
@@ -6,16 +6,18 @@ using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Wh = Domain.Inventory.Aggregates.Warehouse;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.ToggleWarehouseActive;
 
 public class ToggleWarehouseActiveHandlerTests
 {
-    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly ToggleWarehouseActiveHandler _sut;
+    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ToggleWarehouseActiveHandler _sut;
 
     public ToggleWarehouseActiveHandlerTests()
     {
-        _sut = new ToggleWarehouseActiveHandler(_warehouseRepository, _cacheService);
+        _sut = new ToggleWarehouseActiveHandler(_warehouseRepository, _cacheService, _dateTimeProvider);
     }
 
     [Fact]
@@ -55,7 +57,7 @@ public class ToggleWarehouseActiveHandlerTests
     public async Task Handle_WithIsActiveTrueOnDeactivatedWarehouse_ActivatesWarehouse()
     {
         var warehouse = new WarehouseBuilder().Build();
-        warehouse.Deactivate();
+        warehouse.Deactivate(DateTime.UtcNow);
         _warehouseRepository
             .GetByIdAsync(Arg.Any<WarehouseId>(), Arg.Any<CancellationToken>())
             .Returns(warehouse);
@@ -69,3 +71,5 @@ public class ToggleWarehouseActiveHandlerTests
         _warehouseRepository.Received(1).Update(warehouse);
     }
 }
+
+

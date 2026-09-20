@@ -5,6 +5,7 @@ using Domain.Attribute.Aggregates;
 using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
@@ -13,11 +14,11 @@ namespace Tests.Application.Attribute.Features.Commands.UpdateAttributeValue;
 
 public class UpdateAttributeValueHandlerTests
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateAttributeValueHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly UpdateAttributeValueHandler _sut;
 
     public UpdateAttributeValueHandlerTests()
     {
-        _sut = new UpdateAttributeValueHandler(_repository, _cacheService);
+        _sut = new UpdateAttributeValueHandler(_repository, _cacheService, _dateTimeProvider);
     }
 
     [Fact]
@@ -43,7 +44,7 @@ public class UpdateAttributeValueHandlerTests
     public async Task Handle_WhenNewValueIsDuplicate_ReturnsConflictAndDoesNotLoadParentOrPersist()
     {
         var type = await new AttributeTypeBuilder().BuildAsync();
-        var existingValue = type.AddValue("red", "Red");
+        var existingValue = type.AddValue("red", "Red", DateTime.UtcNow);
 
         _repository
             .GetAttributeValueByIdAsync(Arg.Any<AttributeValueId>(), Arg.Any<CancellationToken>())
@@ -72,7 +73,7 @@ public class UpdateAttributeValueHandlerTests
     public async Task Handle_WhenValueProvided_ChecksUniquenessWithParentTypeIdAndCurrentValueIdAsExcludeId()
     {
         var type = await new AttributeTypeBuilder().BuildAsync();
-        var existingValue = type.AddValue("red", "Red");
+        var existingValue = type.AddValue("red", "Red", DateTime.UtcNow);
 
         _repository
             .GetAttributeValueByIdAsync(Arg.Any<AttributeValueId>(), Arg.Any<CancellationToken>())
@@ -103,7 +104,7 @@ public class UpdateAttributeValueHandlerTests
     public async Task Handle_WhenValueOmitted_SkipsUniquenessCheck()
     {
         var type = await new AttributeTypeBuilder().BuildAsync();
-        var existingValue = type.AddValue("red", "Red");
+        var existingValue = type.AddValue("red", "Red", DateTime.UtcNow);
 
         _repository
             .GetAttributeValueByIdAsync(Arg.Any<AttributeValueId>(), Arg.Any<CancellationToken>())
@@ -125,7 +126,7 @@ public class UpdateAttributeValueHandlerTests
     public async Task Handle_WhenParentTypeNotFound_ReturnsNotFoundAndDoesNotPersist()
     {
         var isolatedType = await new AttributeTypeBuilder().BuildAsync();
-        var existingValue = isolatedType.AddValue("red", "Red");
+        var existingValue = isolatedType.AddValue("red", "Red", DateTime.UtcNow);
 
         _repository
             .GetAttributeValueByIdAsync(Arg.Any<AttributeValueId>(), Arg.Any<CancellationToken>())
@@ -157,7 +158,7 @@ public class UpdateAttributeValueHandlerTests
     public async Task Handle_WhenValid_AppliesUpdateOnAggregatePersistsAndInvalidatesCache()
     {
         var type = await new AttributeTypeBuilder().BuildAsync();
-        var existingValue = type.AddValue("red", "Red", "#FF0000", 1);
+        var existingValue = type.AddValue("red", "Red", DateTime.UtcNow, "#FF0000", 1);
 
         _repository
             .GetAttributeValueByIdAsync(Arg.Any<AttributeValueId>(), Arg.Any<CancellationToken>())
@@ -202,8 +203,8 @@ public class UpdateAttributeValueHandlerTests
         string? value, string? displayValue, string? hexCode, int? sortOrder, bool? isActive)
     {
         var type = await new AttributeTypeBuilder().BuildAsync();
-        var existingValue = type.AddValue("red", "Red", "#FF0000", 1);
-        existingValue.Update("red", "Red", "#FF0000", 1, true);
+        var existingValue = type.AddValue("red", "Red", DateTime.UtcNow, "#FF0000", 1);
+        existingValue.Update("red", "Red", "#FF0000", 1, true, DateTime.UtcNow);
 
         var originalValue = existingValue.Value;
         var originalDisplay = existingValue.DisplayValue;

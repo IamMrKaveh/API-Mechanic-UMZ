@@ -90,14 +90,14 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         var catName = $"Cat-{Guid.NewGuid():N}"[..20];
         var cat = await Categories.Create(
             CategoryId.NewId(), CategoryName.Create(catName), CategorySlug.GenerateFrom(catName),
-            new StubCategoryUniquenessChecker(), null, 0, CancellationToken.None);
+            new StubCategoryUniquenessChecker(), null, 0, DateTime.UtcNow, CancellationToken.None);
         _context.Categories.Add(cat);
         await _context.SaveChangesAsync();
 
         var brandName = $"Brand-{Guid.NewGuid():N}"[..20];
         var brand = await Brands.Create(
             BrandName.Create(brandName), BrandSlug.GenerateFrom(brandName), cat.Id,
-            new StubBrandUniquenessChecker(), null, null, CancellationToken.None);
+            new StubBrandUniquenessChecker(), null, null, DateTime.UtcNow, CancellationToken.None);
         _context.Brands.Add(brand);
         await _context.SaveChangesAsync();
 

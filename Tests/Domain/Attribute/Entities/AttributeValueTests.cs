@@ -13,7 +13,7 @@ public class AttributeValueTests
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
-        var sut = parent.AddValue("red", "Red", "#FF0000", 2);
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow, "#FF0000", 2);
 
         sut.ShouldNotBeNull();
         sut.Id.ShouldNotBeNull();
@@ -32,7 +32,7 @@ public class AttributeValueTests
         var parent = await new AttributeTypeBuilder().BuildAsync();
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.CreatedAt.ShouldBeGreaterThanOrEqualTo(before);
@@ -44,7 +44,7 @@ public class AttributeValueTests
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
         sut.AttributeTypeId.ShouldBe(parent.Id);
         sut.AttributeType.ShouldBeSameAs(parent);
@@ -55,7 +55,7 @@ public class AttributeValueTests
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
-        var sut = parent.AddValue("  red  ", "  Red  ", "  #FF0000  ", 1);
+        var sut = parent.AddValue("  red  ", "  Red  ", DateTime.UtcNow, "  #FF0000  ", 1);
 
         sut.Value.ShouldBe("red");
         sut.DisplayValue.ShouldBe("Red");
@@ -70,7 +70,7 @@ public class AttributeValueTests
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
-        var sut = parent.AddValue("  red  ", displayValue!);
+        var sut = parent.AddValue("  red  ", displayValue!, DateTime.UtcNow);
 
         sut.DisplayValue.ShouldBe("red");
     }
@@ -80,7 +80,7 @@ public class AttributeValueTests
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
         sut.HexCode.ShouldBeNull();
     }
@@ -90,7 +90,7 @@ public class AttributeValueTests
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
         sut.IsActive.ShouldBeTrue();
     }
@@ -100,7 +100,7 @@ public class AttributeValueTests
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
         sut.ShouldBeAssignableTo<ISoftDeletable>();
         sut.IsDeleted.ShouldBeFalse();
@@ -112,10 +112,10 @@ public class AttributeValueTests
     public async Task UpdateValue_WithValidInput_AppliesTrimmedFieldsAndSetsUpdatedAt()
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
-        var sut = parent.AddValue("red", "Red", "#FF0000", 1);
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow, "#FF0000", 1);
         var updatedAtBefore = sut.UpdatedAt;
 
-        parent.UpdateValue(sut.Id, "  crimson  ", "  Crimson  ", "  #DC143C  ", 5, false);
+        parent.UpdateValue(sut.Id, "  crimson  ", "  Crimson  ", "  #DC143C  ", 5, false, DateTime.UtcNow);
 
         sut.Value.ShouldBe("crimson");
         sut.DisplayValue.ShouldBe("Crimson");
@@ -133,9 +133,9 @@ public class AttributeValueTests
     public async Task UpdateValue_WithNullOrWhitespaceDisplayValue_FallsBackToTrimmedValue(string? displayValue)
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
-        parent.UpdateValue(sut.Id, "  crimson  ", displayValue!, null, 0, true);
+        parent.UpdateValue(sut.Id, "  crimson  ", displayValue!, null, 0, true, DateTime.UtcNow);
 
         sut.DisplayValue.ShouldBe("crimson");
     }
@@ -144,9 +144,9 @@ public class AttributeValueTests
     public async Task UpdateValue_WithNullHexCode_ClearsHexCode()
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
-        var sut = parent.AddValue("red", "Red", "#FF0000", 0);
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow, "#FF0000", 0);
 
-        parent.UpdateValue(sut.Id, "red", "Red", null, 0, true);
+        parent.UpdateValue(sut.Id, "red", "Red", null, 0, true, DateTime.UtcNow);
 
         sut.HexCode.ShouldBeNull();
     }
@@ -155,9 +155,9 @@ public class AttributeValueTests
     public async Task UpdateValue_WithTrimmedHexCode_StoresTrimmedHexCode()
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
-        parent.UpdateValue(sut.Id, "red", "Red", "  #ABCDEF  ", 0, true);
+        parent.UpdateValue(sut.Id, "red", "Red", "  #ABCDEF  ", 0, true, DateTime.UtcNow);
 
         sut.HexCode.ShouldBe("#ABCDEF");
     }
@@ -166,9 +166,9 @@ public class AttributeValueTests
     public async Task UpdateValue_ChangingIsActiveToFalse_TogglesIsActive()
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
-        parent.UpdateValue(sut.Id, "red", "Red", null, 0, false);
+        parent.UpdateValue(sut.Id, "red", "Red", null, 0, false, DateTime.UtcNow);
 
         sut.IsActive.ShouldBeFalse();
     }
@@ -180,20 +180,20 @@ public class AttributeValueTests
     public async Task UpdateValue_WithNullOrWhitespaceValue_ThrowsArgumentException(string? value)
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
         Should.Throw<ArgumentException>(
-            () => parent.UpdateValue(sut.Id, value!, "Red", null, 0, true));
+            () => parent.UpdateValue(sut.Id, value!, "Red", null, 0, true, DateTime.UtcNow));
     }
 
     [Fact]
     public async Task UpdateValue_WithNegativeSortOrder_ThrowsArgumentException()
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
         Should.Throw<ArgumentException>(
-            () => parent.UpdateValue(sut.Id, "red", "Red", null, -1, true));
+            () => parent.UpdateValue(sut.Id, "red", "Red", null, -1, true, DateTime.UtcNow));
     }
 
     [Fact]
@@ -202,18 +202,18 @@ public class AttributeValueTests
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
         Should.Throw<AttributeValueNotFoundException>(
-            () => parent.UpdateValue(AttributeValueId.NewId(), "red", "Red", null, 0, true));
+            () => parent.UpdateValue(AttributeValueId.NewId(), "red", "Red", null, 0, true, DateTime.UtcNow));
     }
 
     [Fact]
     public async Task UpdateValue_WithNewValueColliding_LeavesTargetValueUnchanged()
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
-        var target = parent.AddValue("red", "Red");
-        parent.AddValue("blue", "Blue");
+        var target = parent.AddValue("red", "Red", DateTime.UtcNow);
+        parent.AddValue("blue", "Blue", DateTime.UtcNow);
 
         Should.Throw<DuplicateAttributeException>(
-            () => parent.UpdateValue(target.Id, "BLUE", "Blue", null, 0, true));
+            () => parent.UpdateValue(target.Id, "BLUE", "Blue", null, 0, true, DateTime.UtcNow));
 
         target.Value.ShouldBe("red");
     }
@@ -223,7 +223,7 @@ public class AttributeValueTests
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
         sut.ShouldBeAssignableTo<IAuditable>();
         sut.CreatedAt.ShouldNotBe(default);
@@ -234,7 +234,7 @@ public class AttributeValueTests
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
-        var sut = parent.AddValue("red", "Red");
+        var sut = parent.AddValue("red", "Red", DateTime.UtcNow);
 
         sut.ShouldBeAssignableTo<IActivatable>();
     }
@@ -244,8 +244,8 @@ public class AttributeValueTests
     {
         var parent = await new AttributeTypeBuilder().BuildAsync();
 
-        var first = parent.AddValue("red", "Red");
-        var second = parent.AddValue("blue", "Blue");
+        var first = parent.AddValue("red", "Red", DateTime.UtcNow);
+        var second = parent.AddValue("blue", "Blue", DateTime.UtcNow);
 
         first.Id.ShouldNotBe(second.Id);
     }

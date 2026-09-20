@@ -1,4 +1,4 @@
-using Application.Common.Interfaces;
+﻿using Application.Common.Interfaces;
 using Application.Inventory.Features.Commands.RecordDamage;
 using Domain.Inventory.Interfaces;
 using Domain.Variant.ValueObjects;
@@ -6,17 +6,19 @@ using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Inv = Domain.Inventory.Aggregates.Inventory;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.RecordDamage;
 
 public class RecordDamageHandlerTests
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly RecordDamageHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly RecordDamageHandler _sut;
 
     public RecordDamageHandlerTests()
     {
         _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new RecordDamageHandler(_inventoryRepository, _currentUserService);
+        _sut = new RecordDamageHandler(_inventoryRepository, _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -66,3 +68,4 @@ public class RecordDamageHandlerTests
         _inventoryRepository.Received(1).Update(inventory);
     }
 }
+

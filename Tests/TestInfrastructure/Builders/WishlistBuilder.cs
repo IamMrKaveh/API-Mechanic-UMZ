@@ -21,5 +21,5 @@ public sealed class WishlistBuilder
         return this;
     }
 
-    public WishlistAggregate Build() => WishlistAggregate.Create(_userId, _productId);
+    public WishlistAggregate Build() => WishlistAggregate.Create(_userId, _productId, DateTime.UtcNow);
 }

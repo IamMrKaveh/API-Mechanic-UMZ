@@ -116,7 +116,7 @@ public class CategoryTests
         var newSlug = CategorySlug.Create("renamed");
         await Task.Delay(2);
 
-        await category.UpdateDetails(newName, newSlug, checker, "new desc", 42, CancellationToken.None);
+        await category.UpdateDetails(newName, newSlug, checker, "new desc", 42, DateTime.UtcNow, CancellationToken.None);
 
         category.Name.ShouldBe(newName);
         category.Slug.ShouldBe(newSlug);
@@ -134,7 +134,7 @@ public class CategoryTests
         await category.UpdateDetails(
             CategoryName.Create("Renamed"),
             CategorySlug.Create("renamed"),
-            checker, null, 1, CancellationToken.None);
+            checker, null, 1, DateTime.UtcNow, CancellationToken.None);
 
         checker.CallCount.ShouldBe(2);
         checker.LastExcludeId.ShouldBe(category.Id);
@@ -151,7 +151,7 @@ public class CategoryTests
             () => category.UpdateDetails(
                 CategoryName.Create("Renamed"),
                 CategorySlug.Create("renamed"),
-                checker, null, 0, CancellationToken.None));
+                checker, null, 0, DateTime.UtcNow, CancellationToken.None));
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class CategoryTests
             () => category.UpdateDetails(
                 CategoryName.Create("Renamed"),
                 CategorySlug.Create("renamed"),
-                null!, null, 0, CancellationToken.None));
+                null!, null, 0, DateTime.UtcNow, CancellationToken.None));
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public class CategoryTests
         await category.UpdateDetails(
             CategoryName.Create("Renamed"),
             CategorySlug.Create("renamed"),
-            checker, "d", 3, CancellationToken.None);
+            checker, "d", 3, DateTime.UtcNow, CancellationToken.None);
 
         category.DomainEvents.Count.ShouldBe(1);
         category.DomainEvents.Single().ShouldBeOfType<CategoryUpdatedEvent>();
@@ -192,7 +192,7 @@ public class CategoryTests
         await category.UpdateDetails(
             CategoryName.Create("Renamed"),
             CategorySlug.Create("renamed"),
-            checker, null, 0, CancellationToken.None);
+            checker, null, 0, DateTime.UtcNow, CancellationToken.None);
 
         category.Version.ShouldBe(versionBefore + 2);
     }
@@ -205,7 +205,7 @@ public class CategoryTests
         var updatedAtBefore = category.UpdatedAt;
         category.ClearDomainEvents();
 
-        Should.NotThrow(category.Activate);
+        Should.NotThrow(() => category.Activate(DateTime.UtcNow));
 
         category.IsActive.ShouldBeTrue();
         category.Version.ShouldBe(versionBefore);
@@ -217,13 +217,13 @@ public class CategoryTests
     public async Task Activate_OnPreviouslyDeactivatedCategory_SetsIsActiveTrueAndRaisesEvent()
     {
         var category = await new CategoryBuilder().BuildAsync();
-        category.Deactivate();
+        category.Deactivate(DateTime.UtcNow);
         category.ClearDomainEvents();
         var versionBefore = category.Version;
         var updatedAtBefore = category.UpdatedAt;
         await Task.Delay(2);
 
-        category.Activate();
+        category.Activate(DateTime.UtcNow);
 
         category.IsActive.ShouldBeTrue();
         category.Version.ShouldBe(versionBefore + 2);
@@ -241,7 +241,7 @@ public class CategoryTests
         var updatedAtBefore = category.UpdatedAt;
         await Task.Delay(2);
 
-        category.Deactivate();
+        category.Deactivate(DateTime.UtcNow);
 
         category.IsActive.ShouldBeFalse();
         category.Version.ShouldBe(versionBefore + 2);
@@ -254,12 +254,12 @@ public class CategoryTests
     public async Task Deactivate_WhenAlreadyInactive_IsNoOpNotThrowingAndProducesNoEvent()
     {
         var category = await new CategoryBuilder().BuildAsync();
-        category.Deactivate();
+        category.Deactivate(DateTime.UtcNow);
         category.ClearDomainEvents();
         var versionBefore = category.Version;
         var updatedAtBefore = category.UpdatedAt;
 
-        Should.NotThrow(category.Deactivate);
+        Should.NotThrow(() => category.Deactivate(DateTime.UtcNow));
 
         category.IsActive.ShouldBeFalse();
         category.Version.ShouldBe(versionBefore);
@@ -283,12 +283,12 @@ public class CategoryTests
         var checker = new StubCategoryUniquenessChecker();
         var category = await new CategoryBuilder().WithUniquenessChecker(checker).BuildAsync();
 
-        category.Deactivate();
-        category.Activate();
+        category.Deactivate(DateTime.UtcNow);
+        category.Activate(DateTime.UtcNow);
         await category.UpdateDetails(
             CategoryName.Create("Renamed"),
             CategorySlug.Create("renamed"),
-            checker, null, 0, CancellationToken.None);
+            checker, null, 0, DateTime.UtcNow, CancellationToken.None);
 
         category.DomainEvents.Count.ShouldBe(4);
         category.DomainEvents.ElementAt(0).ShouldBeOfType<CategoryCreatedEvent>();
@@ -304,14 +304,14 @@ public class CategoryTests
         var category = await new CategoryBuilder().WithUniquenessChecker(checker).BuildAsync();
 
         category.Version.ShouldBe(1);
-        category.Deactivate();
+        category.Deactivate(DateTime.UtcNow);
         category.Version.ShouldBe(3);
-        category.Activate();
+        category.Activate(DateTime.UtcNow);
         category.Version.ShouldBe(5);
         await category.UpdateDetails(
             CategoryName.Create("Renamed"),
             CategorySlug.Create("renamed"),
-            checker, null, 0, CancellationToken.None);
+            checker, null, 0, DateTime.UtcNow, CancellationToken.None);
         category.Version.ShouldBe(7);
     }
 

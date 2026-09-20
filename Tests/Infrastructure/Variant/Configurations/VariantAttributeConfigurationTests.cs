@@ -1,4 +1,4 @@
-using global::Domain.Variant.Entities;
+﻿using global::Domain.Variant.Entities;
 using Tests.TestInfrastructure.Base;
 
 namespace Tests.Infrastructure.Variant.Configurations;
@@ -15,7 +15,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
             .WithName($"Attr{suffix}")
             .WithDisplayName($"Attr {suffix}")
             .BuildAsync(ct);
-        var attributeValue = attributeType.AddValue($"Val{suffix}", $"Val {suffix}");
+        var attributeValue = attributeType.AddValue($"Val{suffix}", $"Val {suffix}", DateTime.UtcNow);
         attributeType.ClearDomainEvents();
 
         Context.AttributeTypes.Add(attributeType);
@@ -139,7 +139,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         variant.ClearDomainEvents();
         await Context.SaveChangesAsync();
 
-        attributeType.MarkAsDeleted(null);
+        attributeType.MarkAsDeleted(null, DateTime.UtcNow);
         attributeType.ClearDomainEvents();
         Context.AttributeTypes.Update(attributeType);
         await Context.SaveChangesAsync();
@@ -232,3 +232,4 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         entityType!.GetQueryFilter().ShouldNotBeNull();
     }
 }
+

@@ -4,6 +4,7 @@ using Domain.Discount.ValueObjects;
 using Infrastructure.Discount.QueryServices;
 using Infrastructure.Discount.Repositories;
 using Infrastructure.Persistence.Context;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Builders;
 
@@ -13,14 +14,14 @@ namespace Tests.Infrastructure.Discount.QueryServices;
 [Collection(nameof(DatabaseCollection))]
 public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private DiscountQueryService _sut = null!; private DiscountRepository _repository = null!;
+    private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private DiscountQueryService _sut = null!; private DiscountRepository _repository = null!; private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
 
     public Task InitializeAsync()
     {
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
 
         _context = _fixture.CreateContext();
-        _sut = new DiscountQueryService(_context);
+        _sut = new DiscountQueryService(_context, _dateTimeProvider);
         _repository = new DiscountRepository(_context);
         return Task.CompletedTask;
     }
@@ -256,7 +257,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
     public async Task ValidateDiscountAsync_OnInactiveCode_ReturnsInvalid()
     {
         var discount = new DiscountCodeBuilder().WithCode("OFFCODE").Build();
-        discount.Deactivate();
+        discount.Deactivate(DateTime.UtcNow);
 
         await SeedAsync(discount);
 

@@ -2,13 +2,15 @@ using Application.Attribute.Constants;
 using Application.Attribute.Features.Shared;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Attribute.Features.Commands.CreateAttributeValue;
 
 public class CreateAttributeValueHandler(
     IAttributeRepository repository,
     IMapper mapper,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateAttributeValueCommand, AttributeValueDto>
 {
     public async Task<ServiceResult<AttributeValueDto>> Handle(
@@ -27,6 +29,7 @@ public class CreateAttributeValueHandler(
         var attributeValue = type.AddValue(
             request.Value,
             request.DisplayValue,
+            dateTimeProvider.UtcNow,
             request.HexCode,
             request.SortOrder);
 

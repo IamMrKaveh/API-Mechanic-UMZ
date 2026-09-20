@@ -3,13 +3,15 @@ using Application.Attribute.Constants;
 using Application.Attribute.Features.Shared;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Attribute.Features.Commands.CreateAttributeType;
 
 public class CreateAttributeTypeHandler(
     IAttributeRepository repository,
     IMapper mapper,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateAttributeTypeCommand, AttributeTypeDto>
 {
     public async Task<ServiceResult<AttributeTypeDto>> Handle(
@@ -23,6 +25,7 @@ public class CreateAttributeTypeHandler(
             request.SortOrder,
             true,
             uniquenessChecker,
+            dateTimeProvider.UtcNow,
             ct);
 
         await repository.AddAttributeTypeAsync(attributeType, ct);

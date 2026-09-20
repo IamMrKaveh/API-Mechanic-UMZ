@@ -18,7 +18,7 @@ public class CartTests
     {
         var userId = UserId.NewId();
 
-        var sut = Carts.CreateForUser(userId);
+        var sut = Carts.CreateForUser(userId, DateTime.UtcNow);
 
         sut.Id.ShouldNotBeNull();
         sut.UserId.ShouldBe(userId);
@@ -35,7 +35,7 @@ public class CartTests
     {
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        var sut = Carts.CreateForUser(UserId.NewId());
+        var sut = Carts.CreateForUser(UserId.NewId(), DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.CreatedAt.ShouldBeGreaterThanOrEqualTo(before);
@@ -45,13 +45,13 @@ public class CartTests
     [Fact]
     public void CreateForUser_ProducesCartWithVersionOne()
     {
-        Carts.CreateForUser(UserId.NewId()).Version.ShouldBe(1);
+        Carts.CreateForUser(UserId.NewId(), DateTime.UtcNow).Version.ShouldBe(1);
     }
 
     [Fact]
     public void CreateForUser_RaisesExactlyOneCartCreatedEvent()
     {
-        var sut = Carts.CreateForUser(UserId.NewId());
+        var sut = Carts.CreateForUser(UserId.NewId(), DateTime.UtcNow);
 
         sut.DomainEvents.Count.ShouldBe(1);
         sut.DomainEvents.Single().ShouldBeOfType<CartCreatedEvent>();
@@ -60,7 +60,7 @@ public class CartTests
     [Fact]
     public void CreateForUser_WithNullUserId_ThrowsArgumentNullException()
     {
-        Should.Throw<ArgumentNullException>(() => Carts.CreateForUser(null!));
+        Should.Throw<ArgumentNullException>(() => Carts.CreateForUser(null!, DateTime.UtcNow));
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class CartTests
     {
         var token = GuestToken.Generate();
 
-        var sut = Carts.CreateForGuest(token);
+        var sut = Carts.CreateForGuest(token, DateTime.UtcNow);
 
         sut.UserId.ShouldBeNull();
         sut.GuestToken.ShouldBe(token);
@@ -79,7 +79,7 @@ public class CartTests
     [Fact]
     public void CreateForGuest_WithNullToken_ThrowsArgumentNullException()
     {
-        Should.Throw<ArgumentNullException>(() => Carts.CreateForGuest(null!));
+        Should.Throw<ArgumentNullException>(() => Carts.CreateForGuest(null!, DateTime.UtcNow));
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public class CartTests
     {
         var sut = new CartBuilder().Build();
         new CartItemParametersBuilder().AddTo(sut);
-        sut.Checkout();
+        sut.Checkout(DateTime.UtcNow);
 
         Should.Throw<CartAlreadyCheckedOutException>(() => new CartItemParametersBuilder().AddTo(sut));
     }
@@ -140,7 +140,7 @@ public class CartTests
 
         Should.Throw<ArgumentNullException>(() =>
             sut.AddItem(VariantId.NewId(), ProductId.NewId(), ProductName.Create("PP"),
-                Sku.Create("S"), null!, Money.Create(10m, "IRT"), 1));
+                Sku.Create("S"), null!, Money.Create(10m, "IRT"), 1, DateTime.UtcNow));
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class CartTests
 
         Should.Throw<ArgumentNullException>(() =>
             sut.AddItem(VariantId.NewId(), ProductId.NewId(), ProductName.Create("PP"),
-                Sku.Create("S"), Money.Create(10m, "IRT"), null!, 1));
+                Sku.Create("S"), Money.Create(10m, "IRT"), null!, 1, DateTime.UtcNow));
     }
 
     [Theory]
@@ -173,7 +173,7 @@ public class CartTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.RemoveItem(variantId);
+        sut.RemoveItem(variantId, DateTime.UtcNow);
 
         sut.CartItems.ShouldBeEmpty();
         sut.Version.ShouldBe(versionBefore + 2);
@@ -186,7 +186,7 @@ public class CartTests
     {
         var sut = new CartBuilder().Build();
 
-        Should.Throw<CartItemNotFoundException>(() => sut.RemoveItem(VariantId.NewId()));
+        Should.Throw<CartItemNotFoundException>(() => sut.RemoveItem(VariantId.NewId(), DateTime.UtcNow));
     }
 
     [Fact]
@@ -195,9 +195,9 @@ public class CartTests
         var sut = new CartBuilder().Build();
         var variantId = VariantId.NewId();
         new CartItemParametersBuilder().WithVariantId(variantId).AddTo(sut);
-        sut.Checkout();
+        sut.Checkout(DateTime.UtcNow);
 
-        Should.Throw<CartAlreadyCheckedOutException>(() => sut.RemoveItem(variantId));
+        Should.Throw<CartAlreadyCheckedOutException>(() => sut.RemoveItem(variantId, DateTime.UtcNow));
     }
 
     [Fact]
@@ -209,7 +209,7 @@ public class CartTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.UpdateItemQuantity(variantId, 7);
+        sut.UpdateItemQuantity(variantId, 7, DateTime.UtcNow);
 
         sut.CartItems.Single().Quantity.ShouldBe(7);
         sut.Version.ShouldBe(versionBefore + 1);
@@ -221,7 +221,7 @@ public class CartTests
     {
         var sut = new CartBuilder().Build();
 
-        Should.Throw<CartItemNotFoundException>(() => sut.UpdateItemQuantity(VariantId.NewId(), 3));
+        Should.Throw<CartItemNotFoundException>(() => sut.UpdateItemQuantity(VariantId.NewId(), 3, DateTime.UtcNow));
     }
 
     [Theory]
@@ -233,7 +233,7 @@ public class CartTests
         var variantId = VariantId.NewId();
         new CartItemParametersBuilder().WithVariantId(variantId).AddTo(sut);
 
-        Should.Throw<InvalidCartQuantityException>(() => sut.UpdateItemQuantity(variantId, quantity));
+        Should.Throw<InvalidCartQuantityException>(() => sut.UpdateItemQuantity(variantId, quantity, DateTime.UtcNow));
     }
 
     [Fact]
@@ -242,9 +242,9 @@ public class CartTests
         var sut = new CartBuilder().Build();
         var variantId = VariantId.NewId();
         new CartItemParametersBuilder().WithVariantId(variantId).AddTo(sut);
-        sut.Checkout();
+        sut.Checkout(DateTime.UtcNow);
 
-        Should.Throw<CartAlreadyCheckedOutException>(() => sut.UpdateItemQuantity(variantId, 3));
+        Should.Throw<CartAlreadyCheckedOutException>(() => sut.UpdateItemQuantity(variantId, 3, DateTime.UtcNow));
     }
 
     [Fact]
@@ -260,7 +260,7 @@ public class CartTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.RefreshItemPrice(variantId, Money.Create(90m, "IRT"), Money.Create(150m, "IRT"));
+        sut.RefreshItemPrice(variantId, Money.Create(90m, "IRT"), Money.Create(150m, "IRT"), DateTime.UtcNow);
 
         sut.CartItems.Single().SellingPrice.Amount.ShouldBe(90m);
         sut.CartItems.Single().OriginalPrice.Amount.ShouldBe(150m);
@@ -274,7 +274,7 @@ public class CartTests
         var sut = new CartBuilder().Build();
 
         Should.Throw<CartItemNotFoundException>(() =>
-            sut.RefreshItemPrice(VariantId.NewId(), Money.Create(1m, "IRT"), Money.Create(1m, "IRT")));
+            sut.RefreshItemPrice(VariantId.NewId(), Money.Create(1m, "IRT"), Money.Create(1m, "IRT"), DateTime.UtcNow));
     }
 
     [Fact]
@@ -285,7 +285,7 @@ public class CartTests
         new CartItemParametersBuilder().WithVariantId(variantId).AddTo(sut);
 
         Should.Throw<ArgumentNullException>(() =>
-            sut.RefreshItemPrice(variantId, null!, Money.Create(1m, "IRT")));
+            sut.RefreshItemPrice(variantId, null!, Money.Create(1m, "IRT"), DateTime.UtcNow));
     }
 
     [Fact]
@@ -294,10 +294,10 @@ public class CartTests
         var sut = new CartBuilder().Build();
         var variantId = VariantId.NewId();
         new CartItemParametersBuilder().WithVariantId(variantId).AddTo(sut);
-        sut.Checkout();
+        sut.Checkout(DateTime.UtcNow);
 
         Should.Throw<CartAlreadyCheckedOutException>(() =>
-            sut.RefreshItemPrice(variantId, Money.Create(1m, "IRT"), Money.Create(1m, "IRT")));
+            sut.RefreshItemPrice(variantId, Money.Create(1m, "IRT"), Money.Create(1m, "IRT"), DateTime.UtcNow));
     }
 
     [Fact]
@@ -309,7 +309,7 @@ public class CartTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Clear();
+        sut.Clear(DateTime.UtcNow);
 
         sut.CartItems.ShouldBeEmpty();
         sut.Version.ShouldBe(versionBefore + 1);
@@ -323,7 +323,7 @@ public class CartTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Clear();
+        sut.Clear(DateTime.UtcNow);
 
         sut.CartItems.ShouldBeEmpty();
         sut.Version.ShouldBe(versionBefore + 1);
@@ -335,9 +335,9 @@ public class CartTests
     {
         var sut = new CartBuilder().Build();
         new CartItemParametersBuilder().AddTo(sut);
-        sut.Checkout();
+        sut.Checkout(DateTime.UtcNow);
 
-        Should.Throw<CartAlreadyCheckedOutException>(sut.Clear);
+        Should.Throw<CartAlreadyCheckedOutException>(() => sut.Clear(DateTime.UtcNow));
     }
 
     [Fact]
@@ -351,7 +351,7 @@ public class CartTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Checkout();
+        sut.Checkout(DateTime.UtcNow);
 
         sut.IsCheckedOut.ShouldBeTrue();
         sut.Version.ShouldBe(versionBefore + 2);
@@ -365,7 +365,7 @@ public class CartTests
     {
         var sut = new CartBuilder().Build();
 
-        Should.Throw<InvalidOperationException>(sut.Checkout);
+        Should.Throw<InvalidOperationException>(() => sut.Checkout(DateTime.UtcNow));
     }
 
     [Fact]
@@ -373,9 +373,9 @@ public class CartTests
     {
         var sut = new CartBuilder().Build();
         new CartItemParametersBuilder().AddTo(sut);
-        sut.Checkout();
+        sut.Checkout(DateTime.UtcNow);
 
-        Should.Throw<CartAlreadyCheckedOutException>(sut.Checkout);
+        Should.Throw<CartAlreadyCheckedOutException>(() => sut.Checkout(DateTime.UtcNow));
     }
 
     [Fact]
@@ -387,7 +387,7 @@ public class CartTests
         var versionBefore = sut.Version;
         var newUserId = UserId.NewId();
 
-        sut.AssignToUser(newUserId);
+        sut.AssignToUser(newUserId, DateTime.UtcNow);
 
         sut.UserId.ShouldBe(newUserId);
         sut.GuestToken.ShouldBeNull();
@@ -400,7 +400,7 @@ public class CartTests
     {
         var sut = new CartBuilder().Build();
 
-        Should.Throw<ArgumentNullException>(() => sut.AssignToUser(null!));
+        Should.Throw<ArgumentNullException>(() => sut.AssignToUser(null!, DateTime.UtcNow));
     }
 
     [Fact]
@@ -408,10 +408,10 @@ public class CartTests
     {
         var sut = new CartBuilder().ForGuest(GuestToken.Generate()).Build();
         new CartItemParametersBuilder().AddTo(sut);
-        sut.Checkout();
+        sut.Checkout(DateTime.UtcNow);
         var newUserId = UserId.NewId();
 
-        Should.NotThrow(() => sut.AssignToUser(newUserId));
+        Should.NotThrow(() => sut.AssignToUser(newUserId, DateTime.UtcNow));
         sut.UserId.ShouldBe(newUserId);
     }
 
@@ -425,7 +425,7 @@ public class CartTests
         target.ClearDomainEvents();
         var versionBefore = target.Version;
 
-        target.MergeFrom(source);
+        target.MergeFrom(source, DateTime.UtcNow);
 
         target.CartItems.Count.ShouldBe(2);
         target.Version.ShouldBe(versionBefore + (2 * 2) + 2);
@@ -442,7 +442,7 @@ public class CartTests
         new CartItemParametersBuilder().WithVariantId(sharedVariant).WithQuantity(4).AddTo(target);
         new CartItemParametersBuilder().WithVariantId(sharedVariant).WithQuantity(3).AddTo(source);
 
-        target.MergeFrom(source, CartMergeStrategy.SumQuantities);
+        target.MergeFrom(source, DateTime.UtcNow, CartMergeStrategy.SumQuantities);
 
         target.CartItems.Single(i => i.VariantId == sharedVariant).Quantity.ShouldBe(7);
     }
@@ -457,7 +457,7 @@ public class CartTests
         target.ClearDomainEvents();
         var versionBefore = target.Version;
 
-        target.MergeFrom(source, CartMergeStrategy.KeepUserCart);
+        target.MergeFrom(source, DateTime.UtcNow, CartMergeStrategy.KeepUserCart);
 
         target.CartItems.Count.ShouldBe(1);
         target.CartItems.Single().Quantity.ShouldBe(5);
@@ -476,7 +476,7 @@ public class CartTests
         target.ClearDomainEvents();
         var versionBefore = target.Version;
 
-        target.MergeFrom(source, CartMergeStrategy.KeepGuestCart);
+        target.MergeFrom(source, DateTime.UtcNow, CartMergeStrategy.KeepGuestCart);
 
         target.CartItems.Count.ShouldBe(2);
         target.CartItems.Any(i => i.Quantity == 5).ShouldBeFalse();
@@ -497,7 +497,7 @@ public class CartTests
         new CartItemParametersBuilder().WithVariantId(extraVariant).WithQuantity(7).AddTo(source);
         target.ClearDomainEvents();
 
-        target.MergeFrom(source, CartMergeStrategy.KeepHigherQuantity);
+        target.MergeFrom(source, DateTime.UtcNow, CartMergeStrategy.KeepHigherQuantity);
 
         target.CartItems.Single(i => i.VariantId == sharedVariant).Quantity.ShouldBe(5);
         target.CartItems.Single(i => i.VariantId == extraVariant).Quantity.ShouldBe(7);
@@ -513,7 +513,7 @@ public class CartTests
         new CartItemParametersBuilder().WithVariantId(sharedVariant).WithQuantity(2).AddTo(target);
         new CartItemParametersBuilder().WithVariantId(sharedVariant).WithQuantity(9).AddTo(source);
 
-        target.MergeFrom(source, CartMergeStrategy.KeepHigherQuantity);
+        target.MergeFrom(source, DateTime.UtcNow, CartMergeStrategy.KeepHigherQuantity);
 
         target.CartItems.Single().Quantity.ShouldBe(9);
     }
@@ -528,7 +528,7 @@ public class CartTests
         new CartItemParametersBuilder().AddTo(source);
         target.ClearDomainEvents();
 
-        target.MergeFrom(source, CartMergeStrategy.KeepUserCart);
+        target.MergeFrom(source, DateTime.UtcNow, CartMergeStrategy.KeepUserCart);
 
         var evt = target.DomainEvents.OfType<CartMergedEvent>().Single();
         evt.MergedItemCount.ShouldBe(3);
@@ -540,7 +540,7 @@ public class CartTests
         var guestCart = new CartBuilder().ForGuest(GuestToken.Generate()).Build();
         var source = new CartBuilder().ForGuest(GuestToken.Generate()).Build();
 
-        Should.Throw<InvalidOperationException>(() => guestCart.MergeFrom(source));
+        Should.Throw<InvalidOperationException>(() => guestCart.MergeFrom(source, DateTime.UtcNow));
     }
 
     [Fact]
@@ -548,10 +548,10 @@ public class CartTests
     {
         var target = new CartBuilder().Build();
         new CartItemParametersBuilder().AddTo(target);
-        target.Checkout();
+        target.Checkout(DateTime.UtcNow);
         var source = new CartBuilder().ForGuest(GuestToken.Generate()).Build();
 
-        Should.Throw<CartAlreadyCheckedOutException>(() => target.MergeFrom(source));
+        Should.Throw<CartAlreadyCheckedOutException>(() => target.MergeFrom(source, DateTime.UtcNow));
     }
 
     [Fact]
@@ -559,7 +559,7 @@ public class CartTests
     {
         var target = new CartBuilder().Build();
 
-        Should.Throw<InvalidOperationException>(() => target.MergeFrom(null!, CartMergeStrategy.SumQuantities));
+        Should.Throw<InvalidOperationException>(() => target.MergeFrom(null!, DateTime.UtcNow, CartMergeStrategy.SumQuantities));
     }
 
     [Fact]
