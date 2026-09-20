@@ -4,34 +4,6 @@
 
 
 Application Layer (84)
-Analytics (1)
- Application/Analytics/Features/Shared/AnalyticsDtos.cs
-Attribute (3)
- Application/Attribute/Adapters/AttributeTypeUniquenessCheckerAdapter.cs
- Application/Attribute/Features/Shared/AttributeDtos.cs
- Application/Attribute/Mapping/AttributeMappingConfig.cs
-Audit (1)
- Application/Audit/Features/Shared/AuditDtos.cs
-Auth (4)
- Application/Auth/EventHandlers/UserPasswordChangedEventHandler.cs
- Application/Auth/Features/Shared/AuthDtos.cs
- Application/Auth/Features/Shared/SessionDtos.cs
- Application/Auth/Mapping/AuthMappingConfig.cs
-Brand (5)
- Application/Brand/Adapters/BrandUniquenessCheckerAdapter.cs
- Application/Brand/Features/Shared/BrandDtos.cs
- Application/Brand/Mapping/BrandMappingConfig.cs
- Application/Brand/Mapping/BrandProjectionConfig.cs
- Application/Brand/Mapping/BrandQueryMappingConfig.cs
-Cache (2)
- Application/Cache/Features/Shared/CacheKeys.cs
- Application/Cache/Features/Shared/VariantAvailabilityCache.cs
-Cart (2)
- Application/Cart/Features/Shared/CartDtos.cs
- Application/Cart/Mapping/CartMappingConfig.cs
-Category (2)
- Application/Category/Features/Shared/CategoryDtos.cs
- Application/Category/Mapping/CategoryMappingConfig.cs
 Common (3)
  Application/Common/DependencyInjection/ApplicationServiceCollection.cs
  Application/Common/Events/DomainEventNotification.cs
