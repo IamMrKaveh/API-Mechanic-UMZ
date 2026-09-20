@@ -63,5 +63,5 @@ public sealed class CategoryBuilder
     }
 
     public Task<Category> BuildAsync(CancellationToken ct = default) =>
-        Category.Create(_id, _name, _slug, _uniquenessChecker, _description, _sortOrder, ct);
+        Category.Create(_id, _name, _slug, _uniquenessChecker, _description, _sortOrder, DateTime.UtcNow, ct);
 }

@@ -201,7 +201,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         await _sut.AddAsync(brand);
         await _context.SaveChangesAsync();
 
-        brand.ChangeCategory(newCategory);
+        brand.ChangeCategory(newCategory, DateTime.UtcNow);
         brand.ClearDomainEvents();
         _sut.Update(brand);
         await _context.SaveChangesAsync();
@@ -223,7 +223,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         await _sut.AddAsync(brand);
         await _context.SaveChangesAsync();
 
-        brand.Deactivate();
+        brand.Deactivate(DateTime.UtcNow);
         brand.ClearDomainEvents();
         _sut.Update(brand);
         await _context.SaveChangesAsync();
@@ -263,7 +263,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         var beforeUpdate = _sut.GetCurrentRowVersion(brand);
         beforeUpdate.ShouldNotBeNull();
 
-        brand.Deactivate();
+        brand.Deactivate(DateTime.UtcNow);
         brand.ClearDomainEvents();
         _sut.Update(brand);
         await _context.SaveChangesAsync();
@@ -291,7 +291,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
             var mutatingRepo = new BrandRepository(mutatingContext);
             var mutating = await mutatingRepo.GetByIdAsync(brandId);
             mutating.ShouldNotBeNull();
-            mutating!.Deactivate();
+            mutating!.Deactivate(DateTime.UtcNow);
             mutating.ClearDomainEvents();
             await mutatingContext.SaveChangesAsync();
         }
@@ -301,7 +301,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         var conflicting = await conflictingRepo.GetByIdAsync(brandId);
         conflicting.ShouldNotBeNull();
 
-        conflicting!.ChangeCategory(CategoryId.NewId());
+        conflicting!.ChangeCategory(CategoryId.NewId(), DateTime.UtcNow);
         conflicting.ClearDomainEvents();
         conflictingRepo.SetOriginalRowVersion(conflicting, staleRowVersion!);
 

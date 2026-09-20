@@ -4,12 +4,14 @@ using Domain.Discount.Enums;
 using Domain.Discount.Exceptions;
 using Domain.Discount.Interfaces;
 using Domain.Discount.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Discount.Features.Commands.CreateDiscount;
 
 public class CreateDiscountHandler(
     IDiscountRepository discountRepository,
-    IMapper mapper)
+    IMapper mapper,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateDiscountCommand, DiscountDto>
 {
     public async Task<ServiceResult<DiscountDto>> Handle(CreateDiscountCommand request, CancellationToken ct)
@@ -48,6 +50,7 @@ public class CreateDiscountHandler(
                 DiscountCodeId.NewId(),
                 request.Code,
                 discountValue,
+                dateTimeProvider.UtcNow,
                 maxDiscount,
                 request.UsageLimit,
                 request.StartsAt,

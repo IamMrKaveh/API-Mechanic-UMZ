@@ -194,6 +194,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
                 new StubCategoryUniquenessChecker(),
                 "updated description",
                 1,
+                DateTime.UtcNow,
                 CancellationToken.None);
             await otherContext.SaveChangesAsync();
         }
@@ -205,6 +206,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
             new StubCategoryUniquenessChecker(),
             "conflict description",
             2,
+            DateTime.UtcNow,
             CancellationToken.None);
 
         _sut.Update(loaded, staleRowVersion);
@@ -237,6 +239,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
             new StubCategoryUniquenessChecker(),
             "spark and coils",
             9,
+            DateTime.UtcNow,
             CancellationToken.None);
 
         _sut.Update(loaded, currentRowVersion);

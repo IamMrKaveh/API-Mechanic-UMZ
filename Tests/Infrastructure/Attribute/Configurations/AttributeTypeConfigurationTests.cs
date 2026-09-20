@@ -71,7 +71,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         _context.AttributeTypes.Add(attributeType);
         await _context.SaveChangesAsync();
 
-        attributeType.MarkAsDeleted(null);
+        attributeType.MarkAsDeleted(null, DateTime.UtcNow);
         _context.AttributeTypes.Update(attributeType);
         await _context.SaveChangesAsync();
 
@@ -94,7 +94,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         _context.AttributeTypes.Add(attributeType);
         await _context.SaveChangesAsync();
 
-        attributeType.MarkAsDeleted(null);
+        attributeType.MarkAsDeleted(null, DateTime.UtcNow);
         _context.AttributeTypes.Update(attributeType);
         await _context.SaveChangesAsync();
 
@@ -115,7 +115,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
             .WithName("Size")
             .WithDisplayName("Size")
             .BuildAsync();
-        var value = attributeType.AddValue("XL", "XL");
+        var value = attributeType.AddValue("XL", "XL", DateTime.UtcNow);
         attributeType.ClearDomainEvents();
 
         _context.AttributeTypes.Add(attributeType);
@@ -155,7 +155,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
 
         var initialRowVersion = _context.Entry(attributeType).Property<byte[]>("RowVersion").CurrentValue!.ToArray();
 
-        attributeType.MarkAsDeleted(Guid.NewGuid());
+        attributeType.MarkAsDeleted(Guid.NewGuid(), DateTime.UtcNow);
         await _context.SaveChangesAsync();
 
         var updatedRowVersion = _context.Entry(attributeType).Property<byte[]>("RowVersion").CurrentValue!;

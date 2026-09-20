@@ -151,7 +151,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
             .WithSlug("delta-tree")
             .WithSortOrder(0)
             .BuildAsync();
-        inactive.Deactivate();
+        inactive.Deactivate(DateTime.UtcNow);
 
         _context.Categories.AddRange(active1, active2, active3, inactive);
         await _context.SaveChangesAsync();
@@ -189,7 +189,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
     {
         var active = await new CategoryBuilder().WithName("Active Paged").WithSlug("active-paged").BuildAsync();
         var inactive = await new CategoryBuilder().WithName("Inactive Paged").WithSlug("inactive-paged").BuildAsync();
-        inactive.Deactivate();
+        inactive.Deactivate(DateTime.UtcNow);
 
         _context.Categories.AddRange(active, inactive);
         await _context.SaveChangesAsync();
@@ -293,7 +293,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
             .WithSlug("deleted-brand-wb")
             .WithCategoryId(category.Id)
             .BuildAsync();
-        deletedBrand.RequestDeletion();
+        deletedBrand.RequestDeletion(DateTime.UtcNow);
 
         _context.Brands.Add(liveBrand);
         _context.Brands.Add(deletedBrand);
@@ -438,7 +438,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         var active1 = await new CategoryBuilder().WithName("Public Alpha").WithSlug("public-alpha").WithSortOrder(2).BuildAsync();
         var active2 = await new CategoryBuilder().WithName("Public Bravo").WithSlug("public-bravo").WithSortOrder(1).BuildAsync();
         var inactive = await new CategoryBuilder().WithName("Public Charlie").WithSlug("public-charlie").WithSortOrder(0).BuildAsync();
-        inactive.Deactivate();
+        inactive.Deactivate(DateTime.UtcNow);
 
         _context.Categories.AddRange(active1, active2, inactive);
         await _context.SaveChangesAsync();

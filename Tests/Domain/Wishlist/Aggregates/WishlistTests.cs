@@ -71,7 +71,7 @@ public class WishlistTests
     public void Create_WithNullUserId_ThrowsArgumentNullException()
     {
         var ex = Should.Throw<ArgumentNullException>(
-            () => WishlistAggregate.Create(null!, ProductId.NewId()));
+            () => WishlistAggregate.Create(null!, ProductId.NewId(), DateTime.UtcNow));
 
         ex.ParamName.ShouldBe("userId");
     }
@@ -80,7 +80,7 @@ public class WishlistTests
     public void Create_WithNullProductId_ThrowsArgumentNullException()
     {
         var ex = Should.Throw<ArgumentNullException>(
-            () => WishlistAggregate.Create(UserId.NewId(), null!));
+            () => WishlistAggregate.Create(UserId.NewId(), null!, DateTime.UtcNow));
 
         ex.ParamName.ShouldBe("productId");
     }

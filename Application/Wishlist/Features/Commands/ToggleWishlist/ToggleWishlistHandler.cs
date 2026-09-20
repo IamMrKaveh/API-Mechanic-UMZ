@@ -1,6 +1,7 @@
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Wishlist.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wishlist.Features.Commands.ToggleWishlist;
 
@@ -8,7 +9,8 @@ public class ToggleWishlistHandler(
     IWishlistRepository wishlistRepository,
     IWishlistQueryService wishlistQueryService,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ToggleWishlistCommand, bool>
 {
     public async Task<ServiceResult<bool>> Handle(ToggleWishlistCommand request, CancellationToken ct)
@@ -26,7 +28,7 @@ public class ToggleWishlistHandler(
         }
         else
         {
-            var wishlist = Domain.Wishlist.Aggregates.Wishlist.Create(userId, productId);
+            var wishlist = Domain.Wishlist.Aggregates.Wishlist.Create(userId, productId, dateTimeProvider.UtcNow);
             await wishlistRepository.AddAsync(wishlist, ct);
             added = true;
         }

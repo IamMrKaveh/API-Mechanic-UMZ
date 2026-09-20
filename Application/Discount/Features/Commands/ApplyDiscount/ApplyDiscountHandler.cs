@@ -2,6 +2,7 @@ using Application.Discount.Features.Shared;
 using Domain.Discount.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Discount.Features.Commands.ApplyDiscount;
 
@@ -9,7 +10,8 @@ public class ApplyDiscountHandler(
     IDiscountRepository discountRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ApplyDiscountCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -24,7 +26,8 @@ public class ApplyDiscountHandler(
                     return ServiceResult.NotFound("کد تخفیف یافت نشد.");
 
                 var orderAmount = Money.FromDecimal(request.OrderAmount, "IRT");
-                var validation = discount.ValidateForApplication(orderAmount);
+                var now = dateTimeProvider.UtcNow;
+                var validation = discount.ValidateForApplication(orderAmount, now);
                 if (!validation.IsValid)
                     return ServiceResult<DiscountApplicationResult>.Failure(validation.FailureReason!);
 
@@ -33,7 +36,7 @@ public class ApplyDiscountHandler(
                 var userId = UserId.From(currentUserService.UserId!.Value);
                 var orderId = OrderId.From(request.OrderId);
 
-                discount.RecordUsage(userId, orderId, discountAmount);
+                discount.RecordUsage(userId, orderId, discountAmount, now);
                 discountRepository.Update(discount);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
 

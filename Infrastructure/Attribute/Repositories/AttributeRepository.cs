@@ -3,11 +3,13 @@ using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Infrastructure.Attribute.Repositories;
 
 public sealed class AttributeRepository(
-    DBContext context) : IAttributeRepository
+    DBContext context,
+    IDateTimeProvider dateTimeProvider) : IAttributeRepository
 {
     public async Task<AttributeType?> GetAttributeTypeByIdAsync(
         AttributeTypeId id,
@@ -98,7 +100,7 @@ public sealed class AttributeRepository(
         var entity = await context.AttributeTypes.FindAsync([id], ct);
         if (entity is null) return;
 
-        entity.MarkAsDeleted(deletedBy?.Value);
+        entity.MarkAsDeleted(deletedBy?.Value, dateTimeProvider.UtcNow);
 
         context.AttributeTypes.Update(entity);
     }
@@ -111,7 +113,7 @@ public sealed class AttributeRepository(
         var entity = await context.AttributeValues.FindAsync([id], ct);
         if (entity is null) return;
 
-        entity.Update(entity.Value, entity.DisplayValue, entity.HexCode, entity.SortOrder, false);
+        entity.Update(entity.Value, entity.DisplayValue, entity.HexCode, entity.SortOrder, false, dateTimeProvider.UtcNow);
         context.AttributeValues.Update(entity);
     }
 }

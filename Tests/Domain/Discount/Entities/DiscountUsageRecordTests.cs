@@ -18,7 +18,7 @@ public class DiscountUsageRecordTests
         var orderId = OrderId.NewId();
         var discounted = Money.Create(75_000m, "IRT");
 
-        var sut = code.RecordUsage(userId, orderId, discounted);
+        var sut = code.RecordUsage(userId, orderId, discounted, DateTime.UtcNow);
 
         sut.ShouldNotBeNull();
         sut.Id.ShouldNotBeNull();
@@ -36,7 +36,7 @@ public class DiscountUsageRecordTests
         var code = new DiscountCodeBuilder().Build();
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        var sut = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(10m, "IRT"));
+        var sut = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(10m, "IRT"), DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         sut.UsedAt.ShouldBeGreaterThanOrEqualTo(before);
@@ -48,9 +48,9 @@ public class DiscountUsageRecordTests
     {
         var code = new DiscountCodeBuilder().Build();
 
-        var first = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"));
-        var second = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(2m, "IRT"));
-        var third = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(3m, "IRT"));
+        var first = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"), DateTime.UtcNow);
+        var second = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(2m, "IRT"), DateTime.UtcNow);
+        var third = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(3m, "IRT"), DateTime.UtcNow);
 
         first.UsageCountAtTime.ShouldBe(1);
         second.UsageCountAtTime.ShouldBe(2);
@@ -62,7 +62,7 @@ public class DiscountUsageRecordTests
     {
         var code = new DiscountCodeBuilder().Build();
 
-        var sut = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(50m, "IRT"));
+        var sut = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(50m, "IRT"), DateTime.UtcNow);
 
         code.Usages.ShouldContain(sut);
         code.Usages.Count.ShouldBe(1);
@@ -73,7 +73,7 @@ public class DiscountUsageRecordTests
     {
         var code = new DiscountCodeBuilder().WithCode("winter40").Build();
 
-        var sut = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"));
+        var sut = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow);
 
         sut.Code.ShouldBe(code.Code);
         sut.Code.ShouldBe("WINTER40");
@@ -83,10 +83,10 @@ public class DiscountUsageRecordTests
     public void RecordUsage_OnInactiveCode_ThrowsDiscountCodeNotRedeemableExceptionAndDoesNotAppend()
     {
         var code = new DiscountCodeBuilder().Build();
-        code.Deactivate();
+        code.Deactivate(DateTime.UtcNow);
 
         Should.Throw<DiscountCodeNotRedeemableException>(
-            () => code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT")));
+            () => code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"), DateTime.UtcNow));
 
         code.Usages.ShouldBeEmpty();
     }
@@ -99,17 +99,17 @@ public class DiscountUsageRecordTests
             .Build();
 
         Should.Throw<DiscountCodeNotRedeemableException>(
-            () => code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT")));
+            () => code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"), DateTime.UtcNow));
     }
 
     [Fact]
     public void RecordUsage_WhenUsageLimitReached_ThrowsDiscountCodeNotRedeemableException()
     {
         var code = new DiscountCodeBuilder().WithUsageLimit(1).Build();
-        code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"));
+        code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"), DateTime.UtcNow);
 
         Should.Throw<DiscountCodeNotRedeemableException>(
-            () => code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT")));
+            () => code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"), DateTime.UtcNow));
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class DiscountUsageRecordTests
         var code = new DiscountCodeBuilder().Build();
         var countBefore = code.UsageCount;
 
-        code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"));
+        code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"), DateTime.UtcNow);
 
         code.UsageCount.ShouldBe(countBefore + 1);
     }
@@ -128,8 +128,8 @@ public class DiscountUsageRecordTests
     {
         var code = new DiscountCodeBuilder().Build();
 
-        var first = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"));
-        var second = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(2m, "IRT"));
+        var first = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(1m, "IRT"), DateTime.UtcNow);
+        var second = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(2m, "IRT"), DateTime.UtcNow);
 
         first.Id.ShouldNotBe(second.Id);
     }
@@ -141,7 +141,7 @@ public class DiscountUsageRecordTests
         var userId = UserId.NewId();
         var orderId = OrderId.NewId();
 
-        var sut = code.RecordUsage(userId, orderId, Money.Create(10m, "IRT"));
+        var sut = code.RecordUsage(userId, orderId, Money.Create(10m, "IRT"), DateTime.UtcNow);
 
         sut.UserId.ShouldBe(userId);
         sut.OrderId.ShouldBe(orderId);
@@ -152,7 +152,7 @@ public class DiscountUsageRecordTests
     {
         var code = new DiscountCodeBuilder().Build();
 
-        var sut = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(123_456m, "IRT"));
+        var sut = code.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(123_456m, "IRT"), DateTime.UtcNow);
 
         sut.DiscountedAmount.ShouldBe(123_456m);
     }

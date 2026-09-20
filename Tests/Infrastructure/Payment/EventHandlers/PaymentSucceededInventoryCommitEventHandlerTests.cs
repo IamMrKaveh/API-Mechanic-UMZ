@@ -8,6 +8,7 @@ using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 using Infrastructure.Payment.EventHandlers;
+using SharedKernel.Abstractions.Interfaces;
 using Inv = Domain.Inventory.Aggregates.Inventory;
 using Orders = Domain.Order.Aggregates.Order;
 
@@ -18,6 +19,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly PaymentSucceededInventoryCommitEventHandler _sut;
 
     public PaymentSucceededInventoryCommitEventHandlerTests()
@@ -25,7 +27,8 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
         _sut = new PaymentSucceededInventoryCommitEventHandler(
             _orderRepository,
             _inventoryRepository,
-            _unitOfWork);
+            _unitOfWork,
+            _dateTimeProvider);
     }
 
     private static PaymentSucceededEvent BuildEvent(OrderId? orderId = null, UserId? userId = null) =>
@@ -58,7 +61,8 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
         {
             inventory.ReserveStock(
                 StockQuantity.Create(reserved),
-                "SETUP-RESERVATION").ShouldBeSuccess();
+                "SETUP-RESERVATION",
+                DateTime.UtcNow).ShouldBeSuccess();
         }
 
         inventory.ClearDomainEvents();

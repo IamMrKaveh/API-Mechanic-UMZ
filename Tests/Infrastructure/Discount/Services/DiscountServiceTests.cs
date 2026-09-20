@@ -5,6 +5,7 @@ using Domain.Discount.ValueObjects;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Discount.Services;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
@@ -14,11 +15,11 @@ namespace Tests.Infrastructure.Discount.Services;
 
 public class DiscountServiceTests
 {
-    private readonly IDiscountRepository _discountRepository = Substitute.For<IDiscountRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly DiscountService _sut;
+    private readonly IDiscountRepository _discountRepository = Substitute.For<IDiscountRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly DiscountService _sut;
 
     public DiscountServiceTests()
     {
-        _sut = new DiscountService(_discountRepository, _auditService);
+        _sut = new DiscountService(_discountRepository, _auditService, _dateTimeProvider);
     }
 
     [Fact]
@@ -80,7 +81,7 @@ public class DiscountServiceTests
     public async Task ApplyDiscountAsync_WhenCodeIsInactive_ReturnsFailure()
     {
         var discount = new DiscountCodeBuilder().WithCode("OFF10").Build();
-        discount.Deactivate();
+        discount.Deactivate(DateTime.UtcNow);
 
         _discountRepository
             .GetByCodeAsync("OFF10", Arg.Any<CancellationToken>())

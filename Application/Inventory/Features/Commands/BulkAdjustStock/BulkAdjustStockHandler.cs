@@ -1,6 +1,7 @@
 using Domain.Inventory.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.BulkAdjustStock;
 
@@ -8,7 +9,8 @@ public class BulkAdjustStockHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<BulkAdjustStockCommand>
 {
     public async Task<ServiceResult> Handle(BulkAdjustStockCommand request, CancellationToken ct)
@@ -35,7 +37,8 @@ public class BulkAdjustStockHandler(
                 var result = inventory.AdjustStock(
                     item.QuantityChange,
                     userId,
-                    request.Reason);
+                    request.Reason,
+                    dateTimeProvider.UtcNow);
 
                 if (result.IsFailure)
                     throw new DomainException(result.Error.Message);

@@ -2,12 +2,14 @@ using Application.Attribute.Adapters;
 using Application.Attribute.Constants;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Attribute.Features.Commands.UpdateAttributeType;
 
 public class UpdateAttributeTypeHandler(
     IAttributeRepository repository,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<UpdateAttributeTypeCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -28,6 +30,7 @@ public class UpdateAttributeTypeHandler(
             request.SortOrder ?? attributeType.SortOrder,
             request.IsActive ?? attributeType.IsActive,
             uniquenessChecker,
+            dateTimeProvider.UtcNow,
             ct);
 
         await repository.UpdateAttributeTypeAsync(attributeType, ct);

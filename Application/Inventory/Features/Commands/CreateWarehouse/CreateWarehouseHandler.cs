@@ -1,11 +1,13 @@
 ﻿using Domain.Inventory.Aggregates;
 using Domain.Inventory.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.CreateWarehouse;
 
 public class CreateWarehouseHandler(
     IWarehouseRepository warehouseRepository,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateWarehouseCommand>
 {
     public async Task<ServiceResult> Handle(CreateWarehouseCommand request, CancellationToken ct)
@@ -14,12 +16,14 @@ public class CreateWarehouseHandler(
         if (codeExists)
             return ServiceResult.Conflict("کد انبار تکراری است.");
 
+        var now = dateTimeProvider.UtcNow;
+
         if (request.IsDefault)
         {
             var current = await warehouseRepository.GetDefaultAsync(ct);
             if (current is not null)
             {
-                current.ClearDefault();
+                current.ClearDefault(now);
                 warehouseRepository.Update(current);
             }
         }
@@ -31,6 +35,7 @@ public class CreateWarehouseHandler(
             request.Address,
             request.Phone,
             request.Priority,
+            now,
             request.IsDefault);
 
         await warehouseRepository.AddAsync(warehouse, ct);

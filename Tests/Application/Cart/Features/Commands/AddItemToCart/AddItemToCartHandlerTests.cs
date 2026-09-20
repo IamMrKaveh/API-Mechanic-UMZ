@@ -1,4 +1,4 @@
-using Application.Cart.Features.Commands.AddItemToCart;
+﻿using Application.Cart.Features.Commands.AddItemToCart;
 using Application.Common.Interfaces;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
@@ -12,12 +12,14 @@ using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Carts = Domain.Cart.Aggregates.Cart;
 using Inventories = Domain.Inventory.Aggregates.Inventory;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.AddItemToCart;
 
 public class AddItemToCartHandlerTests
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly AddItemToCartHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AddItemToCartHandler _sut;
 
     public AddItemToCartHandlerTests()
     {
@@ -25,7 +27,7 @@ public class AddItemToCartHandlerTests
             _cartRepository,
             _variantRepository,
             _inventoryRepository,
-            _currentUserService);
+            _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -71,7 +73,7 @@ public class AddItemToCartHandlerTests
     {
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
-        var inventory = Inventories.Create(variantId, initialStock: 1, isUnlimited: false);
+        var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 1, isUnlimited: false);
 
         _variantRepository
             .GetWithProductAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
@@ -94,7 +96,7 @@ public class AddItemToCartHandlerTests
     {
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
-        var inventory = Inventories.Create(variantId, initialStock: 100);
+        var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 100);
 
         _variantRepository
             .GetWithProductAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
@@ -120,7 +122,7 @@ public class AddItemToCartHandlerTests
         var userGuid = Guid.NewGuid();
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
-        var inventory = Inventories.Create(variantId, initialStock: 100);
+        var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 100);
 
         _variantRepository
             .GetWithProductAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
@@ -160,8 +162,8 @@ public class AddItemToCartHandlerTests
         var userGuid = Guid.NewGuid();
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
-        var inventory = Inventories.Create(variantId, initialStock: 100);
-        var existingCart = Carts.CreateForUser(UserId.From(userGuid));
+        var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 100);
+        var existingCart = Carts.CreateForUser(UserId.From(userGuid), DateTime.UtcNow);
 
         _variantRepository
             .GetWithProductAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
@@ -193,7 +195,7 @@ public class AddItemToCartHandlerTests
         var guestTokenValue = "GUEST-TOKEN-ADD12345";
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
-        var inventory = Inventories.Create(variantId, initialStock: 100);
+        var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 100);
 
         _variantRepository
             .GetWithProductAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
@@ -233,8 +235,8 @@ public class AddItemToCartHandlerTests
         var guestTokenValue = "GUEST-TOKEN-ADD98765";
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
-        var inventory = Inventories.Create(variantId, initialStock: 50);
-        var existingCart = Carts.CreateForGuest(GuestToken.Create(guestTokenValue));
+        var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 50);
+        var existingCart = Carts.CreateForGuest(GuestToken.Create(guestTokenValue), DateTime.UtcNow);
 
         _variantRepository
             .GetWithProductAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
@@ -259,3 +261,5 @@ public class AddItemToCartHandlerTests
         existingCart.CartItems.Single().Quantity.ShouldBe(2);
     }
 }
+
+

@@ -1,13 +1,15 @@
 using Domain.Inventory.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.ReverseInventoryTransaction;
 
 public class ReverseInventoryHandler(
     IInventoryRepository inventoryRepository,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ReverseInventoryCommand>
 {
     public async Task<ServiceResult> Handle(ReverseInventoryCommand request, CancellationToken ct)
@@ -19,7 +21,7 @@ public class ReverseInventoryHandler(
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        var result = inventory.ReverseStockChange(request.IdempotencyKey, request.Reason, userId);
+        var result = inventory.ReverseStockChange(request.IdempotencyKey, request.Reason, userId, dateTimeProvider.UtcNow);
 
         if (result.IsFailure)
             return ServiceResult.Failure(result.Error.Message);

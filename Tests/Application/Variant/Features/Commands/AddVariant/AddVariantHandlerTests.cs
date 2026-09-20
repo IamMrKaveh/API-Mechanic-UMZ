@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Common.Interfaces;
 using Application.Variant.Features.Commands.AddVariant;
 using Domain.Attribute.Interfaces;
@@ -21,12 +21,15 @@ using Attributes = Domain.Attribute.Entities.AttributeValue;
 using Inventories = Domain.Inventory.Aggregates.Inventory;
 using Products = Domain.Product.Aggregates.Product;
 using Shippings = Domain.Shipping.Aggregates.Shipping;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
+using Microsoft.Extensions.Logging;
 
 namespace Tests.Application.Variant.Features.Commands.AddVariant;
 
 public class AddVariantHandlerTests
 {
-    private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAttributeRepository _attributeRepository = Substitute.For<IAttributeRepository>(); private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ILogger<AddVariantHandler> _logger = Substitute.For<ILogger<AddVariantHandler>>(); private readonly AddVariantHandler _sut;
+    private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAttributeRepository _attributeRepository = Substitute.For<IAttributeRepository>(); private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ILogger<AddVariantHandler> _logger = Substitute.For<ILogger<AddVariantHandler>>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AddVariantHandler _sut;
 
     public AddVariantHandlerTests()
     {
@@ -69,6 +72,7 @@ public class AddVariantHandlerTests
             _unitOfWork,
             _auditService,
             _currentUserService,
+            _dateTimeProvider,
             _logger);
     }
 
@@ -252,3 +256,4 @@ public class AddVariantHandlerTests
             Arg.Any<CancellationToken>());
     }
 }
+

@@ -127,14 +127,14 @@ public class InventoryTests
     public void Create_WithNullVariantId_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(
-            () => Inv.Create(null!, 0, false, 5, null));
+            () => Inv.Create(null!, DateTime.UtcNow, 0, false, 5, null));
     }
 
     [Fact]
     public void AvailableQuantity_WhenNotUnlimited_ReturnsStockMinusReserved()
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
-        sut.ReserveStock(StockQuantity.Create(3), "REF").ShouldBeSuccess();
+        sut.ReserveStock(StockQuantity.Create(3), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.AvailableQuantity.ShouldBe(7);
     }
@@ -213,7 +213,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().Build();
 
-        var result = sut.IncreaseStock(quantity, "reason");
+        var result = sut.IncreaseStock(quantity, "reason", DateTime.UtcNow);
 
         result.ShouldFailWith("Inventory.InvalidQuantity");
     }
@@ -224,7 +224,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        var result = sut.IncreaseStock(5, "restock");
+        var result = sut.IncreaseStock(5, "restock", DateTime.UtcNow);
 
         result.ShouldBeSuccess();
         sut.StockQuantity.Value.ShouldBe(15);
@@ -240,7 +240,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().AsUnlimited().Build();
 
-        sut.IncreaseStock(5, "restock").ShouldBeSuccess();
+        sut.IncreaseStock(5, "restock", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.IsUnlimited.ShouldBeFalse();
         sut.StockQuantity.Value.ShouldBe(5);
@@ -252,7 +252,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.IncreaseStock(5, "restock").ShouldBeSuccess();
+        sut.IncreaseStock(5, "restock", DateTime.UtcNow).ShouldBeSuccess();
 
         var evt = sut.DomainEvents.OfType<StockIncreasedEvent>().Single();
         evt.InventoryId.ShouldBe(sut.Id);
@@ -269,7 +269,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.DecreaseStock(quantity, "reason").ShouldFailWith("Inventory.InvalidQuantity");
+        sut.DecreaseStock(quantity, "reason", DateTime.UtcNow).ShouldFailWith("Inventory.InvalidQuantity");
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.DecreaseStock(3, "sold").ShouldBeSuccess();
+        sut.DecreaseStock(3, "sold", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.StockQuantity.Value.ShouldBe(7);
         var last = sut.LedgerEntries.Last();
@@ -291,7 +291,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(5).Build();
 
-        var result = sut.DecreaseStock(10, "sold");
+        var result = sut.DecreaseStock(10, "sold", DateTime.UtcNow);
 
         result.ShouldFailWith("400");
         result.ShouldFailWithType(ErrorType.Validation);
@@ -304,7 +304,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().AsUnlimited().Build();
         var stockBefore = sut.StockQuantity.Value;
 
-        sut.DecreaseStock(5, "sold").ShouldBeSuccess();
+        sut.DecreaseStock(5, "sold", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.StockQuantity.Value.ShouldBe(stockBefore);
     }
@@ -315,7 +315,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.DecreaseStock(3, "sold").ShouldBeSuccess();
+        sut.DecreaseStock(3, "sold", DateTime.UtcNow).ShouldBeSuccess();
 
         var evt = sut.DomainEvents.OfType<StockDecreasedEvent>().Single();
         evt.QuantityRemoved.ShouldBe(3);
@@ -329,7 +329,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().Build();
         sut.ClearDomainEvents();
 
-        sut.SetUnlimited();
+        sut.SetUnlimited(DateTime.UtcNow);
 
         sut.IsUnlimited.ShouldBeTrue();
         sut.DomainEvents.OfType<StockSetUnlimitedEvent>().Count().ShouldBe(1);
@@ -340,7 +340,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().Build();
 
-        sut.SetLowStockThreshold(20);
+        sut.SetLowStockThreshold(20, DateTime.UtcNow);
 
         sut.LowStockThreshold.ShouldBe(20);
     }
@@ -350,7 +350,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().Build();
 
-        var ex = Should.Throw<DomainException>(() => sut.SetLowStockThreshold(-1));
+        var ex = Should.Throw<DomainException>(() => sut.SetLowStockThreshold(-1, DateTime.UtcNow));
 
         ex.Message.ShouldBe("آستانه کمبود موجودی نمی‌تواند منفی باشد.");
     }
@@ -360,7 +360,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.ReserveStock(StockQuantity.Create(0), "REF").ShouldFailWith("Inventory.InvalidQuantity");
+        sut.ReserveStock(StockQuantity.Create(0), "REF", DateTime.UtcNow).ShouldFailWith("Inventory.InvalidQuantity");
     }
 
     [Fact]
@@ -368,7 +368,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.ReserveStock(StockQuantity.Create(4), "REF").ShouldBeSuccess();
+        sut.ReserveStock(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.ReservedQuantity.Value.ShouldBe(4);
         sut.AvailableQuantity.ShouldBe(6);
@@ -383,7 +383,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(3).Build();
 
-        var result = sut.ReserveStock(StockQuantity.Create(10), "REF");
+        var result = sut.ReserveStock(StockQuantity.Create(10), "REF", DateTime.UtcNow);
 
         result.ShouldFailWith("400");
         sut.ReservedQuantity.Value.ShouldBe(0);
@@ -394,7 +394,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().AsUnlimited().Build();
 
-        sut.ReserveStock(StockQuantity.Create(5), "REF").ShouldBeSuccess();
+        sut.ReserveStock(StockQuantity.Create(5), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.ReservedQuantity.Value.ShouldBe(0);
     }
@@ -405,7 +405,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.ReserveStock(StockQuantity.Create(4), "REF").ShouldBeSuccess();
+        sut.ReserveStock(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         var evt = sut.DomainEvents.OfType<StockReservedEvent>().Single();
         evt.QuantityReserved.ShouldBe(4);
@@ -417,7 +417,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.ReleaseReservation(StockQuantity.Create(0), "REF").ShouldFailWith("Inventory.InvalidQuantity");
+        sut.ReleaseReservation(StockQuantity.Create(0), "REF", DateTime.UtcNow).ShouldFailWith("Inventory.InvalidQuantity");
     }
 
     [Fact]
@@ -426,7 +426,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().AsUnlimited().Build();
         sut.ClearDomainEvents();
 
-        sut.ReleaseReservation(StockQuantity.Create(5), "REF").ShouldBeSuccess();
+        sut.ReleaseReservation(StockQuantity.Create(5), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.DomainEvents.ShouldBeEmpty();
         sut.LedgerEntries.ShouldBeEmpty();
@@ -438,7 +438,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.ReleaseReservation(StockQuantity.Create(5), "REF").ShouldBeSuccess();
+        sut.ReleaseReservation(StockQuantity.Create(5), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.ReservedQuantity.Value.ShouldBe(0);
         sut.DomainEvents.ShouldBeEmpty();
@@ -448,9 +448,9 @@ public class InventoryTests
     public void ReleaseReservation_WithMoreThanReserved_ClampsToReservedAmount()
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
-        sut.ReserveStock(StockQuantity.Create(3), "REF").ShouldBeSuccess();
+        sut.ReserveStock(StockQuantity.Create(3), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
-        sut.ReleaseReservation(StockQuantity.Create(100), "REF").ShouldBeSuccess();
+        sut.ReleaseReservation(StockQuantity.Create(100), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.ReservedQuantity.Value.ShouldBe(0);
         sut.AvailableQuantity.ShouldBe(10);
@@ -460,10 +460,10 @@ public class InventoryTests
     public void ReleaseReservation_WithPartialAmount_ReducesReservedByExactAmount()
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
-        sut.ReserveStock(StockQuantity.Create(5), "REF").ShouldBeSuccess();
+        sut.ReserveStock(StockQuantity.Create(5), "REF", DateTime.UtcNow).ShouldBeSuccess();
         sut.ClearDomainEvents();
 
-        sut.ReleaseReservation(StockQuantity.Create(2), "REF").ShouldBeSuccess();
+        sut.ReleaseReservation(StockQuantity.Create(2), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.ReservedQuantity.Value.ShouldBe(3);
         sut.DomainEvents.OfType<StockReservationReleasedEvent>().Count().ShouldBe(1);
@@ -474,7 +474,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.ConfirmReservation(StockQuantity.Create(0), "REF").ShouldFailWith("Inventory.InvalidQuantity");
+        sut.ConfirmReservation(StockQuantity.Create(0), "REF", DateTime.UtcNow).ShouldFailWith("Inventory.InvalidQuantity");
     }
 
     [Fact]
@@ -483,7 +483,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().AsUnlimited().Build();
         sut.ClearDomainEvents();
 
-        sut.ConfirmReservation(StockQuantity.Create(3), "REF").ShouldBeSuccess();
+        sut.ConfirmReservation(StockQuantity.Create(3), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.DomainEvents.ShouldBeEmpty();
     }
@@ -492,9 +492,9 @@ public class InventoryTests
     public void ConfirmReservation_WithGreaterThanReserved_ReturnsInsufficientReservationFailure()
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
-        sut.ReserveStock(StockQuantity.Create(2), "REF").ShouldBeSuccess();
+        sut.ReserveStock(StockQuantity.Create(2), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
-        sut.ConfirmReservation(StockQuantity.Create(5), "REF")
+        sut.ConfirmReservation(StockQuantity.Create(5), "REF", DateTime.UtcNow)
             .ShouldFailWith("Inventory.InsufficientReservation");
     }
 
@@ -502,9 +502,9 @@ public class InventoryTests
     public void ConfirmReservation_WithReservedAmount_ReducesReservedAndStockAndAppendsCommitLedger()
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
-        sut.ReserveStock(StockQuantity.Create(4), "REF").ShouldBeSuccess();
+        sut.ReserveStock(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
-        sut.ConfirmReservation(StockQuantity.Create(4), "REF").ShouldBeSuccess();
+        sut.ConfirmReservation(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.ReservedQuantity.Value.ShouldBe(0);
         sut.StockQuantity.Value.ShouldBe(6);
@@ -515,10 +515,10 @@ public class InventoryTests
     public void ConfirmReservation_RaisesStockCommittedEvent()
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
-        sut.ReserveStock(StockQuantity.Create(4), "REF").ShouldBeSuccess();
+        sut.ReserveStock(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
         sut.ClearDomainEvents();
 
-        sut.ConfirmReservation(StockQuantity.Create(4), "REF").ShouldBeSuccess();
+        sut.ConfirmReservation(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         var evt = sut.DomainEvents.OfType<StockCommittedEvent>().Single();
         evt.InventoryId.ShouldBe(sut.Id);
@@ -531,7 +531,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().AsUnlimited().Build();
 
-        sut.ReverseStockChange("nonexistent-key", "reason", UserId.NewId())
+        sut.ReverseStockChange("nonexistent-key", "reason", UserId.NewId(), DateTime.UtcNow)
             .ShouldFailWith("Inventory.NotApplicable");
     }
 
@@ -540,7 +540,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.ReverseStockChange("no-such-key", "reason", UserId.NewId())
+        sut.ReverseStockChange("no-such-key", "reason", UserId.NewId(), DateTime.UtcNow)
             .ShouldFailWith("Inventory.NotFound");
     }
 
@@ -550,7 +550,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         var originalKey = sut.LedgerEntries.Single().IdempotencyKey;
 
-        var result = sut.ReverseStockChange(originalKey, "return", UserId.NewId());
+        var result = sut.ReverseStockChange(originalKey, "return", UserId.NewId(), DateTime.UtcNow);
 
         result.ShouldBeSuccess();
         sut.StockQuantity.Value.ShouldBe(0);
@@ -562,9 +562,9 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         var originalKey = sut.LedgerEntries.Single().IdempotencyKey;
-        sut.DecreaseStock(8, "sold").ShouldBeSuccess();
+        sut.DecreaseStock(8, "sold", DateTime.UtcNow).ShouldBeSuccess();
 
-        var result = sut.ReverseStockChange(originalKey, "return", UserId.NewId());
+        var result = sut.ReverseStockChange(originalKey, "return", UserId.NewId(), DateTime.UtcNow);
 
         result.IsFailure.ShouldBeTrue();
         sut.StockQuantity.Value.ShouldBe(2);
@@ -577,7 +577,7 @@ public class InventoryTests
         var originalKey = sut.LedgerEntries.Single().IdempotencyKey;
         sut.ClearDomainEvents();
 
-        sut.ReverseStockChange(originalKey, "return", UserId.NewId()).ShouldBeSuccess();
+        sut.ReverseStockChange(originalKey, "return", UserId.NewId(), DateTime.UtcNow).ShouldBeSuccess();
 
         sut.DomainEvents.OfType<StockAdjustedEvent>().Count().ShouldBe(1);
     }
@@ -587,7 +587,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.ReturnStock(StockQuantity.Create(0), "return").ShouldFailWith("Inventory.InvalidQuantity");
+        sut.ReturnStock(StockQuantity.Create(0), "return", DateTime.UtcNow).ShouldFailWith("Inventory.InvalidQuantity");
     }
 
     [Fact]
@@ -596,7 +596,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().AsUnlimited().Build();
         sut.ClearDomainEvents();
 
-        sut.ReturnStock(StockQuantity.Create(3), "return").ShouldBeSuccess();
+        sut.ReturnStock(StockQuantity.Create(3), "return", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.DomainEvents.ShouldBeEmpty();
     }
@@ -606,7 +606,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.ReturnStock(StockQuantity.Create(3), "customer return").ShouldBeSuccess();
+        sut.ReturnStock(StockQuantity.Create(3), "customer return", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.StockQuantity.Value.ShouldBe(13);
         var last = sut.LedgerEntries.Last();
@@ -620,7 +620,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.ReturnStock(StockQuantity.Create(3), "customer return").ShouldBeSuccess();
+        sut.ReturnStock(StockQuantity.Create(3), "customer return", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.DomainEvents.OfType<StockRestoredEvent>().Count().ShouldBe(1);
     }
@@ -630,7 +630,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().AsUnlimited().Build();
 
-        sut.AdjustStock(1, UserId.NewId(), "x").ShouldFailWith("Inventory.NotApplicable");
+        sut.AdjustStock(1, UserId.NewId(), "x", DateTime.UtcNow).ShouldFailWith("Inventory.NotApplicable");
     }
 
     [Fact]
@@ -638,7 +638,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.AdjustStock(5, UserId.NewId(), "recount").ShouldBeSuccess();
+        sut.AdjustStock(5, UserId.NewId(), "recount", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.StockQuantity.Value.ShouldBe(15);
     }
@@ -648,7 +648,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.AdjustStock(-4, UserId.NewId(), "recount").ShouldBeSuccess();
+        sut.AdjustStock(-4, UserId.NewId(), "recount", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.StockQuantity.Value.ShouldBe(6);
     }
@@ -658,7 +658,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(3).Build();
 
-        var result = sut.AdjustStock(-10, UserId.NewId(), "recount");
+        var result = sut.AdjustStock(-10, UserId.NewId(), "recount", DateTime.UtcNow);
 
         result.IsFailure.ShouldBeTrue();
         sut.StockQuantity.Value.ShouldBe(3);
@@ -670,7 +670,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.AdjustStock(-4, UserId.NewId(), "recount").ShouldBeSuccess();
+        sut.AdjustStock(-4, UserId.NewId(), "recount", DateTime.UtcNow).ShouldBeSuccess();
 
         var evt = sut.DomainEvents.OfType<StockAdjustedEvent>().Single();
         evt.Adjustment.ShouldBe(-4);
@@ -683,7 +683,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.AdjustStockTo(-1, "correction").ShouldFailWith("Inventory.InvalidQuantity");
+        sut.AdjustStockTo(-1, "correction", DateTime.UtcNow).ShouldFailWith("Inventory.InvalidQuantity");
     }
 
     [Fact]
@@ -692,7 +692,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().AsUnlimited().Build();
         sut.ClearDomainEvents();
 
-        sut.AdjustStockTo(5, "correction").ShouldBeSuccess();
+        sut.AdjustStockTo(5, "correction", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.IsUnlimited.ShouldBeTrue();
         sut.DomainEvents.ShouldBeEmpty();
@@ -704,7 +704,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.AdjustStockTo(10, "correction").ShouldBeSuccess();
+        sut.AdjustStockTo(10, "correction", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.DomainEvents.ShouldBeEmpty();
     }
@@ -715,7 +715,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(5).Build();
         sut.ClearDomainEvents();
 
-        sut.AdjustStockTo(12, "correction").ShouldBeSuccess();
+        sut.AdjustStockTo(12, "correction", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.StockQuantity.Value.ShouldBe(12);
         sut.DomainEvents.OfType<StockIncreasedEvent>().Count().ShouldBe(1);
@@ -727,7 +727,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.AdjustStockTo(3, "correction").ShouldBeSuccess();
+        sut.AdjustStockTo(3, "correction", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.StockQuantity.Value.ShouldBe(3);
         sut.DomainEvents.OfType<StockDecreasedEvent>().Count().ShouldBe(1);
@@ -740,7 +740,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.RecordDamage(quantity, UserId.NewId(), "damaged").ShouldFailWith("Inventory.InvalidQuantity");
+        sut.RecordDamage(quantity, UserId.NewId(), "damaged", DateTime.UtcNow).ShouldFailWith("Inventory.InvalidQuantity");
     }
 
     [Fact]
@@ -748,7 +748,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().AsUnlimited().Build();
 
-        sut.RecordDamage(1, UserId.NewId(), "damaged").ShouldFailWith("Inventory.NotApplicable");
+        sut.RecordDamage(1, UserId.NewId(), "damaged", DateTime.UtcNow).ShouldFailWith("Inventory.NotApplicable");
     }
 
     [Fact]
@@ -756,7 +756,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(2).Build();
 
-        var result = sut.RecordDamage(5, UserId.NewId(), "damaged");
+        var result = sut.RecordDamage(5, UserId.NewId(), "damaged", DateTime.UtcNow);
 
         result.IsFailure.ShouldBeTrue();
         sut.StockQuantity.Value.ShouldBe(2);
@@ -768,7 +768,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.RecordDamage(3, UserId.NewId(), "broken").ShouldBeSuccess();
+        sut.RecordDamage(3, UserId.NewId(), "broken", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.StockQuantity.Value.ShouldBe(7);
         var last = sut.LedgerEntries.Last();
@@ -783,7 +783,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.RecordDamage(3, UserId.NewId(), "broken").ShouldBeSuccess();
+        sut.RecordDamage(3, UserId.NewId(), "broken", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.DomainEvents.ShouldBeEmpty();
     }
@@ -794,7 +794,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().AsUnlimited().Build();
         sut.ClearDomainEvents();
 
-        sut.Reconcile(StockQuantity.Create(42), UserId.NewId()).ShouldBeSuccess();
+        sut.Reconcile(StockQuantity.Create(42), UserId.NewId(), DateTime.UtcNow).ShouldBeSuccess();
 
         sut.IsUnlimited.ShouldBeTrue();
         sut.DomainEvents.ShouldBeEmpty();
@@ -808,7 +808,7 @@ public class InventoryTests
         var ledgerCountBefore = sut.LedgerEntries.Count;
         sut.ClearDomainEvents();
 
-        sut.Reconcile(StockQuantity.Create(10), UserId.NewId()).ShouldBeSuccess();
+        sut.Reconcile(StockQuantity.Create(10), UserId.NewId(), DateTime.UtcNow).ShouldBeSuccess();
 
         sut.LedgerEntries.Count.ShouldBe(ledgerCountBefore);
         sut.DomainEvents.ShouldBeEmpty();
@@ -819,7 +819,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.Reconcile(StockQuantity.Create(15), UserId.NewId()).ShouldBeSuccess();
+        sut.Reconcile(StockQuantity.Create(15), UserId.NewId(), DateTime.UtcNow).ShouldBeSuccess();
 
         sut.StockQuantity.Value.ShouldBe(15);
         sut.LedgerEntries.Last().EventType.ShouldBe(StockEventType.Adjustment);
@@ -831,7 +831,7 @@ public class InventoryTests
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
 
-        sut.Reconcile(StockQuantity.Create(6), UserId.NewId()).ShouldBeSuccess();
+        sut.Reconcile(StockQuantity.Create(6), UserId.NewId(), DateTime.UtcNow).ShouldBeSuccess();
 
         sut.StockQuantity.Value.ShouldBe(6);
         sut.LedgerEntries.Last().QuantityDelta.ShouldBe(-4);
@@ -843,7 +843,7 @@ public class InventoryTests
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
         sut.ClearDomainEvents();
 
-        sut.Reconcile(StockQuantity.Create(15), UserId.NewId()).ShouldBeSuccess();
+        sut.Reconcile(StockQuantity.Create(15), UserId.NewId(), DateTime.UtcNow).ShouldBeSuccess();
 
         sut.DomainEvents.ShouldBeEmpty();
     }
@@ -877,7 +877,7 @@ public class InventoryTests
     public void CanFulfill_ConsidersReservedQuantity()
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();
-        sut.ReserveStock(StockQuantity.Create(6), "REF").ShouldBeSuccess();
+        sut.ReserveStock(StockQuantity.Create(6), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
         sut.CanFulfill(5).ShouldBeFalse();
         sut.CanFulfill(4).ShouldBeTrue();

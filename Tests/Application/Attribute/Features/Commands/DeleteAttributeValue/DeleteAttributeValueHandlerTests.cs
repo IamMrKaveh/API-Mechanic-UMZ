@@ -38,7 +38,7 @@ public class DeleteAttributeValueHandlerTests
     public async Task Handle_WhenValueExists_DeletesByEntityIdWithNullDeletedByAndInvalidatesAllTypesCache()
     {
         var type = await new AttributeTypeBuilder().BuildAsync();
-        var value = type.AddValue("red", "Red");
+        var value = type.AddValue("red", "Red", DateTime.UtcNow);
 
         _repository
             .GetAttributeValueByIdAsync(Arg.Any<AttributeValueId>(), Arg.Any<CancellationToken>())

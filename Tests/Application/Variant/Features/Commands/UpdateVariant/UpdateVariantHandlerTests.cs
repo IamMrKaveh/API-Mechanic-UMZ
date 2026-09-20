@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Common.Interfaces;
 using Application.Variant.Features.Commands.UpdateVariant;
 using Domain.Attribute.Interfaces;
@@ -17,12 +17,14 @@ using Tests.TestInfrastructure.Builders;
 using Attributes = Domain.Attribute.Entities.AttributeValue;
 using Inventories = Domain.Inventory.Aggregates.Inventory;
 using Shippings = Domain.Shipping.Aggregates.Shipping;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Variant.Features.Commands.UpdateVariant;
 
 public class UpdateVariantHandlerTests
 {
-    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAttributeRepository _attributeRepository = Substitute.For<IAttributeRepository>(); private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly UpdateVariantHandler _sut;
+    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAttributeRepository _attributeRepository = Substitute.For<IAttributeRepository>(); private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly UpdateVariantHandler _sut;
 
     public UpdateVariantHandlerTests()
     {
@@ -55,7 +57,7 @@ public class UpdateVariantHandlerTests
             _shippingRepository,
             _unitOfWork,
             _auditService,
-            _currentUserService);
+            _currentUserService, _dateTimeProvider);
     }
 
     private static ProductVariant BuildVariant(ProductId productId, VariantId? variantId = null, string sku = "OLD-SKU")
@@ -302,3 +304,4 @@ public class UpdateVariantHandlerTests
         inventory.IsUnlimited.ShouldBeTrue();
     }
 }
+

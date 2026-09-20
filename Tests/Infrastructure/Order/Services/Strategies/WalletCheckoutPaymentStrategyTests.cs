@@ -58,7 +58,7 @@ public class WalletCheckoutPaymentStrategyTests
     private static global::Domain.Wallet.Aggregates.Wallet NewFundedWallet(UserId userId, decimal amount = 500_000m)
     {
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(amount), "seed", Guid.NewGuid().ToString("N"));
+        wallet.Credit(Money.Create(amount), "seed", Guid.NewGuid().ToString("N"), DateTime.UtcNow);
         wallet.ClearDomainEvents();
         return wallet;
     }
@@ -154,7 +154,7 @@ public class WalletCheckoutPaymentStrategyTests
         var userId = UserId.NewId();
         var order = NewOrder(userId);
         var wallet = NewFundedWallet(userId);
-        wallet.Freeze("fraud", UserId.NewId());
+        wallet.Freeze("fraud", UserId.NewId(), DateTime.UtcNow);
         wallet.ClearDomainEvents();
         _walletRepository.HasIdempotencyKeyAsync(Arg.Any<UserId>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(false);

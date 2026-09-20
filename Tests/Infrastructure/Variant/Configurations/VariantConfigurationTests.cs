@@ -1,4 +1,4 @@
-using global::Domain.Variant.Aggregates;
+﻿using global::Domain.Variant.Aggregates;
 using Tests.TestInfrastructure.Base;
 using Variants = global::Domain.Variant.Aggregates.ProductVariant;
 
@@ -131,7 +131,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
             .WithName($"Color{Guid.NewGuid():N}"[..16])
             .WithDisplayName($"Color{Guid.NewGuid():N}"[..16])
             .BuildAsync();
-        var attributeValue = attributeType.AddValue($"Red{Guid.NewGuid():N}"[..12], $"Red{Guid.NewGuid():N}"[..12]);
+        var attributeValue = attributeType.AddValue($"Red{Guid.NewGuid():N}"[..12], $"Red{Guid.NewGuid():N}"[..12], DateTime.UtcNow);
         attributeType.ClearDomainEvents();
         Context.AttributeTypes.Add(attributeType);
         await Context.SaveChangesAsync();
@@ -262,3 +262,4 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         entityType.FindProperty(nameof(Variants.UpdatedAt))!.IsNullable.ShouldBeTrue();
     }
 }
+

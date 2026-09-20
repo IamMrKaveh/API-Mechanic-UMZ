@@ -43,5 +43,5 @@ public sealed class InventoryBuilder
     }
 
     public Inv Build() =>
-        Inv.Create(_variantId, _initialStock, _isUnlimited, _lowStockThreshold, _createdBy);
+        Inv.Create(_variantId, DateTime.UtcNow, _initialStock, _isUnlimited, _lowStockThreshold, _createdBy);
 }

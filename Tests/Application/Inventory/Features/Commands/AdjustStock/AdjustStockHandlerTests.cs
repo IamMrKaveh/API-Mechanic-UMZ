@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Common.Interfaces;
 using Application.Inventory.Features.Commands.AdjustStock;
 using Domain.Inventory.Interfaces;
@@ -8,17 +8,19 @@ using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Inv = Domain.Inventory.Aggregates.Inventory;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.AdjustStock;
 
 public class AdjustStockHandlerTests
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly AdjustStockHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AdjustStockHandler _sut;
 
     public AdjustStockHandlerTests()
     {
         _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new AdjustStockHandler(_inventoryRepository, _auditService, _currentUserService);
+        _sut = new AdjustStockHandler(_inventoryRepository, _auditService, _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -74,3 +76,4 @@ public class AdjustStockHandlerTests
         await _auditService.DidNotReceiveWithAnyArgs().LogInventoryEventAsync(default!, default!, default!, default);
     }
 }
+

@@ -1,12 +1,14 @@
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Cart.Features.Commands.ClearCart;
 
 public class ClearCartHandler(
     ICartRepository cartRepository,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ClearCartCommand>
 {
     public async Task<ServiceResult> Handle(ClearCartCommand request, CancellationToken ct)
@@ -29,7 +31,7 @@ public class ClearCartHandler(
         if (cart is null)
             return ServiceResult.Success();
 
-        cart.Clear();
+        cart.Clear(dateTimeProvider.UtcNow);
         cartRepository.Update(cart);
 
         return ServiceResult.Success();

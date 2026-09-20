@@ -3,6 +3,7 @@ using Application.Category.Features.Commands.CreateCategory;
 using Domain.Category.Exceptions;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Exceptions;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Mapping;
@@ -12,7 +13,7 @@ namespace Tests.Application.Category.Features.Commands.CreateCategory;
 
 public class CreateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
 {
-    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateCategoryHandler _sut;
+    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CreateCategoryHandler _sut;
 
     public CreateCategoryHandlerTests(MapsterConfigFixture _)
     {
@@ -23,7 +24,7 @@ public class CreateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
             .ExistsBySlugAsync(Arg.Any<CategorySlug>(), Arg.Any<CategoryId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new CreateCategoryHandler(_repository, _cacheService);
+        _sut = new CreateCategoryHandler(_repository, _cacheService, _dateTimeProvider);
     }
 
     [Fact]

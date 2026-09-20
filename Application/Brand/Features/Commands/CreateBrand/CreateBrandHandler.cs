@@ -3,6 +3,7 @@ using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Brand.Features.Commands.CreateBrand;
 
@@ -12,7 +13,8 @@ public sealed class CreateBrandHandler(
     IBrandUniquenessChecker brandUniquenessChecker,
     IMapper mapper,
     IStorageService storageService,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateBrandCommand, BrandDetailDto>
 {
     private const long MaxFileSizeBytes = 2 * 1024 * 1024;
@@ -63,6 +65,7 @@ public sealed class CreateBrandHandler(
             brandUniquenessChecker,
             string.IsNullOrWhiteSpace(request.Description) ? null : request.Description,
             logoPath,
+            dateTimeProvider.UtcNow,
             ct);
 
         await brandRepository.AddAsync(brand, ct);

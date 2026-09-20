@@ -6,6 +6,7 @@ using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
@@ -16,7 +17,7 @@ namespace Tests.Application.Brand.Features.Commands.CreateBrand;
 
 public class CreateBrandHandlerTests
 {
-    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICategoryRepository _categoryRepository = Substitute.For<ICategoryRepository>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateBrandHandler _sut;
+    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICategoryRepository _categoryRepository = Substitute.For<ICategoryRepository>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CreateBrandHandler _sut;
 
     public CreateBrandHandlerTests()
     {
@@ -40,7 +41,8 @@ public class CreateBrandHandlerTests
             _uniquenessChecker,
             _mapper,
             _storageService,
-            _cacheService);
+            _cacheService,
+            _dateTimeProvider);
     }
 
     private async Task<Categories> ConfigureExistingCategoryAsync()

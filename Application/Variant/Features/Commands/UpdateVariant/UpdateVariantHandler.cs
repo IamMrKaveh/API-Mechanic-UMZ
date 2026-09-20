@@ -7,6 +7,7 @@ using Domain.Shipping.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Variant.Features.Commands.UpdateVariant;
 
@@ -17,7 +18,8 @@ public class UpdateVariantHandler(
     IShippingRepository shippingRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<UpdateVariantCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -117,6 +119,7 @@ public class UpdateVariantHandler(
             var initialStock = request.IsUnlimited ? 0 : Math.Max(0, request.Stock);
             inventory = Domain.Inventory.Aggregates.Inventory.Create(
                 variantId,
+                dateTimeProvider.UtcNow,
                 initialStock,
                 request.IsUnlimited,
                 lowStockThreshold: 5,
@@ -127,13 +130,14 @@ public class UpdateVariantHandler(
         {
             if (request.IsUnlimited)
             {
-                inventory.SetUnlimited();
+                inventory.SetUnlimited(dateTimeProvider.UtcNow);
             }
             else
             {
                 var adjustResult = inventory.AdjustStockTo(
                     request.Stock,
                     "به‌روزرسانی موجودی",
+                    dateTimeProvider.UtcNow,
                     userId);
 
                 if (adjustResult.IsFailure)

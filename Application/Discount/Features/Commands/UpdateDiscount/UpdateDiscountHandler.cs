@@ -2,12 +2,14 @@ using Application.Discount.Features.Shared;
 using Domain.Discount.Enums;
 using Domain.Discount.Interfaces;
 using Domain.Discount.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Discount.Features.Commands.UpdateDiscount;
 
 public class UpdateDiscountHandler(
     IDiscountRepository discountRepository,
-    IMapper mapper)
+    IMapper mapper,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<UpdateDiscountCommand, DiscountDto>
 {
     public async Task<ServiceResult<DiscountDto>> Handle(UpdateDiscountCommand request, CancellationToken ct)
@@ -28,12 +30,13 @@ public class UpdateDiscountHandler(
             ? Money.FromDecimal(request.MaximumDiscountAmount.Value)
             : null;
 
-        discount.Update(discountValue, maxDiscount, request.UsageLimit, request.StartsAt, request.ExpiresAt);
+        var now = dateTimeProvider.UtcNow;
+        discount.Update(discountValue, maxDiscount, request.UsageLimit, request.StartsAt, request.ExpiresAt, now);
 
         if (request.IsActive && !discount.IsActive)
-            discount.Activate();
+            discount.Activate(now);
         else if (!request.IsActive && discount.IsActive)
-            discount.Deactivate();
+            discount.Deactivate(now);
 
         discountRepository.Update(discount);
 

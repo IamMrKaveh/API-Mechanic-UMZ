@@ -1,11 +1,13 @@
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Category.Features.Commands.DeleteCategory;
 
 public class DeleteCategoryHandler(
     ICategoryRepository categoryRepository,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<DeleteCategoryCommand>
 {
     public async Task<ServiceResult> Handle(DeleteCategoryCommand request, CancellationToken ct)
@@ -20,7 +22,7 @@ public class DeleteCategoryHandler(
         if (hasChildren)
             return ServiceResult.Failure("دسته‌بندی دارای زیرمجموعه است و قابل حذف نیست.");
 
-        category.Deactivate();
+        category.Deactivate(dateTimeProvider.UtcNow);
         categoryRepository.Update(category);
         await cacheService.RemoveByPrefixAsync("categories:", ct);
 

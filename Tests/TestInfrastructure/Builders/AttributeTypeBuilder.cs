@@ -45,5 +45,5 @@ public sealed class AttributeTypeBuilder
     }
 
     public Task<AttributeType> BuildAsync(CancellationToken ct = default) =>
-        AttributeType.Create(_name, _displayName, _sortOrder, _isActive, _uniquenessChecker, ct);
+        AttributeType.Create(_name, _displayName, _sortOrder, _isActive, _uniquenessChecker, DateTime.UtcNow, ct);
 }

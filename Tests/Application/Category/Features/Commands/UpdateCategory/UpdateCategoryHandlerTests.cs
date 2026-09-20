@@ -2,6 +2,7 @@ using Application.Cache.Contracts;
 using Application.Category.Features.Commands.UpdateCategory;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
@@ -13,7 +14,7 @@ namespace Tests.Application.Category.Features.Commands.UpdateCategory;
 
 public class UpdateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
 {
-    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateCategoryHandler _sut;
+    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly UpdateCategoryHandler _sut;
 
     public UpdateCategoryHandlerTests(MapsterConfigFixture _)
     {
@@ -24,7 +25,7 @@ public class UpdateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
             .ExistsBySlugAsync(Arg.Any<CategorySlug>(), Arg.Any<CategoryId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new UpdateCategoryHandler(_repository, _cacheService);
+        _sut = new UpdateCategoryHandler(_repository, _cacheService, _dateTimeProvider);
     }
 
     private async Task<Categories> BuildActiveCategoryAsync() =>
@@ -108,7 +109,7 @@ public class UpdateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
     public async Task Handle_WhenIsActiveTrueAndCategoryInactive_ActivatesCategory()
     {
         var category = await BuildActiveCategoryAsync();
-        category.Deactivate();
+        category.Deactivate(DateTime.UtcNow);
         _repository
             .GetByIdAsync(Arg.Any<CategoryId>(), Arg.Any<CancellationToken>())
             .Returns(category);

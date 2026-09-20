@@ -3,13 +3,15 @@ using Domain.Inventory.Services;
 using Domain.Inventory.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.ReconcileStock;
 
 public class ReconcileStockHandler(
     IInventoryRepository inventoryRepository,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ReconcileStockCommand>
 {
     public async Task<ServiceResult> Handle(ReconcileStockCommand request, CancellationToken ct)
@@ -22,7 +24,7 @@ public class ReconcileStockHandler(
         if (inventory is null)
             return ServiceResult.NotFound("موجودی یافت نشد.");
 
-        var result = InventoryDomainService.Reconcile(inventory, stock, userId);
+        var result = InventoryDomainService.Reconcile(inventory, stock, userId, dateTimeProvider.UtcNow);
 
         if (result.IsFailure)
             return ServiceResult.Failure(result.Error.Message);

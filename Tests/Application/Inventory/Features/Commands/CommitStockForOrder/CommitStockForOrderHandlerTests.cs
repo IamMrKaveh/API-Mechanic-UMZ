@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Common.Interfaces;
 using Application.Inventory.Features.Commands.CommitStockForOrder;
 using Domain.Inventory.Interfaces;
@@ -11,12 +11,14 @@ using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Inv = Domain.Inventory.Aggregates.Inventory;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.CommitStockForOrder;
 
 public class CommitStockForOrderHandlerTests
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly CommitStockForOrderHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CommitStockForOrderHandler _sut;
 
     public CommitStockForOrderHandlerTests()
     {
@@ -30,7 +32,7 @@ public class CommitStockForOrderHandlerTests
                 return await op!(ci.Arg<CancellationToken>());
             });
 
-        _sut = new CommitStockForOrderHandler(_inventoryRepository, _unitOfWork, _auditService);
+        _sut = new CommitStockForOrderHandler(_inventoryRepository, _unitOfWork, _auditService, _dateTimeProvider);
     }
 
     [Fact]
@@ -50,7 +52,7 @@ public class CommitStockForOrderHandlerTests
     public async Task Handle_WithReservedInventory_ConfirmsReservationAndReturnsSuccess()
     {
         var inv = new InventoryBuilder().WithInitialStock(10).Build();
-        InventoryDomainService.Reserve(inv, StockQuantity.Create(4), "ORDER-2").ShouldBeSuccess();
+        InventoryDomainService.Reserve(inv, StockQuantity.Create(4), "ORDER-2", DateTime.UtcNow).ShouldBeSuccess();
 
         _inventoryRepository
             .GetByVariantIdAsync(inv.VariantId, Arg.Any<CancellationToken>())
@@ -108,3 +110,5 @@ public class CommitStockForOrderHandlerTests
             () => _sut.Handle(command, CancellationToken.None));
     }
 }
+
+

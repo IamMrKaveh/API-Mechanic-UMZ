@@ -1,4 +1,4 @@
-using Application.Media.Contracts;
+﻿using Application.Media.Contracts;
 using Application.Media.Features.Shared;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
@@ -121,7 +121,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         var user = await SeedUserAsync();
         var cart = new CartBuilder().ForUser(user.Id).Build();
         new CartItemParametersBuilder().AddTo(cart);
-        cart.Checkout();
+        cart.Checkout(DateTime.UtcNow);
 
         await SeedCartAsync(cart);
 
@@ -294,3 +294,4 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         await Context.SaveChangesAsync();
     }
 }
+

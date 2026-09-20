@@ -6,6 +6,7 @@ using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.Order.ValueObjects;
 using Infrastructure.Order.Services;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
@@ -24,6 +25,7 @@ public class CheckoutOrchestrationServiceTests
     private readonly ICheckoutPaymentStrategyResolver _strategyResolver = Substitute.For<ICheckoutPaymentStrategyResolver>();
     private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>();
     private readonly ICheckoutPaymentStrategy _strategy = Substitute.For<ICheckoutPaymentStrategy>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly CheckoutOrchestrationService _sut;
 
     public CheckoutOrchestrationServiceTests()
@@ -37,7 +39,8 @@ public class CheckoutOrchestrationServiceTests
             _priceValidator,
             _orderCreation,
             _strategyResolver,
-            _cartRepository);
+            _cartRepository,
+            _dateTimeProvider);
     }
 
     private static CheckoutFromCartCommand NewCommand(Guid? userId = null) =>
@@ -103,7 +106,7 @@ public class CheckoutOrchestrationServiceTests
 
     private static global::Domain.Cart.Aggregates.Cart NewCheckoutableCart(Guid userId)
     {
-        var cart = global::Domain.Cart.Aggregates.Cart.CreateForUser(global::Domain.User.ValueObjects.UserId.From(userId));
+        var cart = global::Domain.Cart.Aggregates.Cart.CreateForUser(global::Domain.User.ValueObjects.UserId.From(userId), DateTime.UtcNow);
         new CartItemParametersBuilder().AddTo(cart);
         cart.ClearDomainEvents();
         return cart;

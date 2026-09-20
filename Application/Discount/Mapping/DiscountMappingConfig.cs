@@ -1,4 +1,5 @@
-﻿using Application.Discount.Features.Shared;
+﻿using System;
+using Application.Discount.Features.Shared;
 using Domain.Discount.Aggregates;
 using Domain.Discount.Entities;
 
@@ -19,8 +20,8 @@ public class DiscountMappingConfig : IRegister
             .Map(dest => dest.StartsAt, src => src.StartsAt)
             .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
             .Map(dest => dest.IsActive, src => src.IsActive)
-            .Map(dest => dest.IsExpired, src => src.IsExpired)
-            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable)
+            .Map(dest => dest.IsExpired, src => src.IsExpired(DateTime.UtcNow))
+            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable(DateTime.UtcNow))
             .Map(dest => dest.CreatedAt, src => src.CreatedAt);
 
         config.NewConfig<DiscountCode, DiscountCodeDto>()
@@ -31,7 +32,7 @@ public class DiscountMappingConfig : IRegister
             .Map(dest => dest.UsageLimit, src => src.UsageLimit)
             .Map(dest => dest.UsageCount, src => src.UsageCount)
             .Map(dest => dest.IsActive, src => src.IsActive)
-            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable)
+            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable(DateTime.UtcNow))
             .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt);
 
@@ -46,8 +47,8 @@ public class DiscountMappingConfig : IRegister
             .Map(dest => dest.StartsAt, src => src.StartsAt)
             .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
             .Map(dest => dest.IsActive, src => src.IsActive)
-            .Map(dest => dest.IsExpired, src => src.IsExpired)
-            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable)
+            .Map(dest => dest.IsExpired, src => src.IsExpired(DateTime.UtcNow))
+            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable(DateTime.UtcNow))
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Map(dest => dest.Restrictions, src => src.Restrictions.Adapt<List<DiscountRestrictionDto>>());
 
@@ -62,6 +63,6 @@ public class DiscountMappingConfig : IRegister
             .Map(dest => dest.DiscountValue, src => src.Value.Amount)
             .Map(dest => dest.MaximumDiscountAmount, src => src.MaximumDiscountAmount != null ? src.MaximumDiscountAmount.Amount : (decimal?)null)
             .Map(dest => dest.ExpiresAt, src => src.ExpiresAt)
-            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable);
+            .Map(dest => dest.IsRedeemable, src => src.IsRedeemable(DateTime.UtcNow));
     }
 }

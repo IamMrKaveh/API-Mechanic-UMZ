@@ -20,7 +20,7 @@ public class CheckoutCartItemBuilderServiceTests
 
     private static global::Domain.Cart.Aggregates.Cart NewUserCart(Guid userId, int quantity = 2, decimal unitPrice = 100_000m)
     {
-        var cart = global::Domain.Cart.Aggregates.Cart.CreateForUser(global::Domain.User.ValueObjects.UserId.From(userId));
+        var cart = global::Domain.Cart.Aggregates.Cart.CreateForUser(global::Domain.User.ValueObjects.UserId.From(userId), DateTime.UtcNow);
         new CartItemParametersBuilder()
             .WithQuantity(quantity)
             .WithUnitPrice(unitPrice, "IRT")
@@ -59,7 +59,7 @@ public class CheckoutCartItemBuilderServiceTests
     public async Task BuildAsync_WhenCartIsEmpty_ReturnsFailure()
     {
         var userId = Guid.NewGuid();
-        var cart = global::Domain.Cart.Aggregates.Cart.CreateForUser(global::Domain.User.ValueObjects.UserId.From(userId));
+        var cart = global::Domain.Cart.Aggregates.Cart.CreateForUser(global::Domain.User.ValueObjects.UserId.From(userId), DateTime.UtcNow);
         cart.ClearDomainEvents();
         _cartRepository
             .FindByIdAsync(Arg.Any<CartId>(), Arg.Any<CancellationToken>())
@@ -92,7 +92,7 @@ public class CheckoutCartItemBuilderServiceTests
     public async Task BuildAsync_WhenCartHasMultipleItems_MapsAllItems()
     {
         var userId = Guid.NewGuid();
-        var cart = global::Domain.Cart.Aggregates.Cart.CreateForUser(global::Domain.User.ValueObjects.UserId.From(userId));
+        var cart = global::Domain.Cart.Aggregates.Cart.CreateForUser(global::Domain.User.ValueObjects.UserId.From(userId), DateTime.UtcNow);
         new CartItemParametersBuilder().WithQuantity(1).WithUnitPrice(50_000m, "IRT").WithOriginalPrice(50_000m, "IRT").AddTo(cart);
         new CartItemParametersBuilder().WithQuantity(3).WithUnitPrice(20_000m, "IRT").WithOriginalPrice(20_000m, "IRT").AddTo(cart);
         cart.ClearDomainEvents();

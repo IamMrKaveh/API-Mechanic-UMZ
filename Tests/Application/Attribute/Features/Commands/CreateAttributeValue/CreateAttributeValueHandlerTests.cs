@@ -5,6 +5,7 @@ using Application.Cache.Contracts;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Results;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
@@ -13,11 +14,11 @@ namespace Tests.Application.Attribute.Features.Commands.CreateAttributeValue;
 
 public class CreateAttributeValueHandlerTests
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateAttributeValueHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CreateAttributeValueHandler _sut;
 
     public CreateAttributeValueHandlerTests()
     {
-        _sut = new CreateAttributeValueHandler(_repository, _mapper, _cacheService);
+        _sut = new CreateAttributeValueHandler(_repository, _mapper, _cacheService, _dateTimeProvider);
     }
 
     [Fact]

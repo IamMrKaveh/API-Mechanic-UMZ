@@ -15,7 +15,7 @@ public class InventoryDomainServiceTests
         var inv = new InventoryBuilder().WithInitialStock(10).Build();
 
         var result = InventoryDomainService.Reserve(
-            inv, StockQuantity.Create(4), "REF", OrderItemId.NewId(), UserId.NewId());
+            inv, StockQuantity.Create(4), "REF", DateTime.UtcNow, OrderItemId.NewId(), UserId.NewId());
 
         result.ShouldBeSuccess();
         inv.ReservedQuantity.Value.ShouldBe(4);
@@ -25,9 +25,9 @@ public class InventoryDomainServiceTests
     public void ConfirmReservation_DelegatesToAggregateAndReturnsItsResult()
     {
         var inv = new InventoryBuilder().WithInitialStock(10).Build();
-        InventoryDomainService.Reserve(inv, StockQuantity.Create(4), "REF").ShouldBeSuccess();
+        InventoryDomainService.Reserve(inv, StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
-        var result = InventoryDomainService.ConfirmReservation(inv, StockQuantity.Create(4), "REF");
+        var result = InventoryDomainService.ConfirmReservation(inv, StockQuantity.Create(4), "REF", DateTime.UtcNow);
 
         result.ShouldBeSuccess();
         inv.ReservedQuantity.Value.ShouldBe(0);
@@ -38,9 +38,9 @@ public class InventoryDomainServiceTests
     public void RollbackReservation_DelegatesToAggregateReleaseReservation()
     {
         var inv = new InventoryBuilder().WithInitialStock(10).Build();
-        InventoryDomainService.Reserve(inv, StockQuantity.Create(3), "REF").ShouldBeSuccess();
+        InventoryDomainService.Reserve(inv, StockQuantity.Create(3), "REF", DateTime.UtcNow).ShouldBeSuccess();
 
-        var result = InventoryDomainService.RollbackReservation(inv, StockQuantity.Create(3), "REF");
+        var result = InventoryDomainService.RollbackReservation(inv, StockQuantity.Create(3), "REF", DateTime.UtcNow);
 
         result.ShouldBeSuccess();
         inv.ReservedQuantity.Value.ShouldBe(0);
@@ -51,7 +51,7 @@ public class InventoryDomainServiceTests
     {
         var inv = new InventoryBuilder().WithInitialStock(10).Build();
 
-        InventoryDomainService.ReturnStock(inv, StockQuantity.Create(2), "return").ShouldBeSuccess();
+        InventoryDomainService.ReturnStock(inv, StockQuantity.Create(2), "return", DateTime.UtcNow).ShouldBeSuccess();
 
         inv.StockQuantity.Value.ShouldBe(12);
     }
@@ -61,7 +61,7 @@ public class InventoryDomainServiceTests
     {
         var inv = new InventoryBuilder().WithInitialStock(10).Build();
 
-        InventoryDomainService.RecordDamage(inv, StockQuantity.Create(3), UserId.NewId(), "broken")
+        InventoryDomainService.RecordDamage(inv, StockQuantity.Create(3), UserId.NewId(), "broken", DateTime.UtcNow)
             .ShouldBeSuccess();
 
         inv.StockQuantity.Value.ShouldBe(7);
@@ -72,7 +72,7 @@ public class InventoryDomainServiceTests
     {
         var inv = new InventoryBuilder().WithInitialStock(10).Build();
 
-        InventoryDomainService.Reconcile(inv, StockQuantity.Create(15), UserId.NewId())
+        InventoryDomainService.Reconcile(inv, StockQuantity.Create(15), UserId.NewId(), DateTime.UtcNow)
             .ShouldBeSuccess();
 
         inv.StockQuantity.Value.ShouldBe(15);

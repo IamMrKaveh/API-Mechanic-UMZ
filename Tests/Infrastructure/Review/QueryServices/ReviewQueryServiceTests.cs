@@ -58,14 +58,14 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         var catName = $"Cat-{Guid.NewGuid():N}"[..20];
         var category = await Categories.Create(
             CategoryId.NewId(), CategoryName.Create(catName), CategorySlug.GenerateFrom(catName),
-            new StubCategoryUniquenessChecker(), null, 0, CancellationToken.None);
+            new StubCategoryUniquenessChecker(), null, 0, DateTime.UtcNow, CancellationToken.None);
         _context.Categories.Add(category);
         await _context.SaveChangesAsync();
 
         var brandName = $"Brand-{Guid.NewGuid():N}"[..20];
         var brand = await Brands.Create(
             BrandName.Create(brandName), BrandSlug.GenerateFrom(brandName), category.Id,
-            new StubBrandUniquenessChecker(), null, null, CancellationToken.None);
+            new StubBrandUniquenessChecker(), null, null, DateTime.UtcNow, CancellationToken.None);
         _context.Brands.Add(brand);
         await _context.SaveChangesAsync();
 

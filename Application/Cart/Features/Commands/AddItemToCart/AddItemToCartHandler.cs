@@ -5,6 +5,7 @@ using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Cart.Features.Commands.AddItemToCart;
 
@@ -12,7 +13,8 @@ public class AddItemToCartHandler(
     ICartRepository cartRepository,
     IVariantRepository variantRepository,
     IInventoryRepository inventoryRepository,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<AddItemToCartCommand>
 {
     public async Task<ServiceResult> Handle(AddItemToCartCommand request, CancellationToken ct)
@@ -32,6 +34,7 @@ public class AddItemToCartHandler(
 
         Domain.Cart.Aggregates.Cart? cart;
         var isNewCart = false;
+        var now = dateTimeProvider.UtcNow;
 
         if (currentUserService.UserId.HasValue)
         {
@@ -40,7 +43,7 @@ public class AddItemToCartHandler(
 
             if (cart is null)
             {
-                cart = Domain.Cart.Aggregates.Cart.CreateForUser(userId);
+                cart = Domain.Cart.Aggregates.Cart.CreateForUser(userId, now);
                 cartRepository.Add(cart);
                 isNewCart = true;
             }
@@ -52,7 +55,7 @@ public class AddItemToCartHandler(
 
             if (cart is null)
             {
-                cart = Domain.Cart.Aggregates.Cart.CreateForGuest(guestToken);
+                cart = Domain.Cart.Aggregates.Cart.CreateForGuest(guestToken, now);
                 cartRepository.Add(cart);
                 isNewCart = true;
             }
@@ -63,7 +66,7 @@ public class AddItemToCartHandler(
         }
 
         var productName = ProductName.Create(variant.Sku.Value);
-        cart.AddItem(variantId, variant.ProductId, productName, variant.Sku, variant.SellingPrice, variant.OriginalPrice, request.Quantity);
+        cart.AddItem(variantId, variant.ProductId, productName, variant.Sku, variant.SellingPrice, variant.OriginalPrice, request.Quantity, now);
 
         if (!isNewCart)
             cartRepository.Update(cart);

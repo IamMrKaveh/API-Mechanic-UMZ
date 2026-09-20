@@ -1,4 +1,4 @@
-using Application.Inventory.Contracts;
+﻿using Application.Inventory.Contracts;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Inventory.Aggregates;
@@ -45,7 +45,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         Context.ProductVariants.Add(variant);
 
         var inventory = Inventories.Create(
-            variant.Id, initialStock: stock, isUnlimited: isUnlimited, lowStockThreshold: threshold);
+            variant.Id, DateTime.UtcNow, initialStock: stock, isUnlimited: isUnlimited, lowStockThreshold: threshold);
         Context.Inventories.Add(inventory);
 
         await Context.SaveChangesAsync();
@@ -329,8 +329,8 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         var v2 = new ProductVariantBuilder().WithProductId(product.Id).WithSku("SKU-X2").Build();
         Context.ProductVariants.AddRange(v1, v2);
 
-        var inv1 = Inventories.Create(v1.Id, initialStock: 10);
-        var inv2 = Inventories.Create(v2.Id, initialStock: 0);
+        var inv1 = Inventories.Create(v1.Id, DateTime.UtcNow, initialStock: 10);
+        var inv2 = Inventories.Create(v2.Id, DateTime.UtcNow, initialStock: 0);
         Context.Inventories.AddRange(inv1, inv2);
 
         await Context.SaveChangesAsync();
@@ -364,6 +364,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
             address: null,
             phone: null,
             priority: 1,
+            now: DateTime.UtcNow,
             isDefault: true);
         Context.Warehouses.Add(defaultWarehouse);
         await Context.SaveChangesAsync();
@@ -377,3 +378,4 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result[0].WarehouseName.ShouldBe("Main Warehouse");
     }
 }
+

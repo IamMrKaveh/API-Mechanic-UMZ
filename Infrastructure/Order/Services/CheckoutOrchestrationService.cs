@@ -5,6 +5,7 @@ using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Infrastructure.Order.Services;
 
@@ -17,7 +18,8 @@ public class CheckoutOrchestrationService(
     ICheckoutPriceValidatorService priceValidator,
     ICheckoutOrderCreationService orderCreation,
     ICheckoutPaymentStrategyResolver paymentStrategyResolver,
-    ICartRepository cartRepository) : ICheckoutOrchestrationService
+    ICartRepository cartRepository,
+    IDateTimeProvider dateTimeProvider) : ICheckoutOrchestrationService
 {
     public async Task<ServiceResult<CheckoutResultDto>> ProcessCheckoutAsync(
         CheckoutFromCartCommand command, CancellationToken ct)
@@ -94,7 +96,7 @@ public class CheckoutOrchestrationService(
         var cart = await cartRepository.FindByIdAsync(CartId.From(command.CartId), ct);
         if (cart is not null)
         {
-            cart.Checkout();
+            cart.Checkout(dateTimeProvider.UtcNow);
             cartRepository.Update(cart);
         }
 

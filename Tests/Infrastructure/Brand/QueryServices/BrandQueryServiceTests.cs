@@ -254,7 +254,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
     {
         var activeBrand = await new BrandBuilder().WithName("Active Brand").WithSlug("active-brand").BuildAsync();
         var inactiveBrand = await new BrandBuilder().WithName("Inactive Brand").WithSlug("inactive-brand").BuildAsync();
-        inactiveBrand.Deactivate();
+        inactiveBrand.Deactivate(DateTime.UtcNow);
         activeBrand.ClearDomainEvents();
         inactiveBrand.ClearDomainEvents();
 
@@ -312,7 +312,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         var activeBravo = await new BrandBuilder().WithName("Bravo").WithSlug("bravo").BuildAsync();
         var activeAlpha = await new BrandBuilder().WithName("Alpha").WithSlug("alpha").BuildAsync();
         var deactivated = await new BrandBuilder().WithName("Inactive").WithSlug("inactive").BuildAsync();
-        deactivated.Deactivate();
+        deactivated.Deactivate(DateTime.UtcNow);
         foreach (var b in new[] { activeBravo, activeAlpha, deactivated })
             b.ClearDomainEvents();
 

@@ -3,13 +3,15 @@ using Domain.Inventory.Services;
 using Domain.Inventory.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.AddStock;
 
 public class AddStockHandler(
     IInventoryRepository inventoryRepository,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<AddStockCommand>
 {
     public async Task<ServiceResult> Handle(AddStockCommand request, CancellationToken ct)
@@ -26,6 +28,7 @@ public class AddStockHandler(
             inventory,
             stockQuantity,
             request.Notes,
+            dateTimeProvider.UtcNow,
             userId);
 
         if (result.IsFailure)

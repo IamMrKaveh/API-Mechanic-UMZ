@@ -1,4 +1,4 @@
-using Domain.Cart.ValueObjects;
+﻿using Domain.Cart.ValueObjects;
 using Infrastructure.Cart.Repositories;
 using Tests.TestInfrastructure.Base;
 
@@ -77,7 +77,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         var user = await SeedUserAsync();
         var cart = new CartBuilder().ForUser(user.Id).Build();
         new CartItemParametersBuilder().AddTo(cart);
-        cart.Checkout();
+        cart.Checkout(DateTime.UtcNow);
 
         _sut.Add(cart);
         await Context.SaveChangesAsync();
@@ -137,3 +137,4 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         found.ShouldBeNull();
     }
 }
+

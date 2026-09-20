@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Cache.Contracts;
 using Application.Common.Interfaces;
 using Application.Inventory.Features.Commands.RemoveStock;
@@ -11,12 +11,14 @@ using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Inv = Domain.Inventory.Aggregates.Inventory;
 using PV = Domain.Variant.Aggregates.ProductVariant;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.RemoveStock;
 
 public class RemoveStockHandlerTests
 {
-    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly RemoveStockHandler _sut;
+    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly RemoveStockHandler _sut;
 
     public RemoveStockHandlerTests()
     {
@@ -26,7 +28,7 @@ public class RemoveStockHandlerTests
             _inventoryRepository,
             _auditService,
             _cacheService,
-            _currentUserService);
+            _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -112,3 +114,4 @@ public class RemoveStockHandlerTests
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
     }
 }
+

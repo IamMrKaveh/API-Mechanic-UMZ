@@ -2,13 +2,15 @@
 using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Wishlist.Interfaces;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wishlist.Features.Commands.AddToWishlist;
 
 public class AddToWishlistHandler(
     IWishlistRepository wishlistRepository,
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<AddToWishlistCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -25,7 +27,7 @@ public class AddToWishlistHandler(
         if (await wishlistRepository.ExistsAsync(userId, productId, ct))
             return ServiceResult.Conflict("این محصول قبلاً به علاقه‌مندی‌ها اضافه شده است.");
 
-        var wishlistItem = Domain.Wishlist.Aggregates.Wishlist.Create(userId, productId);
+        var wishlistItem = Domain.Wishlist.Aggregates.Wishlist.Create(userId, productId, dateTimeProvider.UtcNow);
         await wishlistRepository.AddAsync(wishlistItem, ct);
         await unitOfWork.SaveChangesAsync(ct);
 

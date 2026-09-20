@@ -46,23 +46,23 @@ public sealed class StockLedgerEntryBuilder
     { _orderItemId = o; return this; }
 
     public StockLedgerEntry BuildStockIn() =>
-        StockLedgerEntry.StockIn(_variantId, _quantity, _balanceAfter, _unitCost,
+        StockLedgerEntry.StockIn(_variantId, _quantity, _balanceAfter, _unitCost, DateTime.UtcNow,
             _referenceNumber, _note, _warehouseId, _userId);
 
     public StockLedgerEntry BuildReserve() =>
         StockLedgerEntry.Reserve(_variantId, _quantity, _balanceAfter,
-            _referenceNumber ?? string.Empty, correlationId: null,
+            _referenceNumber ?? string.Empty, DateTime.UtcNow, correlationId: null,
             warehouseId: _warehouseId, userId: _userId, orderItemId: _orderItemId);
 
     public StockLedgerEntry BuildReleaseReservation() =>
         StockLedgerEntry.ReleaseReservation(_variantId, _quantity, _balanceAfter,
-            _referenceNumber ?? string.Empty, _note, _warehouseId);
+            _referenceNumber ?? string.Empty, DateTime.UtcNow, _note, _warehouseId);
 
     public StockLedgerEntry BuildCommitReservation() =>
         StockLedgerEntry.CommitReservation(_variantId, _quantity, _balanceAfter,
-            _referenceNumber ?? string.Empty, _orderItemId, _warehouseId);
+            _referenceNumber ?? string.Empty, DateTime.UtcNow, _orderItemId, _warehouseId);
 
     public StockLedgerEntry BuildAdjustment() =>
         StockLedgerEntry.Adjustment(_variantId, _quantity, _balanceAfter,
-            _note ?? "adjustment", _userId, _warehouseId);
+            _note ?? "adjustment", DateTime.UtcNow, _userId, _warehouseId);
 }

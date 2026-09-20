@@ -1,4 +1,4 @@
-using Application.Common.Interfaces;
+﻿using Application.Common.Interfaces;
 using Application.Wishlist.Features.Commands.AddToWishlist;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
@@ -9,16 +9,18 @@ using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Products = Domain.Product.Aggregates.Product;
 using Wishlists = Domain.Wishlist.Aggregates.Wishlist;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Wishlist.Features.Commands.AddToWishlist;
 
 public class AddToWishlistHandlerTests
 {
-    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly AddToWishlistHandler _sut;
+    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AddToWishlistHandler _sut;
 
     public AddToWishlistHandlerTests()
     {
-        _sut = new AddToWishlistHandler(_wishlistRepository, _productRepository, _unitOfWork);
+        _sut = new AddToWishlistHandler(_wishlistRepository, _productRepository, _unitOfWork, _dateTimeProvider);
     }
 
     [Fact]
@@ -122,3 +124,4 @@ public class AddToWishlistHandlerTests
             Arg.Any<CancellationToken>());
     }
 }
+

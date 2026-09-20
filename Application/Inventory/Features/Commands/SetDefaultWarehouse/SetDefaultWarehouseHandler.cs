@@ -1,11 +1,13 @@
 ﻿using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.SetDefaultWarehouse;
 
 public class SetDefaultWarehouseHandler(
     IWarehouseRepository warehouseRepository,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<SetDefaultWarehouseCommand>
 {
     public async Task<ServiceResult> Handle(SetDefaultWarehouseCommand request, CancellationToken ct)
@@ -16,14 +18,16 @@ public class SetDefaultWarehouseHandler(
         if (warehouse is null)
             return ServiceResult.NotFound("انبار یافت نشد.");
 
+        var now = dateTimeProvider.UtcNow;
+
         var current = await warehouseRepository.GetDefaultAsync(ct);
         if (current is not null && current.Id != id)
         {
-            current.ClearDefault();
+            current.ClearDefault(now);
             warehouseRepository.Update(current);
         }
 
-        warehouse.SetAsDefault();
+        warehouse.SetAsDefault(now);
         warehouseRepository.Update(warehouse);
         await cacheService.RemoveByPrefixAsync("warehouses:", ct);
 

@@ -82,7 +82,7 @@ public class DiscountCodeTests
         var sut = new DiscountCodeBuilder().WithExpiresAt(pastExpiry).Build();
 
         sut.ExpiresAt.ShouldBe(pastExpiry);
-        sut.IsExpired.ShouldBeTrue();
+        sut.IsExpired(DateTime.UtcNow).ShouldBeTrue();
     }
 
     [Fact]
@@ -140,14 +140,14 @@ public class DiscountCodeTests
     {
         var sut = new DiscountCodeBuilder().WithExpiresAt(DateTime.UtcNow.AddMinutes(-1)).Build();
 
-        sut.IsExpired.ShouldBeTrue();
+        sut.IsExpired(DateTime.UtcNow).ShouldBeTrue();
     }
 
     [Fact]
     public void IsExpired_WhenExpiresAtInFutureOrNull_ReturnsFalse()
     {
-        new DiscountCodeBuilder().Build().IsExpired.ShouldBeFalse();
-        new DiscountCodeBuilder().WithExpiresAt(DateTime.UtcNow.AddDays(30)).Build().IsExpired.ShouldBeFalse();
+        new DiscountCodeBuilder().Build().IsExpired(DateTime.UtcNow).ShouldBeFalse();
+        new DiscountCodeBuilder().WithExpiresAt(DateTime.UtcNow.AddDays(30)).Build().IsExpired(DateTime.UtcNow).ShouldBeFalse();
     }
 
     [Fact]
@@ -155,14 +155,14 @@ public class DiscountCodeTests
     {
         var sut = new DiscountCodeBuilder().WithStartsAt(DateTime.UtcNow.AddDays(1)).Build();
 
-        sut.HasStarted.ShouldBeFalse();
+        sut.HasStarted(DateTime.UtcNow).ShouldBeFalse();
     }
 
     [Fact]
     public void HasStarted_WhenStartsAtNullOrInPast_ReturnsTrue()
     {
-        new DiscountCodeBuilder().Build().HasStarted.ShouldBeTrue();
-        new DiscountCodeBuilder().WithStartsAt(DateTime.UtcNow.AddDays(-1)).Build().HasStarted.ShouldBeTrue();
+        new DiscountCodeBuilder().Build().HasStarted(DateTime.UtcNow).ShouldBeTrue();
+        new DiscountCodeBuilder().WithStartsAt(DateTime.UtcNow.AddDays(-1)).Build().HasStarted(DateTime.UtcNow).ShouldBeTrue();
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public class DiscountCodeTests
     [Fact]
     public void IsRedeemable_ForFreshCodeWithoutRestrictions_ReturnsTrue()
     {
-        new DiscountCodeBuilder().Build().IsRedeemable.ShouldBeTrue();
+        new DiscountCodeBuilder().Build().IsRedeemable(DateTime.UtcNow).ShouldBeTrue();
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class DiscountCodeTests
     {
         var sut = new DiscountCodeBuilder().WithExpiresAt(DateTime.UtcNow.AddMinutes(-1)).Build();
 
-        sut.IsRedeemable.ShouldBeFalse();
+        sut.IsRedeemable(DateTime.UtcNow).ShouldBeFalse();
     }
 
     [Fact]
@@ -190,16 +190,16 @@ public class DiscountCodeTests
     {
         var sut = new DiscountCodeBuilder().WithStartsAt(DateTime.UtcNow.AddDays(1)).Build();
 
-        sut.IsRedeemable.ShouldBeFalse();
+        sut.IsRedeemable(DateTime.UtcNow).ShouldBeFalse();
     }
 
     [Fact]
     public void IsRedeemable_ForInactiveCode_ReturnsFalse()
     {
         var sut = new DiscountCodeBuilder().Build();
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
 
-        sut.IsRedeemable.ShouldBeFalse();
+        sut.IsRedeemable(DateTime.UtcNow).ShouldBeFalse();
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class DiscountCodeTests
         var versionBefore = sut.Version;
         var newValue = DiscountValue.Fixed(500m);
 
-        sut.Update(newValue, Money.Create(1000m, "IRT"), 50, null, DateTime.UtcNow.AddDays(30));
+        sut.Update(newValue, Money.Create(1000m, "IRT"), 50, null, DateTime.UtcNow.AddDays(30), DateTime.UtcNow);
 
         sut.Value.ShouldBe(newValue);
         sut.UsageLimit.ShouldBe(50);
@@ -223,7 +223,7 @@ public class DiscountCodeTests
     {
         var sut = new DiscountCodeBuilder().WithCode("SAVE10").Build();
 
-        sut.Update(DiscountValue.Percentage(20m), null, null, null, null);
+        sut.Update(DiscountValue.Percentage(20m), null, null, null, null, DateTime.UtcNow);
 
         sut.Code.ShouldBe("SAVE10");
     }
@@ -232,10 +232,10 @@ public class DiscountCodeTests
     public void Update_DoesNotResetUsageCount()
     {
         var sut = new DiscountCodeBuilder().WithUsageLimit(10).Build();
-        sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"));
+        sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow);
         sut.UsageCount.ShouldBe(1);
 
-        sut.Update(DiscountValue.Percentage(20m), null, 20, null, null);
+        sut.Update(DiscountValue.Percentage(20m), null, 20, null, null, DateTime.UtcNow);
 
         sut.UsageCount.ShouldBe(1);
     }
@@ -248,7 +248,7 @@ public class DiscountCodeTests
         var expires = new DateTime(2026, 5, 1);
 
         Should.Throw<InvalidDiscountException>(() =>
-            sut.Update(DiscountValue.Percentage(10m), null, null, starts, expires));
+            sut.Update(DiscountValue.Percentage(10m), null, null, starts, expires, DateTime.UtcNow));
     }
 
     [Fact]
@@ -256,7 +256,7 @@ public class DiscountCodeTests
     {
         var sut = new DiscountCodeBuilder().WithStartsAt(DateTime.UtcNow.AddDays(1)).Build();
 
-        var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"));
+        var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"), DateTime.UtcNow);
 
         validation.IsValid.ShouldBeFalse();
         validation.FailureReason!.ShouldContain("فعال");
@@ -267,7 +267,7 @@ public class DiscountCodeTests
     {
         var sut = new DiscountCodeBuilder().WithExpiresAt(DateTime.UtcNow.AddDays(-1)).Build();
 
-        var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"));
+        var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"), DateTime.UtcNow);
 
         validation.IsValid.ShouldBeFalse();
         validation.FailureReason!.ShouldContain("منقضی");
@@ -277,9 +277,9 @@ public class DiscountCodeTests
     public void ValidateForApplication_OnInactiveCode_ReturnsInvalid()
     {
         var sut = new DiscountCodeBuilder().Build();
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
 
-        var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"));
+        var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"), DateTime.UtcNow);
 
         validation.IsValid.ShouldBeFalse();
         validation.FailureReason!.ShouldContain("غیرفعال");
@@ -289,9 +289,9 @@ public class DiscountCodeTests
     public void ValidateForApplication_OnUsageLimitReached_ReturnsInvalid()
     {
         var sut = new DiscountCodeBuilder().WithUsageLimit(1).Build();
-        sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"));
+        sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow);
 
-        var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"));
+        var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"), DateTime.UtcNow);
 
         validation.IsValid.ShouldBeFalse();
         validation.FailureReason!.ShouldContain("سقف");
@@ -302,7 +302,7 @@ public class DiscountCodeTests
     {
         var sut = new DiscountCodeBuilder().Build();
 
-        var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"));
+        var validation = sut.ValidateForApplication(Money.Create(100m, "IRT"), DateTime.UtcNow);
 
         validation.IsValid.ShouldBeTrue();
     }
@@ -375,7 +375,7 @@ public class DiscountCodeTests
         var userId = UserId.NewId();
         var orderId = OrderId.NewId();
 
-        var usage = sut.RecordUsage(userId, orderId, Money.Create(25m, "IRT"));
+        var usage = sut.RecordUsage(userId, orderId, Money.Create(25m, "IRT"), DateTime.UtcNow);
 
         sut.UsageCount.ShouldBe(1);
         sut.Usages.Count.ShouldBe(1);
@@ -395,7 +395,7 @@ public class DiscountCodeTests
         var sut = new DiscountCodeBuilder().WithUsageLimit(10).Build();
         var versionBefore = sut.Version;
 
-        sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"));
+        sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow);
 
         sut.Version.ShouldBe(versionBefore + 2);
     }
@@ -404,10 +404,10 @@ public class DiscountCodeTests
     public void RecordUsage_OnInactiveCode_ThrowsDiscountCodeNotRedeemableException()
     {
         var sut = new DiscountCodeBuilder().Build();
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
 
         Should.Throw<DiscountCodeNotRedeemableException>(() =>
-            sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT")));
+            sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow));
     }
 
     [Fact]
@@ -416,7 +416,7 @@ public class DiscountCodeTests
         var sut = new DiscountCodeBuilder().WithExpiresAt(DateTime.UtcNow.AddMinutes(-1)).Build();
 
         Should.Throw<DiscountCodeNotRedeemableException>(() =>
-            sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT")));
+            sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow));
     }
 
     [Fact]
@@ -425,17 +425,17 @@ public class DiscountCodeTests
         var sut = new DiscountCodeBuilder().WithStartsAt(DateTime.UtcNow.AddDays(1)).Build();
 
         Should.Throw<DiscountCodeNotRedeemableException>(() =>
-            sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT")));
+            sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow));
     }
 
     [Fact]
     public void RecordUsage_WhenLimitReached_SubsequentCallThrows()
     {
         var sut = new DiscountCodeBuilder().WithUsageLimit(1).Build();
-        sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"));
+        sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow);
 
         Should.Throw<DiscountCodeNotRedeemableException>(() =>
-            sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT")));
+            sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow));
     }
 
     [Fact]
@@ -444,7 +444,7 @@ public class DiscountCodeTests
         var sut = new DiscountCodeBuilder().Build();
         var before = DateTime.UtcNow.AddSeconds(-1);
 
-        var usage = sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"));
+        var usage = sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow);
 
         var after = DateTime.UtcNow.AddSeconds(1);
         usage.UsedAt.ShouldBeGreaterThanOrEqualTo(before);
@@ -458,7 +458,7 @@ public class DiscountCodeTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Activate();
+        sut.Activate(DateTime.UtcNow);
 
         sut.IsActive.ShouldBeTrue();
         sut.Version.ShouldBe(versionBefore);
@@ -469,11 +469,11 @@ public class DiscountCodeTests
     public void Activate_OnDeactivatedCode_SetsFlagAndRaisesEventAndBumpsVersionByTwo()
     {
         var sut = new DiscountCodeBuilder().Build();
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Activate();
+        sut.Activate(DateTime.UtcNow);
 
         sut.IsActive.ShouldBeTrue();
         sut.Version.ShouldBe(versionBefore + 2);
@@ -487,7 +487,7 @@ public class DiscountCodeTests
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
 
         sut.IsActive.ShouldBeFalse();
         sut.Version.ShouldBe(versionBefore + 2);
@@ -498,11 +498,11 @@ public class DiscountCodeTests
     public void Deactivate_WhenAlreadyInactive_IsNoOp()
     {
         var sut = new DiscountCodeBuilder().Build();
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
         sut.ClearDomainEvents();
         var versionBefore = sut.Version;
 
-        sut.Deactivate();
+        sut.Deactivate(DateTime.UtcNow);
 
         sut.Version.ShouldBe(versionBefore);
         sut.DomainEvents.ShouldBeEmpty();
@@ -513,9 +513,9 @@ public class DiscountCodeTests
     {
         var sut = new DiscountCodeBuilder().WithUsageLimit(10).Build();
 
-        sut.Deactivate();
-        sut.Activate();
-        sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"));
+        sut.Deactivate(DateTime.UtcNow);
+        sut.Activate(DateTime.UtcNow);
+        sut.RecordUsage(UserId.NewId(), OrderId.NewId(), Money.Create(5m, "IRT"), DateTime.UtcNow);
 
         sut.DomainEvents.Count.ShouldBe(4);
         sut.DomainEvents.ElementAt(0).ShouldBeOfType<DiscountCodeCreatedEvent>();

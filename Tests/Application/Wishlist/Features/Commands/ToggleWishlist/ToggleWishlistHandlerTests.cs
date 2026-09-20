@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Common.Interfaces;
 using Application.Wishlist.Contracts;
 using Application.Wishlist.Features.Commands.ToggleWishlist;
@@ -7,12 +7,14 @@ using Domain.User.ValueObjects;
 using Domain.Wishlist.Interfaces;
 using Tests.TestInfrastructure.Assertions;
 using Wishlists = Domain.Wishlist.Aggregates.Wishlist;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Wishlist.Features.Commands.ToggleWishlist;
 
 public class ToggleWishlistHandlerTests
 {
-    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly IWishlistQueryService _wishlistQueryService = Substitute.For<IWishlistQueryService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ToggleWishlistHandler _sut;
+    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly IWishlistQueryService _wishlistQueryService = Substitute.For<IWishlistQueryService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ToggleWishlistHandler _sut;
 
     public ToggleWishlistHandlerTests()
     {
@@ -20,7 +22,7 @@ public class ToggleWishlistHandlerTests
             _wishlistRepository,
             _wishlistQueryService,
             _auditService,
-            _currentUserService);
+            _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -86,3 +88,4 @@ public class ToggleWishlistHandlerTests
             Arg.Any<CancellationToken>());
     }
 }
+

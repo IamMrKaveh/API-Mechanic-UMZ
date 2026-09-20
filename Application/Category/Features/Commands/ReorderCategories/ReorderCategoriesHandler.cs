@@ -1,12 +1,14 @@
 using Application.Category.Adapters;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Category.Features.Commands.ReorderCategories;
 
 public class ReorderCategoriesHandler(
     ICategoryRepository categoryRepository,
-    IAuditService auditService)
+    IAuditService auditService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ReorderCategoriesCommand>
 {
     public async Task<ServiceResult> Handle(ReorderCategoriesCommand request, CancellationToken ct)
@@ -20,7 +22,7 @@ public class ReorderCategoriesHandler(
                 continue;
 
             var uniquenessChecker = new CategoryUniquenessCheckerAdapter(categoryRepository);
-            await category.UpdateDetails(category.Name, category.Slug, uniquenessChecker, category.Description, SortOrder, ct);
+            await category.UpdateDetails(category.Name, category.Slug, uniquenessChecker, category.Description, SortOrder, dateTimeProvider.UtcNow, ct);
             categoryRepository.Update(category);
         }
 

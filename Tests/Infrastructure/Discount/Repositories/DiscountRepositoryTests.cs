@@ -150,7 +150,8 @@ public class DiscountRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
             Money.Create(1000m, "IRT"),
             25,
             null,
-            new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            DateTime.UtcNow);
         _sut.Update(toModify);
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();

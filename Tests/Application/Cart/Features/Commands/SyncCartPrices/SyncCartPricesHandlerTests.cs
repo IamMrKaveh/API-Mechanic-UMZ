@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Cart.Features.Commands.SyncCartPrices;
 using Application.Common.Interfaces;
 using Domain.Cart.Interfaces;
@@ -12,12 +12,14 @@ using SharedKernel.ValueObjects;
 using Tests.TestInfrastructure.Assertions;
 using Tests.TestInfrastructure.Builders;
 using Carts = Domain.Cart.Aggregates.Cart;
+using SharedKernel.Abstractions.Interfaces;
+using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.SyncCartPrices;
 
 public class SyncCartPricesHandlerTests
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly SyncCartPricesHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly SyncCartPricesHandler _sut;
 
     public SyncCartPricesHandlerTests()
     {
@@ -25,7 +27,7 @@ public class SyncCartPricesHandlerTests
             _cartRepository,
             _variantRepository,
             _auditService,
-            _currentUserService);
+            _currentUserService, _dateTimeProvider);
     }
 
     [Fact]
@@ -181,3 +183,4 @@ public class SyncCartPricesHandlerTests
         _cartRepository.Received(1).Update(cart);
     }
 }
+

@@ -1,13 +1,15 @@
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Cart.Features.Commands.MergeGuestCart;
 
 public class MergeGuestCartHandler(
     ICartRepository cartRepository,
     IAuditService auditService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider)
     : ICommandHandler<MergeGuestCartCommand>
 {
     public async Task<ServiceResult> Handle(MergeGuestCartCommand request, CancellationToken ct)
@@ -26,12 +28,12 @@ public class MergeGuestCartHandler(
 
         if (userCart is null)
         {
-            guestCart.AssignToUser(userId);
+            guestCart.AssignToUser(userId, dateTimeProvider.UtcNow);
             cartRepository.Update(guestCart);
         }
         else
         {
-            userCart.MergeFrom(guestCart, request.Strategy);
+            userCart.MergeFrom(guestCart, dateTimeProvider.UtcNow, request.Strategy);
             cartRepository.Update(userCart);
             cartRepository.Remove(guestCart);
         }

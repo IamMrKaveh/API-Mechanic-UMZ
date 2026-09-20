@@ -11,6 +11,7 @@ using Domain.Variant.Aggregates;
 using Domain.Variant.Interfaces;
 using Domain.Variant.ValueObjects;
 using Npgsql;
+using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Variant.Features.Commands.AddVariant;
 
@@ -23,6 +24,7 @@ public sealed class AddVariantHandler(
     IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService,
+    IDateTimeProvider dateTimeProvider,
     ILogger<AddVariantHandler> logger)
     : ICommandHandler<AddVariantCommand, ProductVariantViewDto>
 {
@@ -138,6 +140,7 @@ public sealed class AddVariantHandler(
         var inventoryQuantity = request.IsUnlimited ? 0 : Math.Max(0, request.Stock);
         var inventory = Domain.Inventory.Aggregates.Inventory.Create(
             variantId,
+            dateTimeProvider.UtcNow,
             inventoryQuantity,
             request.IsUnlimited,
             lowStockThreshold: 5,
