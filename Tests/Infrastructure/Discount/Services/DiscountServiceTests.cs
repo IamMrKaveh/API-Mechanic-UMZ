@@ -19,6 +19,7 @@ public class DiscountServiceTests
 
     public DiscountServiceTests()
     {
+        _dateTimeProvider.UtcNow.Returns(_ => DateTime.UtcNow);
         _sut = new DiscountService(_discountRepository, _auditService, _dateTimeProvider);
     }
 

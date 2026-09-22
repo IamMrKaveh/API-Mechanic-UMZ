@@ -20,7 +20,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
 
         _context = _fixture.CreateContext();
         var dateTimeProvider = Substitute.For<IDateTimeProvider>();
-        dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        dateTimeProvider.UtcNow.Returns(_ => DateTime.UtcNow);
         _sut = new OtpRepository(_context, dateTimeProvider);
 
         await Task.CompletedTask;

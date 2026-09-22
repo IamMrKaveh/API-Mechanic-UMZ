@@ -21,6 +21,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
 
         _context = _fixture.CreateContext();
+        _dateTimeProvider.UtcNow.Returns(_ => DateTime.UtcNow);
         _sut = new DiscountQueryService(_context, _dateTimeProvider);
         _repository = new DiscountRepository(_context);
         return Task.CompletedTask;

@@ -34,7 +34,7 @@ public class UserPasswordChangedEventHandlerAuditFailureTests
         await _sessionRepository.Received(1).RevokeAllByUserIdAsync(userId, SessionRevocationReason.PasswordChanged, Arg.Any<CancellationToken>());
         await _auditService.Received(1).LogSystemEventAsync(
             "PasswordChangedSessionRevocationFailed",
-            Arg.Is<string>(s => s.Contains(userId.Value.ToString())),
+            Arg.Is<string>(s => s != null && s.Contains(userId.Value.ToString())),
             Arg.Any<CancellationToken>());
     }
 
