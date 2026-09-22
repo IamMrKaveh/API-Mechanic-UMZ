@@ -19,6 +19,7 @@ public class CheckoutDiscountApplicatorServiceTests
 
     public CheckoutDiscountApplicatorServiceTests()
     {
+        _dateTimeProvider.UtcNow.Returns(_ => DateTime.UtcNow);
         _sut = new CheckoutDiscountApplicatorService(_discountRepository, _auditService, _dateTimeProvider);
     }
 

@@ -4,29 +4,6 @@
 
 
 Application Layer (84)
-Common (3)
- Application/Common/DependencyInjection/ApplicationServiceCollection.cs
- Application/Common/Events/DomainEventNotification.cs
- Application/Common/Mapping/GlobalTypeConverter.cs
-Discount (7)
- Application/Discount/Features/Commands/ApplyDiscount/ApplyDiscountHandler.cs
- Application/Discount/Features/Commands/CancelDiscountUsage/CancelDiscountUsageHandler.cs
- Application/Discount/Features/Commands/CreateDiscount/CreateDiscountHandler.cs
- Application/Discount/Features/Commands/DeleteDiscount/DeleteDiscountHandler.cs
- Application/Discount/Features/Commands/UpdateDiscount/UpdateDiscountHandler.cs
- Application/Discount/Features/Shared/DiscountDtos.cs
- Application/Discount/Mapping/DiscountMappingConfig.cs
-Inventory (2)
- Application/Inventory/Features/Shared/InventoryDtos.cs
- Application/Inventory/Mapping/InventoryMappingConfig.cs
-Location (1)
- Application/Location/Features/Shared/LocationDtos.cs
-Media (2)
- Application/Media/Features/Shared/MediaDtos.cs
- Application/Media/Mapping/MediaMappingConfig.cs
-Notification (2)
- Application/Notification/Features/Shared/NotificationDtos.cs
- Application/Notification/Mapping/NotificationMappingConfig.cs
 Order (6)
  Application/Order/Features/Shared/OrderAdminDtos.cs
  Application/Order/Features/Shared/OrderPublicDtos.cs

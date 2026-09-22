@@ -61,7 +61,7 @@ public class AuthControllerTests
         unauthorized.StatusCode.ShouldBe(StatusCodes.Status401Unauthorized);
         var body = unauthorized.Value.ShouldBeOfType<ApiResponse>();
         body.Success.ShouldBeFalse();
-        _mediator.DidNotReceiveWithAnyArgs().Send(Arg.Any<IRequest<ServiceResult>>(), Arg.Any<CancellationToken>());
+        await _mediator.DidNotReceiveWithAnyArgs().Send(Arg.Any<IRequest<ServiceResult>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public class AuthControllerTests
     [Fact]
     public async Task VerifyOtp_Success_Returns201_WithCookie_AndNoRefreshTokenInBody()
     {
-        StubRefreshSuccess();
+        StubVerifyOtpSuccess();
         var request = new VerifyOtpRequest("09123456789", "123456");
 
         var result = await _controller.VerifyOtp(request, CancellationToken.None);
@@ -227,14 +227,23 @@ public class AuthControllerTests
     {
         _mediator
             .Send(Arg.Any<RefreshTokenCommand>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(ServiceResult<AuthResult>.Success(new AuthResult
-            {
-                AccessToken = "new-access",
-                RefreshToken = "new-refresh",
-                AccessTokenExpiresAt = DateTime.UnixEpoch,
-                RefreshTokenExpiresAt = DateTime.UnixEpoch,
-                User = new UserProfileDto { PhoneNumber = "09123456789" },
-                IsNewUser = false
-            })));
+            .Returns(Task.FromResult(ServiceResult<AuthResult>.Success(NewAuthResult())));
     }
+
+    private void StubVerifyOtpSuccess()
+    {
+        _mediator
+            .Send(Arg.Any<VerifyOtpCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(ServiceResult<AuthResult>.Success(NewAuthResult())));
+    }
+
+    private static AuthResult NewAuthResult() => new()
+    {
+        AccessToken = "new-access",
+        RefreshToken = "new-refresh",
+        AccessTokenExpiresAt = DateTime.UnixEpoch,
+        RefreshTokenExpiresAt = DateTime.UnixEpoch,
+        User = new UserProfileDto { PhoneNumber = "09123456789" },
+        IsNewUser = false
+    };
 }

@@ -66,7 +66,7 @@ public static class AntiforgeryExtensions
 
         return segments.Length >= 3
                && segments[0].Equals("api", StringComparison.OrdinalIgnoreCase)
-               && segments[1].StartsWith('v')
+               && segments[1].StartsWith("v", StringComparison.OrdinalIgnoreCase)
                && int.TryParse(segments[1].AsSpan(1), out _)
                && segments[2].Equals("auth", StringComparison.OrdinalIgnoreCase);
     }
