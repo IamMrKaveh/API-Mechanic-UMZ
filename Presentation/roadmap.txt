@@ -4,25 +4,6 @@
 
 
 Application Layer (84)
-Order (6)
- Application/Order/Features/Shared/OrderAdminDtos.cs
- Application/Order/Features/Shared/OrderPublicDtos.cs
- Application/Order/Mapping/OrderMappingConfig.cs
- Application/Order/Mapping/OrderStatusTransitionResolver.cs
- Application/Order/Sagas/OrderProcessManagerSaga.cs
- Application/Order/Sagas/State/OrderProcessState.cs
-Payment (5)
- Application/Payment/Features/Adapters/OrderPaymentContextAdapter.cs
- Application/Payment/Features/Shared/PaymentDtos.cs
- Application/Payment/Features/Shared/PaymentMethodDtos.cs
- Application/Payment/Mapping/PaymentMappingConfig.cs
- Application/Payment/Mapping/PaymentMethodMappingConfig.cs
-Product (5)
- Application/Product/Features/Commands/BulkUpdatePrices/BulkUpdatePricesHandler.cs
- Application/Product/Features/Commands/UpdateProduct/UpdateProductHandler.cs
- Application/Product/Features/Shared/ProductDtos.cs
- Application/Product/Mapping/ProductMappingConfig.cs
- Application/Product/Mapping/ProductQueryMappingConfig.cs
 Review (5)
  Application/Review/Configuration/ReviewRateLimitSettings.cs
  Application/Review/Configuration/ReviewSettings.cs
