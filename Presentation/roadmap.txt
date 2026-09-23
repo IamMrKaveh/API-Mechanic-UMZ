@@ -2,24 +2,6 @@
 
 مجموع: 399 فایل (بعد از حذف Command/Query/DTO/Interface های بدون منطق قابل تست)
 
-
-Application Layer (84)
-Variant (2)
- Application/Variant/Features/Shared/VariantDtos.cs
- Application/Variant/Mapping/VariantMappingConfig.cs
-Wallet (7)
- Application/Wallet/EventHandlers/OrderCancelledWalletReleaseEventHandler.cs
- Application/Wallet/EventHandlers/PaymentRefundedWalletEventHandler.cs
- Application/Wallet/Features/Shared/WalletLedgerFilter.cs
- Application/Wallet/Features/Shared/WalletOverviewFilter.cs
- Application/Wallet/Features/Shared/WalletTransferDtos.cs
- Application/Wallet/Mapping/WalletMappingConfig.cs
- Application/Wallet/Mapping/WalletTransferMappingConfig.cs
-Wishlist (2)
- Application/Wishlist/Features/Shared/WishlistDtos.cs
- Application/Wishlist/Mapping/WishlistMappingConfig.cs
-
-
 Presentation Layer (152)
 Analytic (3)
  Presentation/Analytic/Endpoints/AdminAnalyticsController.cs
