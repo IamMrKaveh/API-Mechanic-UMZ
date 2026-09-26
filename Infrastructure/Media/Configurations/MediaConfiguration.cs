@@ -8,8 +8,7 @@ public sealed class MediaConfiguration : IEntityTypeConfiguration<Domain.Media.A
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-               .HasConversion(v => v.Value, v => MediaId.From(v));
+        builder.Property(e => e.Id);
 
         builder.OwnsOne(e => e.Path, pb =>
         {

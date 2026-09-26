@@ -16,11 +16,9 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
 
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => WalletLedgerEntryId.From(value));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.WalletId)
-            .HasConversion(id => id.Value, value => WalletId.From(value))
             .HasColumnName("WalletId")
             .IsRequired();
 

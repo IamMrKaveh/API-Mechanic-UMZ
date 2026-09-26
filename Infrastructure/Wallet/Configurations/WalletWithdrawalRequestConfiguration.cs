@@ -20,11 +20,9 @@ public sealed class WalletWithdrawalRequestConfiguration : IEntityTypeConfigurat
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => WalletWithdrawalRequestId.From(value))
             .ValueGeneratedNever();
 
         builder.Property(e => e.UserId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .HasColumnName("UserId").IsRequired();
 
         builder.OwnsOne(e => e.Amount, m =>
@@ -45,7 +43,6 @@ public sealed class WalletWithdrawalRequestConfiguration : IEntityTypeConfigurat
         builder.Property(e => e.Description).HasMaxLength(500);
 
         builder.Property(e => e.ReservationId)
-            .HasConversion(id => id.Value, value => WalletReservationId.From(value))
             .HasColumnName("ReservationId").IsRequired();
 
         var statusProp = builder.Property(e => e.Status)

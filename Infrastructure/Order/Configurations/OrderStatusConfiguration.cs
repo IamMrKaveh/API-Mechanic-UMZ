@@ -9,8 +9,7 @@ public sealed class OrderStatusConfiguration : IEntityTypeConfiguration<OrderSta
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-               .HasConversion(v => v.Value, v => OrderStatusId.From(v));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.Name).IsRequired().HasMaxLength(50);
         builder.Property(e => e.DisplayName).IsRequired().HasMaxLength(100);

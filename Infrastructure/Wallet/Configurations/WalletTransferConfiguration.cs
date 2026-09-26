@@ -17,15 +17,12 @@ public sealed class WalletTransferConfiguration : IEntityTypeConfiguration<Walle
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => WalletTransferId.From(value))
             .ValueGeneratedNever();
 
         builder.Property(e => e.FromUserId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .HasColumnName("FromUserId").IsRequired();
 
         builder.Property(e => e.ToUserId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .HasColumnName("ToUserId").IsRequired();
 
         builder.OwnsOne(e => e.Amount, m =>

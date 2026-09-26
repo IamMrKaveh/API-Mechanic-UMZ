@@ -9,11 +9,9 @@ internal sealed class UserAddressConfiguration : IEntityTypeConfiguration<UserAd
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => UserAddressId.From(value));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.UserId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .IsRequired();
 
         builder.Property(e => e.Title)

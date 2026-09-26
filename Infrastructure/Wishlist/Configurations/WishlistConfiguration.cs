@@ -13,15 +13,12 @@ internal sealed class WishlistConfiguration : IEntityTypeConfiguration<Domain.Wi
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => WishlistId.From(value))
             .ValueGeneratedNever();
 
         builder.Property(e => e.UserId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .IsRequired();
 
         builder.Property(e => e.ProductId)
-            .HasConversion(id => id.Value, value => ProductId.From(value))
             .IsRequired();
 
         builder.Property(e => e.CreatedAt).IsRequired();

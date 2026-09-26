@@ -11,15 +11,12 @@ public sealed class ReviewVoteConfiguration : IEntityTypeConfiguration<ReviewVot
         builder.ToTable("ReviewVotes");
         builder.HasKey(v => v.Id);
 
-        builder.Property(v => v.Id)
-            .HasConversion(v => v.Value, v => ReviewVoteId.From(v));
+        builder.Property(v => v.Id);
 
         builder.Property(v => v.ReviewId)
-            .HasConversion(v => v.Value, v => ReviewId.From(v))
             .IsRequired();
 
         builder.Property(v => v.UserId)
-            .HasConversion(v => v.Value, v => UserId.From(v))
             .IsRequired();
 
         builder.Property(v => v.Type)

@@ -11,13 +11,11 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<UserSession>
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => SessionId.From(v));
+        builder.Property(e => e.Id);
 
         builder.AddInterceptorRowVersion();
 
         builder.Property(e => e.UserId)
-            .HasConversion(v => v.Value, v => UserId.From(v))
             .IsRequired();
 
         builder.Property(e => e.RefreshToken)

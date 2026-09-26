@@ -11,7 +11,6 @@ public sealed class CategoryConfiguration : IEntityTypeConfiguration<Domain.Cate
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => CategoryId.From(v))
             .ValueGeneratedNever();
 
         builder.Property<byte[]>("RowVersion")

@@ -13,15 +13,12 @@ public sealed class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id)
-            .HasConversion(v => v.Value, v => CartItemId.From(v))
             .ValueGeneratedNever();
 
         builder.Property(x => x.VariantId)
-            .HasConversion(v => v.Value, v => VariantId.From(v))
             .IsRequired();
 
         builder.Property(x => x.ProductId)
-            .HasConversion(v => v.Value, v => ProductId.From(v))
             .IsRequired();
 
         builder.Property(x => x.ProductName)

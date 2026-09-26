@@ -9,15 +9,12 @@ internal sealed class TicketMessageConfiguration : IEntityTypeConfiguration<Doma
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => TicketMessageId.From(value));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.TicketId)
-            .HasConversion(id => id.Value, value => TicketId.From(value))
             .IsRequired();
 
         builder.Property(e => e.SenderId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .IsRequired();
 
         builder.Property(e => e.SenderType)

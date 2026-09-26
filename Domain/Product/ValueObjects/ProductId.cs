@@ -1,18 +1,10 @@
-﻿namespace Domain.Product.ValueObjects;
+namespace Domain.Product.ValueObjects;
 
-public sealed record ProductId : IStronglyTypedId
+public sealed record ProductId : StronglyTypedId<ProductId>
 {
-    public Guid Value { get; }
-
-    private ProductId(Guid value) => Value = value;
-
-    public static ProductId NewId() => new(Guid.NewGuid());
-
-    public static ProductId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("ProductId cannot be empty.")
-        : new(value);
-
-    public override string ToString() => Value.ToString();
+    private ProductId(Guid value) : base(value) { }
 
     public static implicit operator Guid(ProductId id) => id.Value;
+
+    public override string ToString() => Value.ToString();
 }

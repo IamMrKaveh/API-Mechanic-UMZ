@@ -17,11 +17,9 @@ public sealed class WalletTopUpConfiguration : IEntityTypeConfiguration<WalletTo
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => WalletTopUpId.From(value))
             .ValueGeneratedNever();
 
         builder.Property(e => e.UserId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .HasColumnName("UserId")
             .IsRequired();
 

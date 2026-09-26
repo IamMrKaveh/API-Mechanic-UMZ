@@ -13,11 +13,9 @@ internal sealed class VariantConfiguration : IEntityTypeConfiguration<ProductVar
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => VariantId.From(value))
             .ValueGeneratedNever();
 
         builder.Property(e => e.ProductId)
-            .HasConversion(id => id.Value, value => ProductId.From(value))
             .IsRequired();
 
         builder.Property(e => e.Sku)

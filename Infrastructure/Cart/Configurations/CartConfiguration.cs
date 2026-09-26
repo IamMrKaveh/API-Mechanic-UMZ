@@ -13,8 +13,7 @@ public sealed class CartConfiguration : IEntityTypeConfiguration<Domain.Cart.Agg
 
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => CartId.From(v));
+        builder.Property(e => e.Id);
 
         builder.AddInterceptorRowVersion();
 

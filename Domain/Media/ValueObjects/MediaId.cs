@@ -1,18 +1,10 @@
-﻿namespace Domain.Media.ValueObjects;
+namespace Domain.Media.ValueObjects;
 
-public sealed record MediaId : IStronglyTypedId
+public sealed record MediaId : StronglyTypedId<MediaId>
 {
-    public Guid Value { get; }
-
-    private MediaId(Guid value) => Value = value;
-
-    public static MediaId NewId() => new(Guid.NewGuid());
-
-    public static MediaId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("MediaId cannot be empty.")
-        : new(value);
-
-    public override string ToString() => Value.ToString();
+    private MediaId(Guid value) : base(value) { }
 
     public static implicit operator Guid(MediaId id) => id.Value;
+
+    public override string ToString() => Value.ToString();
 }

@@ -11,8 +11,7 @@ public sealed class DiscountCodeConfiguration : IEntityTypeConfiguration<Discoun
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => DiscountCodeId.From(v));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.Code)
             .IsRequired()

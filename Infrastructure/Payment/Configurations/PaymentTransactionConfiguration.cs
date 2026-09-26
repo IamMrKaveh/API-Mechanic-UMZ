@@ -13,15 +13,12 @@ public sealed class PaymentTransactionConfiguration : IEntityTypeConfiguration<P
 
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => PaymentTransactionId.From(v));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.OrderId)
-            .HasConversion(v => v.Value, v => OrderId.From(v))
             .IsRequired();
 
         builder.Property(e => e.UserId)
-            .HasConversion(v => v.Value, v => UserId.From(v))
             .IsRequired();
 
         builder.Property(e => e.Authority)

@@ -16,8 +16,7 @@ public sealed class WalletReservationConfiguration : IEntityTypeConfiguration<Wa
 
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => WalletReservationId.From(value));
+        builder.Property(e => e.Id);
 
         builder.Property("WalletId")
             .HasColumnName("WalletId")

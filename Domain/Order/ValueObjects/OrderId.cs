@@ -1,18 +1,10 @@
 namespace Domain.Order.ValueObjects;
 
-public sealed record OrderId : IStronglyTypedId
+public sealed record OrderId : StronglyTypedId<OrderId>
 {
-    public Guid Value { get; }
-
-    private OrderId(Guid value) => Value = value;
-
-    public static OrderId NewId() => new(Guid.NewGuid());
-
-    public static OrderId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("OrderId cannot be empty.")
-        : new(value);
-
-    public override string ToString() => Value.ToString();
+    private OrderId(Guid value) : base(value) { }
 
     public static implicit operator Guid(OrderId id) => id.Value;
+
+    public override string ToString() => Value.ToString();
 }

@@ -1,23 +1,45 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using Domain.Product.ValueObjects;
-using Domain.Security.ValueObjects;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SharedKernel.Exceptions;
+using SharedKernel.ValueObjects;
 
 namespace Tests.Infrastructure.Persistence.Converters;
 
 public class StronglyTypedIdConverterTests
 {
-    private static object CreateConverter(string fullName)
+    public static TheoryData<Type> AllStronglyTypedIds
     {
-        var type = typeof(DBContext).Assembly.GetType(fullName);
-        type.ShouldNotBeNull();
-        return Activator.CreateInstance(type!)!;
+        get
+        {
+            var data = new TheoryData<Type>();
+            foreach (var type in typeof(ProductId).Assembly.GetTypes()
+                .Where(t => t.IsClass && !t.IsAbstract
+                    && t.BaseType is { IsGenericType: true }
+                    && t.BaseType.GetGenericTypeDefinition() == typeof(StronglyTypedId<>))
+                .OrderBy(t => t.Name))
+            {
+                data.Add(type);
+            }
+
+            return data;
+        }
     }
 
-    private static object CreateProductConverter() =>
-        CreateConverter("Infrastructure.Product.Converters.ProductIdConverter");
+    private static object CreateConverter(Type idType)
+    {
+        var converterType = typeof(DBContext).Assembly.GetType(
+            "Infrastructure.Persistence.Converters.StronglyTypedIdConverter`1")!
+            .MakeGenericType(idType);
+
+        return Activator.CreateInstance(converterType)!;
+    }
+
+    private static MethodInfo StronglyTypedIdMethod(Type idType, string name) =>
+        idType.GetMethod(
+            name,
+            BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)!;
 
     private static LambdaExpression TypedExpression(object converter, string propertyName) =>
         (LambdaExpression)converter.GetType()
@@ -34,120 +56,88 @@ public class StronglyTypedIdConverterTests
         TypedExpression(converter, "ConvertFromProviderExpression");
 
     [Fact]
-    public void BaseType_IsGenericStronglyTypedIdConverter()
+    public void ConverterType_IsGenericStronglyTypedIdConverter()
     {
-        var converter = CreateProductConverter();
-        var baseType = converter.GetType().BaseType;
-
-        baseType.ShouldNotBeNull();
-        baseType!.IsGenericType.ShouldBeTrue();
-        baseType.GetGenericTypeDefinition().FullName.ShouldBe(
+        var converterType = typeof(DBContext).Assembly.GetType(
             "Infrastructure.Persistence.Converters.StronglyTypedIdConverter`1");
-        baseType.GetGenericArguments()[0].ShouldBe(typeof(ProductId));
+
+        converterType.ShouldNotBeNull();
+        converterType!.IsGenericTypeDefinition.ShouldBeTrue();
     }
 
-    [Fact]
-    public void ClrTypes_MapModelToGuidProvider()
+    [Theory]
+    [MemberData(nameof(AllStronglyTypedIds))]
+    public void ClrTypes_MapModelToGuidProvider(Type idType)
     {
-        var converter = (ValueConverter)CreateProductConverter();
+        var converter = (ValueConverter)CreateConverter(idType);
 
-        converter.ModelClrType.ShouldBe(typeof(ProductId));
+        converter.ModelClrType.ShouldBe(idType);
         converter.ProviderClrType.ShouldBe(typeof(Guid));
     }
 
-    [Fact]
-    public void ConvertToProvider_MapsIdToUnderlyingGuid()
+    [Theory]
+    [MemberData(nameof(AllStronglyTypedIds))]
+    public void ConvertToProvider_MapsIdToUnderlyingGuid(Type idType)
     {
-        var converter = CreateProductConverter();
-        var id = ProductId.NewId();
+        var converter = CreateConverter(idType);
+        var from = StronglyTypedIdMethod(idType, "From");
+        var value = Guid.NewGuid();
+        var id = from.Invoke(null, [value])!;
 
-        ToProvider(converter).Compile().DynamicInvoke(id).ShouldBe(id.Value);
+        ToProvider(converter).Compile().DynamicInvoke(id).ShouldBe(value);
     }
 
-    [Fact]
-    public void ConvertFromProvider_RestoresIdFromGuid()
+    [Theory]
+    [MemberData(nameof(AllStronglyTypedIds))]
+    public void ConvertFromProvider_RestoresIdFromGuid(Type idType)
     {
-        var converter = CreateProductConverter();
+        var converter = CreateConverter(idType);
+        var from = StronglyTypedIdMethod(idType, "From");
         var value = Guid.NewGuid();
 
-        FromProvider(converter).Compile().DynamicInvoke(value).ShouldBe(ProductId.From(value));
+        FromProvider(converter).Compile().DynamicInvoke(value).ShouldBe(from.Invoke(null, [value]));
     }
 
-    [Fact]
-    public void Roundtrip_PreservesValueEquality()
+    [Theory]
+    [MemberData(nameof(AllStronglyTypedIds))]
+    public void Roundtrip_PreservesValueEquality(Type idType)
     {
-        var converter = CreateProductConverter();
-        var original = ProductId.NewId();
+        var converter = CreateConverter(idType);
+        var newId = StronglyTypedIdMethod(idType, "NewId");
+        var original = newId.Invoke(null, null)!;
         var toProvider = ToProvider(converter).Compile();
         var fromProvider = FromProvider(converter).Compile();
 
         fromProvider.DynamicInvoke(toProvider.DynamicInvoke(original)).ShouldBe(original);
     }
 
-    [Fact]
-    public void ConvertToProvider_WithNullId_Throws()
+    [Theory]
+    [MemberData(nameof(AllStronglyTypedIds))]
+    public void ConvertFromProvider_WithEmptyGuid_ThrowsDomainException(Type idType)
     {
-        var converter = CreateProductConverter();
-        var toProvider = ToProvider(converter).Compile();
-
-        Should.Throw<TargetInvocationException>(() => toProvider.DynamicInvoke(new object?[] { null }));
-    }
-
-    [Fact]
-    public void ConvertFromProvider_WithEmptyGuid_ThrowsDomainException()
-    {
-        var converter = CreateProductConverter();
+        var converter = CreateConverter(idType);
         var fromProvider = FromProvider(converter).Compile();
 
         var ex = Should.Throw<TargetInvocationException>(() => fromProvider.DynamicInvoke(Guid.Empty));
         ex.InnerException.ShouldBeOfType<DomainException>();
     }
 
-    [Fact]
-    public void Expressions_AreDistinctPerDirection()
+    [Theory]
+    [MemberData(nameof(AllStronglyTypedIds))]
+    public void Expressions_AreDistinctPerDirection(Type idType)
     {
-        var converter = CreateProductConverter();
+        var converter = CreateConverter(idType);
 
         ToProvider(converter).ShouldNotBeSameAs(FromProvider(converter));
     }
 
-    [Fact]
-    public void DistinctConverterInstances_DoNotShareState()
+    [Theory]
+    [MemberData(nameof(AllStronglyTypedIds))]
+    public void DistinctConverterInstances_DoNotShareState(Type idType)
     {
-        var first = CreateProductConverter();
-        var second = CreateProductConverter();
+        var first = CreateConverter(idType);
+        var second = CreateConverter(idType);
 
         first.ShouldNotBeSameAs(second);
-        ToProvider(first).Compile().DynamicInvoke(ProductId.NewId()).ShouldBeOfType<Guid>();
-        FromProvider(second).Compile().DynamicInvoke(Guid.NewGuid()).ShouldBeOfType<ProductId>();
-    }
-
-    [Fact]
-    public void BaseContract_HoldsAcrossDifferentIdTypes()
-    {
-        var product = (ValueConverter)CreateProductConverter();
-        var otp = (ValueConverter)CreateConverter("Infrastructure.Security.Converters.OtpIdConverter");
-
-        product.ProviderClrType.ShouldBe(typeof(Guid));
-        otp.ProviderClrType.ShouldBe(typeof(Guid));
-        product.ModelClrType.ShouldBe(typeof(ProductId));
-        otp.ModelClrType.ShouldBe(typeof(OtpId));
-
-        var productId = ProductId.NewId();
-        var otpId = OtpId.NewId();
-
-        ToProvider(product).Compile().DynamicInvoke(productId).ShouldBe(productId.Value);
-        ToProvider(otp).Compile().DynamicInvoke(otpId).ShouldBe(otpId.Value);
-        FromProvider(otp).Compile().DynamicInvoke(otpId.Value).ShouldBe(otpId);
-    }
-
-    [Fact]
-    public void ConvertFromProvider_WithSameGuid_ReturnsEqualIds()
-    {
-        var converter = CreateProductConverter();
-        var value = Guid.NewGuid();
-        var fromProvider = FromProvider(converter).Compile();
-
-        fromProvider.DynamicInvoke(value).ShouldBe(fromProvider.DynamicInvoke(value));
     }
 }

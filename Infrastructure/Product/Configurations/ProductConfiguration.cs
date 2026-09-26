@@ -13,7 +13,6 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => ProductId.From(v))
             .ValueGeneratedNever();
 
         builder.Property<uint>("xmin")
@@ -47,11 +46,9 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
             .HasColumnType("text");
 
         builder.Property(p => p.BrandId)
-            .HasConversion(id => id.Value, value => BrandId.From(value))
             .IsRequired();
 
         builder.Property(p => p.CategoryId)
-            .HasConversion(id => id.Value, value => CategoryId.From(value))
             .IsRequired();
 
         builder.Property(e => e.IsActive)

@@ -1,4 +1,4 @@
-﻿using Application.Order.Sagas.State;
+using Application.Order.Sagas.State;
 using Domain.Order.ValueObjects;
 
 namespace Infrastructure.Order.Configurations;
@@ -12,7 +12,6 @@ public sealed class OrderProcessStateConfiguration : IEntityTypeConfiguration<Or
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.OrderId)
-            .HasConversion(v => v.Value, v => OrderId.From(v))
             .IsRequired();
 
         builder.Property(e => e.CurrentStep)

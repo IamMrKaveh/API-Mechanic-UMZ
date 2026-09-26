@@ -14,8 +14,7 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
 
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => ReviewId.From(v));
+        builder.Property(e => e.Id);
 
         builder.Property<uint>("xmin")
             .HasColumnName("xmin")
@@ -24,11 +23,9 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
             .IsConcurrencyToken();
 
         builder.Property(e => e.ProductId)
-            .HasConversion(v => v.Value, v => ProductId.From(v))
             .IsRequired();
 
         builder.Property(e => e.UserId)
-            .HasConversion(v => v.Value, v => UserId.From(v))
             .IsRequired();
 
         var orderIdConverter = new ValueConverter<OrderId?, Guid?>(

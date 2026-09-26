@@ -11,15 +11,12 @@ public sealed class WalletDebitRequestConfiguration : IEntityTypeConfiguration<W
         builder.ToTable("WalletDebitRequests");
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => WalletDebitRequestId.From(value));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.WalletId)
-            .HasConversion(id => id.Value, value => WalletId.From(value))
             .IsRequired();
 
         builder.Property(e => e.OwnerId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .IsRequired();
 
         builder.OwnsOne(e => e.Amount, b =>
@@ -33,11 +30,9 @@ public sealed class WalletDebitRequestConfiguration : IEntityTypeConfiguration<W
         builder.Property(e => e.RejectionReason).HasMaxLength(500);
 
         builder.Property(e => e.RequestedBy)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .IsRequired();
 
         builder.Property(e => e.ReservationId)
-            .HasConversion(id => id.Value, value => WalletReservationId.From(value))
             .IsRequired();
 
         builder.Property(e => e.RespondedBy)

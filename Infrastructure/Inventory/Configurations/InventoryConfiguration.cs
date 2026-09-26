@@ -10,11 +10,9 @@ internal sealed class InventoryConfiguration : IEntityTypeConfiguration<Domain.I
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => InventoryId.From(value));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.VariantId)
-            .HasConversion(id => id.Value, value => VariantId.From(value))
             .IsRequired();
 
         builder.OwnsOne(e => e.StockQuantity, sq =>

@@ -9,11 +9,9 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Domain.Supp
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => TicketId.From(value));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.CustomerId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .IsRequired();
 
         builder.Property(e => e.AssignedAgentId)

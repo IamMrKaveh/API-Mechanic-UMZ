@@ -8,8 +8,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<Domain.User.A
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => UserId.From(value));
+        builder.Property(e => e.Id);
 
         builder.OwnsOne(e => e.FullName, fn =>
         {

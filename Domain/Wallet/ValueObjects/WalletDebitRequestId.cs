@@ -1,16 +1,10 @@
 namespace Domain.Wallet.ValueObjects;
 
-public sealed record WalletDebitRequestId : IStronglyTypedId
+public sealed record WalletDebitRequestId : StronglyTypedId<WalletDebitRequestId>
 {
-    public Guid Value { get; }
+    private WalletDebitRequestId(Guid value) : base(value) { }
 
-    private WalletDebitRequestId(Guid value) => Value = value;
-
-    public static WalletDebitRequestId NewId() => new(Guid.NewGuid());
-
-    public static WalletDebitRequestId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("WalletDebitRequestId cannot be empty.")
-        : new(value);
+    public static implicit operator Guid(WalletDebitRequestId id) => id.Value;
 
     public override string ToString() => Value.ToString();
 }

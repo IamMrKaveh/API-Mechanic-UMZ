@@ -15,23 +15,19 @@ internal sealed class VariantAttributeConfiguration
 
         builder.Property(e => e.Id)
             .HasColumnName("Id")
-            .HasConversion(v => v.Value, v => VariantAttributeId.From(v))
             .ValueGeneratedNever()
             .IsRequired();
 
         builder.Property(e => e.VariantId)
             .HasColumnName("VariantId")
-            .HasConversion(id => id.Value, value => VariantId.From(value))
             .IsRequired();
 
         builder.Property(e => e.AttributeTypeId)
             .HasColumnName("AttributeTypeId")
-            .HasConversion(id => id.Value, value => AttributeTypeId.From(value))
             .IsRequired();
 
         builder.Property(e => e.ValueId)
             .HasColumnName("ValueId")
-            .HasConversion(id => id.Value, value => AttributeValueId.From(value))
             .IsRequired();
 
         builder.Property(e => e.DisplayValue)

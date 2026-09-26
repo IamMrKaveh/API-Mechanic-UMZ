@@ -1,3 +1,4 @@
+using System.Reflection;
 using Application.Search.Features.Shared;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
@@ -124,7 +125,12 @@ public class DBContextTests
 
         matching.ShouldNotBeEmpty($"expected at least one mapped property of type {idType.Name}");
 
-        var fromFactory = idType.GetMethod("From", [typeof(Guid)]);
+        var fromFactory = idType.GetMethod(
+            "From",
+            BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy,
+            binder: null,
+            types: [typeof(Guid)],
+            modifiers: null);
         fromFactory.ShouldNotBeNull();
 
         foreach (var property in matching)
