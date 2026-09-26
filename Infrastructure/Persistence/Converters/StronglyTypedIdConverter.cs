@@ -1,10 +1,16 @@
 ﻿namespace Infrastructure.Persistence.Converters;
 
-internal abstract class StronglyTypedIdConverter<TId>(
-    Func<Guid, TId> factory)
-    : ValueConverter<TId, Guid>(
-        id => id.Value,
-        value => factory(value))
-    where TId : class, IStronglyTypedId
+/// <summary>
+/// Single generic EF Core converter for every Guid-backed strongly typed id.
+/// Replaces the per-id *IdConverter subclasses.
+/// </summary>
+internal sealed class StronglyTypedIdConverter<TId> : ValueConverter<TId, Guid>
+    where TId : StronglyTypedId<TId>
 {
+    public StronglyTypedIdConverter()
+        : base(
+            id => id.Value,
+            value => StronglyTypedId<TId>.From(value))
+    {
+    }
 }

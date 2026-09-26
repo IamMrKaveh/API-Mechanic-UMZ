@@ -12,7 +12,6 @@ public sealed class BrandConfiguration : IEntityTypeConfiguration<Domain.Brand.A
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => BrandId.From(v))
             .ValueGeneratedNever();
 
         builder.Property<uint>("xmin")
@@ -43,7 +42,6 @@ public sealed class BrandConfiguration : IEntityTypeConfiguration<Domain.Brand.A
         });
 
         builder.Property(e => e.CategoryId)
-            .HasConversion(v => v.Value, v => CategoryId.From(v))
             .IsRequired();
 
         builder.Property(e => e.Description)

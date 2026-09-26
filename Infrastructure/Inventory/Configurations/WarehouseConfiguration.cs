@@ -10,8 +10,7 @@ public sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => WarehouseId.From(v));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.Code)
             .HasConversion(v => v.Value, v => WarehouseCode.Create(v))

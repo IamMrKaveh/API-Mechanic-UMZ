@@ -1,18 +1,10 @@
-﻿namespace Domain.Inventory.ValueObjects;
+namespace Domain.Inventory.ValueObjects;
 
-public sealed record StockLedgerEntryId : IStronglyTypedId
+public sealed record StockLedgerEntryId : StronglyTypedId<StockLedgerEntryId>
 {
-    public Guid Value { get; }
-
-    private StockLedgerEntryId(Guid value) => Value = value;
-
-    public static StockLedgerEntryId NewId() => new(Guid.NewGuid());
-
-    public static StockLedgerEntryId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("StockLedgerEntryId cannot be empty.")
-        : new(value);
-
-    public override string ToString() => Value.ToString();
+    private StockLedgerEntryId(Guid value) : base(value) { }
 
     public static implicit operator Guid(StockLedgerEntryId id) => id.Value;
+
+    public override string ToString() => Value.ToString();
 }

@@ -10,11 +10,9 @@ public sealed class WalletConfiguration : IEntityTypeConfiguration<Domain.Wallet
         builder.ToTable("Wallets");
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => WalletId.From(value));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.OwnerId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .HasColumnName("UserId")
             .IsRequired();
 

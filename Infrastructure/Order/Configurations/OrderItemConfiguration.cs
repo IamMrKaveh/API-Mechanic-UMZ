@@ -14,19 +14,15 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id)
-            .HasConversion(id => id.Value, value => OrderItemId.From(value))
             .ValueGeneratedNever();
 
         builder.Property(x => x.OrderId)
-            .HasConversion(id => id.Value, value => OrderId.From(value))
             .IsRequired();
 
         builder.Property(x => x.VariantId)
-            .HasConversion(id => id.Value, value => VariantId.From(value))
             .IsRequired();
 
         builder.Property(x => x.ProductId)
-            .HasConversion(id => id.Value, value => ProductId.From(value))
             .IsRequired();
 
         builder.Property(x => x.Quantity).IsRequired();

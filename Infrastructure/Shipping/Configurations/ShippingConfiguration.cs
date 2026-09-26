@@ -8,8 +8,7 @@ internal sealed class ShippingConfiguration : IEntityTypeConfiguration<Domain.Sh
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => ShippingId.From(value));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.Name)
             .HasConversion(n => n.Value, v => ShippingName.Create(v))

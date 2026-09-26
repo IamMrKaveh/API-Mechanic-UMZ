@@ -1,18 +1,10 @@
-﻿namespace Domain.Brand.ValueObjects;
+namespace Domain.Brand.ValueObjects;
 
-public sealed record BrandId : IStronglyTypedId
+public sealed record BrandId : StronglyTypedId<BrandId>
 {
-    public Guid Value { get; }
-
-    private BrandId(Guid value) => Value = value;
-
-    public static BrandId NewId() => new(Guid.NewGuid());
-
-    public static BrandId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("BrandId cannot be empty.")
-        : new(value);
-
-    public override string ToString() => Value.ToString();
+    private BrandId(Guid value) : base(value) { }
 
     public static implicit operator Guid(BrandId id) => id.Value;
+
+    public override string ToString() => Value.ToString();
 }

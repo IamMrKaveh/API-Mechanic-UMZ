@@ -1,4 +1,4 @@
-﻿using Domain.Payment.Aggregates;
+using Domain.Payment.Aggregates;
 using Domain.Payment.ValueObjects;
 
 namespace Infrastructure.Payment.Configurations;
@@ -11,8 +11,7 @@ internal sealed class PaymentMethodConfiguration : IEntityTypeConfiguration<Paym
 
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => PaymentMethodId.From(value));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.Name)
             .HasConversion(n => n.Value, v => PaymentMethodName.Create(v))

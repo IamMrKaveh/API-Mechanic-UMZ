@@ -1,18 +1,10 @@
-﻿namespace Domain.Variant.ValueObjects;
+namespace Domain.Variant.ValueObjects;
 
-public sealed record VariantShippingId : IStronglyTypedId
+public sealed record VariantShippingId : StronglyTypedId<VariantShippingId>
 {
-    public Guid Value { get; }
-
-    private VariantShippingId(Guid value) => Value = value;
-
-    public static VariantShippingId NewId() => new(Guid.NewGuid());
-
-    public static VariantShippingId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("VariantShippingId cannot be empty.")
-        : new(value);
-
-    public override string ToString() => Value.ToString();
+    private VariantShippingId(Guid value) : base(value) { }
 
     public static implicit operator Guid(VariantShippingId id) => id.Value;
+
+    public override string ToString() => Value.ToString();
 }

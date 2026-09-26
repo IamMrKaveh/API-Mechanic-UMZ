@@ -1,18 +1,10 @@
-﻿namespace Domain.Shipping.ValueObjects;
+namespace Domain.Shipping.ValueObjects;
 
-public sealed record ShippingId : IStronglyTypedId
+public sealed record ShippingId : StronglyTypedId<ShippingId>
 {
-    public Guid Value { get; }
-
-    private ShippingId(Guid value) => Value = value;
-
-    public static ShippingId NewId() => new(Guid.NewGuid());
-
-    public static ShippingId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("ShippingId cannot be empty.")
-        : new(value);
-
-    public override string ToString() => Value.ToString();
+    private ShippingId(Guid value) : base(value) { }
 
     public static implicit operator Guid(ShippingId id) => id.Value;
+
+    public override string ToString() => Value.ToString();
 }

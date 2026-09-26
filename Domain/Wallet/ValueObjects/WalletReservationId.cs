@@ -1,18 +1,10 @@
-﻿namespace Domain.Wallet.ValueObjects;
+namespace Domain.Wallet.ValueObjects;
 
-public sealed record WalletReservationId : IStronglyTypedId
+public sealed record WalletReservationId : StronglyTypedId<WalletReservationId>
 {
-    public Guid Value { get; }
-
-    private WalletReservationId(Guid value) => Value = value;
-
-    public static WalletReservationId NewId() => new(Guid.NewGuid());
-
-    public static WalletReservationId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("WalletReservationId cannot be empty.")
-        : new(value);
-
-    public override string ToString() => Value.ToString();
+    private WalletReservationId(Guid value) : base(value) { }
 
     public static implicit operator Guid(WalletReservationId id) => id.Value;
+
+    public override string ToString() => Value.ToString();
 }

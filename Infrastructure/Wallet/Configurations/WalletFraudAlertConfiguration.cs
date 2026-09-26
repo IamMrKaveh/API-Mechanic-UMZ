@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.ValueObjects;
 
@@ -13,15 +13,12 @@ internal sealed class WalletFraudAlertConfiguration : IEntityTypeConfiguration<W
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasConversion(id => id.Value, value => WalletFraudAlertId.From(value))
             .ValueGeneratedNever();
 
         builder.Property(e => e.WalletId)
-            .HasConversion(id => id.Value, value => WalletId.From(value))
             .IsRequired();
 
         builder.Property(e => e.UserId)
-            .HasConversion(id => id.Value, value => UserId.From(value))
             .IsRequired();
 
         builder.Property(e => e.RuleName)

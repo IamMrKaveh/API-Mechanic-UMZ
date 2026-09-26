@@ -10,11 +10,9 @@ public sealed class AttributeValueConfiguration : IEntityTypeConfiguration<Attri
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => AttributeValueId.From(v));
+        builder.Property(e => e.Id);
 
         builder.Property(e => e.AttributeTypeId)
-            .HasConversion(v => v.Value, v => AttributeTypeId.From(v))
             .IsRequired();
 
         builder.AddInterceptorRowVersion();

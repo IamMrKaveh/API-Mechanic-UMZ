@@ -1,18 +1,10 @@
-﻿namespace Domain.Review.ValueObjects;
+namespace Domain.Review.ValueObjects;
 
-public sealed record ReviewId : IStronglyTypedId
+public sealed record ReviewId : StronglyTypedId<ReviewId>
 {
-    public Guid Value { get; }
-
-    private ReviewId(Guid value) => Value = value;
-
-    public static ReviewId NewId() => new(Guid.NewGuid());
-
-    public static ReviewId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("ReviewId cannot be empty.")
-        : new(value);
-
-    public override string ToString() => Value.ToString();
+    private ReviewId(Guid value) : base(value) { }
 
     public static implicit operator Guid(ReviewId id) => id.Value;
+
+    public override string ToString() => Value.ToString();
 }

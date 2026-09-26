@@ -1,18 +1,10 @@
-﻿namespace Domain.Audit.ValueObjects;
+namespace Domain.Audit.ValueObjects;
 
-public sealed record AuditLogId : IStronglyTypedId
+public sealed record AuditLogId : StronglyTypedId<AuditLogId>
 {
-    public Guid Value { get; }
-
-    private AuditLogId(Guid value) => Value = value;
-
-    public static AuditLogId NewId() => new(Guid.NewGuid());
-
-    public static AuditLogId From(Guid value) => value == Guid.Empty
-        ? throw new DomainException("AuditLogId cannot be empty.")
-        : new(value);
-
-    public override string ToString() => Value.ToString();
+    private AuditLogId(Guid value) : base(value) { }
 
     public static implicit operator Guid(AuditLogId id) => id.Value;
+
+    public override string ToString() => Value.ToString();
 }

@@ -11,13 +11,11 @@ public sealed class OtpConfiguration : IEntityTypeConfiguration<UserOtp>
     {
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
-            .HasConversion(v => v.Value, v => OtpId.From(v));
+        builder.Property(e => e.Id);
 
         builder.AddInterceptorRowVersion();
 
         builder.Property(e => e.UserId)
-            .HasConversion(v => v.Value, v => UserId.From(v))
             .IsRequired();
 
         builder.Property(e => e.CodeHash)
