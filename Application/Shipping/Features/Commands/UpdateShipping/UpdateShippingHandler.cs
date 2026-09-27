@@ -15,9 +15,9 @@ public class UpdateShippingHandler(
         var shippingId = ShippingId.From(request.Id);
         var shippingName = ShippingName.Create(request.Name);
 
-        var shipping = await shippingRepository.GetByIdAsync(shippingId, ct);
-        if (shipping is null)
-            return ServiceResult<ShippingDto>.NotFound("روش ارسال یافت نشد.");
+        var shippingResult = await (shippingRepository.GetByIdAsync(shippingId, ct)).OrNotFoundAsync("روش ارسال یافت نشد.");
+        if (shippingResult.IsFailure) return shippingResult.Error;
+        var shipping = shippingResult.Value;
 
         if (await shippingRepository.ExistsByNameAsync(shippingName, shippingId, ct))
             return ServiceResult<ShippingDto>.Conflict("روش ارسال با این نام قبلاً ثبت شده است.");

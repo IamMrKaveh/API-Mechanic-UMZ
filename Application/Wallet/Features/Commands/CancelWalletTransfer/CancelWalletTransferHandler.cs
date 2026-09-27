@@ -21,9 +21,9 @@ public sealed class CancelWalletTransferHandler(
             var transferId = WalletTransferId.From(request.TransferId);
             var fromUserId = UserId.From(currentUserService.UserId!.Value);
 
-            var transfer = await transferRepository.GetByIdForUpdateAsync(transferId, ct);
-            if (transfer is null)
-                return ServiceResult<Unit>.NotFound("درخواست انتقال یافت نشد.");
+            var transferResult = await (transferRepository.GetByIdForUpdateAsync(transferId, ct)).OrNotFoundAsync("درخواست انتقال یافت نشد.");
+            if (transferResult.IsFailure) return transferResult.Error;
+            var transfer = transferResult.Value;
 
             if (!transfer.FromUserId.Equals(fromUserId))
                 return ServiceResult<Unit>.Forbidden("دسترسی به این درخواست انتقال مجاز نیست.");

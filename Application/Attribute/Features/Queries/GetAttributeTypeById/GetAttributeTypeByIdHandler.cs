@@ -15,10 +15,9 @@ public class GetAttributeTypeByIdHandler(
     {
         var attributeTypeId = AttributeTypeId.From(request.Id);
 
-        var type = await repository.GetAttributeTypeWithValuesAsync(attributeTypeId, ct);
-
-        if (type is null)
-            return ServiceResult<AttributeTypeDto>.NotFound("Attribute type not found.");
+        var typeResult = await (repository.GetAttributeTypeWithValuesAsync(attributeTypeId, ct)).OrNotFoundAsync("Attribute type not found.");
+        if (typeResult.IsFailure) return typeResult.Error;
+        var type = typeResult.Value;
 
         return ServiceResult<AttributeTypeDto>.Success(mapper.Map<AttributeTypeDto>(type));
     }

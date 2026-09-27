@@ -14,9 +14,9 @@ public class CancelDiscountUsageHandler(
         var discountCodeId = DiscountCodeId.From(request.DiscountCodeId);
         var orderId = OrderId.From(request.OrderId);
 
-        var discount = await discountRepository.GetByIdWithUsagesAsync(discountCodeId, ct);
-        if (discount is null)
-            return ServiceResult.NotFound("کد تخفیف یافت نشد.");
+        var discountResult = await (discountRepository.GetByIdWithUsagesAsync(discountCodeId, ct)).OrNotFoundAsync("کد تخفیف یافت نشد.");
+        if (discountResult.IsFailure) return discountResult.Error;
+        var discount = discountResult.Value;
 
         var usage = discount.Usages.FirstOrDefault(u => u.OrderId == orderId);
         if (usage is null)

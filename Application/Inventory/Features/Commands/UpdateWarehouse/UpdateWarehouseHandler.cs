@@ -13,10 +13,9 @@ public class UpdateWarehouseHandler(
     public async Task<ServiceResult> Handle(UpdateWarehouseCommand request, CancellationToken ct)
     {
         var id = WarehouseId.From(request.Id);
-        var warehouse = await warehouseRepository.GetByIdAsync(id, ct);
-
-        if (warehouse is null)
-            return ServiceResult.NotFound("انبار یافت نشد.");
+        var warehouseResult = await (warehouseRepository.GetByIdAsync(id, ct)).OrNotFoundAsync("انبار یافت نشد.");
+        if (warehouseResult.IsFailure) return warehouseResult.Error;
+        var warehouse = warehouseResult.Value;
 
         warehouse.Update(request.Name, request.City, request.Address, request.Phone, request.Priority, dateTimeProvider.UtcNow);
         warehouseRepository.Update(warehouse);

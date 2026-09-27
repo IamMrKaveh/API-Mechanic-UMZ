@@ -15,9 +15,9 @@ public class CreateUserAddressHandler(
     {
         var userId = UserId.From(currentUser.UserId!.Value);
 
-        var user = await userRepository.GetWithAddressesAsync(userId, ct);
-        if (user is null)
-            return ServiceResult<UserAddressDto>.NotFound("کاربر یافت نشد.");
+        var userResult = await (userRepository.GetWithAddressesAsync(userId, ct)).OrNotFoundAsync("کاربر یافت نشد.");
+        if (userResult.IsFailure) return userResult.Error;
+        var user = userResult.Value;
 
         var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
         var addressId = UserAddressId.NewId();

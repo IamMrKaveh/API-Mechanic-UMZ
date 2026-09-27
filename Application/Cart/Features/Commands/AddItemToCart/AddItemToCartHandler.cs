@@ -20,10 +20,9 @@ public class AddItemToCartHandler(
     public async Task<ServiceResult> Handle(AddItemToCartCommand request, CancellationToken ct)
     {
         var variantId = VariantId.From(request.VariantId);
-        var variant = await variantRepository.GetWithProductAsync(variantId, ct);
-
-        if (variant is null)
-            return ServiceResult.NotFound("واریانت یافت نشد.");
+        var variantResult = await (variantRepository.GetWithProductAsync(variantId, ct)).OrNotFoundAsync("واریانت یافت نشد.");
+        if (variantResult.IsFailure) return variantResult.Error;
+        var variant = variantResult.Value;
 
         if (!variant.IsActive)
             return ServiceResult.Failure("واریانت غیرفعال است.");

@@ -15,8 +15,6 @@ public sealed class GetPaymentMethodHandler(
         var id = PaymentMethodId.From(request.Id);
         var dto = await queryService.GetByIdAsync(id, ct);
 
-        return dto is null
-            ? ServiceResult<PaymentMethodDto>.NotFound("روش پرداخت یافت نشد.")
-            : ServiceResult<PaymentMethodDto>.Success(dto);
+        return dto.ToResultOrNotFound("روش پرداخت یافت نشد.");
     }
 }

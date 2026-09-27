@@ -13,10 +13,9 @@ public class DeleteCategoryHandler(
     public async Task<ServiceResult> Handle(DeleteCategoryCommand request, CancellationToken ct)
     {
         var categoryId = CategoryId.From(request.CategoryId);
-        var category = await categoryRepository.GetByIdAsync(categoryId, ct);
-
-        if (category is null)
-            return ServiceResult.NotFound("دسته‌بندی یافت نشد.");
+        var categoryResult = await (categoryRepository.GetByIdAsync(categoryId, ct)).OrNotFoundAsync("دسته‌بندی یافت نشد.");
+        if (categoryResult.IsFailure) return categoryResult.Error;
+        var category = categoryResult.Value;
 
         var hasChildren = await categoryRepository.HasBrandAsync(categoryId, ct);
         if (hasChildren)

@@ -20,9 +20,9 @@ public class AddStockHandler(
         var userId = UserId.From(currentUserService.UserId!.Value);
         var stockQuantity = StockQuantity.Create(request.Quantity);
 
-        var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
-        if (inventory is null)
-            return ServiceResult.NotFound("موجودی یافت نشد.");
+        var inventoryResult = await (inventoryRepository.GetByVariantIdAsync(variantId, ct)).OrNotFoundAsync("موجودی یافت نشد.");
+        if (inventoryResult.IsFailure) return inventoryResult.Error;
+        var inventory = inventoryResult.Value;
 
         var result = InventoryDomainService.IncreaseStock(
             inventory,

@@ -11,9 +11,9 @@ public sealed class UpdateProductDetailsHandler(
     {
         var productId = ProductId.From(request.ProductId);
 
-        var product = await productRepository.GetByIdAsync(productId, ct);
-        if (product is null)
-            return ServiceResult.NotFound("محصول یافت نشد.");
+        var productResult = await (productRepository.GetByIdAsync(productId, ct)).OrNotFoundAsync("محصول یافت نشد.");
+        if (productResult.IsFailure) return productResult.Error;
+        var product = productResult.Value;
 
         var slug = ProductSlug.GenerateFrom(request.Name);
 

@@ -38,9 +38,9 @@ public sealed class AddVariantHandler(
         var productId = ProductId.From(request.ProductId);
         var userId = UserId.From(currentUserService.UserId.Value);
 
-        var product = await productRepository.GetByIdAsync(productId, ct);
-        if (product is null)
-            return ServiceResult<ProductVariantViewDto>.NotFound("محصول یافت نشد.");
+        var productResult = await (productRepository.GetByIdAsync(productId, ct)).OrNotFoundAsync("محصول یافت نشد.");
+        if (productResult.IsFailure) return productResult.Error;
+        var product = productResult.Value;
 
         var attributeValueIds = request.AttributeValueIds ?? Array.Empty<Guid>();
 

@@ -17,9 +17,9 @@ public class RemoveVariantHandler(
         var variantId = VariantId.From(request.VariantId);
         var userId = UserId.From(currentUserService.UserId!.Value);
 
-        var variant = await variantRepository.GetByIdAsync(variantId, ct);
-        if (variant is null)
-            return ServiceResult.NotFound("واریانت یافت نشد.");
+        var variantResult = await (variantRepository.GetByIdAsync(variantId, ct)).OrNotFoundAsync("واریانت یافت نشد.");
+        if (variantResult.IsFailure) return variantResult.Error;
+        var variant = variantResult.Value;
 
         try
         {

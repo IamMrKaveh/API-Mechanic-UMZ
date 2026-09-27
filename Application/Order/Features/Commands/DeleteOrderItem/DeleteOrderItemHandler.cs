@@ -12,9 +12,9 @@ public class DeleteOrderItemHandler(
         CancellationToken ct)
     {
         var orderItemId = OrderItemId.From(request.Id);
-        var order = await orderRepository.FindByOrderItemIdAsync(orderItemId, ct);
-        if (order is null)
-            return ServiceResult.NotFound("سفارش یا آیتم یافت نشد.");
+        var orderResult = await (orderRepository.FindByOrderItemIdAsync(orderItemId, ct)).OrNotFoundAsync("سفارش یا آیتم یافت نشد.");
+        if (orderResult.IsFailure) return orderResult.Error;
+        var order = orderResult.Value;
 
         try
         {

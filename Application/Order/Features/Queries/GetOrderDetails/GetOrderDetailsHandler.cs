@@ -19,10 +19,9 @@ public class GetOrderDetailsHandler(
         var orderId = OrderId.From(request.OrderId);
         var userId = UserId.From(currentUserService.UserId.Value);
 
-        var order = await orderQueryService.GetOrderDetailsAsync(orderId, userId, ct);
-
-        if (order is null)
-            return ServiceResult<OrderDto>.NotFound("سفارش یافت نشد.");
+        var orderResult = await (orderQueryService.GetOrderDetailsAsync(orderId, userId, ct)).OrNotFoundAsync("سفارش یافت نشد.");
+        if (orderResult.IsFailure) return orderResult.Error;
+        var order = orderResult.Value;
 
         return ServiceResult<OrderDto>.Success(order);
     }

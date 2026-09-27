@@ -27,9 +27,9 @@ public sealed class CreateBrandHandler(
     {
         var categoryId = CategoryId.From(request.CategoryId);
 
-        var category = await categoryRepository.GetByIdAsync(categoryId, ct);
-        if (category is null)
-            return ServiceResult<BrandDetailDto>.NotFound("دسته‌بندی یافت نشد.");
+        var categoryResult = await (categoryRepository.GetByIdAsync(categoryId, ct)).OrNotFoundAsync("دسته‌بندی یافت نشد.");
+        if (categoryResult.IsFailure) return categoryResult.Error;
+        var category = categoryResult.Value;
 
         var brandName = BrandName.Create(request.Name);
 

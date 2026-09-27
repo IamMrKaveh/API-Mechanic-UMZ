@@ -10,10 +10,9 @@ public class AdminDeleteNotificationHandler(
     public async Task<ServiceResult> Handle(AdminDeleteNotificationCommand request, CancellationToken ct)
     {
         var notificationId = NotificationId.From(request.NotificationId);
-        var notification = await notificationRepository.GetByIdAsync(notificationId, ct);
-
-        if (notification is null)
-            return ServiceResult.NotFound("اعلان یافت نشد.");
+        var notificationResult = await (notificationRepository.GetByIdAsync(notificationId, ct)).OrNotFoundAsync("اعلان یافت نشد.");
+        if (notificationResult.IsFailure) return notificationResult.Error;
+        var notification = notificationResult.Value;
 
         notificationRepository.Remove(notification);
 

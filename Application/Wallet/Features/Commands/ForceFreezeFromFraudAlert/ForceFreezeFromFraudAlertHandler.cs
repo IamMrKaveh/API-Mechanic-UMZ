@@ -28,9 +28,9 @@ public sealed class ForceFreezeFromFraudAlertHandler(
             var alertId = WalletFraudAlertId.From(request.AlertId);
             var adminId = UserId.From(currentUserService.UserId!.Value);
 
-            var alert = await alertRepository.GetByIdAsync(alertId, ct);
-            if (alert is null)
-                return ServiceResult<Unit>.NotFound("هشدار مورد نظر یافت نشد.");
+            var alertResult = await (alertRepository.GetByIdAsync(alertId, ct)).OrNotFoundAsync("هشدار مورد نظر یافت نشد.");
+            if (alertResult.IsFailure) return alertResult.Error;
+            var alert = alertResult.Value;
 
             if (alert.Status != FraudAlertStatus.Open)
                 return ServiceResult<Unit>.Conflict(
@@ -42,9 +42,9 @@ public sealed class ForceFreezeFromFraudAlertHandler(
             if (lockHandle is null || !lockHandle.IsAcquired)
                 return ServiceResult<Unit>.Conflict("عملیات دیگری روی کیف پول در حال انجام است. لطفاً مجدداً تلاش کنید.");
 
-            var wallet = await walletRepository.GetByUserIdForUpdateAsync(alert.UserId, ct);
-            if (wallet is null)
-                return ServiceResult<Unit>.NotFound("کیف پول کاربر یافت نشد.");
+            var walletResult = await (walletRepository.GetByUserIdForUpdateAsync(alert.UserId, ct)).OrNotFoundAsync("کیف پول کاربر یافت نشد.");
+            if (walletResult.IsFailure) return walletResult.Error;
+            var wallet = walletResult.Value;
 
             var reason = string.IsNullOrWhiteSpace(request.AdditionalNote)
                 ? $"[Force-Freeze from Alert {alert.Id.Value:N}] {alert.RuleName}: {alert.Description}"

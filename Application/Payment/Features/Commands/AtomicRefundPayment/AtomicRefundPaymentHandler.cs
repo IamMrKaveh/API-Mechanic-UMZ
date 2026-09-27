@@ -14,16 +14,16 @@ public class AtomicRefundPaymentHandler(
     public async Task<ServiceResult> Handle(AtomicRefundPaymentCommand request, CancellationToken ct)
     {
         var orderId = OrderId.From(request.OrderId);
-        var order = await orderRepository.FindByIdAsync(orderId, ct);
-        if (order is null)
-            return ServiceResult.NotFound("سفارش یافت نشد.");
+        var orderResult = await (orderRepository.FindByIdAsync(orderId, ct)).OrNotFoundAsync("سفارش یافت نشد.");
+        if (orderResult.IsFailure) return orderResult.Error;
+        var order = orderResult.Value;
 
         if (!order.IsPaid)
             return ServiceResult.Failure("سفارش پرداخت نشده است.");
 
-        var payment = await paymentRepository.GetVerifiedByOrderIdAsync(orderId, ct);
-        if (payment is null)
-            return ServiceResult.NotFound("تراکنش پرداخت یافت نشد.");
+        var paymentResult = await (paymentRepository.GetVerifiedByOrderIdAsync(orderId, ct)).OrNotFoundAsync("تراکنش پرداخت یافت نشد.");
+        if (paymentResult.IsFailure) return paymentResult.Error;
+        var payment = paymentResult.Value;
 
         var eligibility = PaymentSettlementService.ValidateRefundEligibility(
             new OrderPaymentContextAdapter(order), payment);

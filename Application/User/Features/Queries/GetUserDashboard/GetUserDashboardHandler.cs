@@ -14,10 +14,9 @@ public class GetUserDashboardHandler(
     {
         var userId = UserId.From(currentUserService.UserId!.Value);
 
-        var dashboard = await userQueryService.GetUserDashboardAsync(userId, ct);
-
-        if (dashboard is null)
-            return ServiceResult<UserDashboardDto>.NotFound("کاربر یافت نشد.");
+        var dashboardResult = await (userQueryService.GetUserDashboardAsync(userId, ct)).OrNotFoundAsync("کاربر یافت نشد.");
+        if (dashboardResult.IsFailure) return dashboardResult.Error;
+        var dashboard = dashboardResult.Value;
 
         var profile = dashboard.UserProfile;
 

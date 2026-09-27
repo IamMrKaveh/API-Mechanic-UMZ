@@ -19,9 +19,9 @@ public class GetPaymentsByOrderHandler(
             return ServiceResult<IEnumerable<PaymentTransactionDto>>.Unauthorized("کاربر احراز هویت نشده است.");
 
         var orderId = OrderId.From(request.OrderId);
-        var order = await orderRepository.FindByIdAsync(orderId, ct);
-        if (order is null)
-            return ServiceResult<IEnumerable<PaymentTransactionDto>>.NotFound("سفارش یافت نشد.");
+        var orderResult = await (orderRepository.FindByIdAsync(orderId, ct)).OrNotFoundAsync("سفارش یافت نشد.");
+        if (orderResult.IsFailure) return orderResult.Error;
+        var order = orderResult.Value;
 
         var userId = UserId.From(currentUser.UserId.Value);
         if (!currentUser.IsAdmin && order.UserId != userId)

@@ -23,13 +23,13 @@ public class RemoveStockHandler(
         var userId = UserId.From(currentUserService.UserId!.Value);
         var stock = StockQuantity.Create(request.Quantity);
 
-        var variant = await variantRepository.GetByIdAsync(variantId, ct);
-        if (variant is null)
-            return ServiceResult.NotFound("واریانت یافت نشد.");
+        var variantResult = await (variantRepository.GetByIdAsync(variantId, ct)).OrNotFoundAsync("واریانت یافت نشد.");
+        if (variantResult.IsFailure) return variantResult.Error;
+        var variant = variantResult.Value;
 
-        var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
-        if (inventory is null)
-            return ServiceResult.NotFound("موجودی یافت نشد.");
+        var inventoryResult = await (inventoryRepository.GetByVariantIdAsync(variantId, ct)).OrNotFoundAsync("موجودی یافت نشد.");
+        if (inventoryResult.IsFailure) return inventoryResult.Error;
+        var inventory = inventoryResult.Value;
 
         var result = InventoryDomainService.DecreaseStock(inventory, stock, request.Notes, dateTimeProvider.UtcNow, userId);
 

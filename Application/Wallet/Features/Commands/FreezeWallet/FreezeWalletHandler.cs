@@ -34,9 +34,9 @@ public sealed class FreezeWalletHandler(
         {
             var adminId = UserId.From(currentUserService.UserId!.Value);
 
-            var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
-            if (wallet is null)
-                return ServiceResult<Unit>.NotFound("کیف پول کاربر یافت نشد.");
+            var walletResult = await (walletRepository.GetByUserIdForUpdateAsync(userId, ct)).OrNotFoundAsync("کیف پول کاربر یافت نشد.");
+            if (walletResult.IsFailure) return walletResult.Error;
+            var wallet = walletResult.Value;
 
             wallet.Freeze(request.Reason, adminId, dateTimeProvider.UtcNow);
 

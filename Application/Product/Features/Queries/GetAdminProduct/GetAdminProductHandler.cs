@@ -13,10 +13,9 @@ public sealed class GetAdminProductHandler(
     {
         var productId = ProductId.From(request.ProductId);
 
-        var result = await productQueryService.GetAdminProductDetailAsync(productId, ct);
-
-        if (result is null)
-            return ServiceResult<AdminProductDetailDto?>.NotFound("محصول یافت نشد.");
+        var resultResult = await (productQueryService.GetAdminProductDetailAsync(productId, ct)).OrNotFoundAsync("محصول یافت نشد.");
+        if (resultResult.IsFailure) return resultResult.Error;
+        var result = resultResult.Value;
 
         return ServiceResult<AdminProductDetailDto?>.Success(result);
     }

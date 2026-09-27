@@ -17,9 +17,9 @@ public class UpdateAttributeValueHandler(
     {
         var attributeValueId = AttributeValueId.From(request.Id);
 
-        var attributeValue = await repository.GetAttributeValueByIdAsync(attributeValueId, ct);
-        if (attributeValue is null)
-            return ServiceResult.NotFound("Attribute value not found.");
+        var attributeValueResult = await (repository.GetAttributeValueByIdAsync(attributeValueId, ct)).OrNotFoundAsync("Attribute value not found.");
+        if (attributeValueResult.IsFailure) return attributeValueResult.Error;
+        var attributeValue = attributeValueResult.Value;
 
         var resolvedValue = request.Value ?? attributeValue.Value;
 
@@ -35,9 +35,9 @@ public class UpdateAttributeValueHandler(
                 return ServiceResult.Conflict("Attribute value already exists.");
         }
 
-        var type = await repository.GetAttributeTypeWithValuesAsync(attributeValue.AttributeTypeId, ct);
-        if (type is null)
-            return ServiceResult.NotFound("Attribute type not found.");
+        var typeResult = await (repository.GetAttributeTypeWithValuesAsync(attributeValue.AttributeTypeId, ct)).OrNotFoundAsync("Attribute type not found.");
+        if (typeResult.IsFailure) return typeResult.Error;
+        var type = typeResult.Value;
 
         type.UpdateValue(
             attributeValueId,

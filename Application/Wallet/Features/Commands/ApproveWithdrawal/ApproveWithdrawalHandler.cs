@@ -33,9 +33,9 @@ public sealed class ApproveWithdrawalHandler(
 
         try
         {
-            var withdrawal = await withdrawalRepository.GetByIdForUpdateAsync(withdrawalId, ct);
-            if (withdrawal is null)
-                return ServiceResult<Unit>.NotFound("درخواست برداشت یافت نشد.");
+            var withdrawalResult = await (withdrawalRepository.GetByIdForUpdateAsync(withdrawalId, ct)).OrNotFoundAsync("درخواست برداشت یافت نشد.");
+            if (withdrawalResult.IsFailure) return withdrawalResult.Error;
+            var withdrawal = withdrawalResult.Value;
 
             withdrawal.Approve(adminId, dateTimeProvider.UtcNow);
             withdrawalRepository.Update(withdrawal);

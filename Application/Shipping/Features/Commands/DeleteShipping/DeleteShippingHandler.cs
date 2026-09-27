@@ -14,9 +14,9 @@ public class DeleteShippingHandler(
     {
         var shippingId = ShippingId.From(request.Id);
 
-        var shipping = await shippingRepository.GetByIdAsync(shippingId, ct);
-        if (shipping is null)
-            return ServiceResult.NotFound("روش ارسال یافت نشد.");
+        var shippingResult = await (shippingRepository.GetByIdAsync(shippingId, ct)).OrNotFoundAsync("روش ارسال یافت نشد.");
+        if (shippingResult.IsFailure) return shippingResult.Error;
+        var shipping = shippingResult.Value;
 
         try
         {

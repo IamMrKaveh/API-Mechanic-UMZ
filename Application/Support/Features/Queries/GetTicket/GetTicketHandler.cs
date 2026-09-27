@@ -13,10 +13,9 @@ public class GetTicketHandler(
     {
         var ticketId = TicketId.From(request.TicketId);
 
-        var ticket = await supportQueryService.GetTicketDetailAsync(ticketId, ct);
-
-        if (ticket is null)
-            return ServiceResult<TicketDto>.NotFound("تیکت یافت نشد.");
+        var ticketResult = await (supportQueryService.GetTicketDetailAsync(ticketId, ct)).OrNotFoundAsync("تیکت یافت نشد.");
+        if (ticketResult.IsFailure) return ticketResult.Error;
+        var ticket = ticketResult.Value;
 
         if (!request.IsAdmin && ticket.UserId != request.RequestingUserId)
             return ServiceResult<TicketDto>.Forbidden("دسترسی به این تیکت وجود ندارد.");

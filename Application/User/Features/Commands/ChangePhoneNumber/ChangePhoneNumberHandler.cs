@@ -30,9 +30,9 @@ public class ChangePhoneNumberHandler(
         if (await userRepository.ExistsByPhoneNumberAsync(phoneNumber, userId, ct))
             return ServiceResult.Conflict("این شماره تلفن قبلاً ثبت شده است.");
 
-        var user = await userRepository.GetByIdAsync(userId, ct);
-        if (user is null)
-            return ServiceResult.NotFound("کاربر یافت نشد.");
+        var userResult = await (userRepository.GetByIdAsync(userId, ct)).OrNotFoundAsync("کاربر یافت نشد.");
+        if (userResult.IsFailure) return userResult.Error;
+        var user = userResult.Value;
 
         var otpCode = OtpCode.Create(request.OtpCode);
 

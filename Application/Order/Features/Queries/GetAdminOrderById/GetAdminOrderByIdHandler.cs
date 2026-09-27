@@ -12,10 +12,9 @@ public class GetAdminOrderByIdHandler(
         CancellationToken ct)
     {
         var orderId = OrderId.From(request.OrderId);
-        var order = await orderQueryService.GetAdminOrderDetailsAsync(orderId, ct);
-
-        if (order is null)
-            return ServiceResult<AdminOrderDto>.NotFound("سفارش یافت نشد.");
+        var orderResult = await (orderQueryService.GetAdminOrderDetailsAsync(orderId, ct)).OrNotFoundAsync("سفارش یافت نشد.");
+        if (orderResult.IsFailure) return orderResult.Error;
+        var order = orderResult.Value;
 
         return ServiceResult<AdminOrderDto>.Success(order);
     }

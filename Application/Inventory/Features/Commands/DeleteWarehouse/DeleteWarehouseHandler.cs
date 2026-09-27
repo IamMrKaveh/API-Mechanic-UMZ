@@ -11,10 +11,9 @@ public class DeleteWarehouseHandler(
     public async Task<ServiceResult> Handle(DeleteWarehouseCommand request, CancellationToken ct)
     {
         var id = WarehouseId.From(request.Id);
-        var warehouse = await warehouseRepository.GetByIdAsync(id, ct);
-
-        if (warehouse is null)
-            return ServiceResult.NotFound("انبار یافت نشد.");
+        var warehouseResult = await (warehouseRepository.GetByIdAsync(id, ct)).OrNotFoundAsync("انبار یافت نشد.");
+        if (warehouseResult.IsFailure) return warehouseResult.Error;
+        var warehouse = warehouseResult.Value;
 
         if (warehouse.IsDefault)
             return ServiceResult.Failure("انبار پیش‌فرض را نمی‌توان حذف کرد.");

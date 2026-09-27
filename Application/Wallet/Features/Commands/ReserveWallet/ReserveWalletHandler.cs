@@ -21,9 +21,9 @@ public class ReserveWalletHandler(
 
         try
         {
-            var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
-            if (wallet is null)
-                return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
+            var walletResult = await (walletRepository.GetByUserIdForUpdateAsync(userId, ct)).OrNotFoundAsync("کیف پول یافت نشد.");
+            if (walletResult.IsFailure) return walletResult.Error;
+            var wallet = walletResult.Value;
 
             var reservationId = WalletReservationId.NewId();
 

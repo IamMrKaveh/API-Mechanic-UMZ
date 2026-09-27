@@ -35,9 +35,9 @@ public class UpdateCartItemQuantityHandler(
         if (variant is null || variant.IsDeleted)
             return ServiceResult<CartDetailDto>.NotFound("محصول یافت نشد.");
 
-        var inventory = await inventoryRepository.GetByVariantIdAsync(variantId, ct);
-        if (inventory is null)
-            return ServiceResult<CartDetailDto>.NotFound("اطلاعات موجودی یافت نشد.");
+        var inventoryResult = await (inventoryRepository.GetByVariantIdAsync(variantId, ct)).OrNotFoundAsync("اطلاعات موجودی یافت نشد.");
+        if (inventoryResult.IsFailure) return inventoryResult.Error;
+        var inventory = inventoryResult.Value;
 
         if (!inventory.CanFulfill(request.Quantity))
             return ServiceResult<CartDetailDto>.Validation($"موجودی کافی نیست. موجود: {inventory.AvailableQuantity}");

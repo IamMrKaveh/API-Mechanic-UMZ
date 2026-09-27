@@ -14,9 +14,9 @@ public sealed class UpdateReviewStatusHandler(
     {
         var reviewId = ReviewId.From(request.ReviewId);
 
-        var review = await reviewRepository.GetByIdAsync(reviewId, ct);
-        if (review is null)
-            return ServiceResult.NotFound("نظر یافت نشد.");
+        var reviewResult = await (reviewRepository.GetByIdAsync(reviewId, ct)).OrNotFoundAsync("نظر یافت نشد.");
+        if (reviewResult.IsFailure) return reviewResult.Error;
+        var review = reviewResult.Value;
 
         var previousStatus = review.Status.ToString();
 

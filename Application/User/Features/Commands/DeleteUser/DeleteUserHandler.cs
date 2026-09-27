@@ -17,9 +17,9 @@ public class DeleteUserHandler(
 
         var userId = UserId.From(request.Id);
 
-        var user = await userRepository.GetByIdAsync(userId);
-        if (user is null)
-            return ServiceResult.NotFound("User Not Found");
+        var userResult = await (userRepository.GetByIdAsync(userId)).OrNotFoundAsync("User Not Found");
+        if (userResult.IsFailure) return userResult.Error;
+        var user = userResult.Value;
 
         user.Deactivate();
 

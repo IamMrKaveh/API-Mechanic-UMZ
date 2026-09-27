@@ -21,9 +21,9 @@ public class ApplyDiscountHandler(
         {
             return await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
             {
-                var discount = await discountRepository.GetByCodeAsync(request.Code, cancellationToken);
-                if (discount is null)
-                    return ServiceResult.NotFound("کد تخفیف یافت نشد.");
+                var discountResult = await (discountRepository.GetByCodeAsync(request.Code, cancellationToken)).OrNotFoundAsync("کد تخفیف یافت نشد.");
+                if (discountResult.IsFailure) return ServiceResult.Failure(discountResult.Error);
+                var discount = discountResult.Value;
 
                 var orderAmount = Money.FromDecimal(request.OrderAmount, "IRT");
                 var now = dateTimeProvider.UtcNow;

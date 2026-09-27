@@ -33,9 +33,9 @@ public class DebitWalletHandler(
             if (alreadyProcessed)
                 return ServiceResult<Unit>.Success(Unit.Value);
 
-            var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
-            if (wallet is null)
-                return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
+            var walletResult = await (walletRepository.GetByUserIdForUpdateAsync(userId, ct)).OrNotFoundAsync("کیف پول یافت نشد.");
+            if (walletResult.IsFailure) return walletResult.Error;
+            var wallet = walletResult.Value;
 
             var now = dateTimeProvider.UtcNow;
             var amount = Money.Create(request.Amount, DefaultCurrency);

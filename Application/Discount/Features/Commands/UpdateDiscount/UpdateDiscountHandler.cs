@@ -14,9 +14,9 @@ public class UpdateDiscountHandler(
 {
     public async Task<ServiceResult<DiscountDto>> Handle(UpdateDiscountCommand request, CancellationToken ct)
     {
-        var discount = await discountRepository.GetByIdAsync(DiscountCodeId.From(request.Id), ct);
-        if (discount is null)
-            return ServiceResult<DiscountDto>.NotFound("کد تخفیف یافت نشد.");
+        var discountResult = await (discountRepository.GetByIdAsync(DiscountCodeId.From(request.Id), ct)).OrNotFoundAsync("کد تخفیف یافت نشد.");
+        if (discountResult.IsFailure) return discountResult.Error;
+        var discount = discountResult.Value;
 
         DiscountValue discountValue = request.DiscountType switch
         {

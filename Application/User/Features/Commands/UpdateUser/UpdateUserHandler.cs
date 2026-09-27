@@ -13,9 +13,9 @@ public class UpdateUserHandler(
     {
         var userId = UserId.From(request.Id);
 
-        var user = await userRepository.GetByIdAsync(userId, ct);
-        if (user is null)
-            return ServiceResult.NotFound("کاربر یافت نشد.");
+        var userResult = await (userRepository.GetByIdAsync(userId, ct)).OrNotFoundAsync("کاربر یافت نشد.");
+        if (userResult.IsFailure) return userResult.Error;
+        var user = userResult.Value;
 
         if (!user.IsActive)
             return ServiceResult.Forbidden("حساب کاربری غیرفعال است و قابل ویرایش نیست.");

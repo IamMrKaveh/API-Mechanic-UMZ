@@ -13,9 +13,9 @@ public sealed class DeletePaymentMethodHandler(
     public async Task<ServiceResult> Handle(DeletePaymentMethodCommand request, CancellationToken ct)
     {
         var id = PaymentMethodId.From(request.Id);
-        var method = await repository.GetByIdAsync(id, ct);
-        if (method is null)
-            return ServiceResult.NotFound("روش پرداخت یافت نشد.");
+        var methodResult = await (repository.GetByIdAsync(id, ct)).OrNotFoundAsync("روش پرداخت یافت نشد.");
+        if (methodResult.IsFailure) return methodResult.Error;
+        var method = methodResult.Value;
 
         try
         {

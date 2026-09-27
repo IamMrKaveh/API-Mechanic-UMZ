@@ -13,9 +13,9 @@ public class UpdateProfileHandler(
     {
         var userId = UserId.From(currentUser.UserId!.Value);
 
-        var user = await userRepository.GetByIdAsync(userId, ct);
-        if (user is null)
-            return ServiceResult<UserProfileDto>.NotFound("کاربر یافت نشد.");
+        var userResult = await (userRepository.GetByIdAsync(userId, ct)).OrNotFoundAsync("کاربر یافت نشد.");
+        if (userResult.IsFailure) return userResult.Error;
+        var user = userResult.Value;
 
         var fullName = FullName.Create(
             request.FirstName ?? user.FullName.FirstName,

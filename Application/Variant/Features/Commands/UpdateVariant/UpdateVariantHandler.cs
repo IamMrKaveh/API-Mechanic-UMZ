@@ -33,9 +33,9 @@ public class UpdateVariantHandler(
         var userId = UserId.From(currentUserService.UserId.Value);
         var productId = ProductId.From(request.ProductId);
 
-        var variant = await variantRepository.GetForUpdateAsync(variantId, ct);
-        if (variant is null)
-            return ServiceResult.NotFound("واریانت یافت نشد.");
+        var variantResult = await (variantRepository.GetForUpdateAsync(variantId, ct)).OrNotFoundAsync("واریانت یافت نشد.");
+        if (variantResult.IsFailure) return variantResult.Error;
+        var variant = variantResult.Value;
 
         if (variant.ProductId != productId)
             return ServiceResult.Validation("واریانت متعلق به این محصول نیست.");

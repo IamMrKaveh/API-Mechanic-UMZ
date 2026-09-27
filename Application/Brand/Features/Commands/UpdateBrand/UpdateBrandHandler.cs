@@ -24,10 +24,9 @@ public sealed class UpdateBrandHandler(
         CancellationToken ct)
     {
         var brandId = BrandId.From(request.BrandId);
-        var brand = await brandRepository.GetByIdAsync(brandId, ct);
-
-        if (brand is null)
-            return ServiceResult<BrandDetailDto>.NotFound("برند یافت نشد.");
+        var brandResult = await (brandRepository.GetByIdAsync(brandId, ct)).OrNotFoundAsync("برند یافت نشد.");
+        if (brandResult.IsFailure) return brandResult.Error;
+        var brand = brandResult.Value;
 
         string? logoPath = null;
 
@@ -66,9 +65,9 @@ public sealed class UpdateBrandHandler(
         await unitOfWork.SaveChangesAsync(ct);
         await cacheService.RemoveByPrefixAsync("brands:", ct);
 
-        var dto = await brandQueryService.GetBrandDetailAsync(brand.Id, ct);
-        if (dto is null)
-            return ServiceResult<BrandDetailDto>.NotFound("برند یافت نشد.");
+        var dtoResult = await (brandQueryService.GetBrandDetailAsync(brand.Id, ct)).OrNotFoundAsync("برند یافت نشد.");
+        if (dtoResult.IsFailure) return dtoResult.Error;
+        var dto = dtoResult.Value;
 
         return ServiceResult<BrandDetailDto>.Success(dto);
     }

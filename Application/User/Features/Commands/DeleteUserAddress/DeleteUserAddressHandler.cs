@@ -13,9 +13,9 @@ public class DeleteUserAddressHandler(
         var userId = UserId.From(currentUser.UserId!.Value);
         var addressId = UserAddressId.From(request.AddressId);
 
-        var user = await userRepository.GetWithAddressesAsync(userId, ct);
-        if (user is null)
-            return ServiceResult.NotFound("کاربر یافت نشد.");
+        var userResult = await (userRepository.GetWithAddressesAsync(userId, ct)).OrNotFoundAsync("کاربر یافت نشد.");
+        if (userResult.IsFailure) return userResult.Error;
+        var user = userResult.Value;
 
         try
         {

@@ -32,9 +32,9 @@ public sealed class RequestWalletDebitHandler(
 
         try
         {
-            var wallet = await walletRepository.GetByUserIdForUpdateAsync(userId, ct);
-            if (wallet is null)
-                return ServiceResult<Guid>.NotFound("کیف پول کاربر یافت نشد.");
+            var walletResult = await (walletRepository.GetByUserIdForUpdateAsync(userId, ct)).OrNotFoundAsync("کیف پول کاربر یافت نشد.");
+            if (walletResult.IsFailure) return walletResult.Error;
+            var wallet = walletResult.Value;
 
             var requestId = WalletDebitRequestId.NewId();
             var amount = Money.Create(request.Amount, DefaultCurrency);

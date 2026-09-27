@@ -14,10 +14,9 @@ public class GetPaymentByAuthorityHandler(
         if (!currentUser.UserId.HasValue)
             return ServiceResult<PaymentTransactionDto?>.Unauthorized("کاربر احراز هویت نشده است.");
 
-        var dto = await paymentQueryService.GetByAuthorityAsync(request.Authority, ct);
-
-        if (dto is null)
-            return ServiceResult<PaymentTransactionDto?>.NotFound("تراکنش یافت نشد.");
+        var dtoResult = await (paymentQueryService.GetByAuthorityAsync(request.Authority, ct)).OrNotFoundAsync("تراکنش یافت نشد.");
+        if (dtoResult.IsFailure) return dtoResult.Error;
+        var dto = dtoResult.Value;
 
         if (!currentUser.IsAdmin && dto.UserId != currentUser.UserId.Value)
             return ServiceResult<PaymentTransactionDto?>.Forbidden("دسترسی ممنوع.");

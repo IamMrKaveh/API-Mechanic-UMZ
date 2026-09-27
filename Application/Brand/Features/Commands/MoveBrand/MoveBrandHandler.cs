@@ -15,16 +15,14 @@ public class MoveBrandHandler(
     public async Task<ServiceResult> Handle(MoveBrandCommand request, CancellationToken ct)
     {
         var brandId = BrandId.From(request.BrandId);
-        var brand = await brandRepository.GetByIdAsync(brandId, ct);
-
-        if (brand is null)
-            return ServiceResult.NotFound("برند یافت نشد.");
+        var brandResult = await (brandRepository.GetByIdAsync(brandId, ct)).OrNotFoundAsync("برند یافت نشد.");
+        if (brandResult.IsFailure) return brandResult.Error;
+        var brand = brandResult.Value;
 
         var targetCategoryId = CategoryId.From(request.TargetCategoryId);
-        var category = await categoryRepository.GetByIdAsync(targetCategoryId, ct);
-
-        if (category is null)
-            return ServiceResult.NotFound("دسته‌بندی مقصد یافت نشد.");
+        var categoryResult = await (categoryRepository.GetByIdAsync(targetCategoryId, ct)).OrNotFoundAsync("دسته‌بندی مقصد یافت نشد.");
+        if (categoryResult.IsFailure) return categoryResult.Error;
+        var category = categoryResult.Value;
 
         brand.ChangeCategory(targetCategoryId, dateTimeProvider.UtcNow);
         brandRepository.Update(brand);

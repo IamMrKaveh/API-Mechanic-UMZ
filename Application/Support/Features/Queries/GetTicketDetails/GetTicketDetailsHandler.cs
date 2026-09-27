@@ -19,19 +19,17 @@ public sealed class GetTicketDetailsHandler(
         var ticketId = TicketId.From(request.TicketId);
         var userId = UserId.From(currentUserService.UserId!.Value);
 
-        var ticket = await ticketRepository.GetByIdWithMessagesAsync(ticketId, ct);
-
-        if (ticket is null)
-            return ServiceResult<TicketDto>.NotFound("تیکت یافت نشد.");
+        var ticketResult = await (ticketRepository.GetByIdWithMessagesAsync(ticketId, ct)).OrNotFoundAsync("تیکت یافت نشد.");
+        if (ticketResult.IsFailure) return ticketResult.Error;
+        var ticket = ticketResult.Value;
 
         var result = TicketDomainService.ValidateUserAccess(ticket, userId, request.IsAdmin);
         if (!result.HasAccess)
             return ServiceResult<TicketDto>.Forbidden("شما دسترسی به این تیکت را ندارید");
 
-        var dto = await ticketQueryService.GetTicketDetailAsync(ticketId, ct);
-
-        if (dto is null)
-            return ServiceResult<TicketDto>.NotFound("تیکت یافت نشد.");
+        var dtoResult = await (ticketQueryService.GetTicketDetailAsync(ticketId, ct)).OrNotFoundAsync("تیکت یافت نشد.");
+        if (dtoResult.IsFailure) return dtoResult.Error;
+        var dto = dtoResult.Value;
 
         return ServiceResult<TicketDto>.Success(dto);
     }

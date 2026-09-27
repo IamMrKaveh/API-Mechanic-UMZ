@@ -17,9 +17,9 @@ public class ReplyToTicketHandler(
         var ticketId = TicketId.From(request.TicketId);
         var senderId = UserId.From(currentUser.UserId!.Value);
 
-        var ticket = await ticketRepository.GetByIdWithMessagesAsync(ticketId, ct);
-        if (ticket is null)
-            return ServiceResult.NotFound("تیکت یافت نشد.");
+        var ticketResult = await (ticketRepository.GetByIdWithMessagesAsync(ticketId, ct)).OrNotFoundAsync("تیکت یافت نشد.");
+        if (ticketResult.IsFailure) return ticketResult.Error;
+        var ticket = ticketResult.Value;
 
         if (!currentUser.IsAdmin && ticket.CustomerId != senderId)
             return ServiceResult.Forbidden("دسترسی ممنوع.");

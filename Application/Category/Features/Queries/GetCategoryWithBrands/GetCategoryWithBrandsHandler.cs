@@ -11,10 +11,9 @@ public class GetCategoryWithBrandsHandler(ICategoryQueryService queryService)
         CancellationToken ct)
     {
         var categoryId = CategoryId.From(request.CategoryId);
-        var result = await queryService.GetCategoryWithBrandsAsync(categoryId, ct);
-
-        if (result is null)
-            return ServiceResult<CategoryWithBrandsDto?>.NotFound("دسته‌بندی یافت نشد.");
+        var fetchResult = await (queryService.GetCategoryWithBrandsAsync(categoryId, ct)).OrNotFoundAsync("دسته‌بندی یافت نشد.");
+        if (fetchResult.IsFailure) return fetchResult.Error;
+        var result = fetchResult.Value;
 
         return ServiceResult<CategoryWithBrandsDto?>.Success(result);
     }

@@ -15,10 +15,9 @@ public class ChangeUserRoleHandler(
         var userId = UserId.From(request.UserId);
         var adminId = UserId.From(currentUser.UserId!.Value);
 
-        var user = await userRepository.GetActiveByIdAsync(userId, ct);
-
-        if (user is null)
-            return ServiceResult.NotFound("کاربر یافت نشد");
+        var userResult = await (userRepository.GetActiveByIdAsync(userId, ct)).OrNotFoundAsync("کاربر یافت نشد");
+        if (userResult.IsFailure) return userResult.Error;
+        var user = userResult.Value;
 
         if (user.Id == adminId)
             return ServiceResult.Forbidden("امکان تغییر نقش خود وجود ندارد");

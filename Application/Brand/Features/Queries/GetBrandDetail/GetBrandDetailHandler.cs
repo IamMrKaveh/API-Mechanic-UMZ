@@ -9,10 +9,9 @@ public class GetBrandDetailHandler(IBrandQueryService brandQueryService)
     public async Task<ServiceResult<BrandDetailDto?>> Handle(GetBrandDetailQuery request, CancellationToken ct)
     {
         var brandId = BrandId.From(request.BrandId);
-        var result = await brandQueryService.GetBrandDetailAsync(brandId, ct);
-
-        if (result is null)
-            return ServiceResult<BrandDetailDto?>.NotFound("برند یافت نشد.");
+        var fetchResult = await (brandQueryService.GetBrandDetailAsync(brandId, ct)).OrNotFoundAsync("برند یافت نشد.");
+        if (fetchResult.IsFailure) return fetchResult.Error;
+        var result = fetchResult.Value;
 
         return ServiceResult<BrandDetailDto?>.Success(result);
     }

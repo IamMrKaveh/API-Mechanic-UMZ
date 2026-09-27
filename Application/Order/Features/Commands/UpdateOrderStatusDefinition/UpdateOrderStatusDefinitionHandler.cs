@@ -14,9 +14,9 @@ public class UpdateOrderStatusDefinitionHandler(
         CancellationToken ct)
     {
         var orderStatusId = OrderStatusId.From(request.Id);
-        var status = await orderStatusRepository.GetByIdAsync(orderStatusId, ct);
-        if (status is null)
-            return ServiceResult.NotFound("وضعیت یافت نشد.");
+        var statusResult = await (orderStatusRepository.GetByIdAsync(orderStatusId, ct)).OrNotFoundAsync("وضعیت یافت نشد.");
+        if (statusResult.IsFailure) return statusResult.Error;
+        var status = statusResult.Value;
 
         byte[]? rowVersion = null;
         if (!string.IsNullOrEmpty(request.RowVersion))

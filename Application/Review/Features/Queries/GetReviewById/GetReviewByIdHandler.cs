@@ -27,9 +27,7 @@ public sealed class GetReviewByIdHandler(
 
             var dto = await reviewQueryService.GetByIdAsync(reviewId, currentUserId, ct);
 
-            return dto is null
-                ? ServiceResult<ProductReviewDto>.NotFound("نظر یافت نشد.")
-                : ServiceResult<ProductReviewDto>.Success(dto);
+            return dto.ToResultOrNotFound("نظر یافت نشد.");
         }
         catch (NullReferenceException ex)
         {

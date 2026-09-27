@@ -11,8 +11,6 @@ public class GetCategoryHandler(
     {
         var categoryId = CategoryId.From(request.Id);
         var category = await categoryQueryService.GetCategoryDetailAsync(categoryId, ct);
-        return category is null
-            ? ServiceResult<CategoryDetailDto>.NotFound("دسته‌بندی یافت نشد.")
-            : ServiceResult<CategoryDetailDto>.Success(category);
+        return category.ToResultOrNotFound("دسته‌بندی یافت نشد.");
     }
 }

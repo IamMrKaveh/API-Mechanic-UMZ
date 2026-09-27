@@ -11,10 +11,9 @@ public sealed class VerifyAuditIntegrityHandler(IAuditRepository auditRepository
         VerifyAuditIntegrityQuery request,
         CancellationToken ct)
     {
-        var log = await auditRepository.GetByIdAsync(AuditLogId.From(request.Id), ct);
-
-        if (log is null)
-            return ServiceResult<AuditIntegrityResultDto>.NotFound("لاگ درخواستی یافت نشد.");
+        var logResult = await (auditRepository.GetByIdAsync(AuditLogId.From(request.Id), ct)).OrNotFoundAsync("لاگ درخواستی یافت نشد.");
+        if (logResult.IsFailure) return logResult.Error;
+        var log = logResult.Value;
 
         var storedHash = log.IntegrityHash;
         var expectedHash = log.RecomputeIntegrityHash();

@@ -14,9 +14,9 @@ public class CloseTicketHandler(
         var ticketId = TicketId.From(request.TicketId);
         var userId = UserId.From(currentUser.UserId!.Value);
 
-        var ticket = await ticketRepository.GetByIdAsync(ticketId, ct);
-        if (ticket is null)
-            return ServiceResult.NotFound("تیکت یافت نشد.");
+        var ticketResult = await (ticketRepository.GetByIdAsync(ticketId, ct)).OrNotFoundAsync("تیکت یافت نشد.");
+        if (ticketResult.IsFailure) return ticketResult.Error;
+        var ticket = ticketResult.Value;
 
         if (!currentUser.IsAdmin && ticket.CustomerId != userId)
             return ServiceResult.Forbidden("دسترسی ممنوع.");

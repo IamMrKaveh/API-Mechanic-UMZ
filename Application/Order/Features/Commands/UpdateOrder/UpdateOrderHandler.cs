@@ -13,9 +13,9 @@ public class UpdateOrderHandler(
     public async Task<ServiceResult> Handle(UpdateOrderCommand request, CancellationToken ct)
     {
         var orderId = OrderId.From(request.OrderId);
-        var order = await orderRepository.FindByIdAsync(orderId, ct);
-        if (order is null)
-            return ServiceResult.NotFound("سفارش یافت نشد.");
+        var orderResult = await (orderRepository.FindByIdAsync(orderId, ct)).OrNotFoundAsync("سفارش یافت نشد.");
+        if (orderResult.IsFailure) return orderResult.Error;
+        var order = orderResult.Value;
 
         if (!order.CanBeModified())
             return ServiceResult.Forbidden("این سفارش قابل ویرایش نیست.");

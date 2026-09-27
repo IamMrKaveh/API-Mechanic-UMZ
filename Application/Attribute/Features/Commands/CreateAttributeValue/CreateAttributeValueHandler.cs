@@ -19,9 +19,9 @@ public class CreateAttributeValueHandler(
     {
         var attributeTypeId = AttributeTypeId.From(request.TypeId);
 
-        var type = await repository.GetAttributeTypeWithValuesAsync(attributeTypeId, ct);
-        if (type is null)
-            return ServiceResult<AttributeValueDto>.NotFound("Attribute type not found.");
+        var typeResult = await (repository.GetAttributeTypeWithValuesAsync(attributeTypeId, ct)).OrNotFoundAsync("Attribute type not found.");
+        if (typeResult.IsFailure) return typeResult.Error;
+        var type = typeResult.Value;
 
         if (await repository.AttributeValueExistsAsync(attributeTypeId, request.Value, null, ct))
             return ServiceResult<AttributeValueDto>.Conflict("Attribute value already exists.");
