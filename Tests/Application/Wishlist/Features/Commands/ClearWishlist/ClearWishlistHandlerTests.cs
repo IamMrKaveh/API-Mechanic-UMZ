@@ -12,11 +12,11 @@ public class ClearWishlistHandlerTests
 
     public ClearWishlistHandlerTests()
     {
-        _sut = new ClearWishlistHandler(_wishlistRepository, _unitOfWork, _currentUserService);
+        _sut = new ClearWishlistHandler(_wishlistRepository, _currentUserService);
     }
 
     [Fact]
-    public async Task Handle_WhenInvoked_ClearsWishlistForCurrentUserAndSavesAndReturnsSuccess()
+    public async Task Handle_WhenInvoked_ClearsWishlistForCurrentUserAndReturnsSuccess()
     {
         var userGuid = Guid.NewGuid();
         _currentUserService.UserId.Returns((Guid?)userGuid);
@@ -27,6 +27,6 @@ public class ClearWishlistHandlerTests
         await _wishlistRepository.Received(1).ClearAsync(
             Arg.Is<UserId>(u => u == UserId.From(userGuid)),
             Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

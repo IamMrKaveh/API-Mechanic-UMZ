@@ -55,7 +55,6 @@ public class UpdateVariantHandlerTests
             _inventoryRepository,
             _attributeRepository,
             _shippingRepository,
-            _unitOfWork,
             _auditService,
             _currentUserService, _dateTimeProvider);
     }
@@ -211,7 +210,7 @@ public class UpdateVariantHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WithExistingInventoryAndValidUpdate_ReturnsSuccessAndSaves()
+    public async Task Handle_WithExistingInventoryAndValidUpdate_ReturnsSuccess()
     {
         var productId = ProductId.NewId();
         var variantId = VariantId.NewId();
@@ -239,7 +238,7 @@ public class UpdateVariantHandlerTests
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
         await _auditService.Received(1).LogProductEventAsync(
             Arg.Any<ProductId>(),
             "UpdateVariant",

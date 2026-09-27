@@ -7,7 +7,6 @@ namespace Application.Wallet.Features.Commands.DebitWallet;
 
 public class DebitWalletHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService,
     IDateTimeProvider dateTimeProvider,
@@ -51,7 +50,6 @@ public class DebitWalletHandler(
                 request.IdempotencyKey);
 
             walletRepository.Update(wallet);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }

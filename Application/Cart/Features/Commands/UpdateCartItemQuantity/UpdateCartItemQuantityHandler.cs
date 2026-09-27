@@ -31,9 +31,9 @@ public class UpdateCartItemQuantityHandler(
 
         var variantId = VariantId.From(request.VariantId);
 
-        var variant = await variantRepository.GetByIdAsync(variantId, ct);
-        if (variant is null || variant.IsDeleted)
-            return ServiceResult<CartDetailDto>.NotFound("محصول یافت نشد.");
+        var variantResult = await variantRepository.GetByIdAsync(variantId, ct).OrNotFoundAsync(v => v.IsDeleted, "محصول یافت نشد.");
+        if (variantResult.IsFailure) return variantResult.Error;
+        var variant = variantResult.Value;
 
         var inventoryResult = await (inventoryRepository.GetByVariantIdAsync(variantId, ct)).OrNotFoundAsync("اطلاعات موجودی یافت نشد.");
         if (inventoryResult.IsFailure) return inventoryResult.Error;
@@ -42,12 +42,11 @@ public class UpdateCartItemQuantityHandler(
         if (!inventory.CanFulfill(request.Quantity))
             return ServiceResult<CartDetailDto>.Validation($"موجودی کافی نیست. موجود: {inventory.AvailableQuantity}");
 
-        Domain.Cart.Aggregates.Cart? cart = userId is not null
-            ? await cartRepository.FindByUserIdAsync(userId, ct)
-            : await cartRepository.FindByGuestTokenAsync(guestToken!, ct);
-
-        if (cart is null)
-            return ServiceResult<CartDetailDto>.NotFound("سبد خرید یافت نشد.");
+        var cartResult = await (userId is not null
+            ? cartRepository.FindByUserIdAsync(userId, ct)
+            : cartRepository.FindByGuestTokenAsync(guestToken!, ct)).OrNotFoundAsync("سبد خرید یافت نشد.");
+        if (cartResult.IsFailure) return cartResult.Error;
+        var cart = cartResult.Value;
 
         cart.UpdateItemQuantity(variantId, request.Quantity, dateTimeProvider.UtcNow);
         cartRepository.Update(cart);

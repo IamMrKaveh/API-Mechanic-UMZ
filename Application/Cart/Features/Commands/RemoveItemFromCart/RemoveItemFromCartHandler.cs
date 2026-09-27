@@ -25,12 +25,11 @@ public class RemoveItemFromCartHandler(
         if (userId is null && guestToken is null)
             return ServiceResult<CartDetailDto>.Validation("UserId یا GuestToken الزامی است.");
 
-        Domain.Cart.Aggregates.Cart? cart = userId is not null
-            ? await cartRepository.FindByUserIdAsync(userId, ct)
-            : await cartRepository.FindByGuestTokenAsync(guestToken!, ct);
-
-        if (cart is null)
-            return ServiceResult<CartDetailDto>.NotFound("سبد خرید یافت نشد.");
+        var cartResult = await (userId is not null
+            ? cartRepository.FindByUserIdAsync(userId, ct)
+            : cartRepository.FindByGuestTokenAsync(guestToken!, ct)).OrNotFoundAsync("سبد خرید یافت نشد.");
+        if (cartResult.IsFailure) return cartResult.Error;
+        var cart = cartResult.Value;
 
         var variantId = VariantId.From(request.VariantId);
         cart.RemoveItem(variantId, dateTimeProvider.UtcNow);

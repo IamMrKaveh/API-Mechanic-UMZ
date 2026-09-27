@@ -33,7 +33,6 @@ public class CreditWalletHandlerTests
 
         _sut = new CreditWalletHandler(
             _walletRepository,
-            _unitOfWork,
             _distributedLock,
             _auditService,
             _dateTimeProvider,
@@ -135,11 +134,11 @@ public class CreditWalletHandlerTests
         addedWallet!.OwnerId.Value.ShouldBe(command.UserId);
         addedWallet.Balance.Amount.ShouldBe(50_000m);
         _walletRepository.Received(1).Update(addedWallet);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_WhenWalletExists_CreditsExistingWalletAndSavesChanges()
+    public async Task Handle_WhenWalletExists_CreditsExistingWallet()
     {
         var command = ValidCommand(amount: 25_000m);
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
@@ -157,7 +156,7 @@ public class CreditWalletHandlerTests
         wallet.Balance.Amount.ShouldBe(25_000m);
         _walletRepository.Received(1).Update(wallet);
         await _walletRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -181,7 +180,7 @@ public class CreditWalletHandlerTests
         wallet.IsActive.ShouldBeTrue();
         wallet.Balance.Amount.ShouldBe(10_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
         await _auditService.Received(1).LogSystemEventAsync(
             "WalletAutoUnfrozenOnAdminCredit",
             Arg.Any<string>(),
@@ -210,32 +209,6 @@ public class CreditWalletHandlerTests
         wallet.Balance.Amount.ShouldBe(10_000m);
         await _auditService.DidNotReceive().LogSystemEventAsync(
             "WalletAutoUnfrozenOnAdminCredit",
-            Arg.Any<string>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Handle_WhenSaveChangesThrowsConcurrencyException_ReturnsConflictAndAudits()
-    {
-        var command = ValidCommand();
-        var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
-
-        _walletRepository
-            .HasIdempotencyKeyAsync(Arg.Any<UserId>(), command.IdempotencyKey, Arg.Any<CancellationToken>())
-            .Returns(false);
-        _walletRepository
-            .GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
-            .Returns(wallet);
-
-        _unitOfWork
-            .SaveChangesAsync(Arg.Any<CancellationToken>())
-            .ThrowsAsync(new ConcurrencyException());
-
-        var result = await _sut.Handle(command, CancellationToken.None);
-
-        result.ShouldFailWith(ErrorCode.Conflict);
-        await _auditService.Received(1).LogSystemEventAsync(
-            "WalletCreditConcurrencyConflict",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
     }

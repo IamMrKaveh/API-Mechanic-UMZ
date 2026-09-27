@@ -26,7 +26,7 @@ public sealed class RejectWalletDebitHandlerTests
 
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new RejectWalletDebitHandler(
-            _debitRequestRepository, _walletRepository, _unitOfWork, _distributedLock, _dateTimeProvider, _currentUserService);
+            _debitRequestRepository, _walletRepository, _distributedLock, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public sealed class RejectWalletDebitHandlerTests
         result.ShouldBeSuccess();
         wallet.AvailableBalance.Amount.ShouldBe(500_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

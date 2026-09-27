@@ -25,7 +25,6 @@ public sealed class ApproveWalletDebitHandlerTests
         _sut = new ApproveWalletDebitHandler(
             _debitRequestRepository,
             _walletRepository,
-            _unitOfWork,
             _distributedLock,
             _dateTimeProvider,
             _currentUserService);
@@ -125,7 +124,7 @@ public sealed class ApproveWalletDebitHandlerTests
         result.ShouldBeSuccess();
         wallet.Balance.Amount.ShouldBe(400_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

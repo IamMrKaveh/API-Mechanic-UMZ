@@ -10,7 +10,6 @@ namespace Application.Wallet.Features.Commands.ForceFreezeFromFraudAlert;
 public sealed class ForceFreezeFromFraudAlertHandler(
     IWalletFraudAlertRepository alertRepository,
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
@@ -63,8 +62,6 @@ public sealed class ForceFreezeFromFraudAlertHandler(
 
             alert.MarkAsReviewed(adminId, reviewNote, now);
             alertRepository.Update(alert);
-
-            await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSystemEventAsync(
                 "WalletForceFrozenFromFraudAlert",

@@ -7,7 +7,6 @@ namespace Application.Wallet.Features.Commands.DismissFraudAlert;
 
 public sealed class DismissFraudAlertHandler(
     IWalletFraudAlertRepository repository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
@@ -27,7 +26,6 @@ public sealed class DismissFraudAlertHandler(
             alert.Dismiss(adminId, request.Note, dateTimeProvider.UtcNow);
 
             repository.Update(alert);
-            await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSystemEventAsync(
                 "FraudAlertDismissed",

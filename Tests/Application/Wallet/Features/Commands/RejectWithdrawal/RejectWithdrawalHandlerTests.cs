@@ -24,7 +24,7 @@ public sealed class RejectWithdrawalHandlerTests
     {
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new RejectWithdrawalHandler(
-            _withdrawalRepository, _walletRepository, _unitOfWork, _auditService, _dateTimeProvider, _currentUserService);
+            _withdrawalRepository, _walletRepository, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -82,34 +82,6 @@ public sealed class RejectWithdrawalHandlerTests
         wallet.AvailableBalance.Amount.ShouldBe(500_000m);
         _walletRepository.Received(1).Update(wallet);
         _withdrawalRepository.Received(1).Update(withdrawal);
-    }
-
-    [Fact]
-    public async Task Handle_WhenConcurrencyExceptionThrown_ReturnsConflict()
-    {
-        var adminId = UserId.NewId();
-        var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
-
-        var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
-        var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(200_000m), "withdrawal-request", DateTime.UtcNow);
-
-        var withdrawal = new WalletWithdrawalRequestBuilder()
-            .WithUserId(userId).WithAmount(200_000m).WithReservationId(reservationId).Build();
-
-        _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
-            .Returns(withdrawal);
-        _walletRepository.GetByUserIdForUpdateAsync(userId, Arg.Any<CancellationToken>()).Returns(wallet);
-        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
-            .Returns<Task>(_ => throw new ConcurrencyException());
-
-        var result = await _sut.Handle(new RejectWithdrawalCommand(withdrawal.Id.Value, "reason"), CancellationToken.None);
-
-        result.ShouldFailWithType(ErrorType.Conflict);
-        await _auditService.Received().LogSystemEventAsync(
-            "WithdrawalRejectConcurrencyConflict", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

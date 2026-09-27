@@ -8,7 +8,6 @@ namespace Application.Wallet.Features.Commands.RequestWalletDebit;
 
 public sealed class RequestWalletDebitHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
@@ -50,7 +49,6 @@ public sealed class RequestWalletDebitHandler(
                 now);
 
             walletRepository.Update(wallet);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Guid>.Success(requestId.Value);
         }

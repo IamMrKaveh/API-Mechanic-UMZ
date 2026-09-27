@@ -24,7 +24,7 @@ public sealed class DismissFraudAlertHandlerTests
     public DismissFraudAlertHandlerTests()
     {
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new DismissFraudAlertHandler(_repository, _unitOfWork, _auditService, _dateTimeProvider, _currentUserService);
+        _sut = new DismissFraudAlertHandler(_repository, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public sealed class DismissFraudAlertHandlerTests
         alert.ReviewedBy.ShouldBe(adminId);
         alert.ReviewNote.ShouldBe("false positive");
         _repository.Received(1).Update(alert);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
         await _auditService.Received(1).LogSystemEventAsync(
             "FraudAlertDismissed", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }

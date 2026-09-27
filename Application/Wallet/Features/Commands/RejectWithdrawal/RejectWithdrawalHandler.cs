@@ -8,7 +8,6 @@ namespace Application.Wallet.Features.Commands.RejectWithdrawal;
 public sealed class RejectWithdrawalHandler(
     IWalletWithdrawalRepository withdrawalRepository,
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
@@ -37,7 +36,6 @@ public sealed class RejectWithdrawalHandler(
 
             walletRepository.Update(wallet);
             withdrawalRepository.Update(withdrawal);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }

@@ -16,11 +16,11 @@ public class ApproveReturnHandler(
         CancellationToken ct)
     {
         var orderId = OrderId.From(request.OrderId);
-        var order = await orderRepository.FindByIdAsync(orderId, ct);
+        var orderResult = await orderRepository.FindByIdAsync(orderId, ct).OrNotFoundAsync("سفارش یافت نشد.");
         var userId = UserId.From(currentUserService.UserId!.Value);
 
-        if (order is null)
-            return ServiceResult.NotFound("سفارش یافت نشد.");
+        if (orderResult.IsFailure) return orderResult.ToServiceResult();
+        var order = orderResult.Value;
 
         try
         {

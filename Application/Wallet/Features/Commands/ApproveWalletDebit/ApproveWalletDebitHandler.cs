@@ -9,7 +9,6 @@ namespace Application.Wallet.Features.Commands.ApproveWalletDebit;
 public sealed class ApproveWalletDebitHandler(
     IWalletDebitRequestRepository debitRequestRepository,
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
@@ -46,7 +45,6 @@ public sealed class ApproveWalletDebitHandler(
             var now = dateTimeProvider.UtcNow;
             wallet.ApproveDebitRequest(requestId, currentUserId, now);
             walletRepository.Update(wallet);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }

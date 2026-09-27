@@ -6,7 +6,6 @@ namespace Application.Wishlist.Features.Commands.RemoveFromWishlist;
 
 public class RemoveFromWishlistHandler(
     IWishlistRepository wishlistRepository,
-    IUnitOfWork unitOfWork,
     ICurrentUserService currentUserService)
     : ICommandHandler<RemoveFromWishlistCommand>
 {
@@ -22,7 +21,6 @@ public class RemoveFromWishlistHandler(
             return ServiceResult.Success();
 
         await wishlistRepository.RemoveAsync(userId, productId, ct);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

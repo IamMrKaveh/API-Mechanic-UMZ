@@ -7,7 +7,6 @@ namespace Application.Wallet.Features.Commands.ReleaseWalletReservation;
 
 public class ReleaseWalletReservationHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider,
     IAuditService auditService)
     : ICommandHandler<ReleaseWalletReservationCommand, Unit>
@@ -27,7 +26,6 @@ public class ReleaseWalletReservationHandler(
 
             wallet.ReleaseReservation(reservationId, dateTimeProvider.UtcNow);
             walletRepository.Update(wallet);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }

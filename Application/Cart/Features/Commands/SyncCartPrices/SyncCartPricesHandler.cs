@@ -16,27 +16,28 @@ public class SyncCartPricesHandler(
 {
     public async Task<ServiceResult> Handle(SyncCartPricesCommand request, CancellationToken ct)
     {
-        Domain.Cart.Aggregates.Cart? cart;
         UserId? userId = currentUserService.UserId.HasValue
             ? UserId.From(currentUserService.UserId.Value)
             : null;
 
+        Task<Domain.Cart.Aggregates.Cart?> cartTask;
         if (userId is not null)
         {
-            cart = await cartRepository.FindByUserIdAsync(userId, ct);
+            cartTask = cartRepository.FindByUserIdAsync(userId, ct);
         }
         else if (!string.IsNullOrWhiteSpace(currentUserService.GuestToken))
         {
             var guestToken = GuestToken.Create(currentUserService.GuestToken);
-            cart = await cartRepository.FindByGuestTokenAsync(guestToken, ct);
+            cartTask = cartRepository.FindByGuestTokenAsync(guestToken, ct);
         }
         else
         {
             return ServiceResult.NotFound("سبد خرید یافت نشد.");
         }
 
-        if (cart is null)
-            return ServiceResult.NotFound("سبد خرید یافت نشد.");
+        var cartResult = await cartTask.OrNotFoundAsync("سبد خرید یافت نشد.");
+        if (cartResult.IsFailure) return cartResult.ToServiceResult();
+        var cart = cartResult.Value;
 
         foreach (var item in cart.CartItems)
         {

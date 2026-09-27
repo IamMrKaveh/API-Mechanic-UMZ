@@ -15,7 +15,7 @@ public class RemoveFromWishlistHandlerTests
 
     public RemoveFromWishlistHandlerTests()
     {
-        _sut = new RemoveFromWishlistHandler(_wishlistRepository, _unitOfWork, _currentUserService);
+        _sut = new RemoveFromWishlistHandler(_wishlistRepository, _currentUserService);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class RemoveFromWishlistHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenItemExists_RemovesItemAndSavesAndReturnsSuccess()
+    public async Task Handle_WhenItemExists_RemovesItemAndReturnsSuccess()
     {
         var userGuid = Guid.NewGuid();
         var productGuid = Guid.NewGuid();
@@ -63,6 +63,6 @@ public class RemoveFromWishlistHandlerTests
             Arg.Is<UserId>(u => u == UserId.From(userGuid)),
             Arg.Is<ProductId>(p => p == ProductId.From(productGuid)),
             Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

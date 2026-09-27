@@ -5,7 +5,6 @@ namespace Application.Wishlist.Features.Commands.ClearWishlist;
 
 public sealed class ClearWishlistHandler(
     IWishlistRepository wishlistRepository,
-    IUnitOfWork unitOfWork,
     ICurrentUserService currentUserService)
     : ICommandHandler<ClearWishlistCommand>
 {
@@ -13,7 +12,6 @@ public sealed class ClearWishlistHandler(
     {
         var userId = UserId.From(currentUserService.UserId!.Value);
         await wishlistRepository.ClearAsync(userId, ct);
-        await unitOfWork.SaveChangesAsync(ct);
         return ServiceResult.Success();
     }
 }

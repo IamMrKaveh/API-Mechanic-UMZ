@@ -27,7 +27,7 @@ public sealed class ForceFreezeFromFraudAlertHandlerTests
             .Returns(new FakeLockHandle("wallet", true));
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new ForceFreezeFromFraudAlertHandler(
-            _alertRepository, _walletRepository, _unitOfWork, _distributedLock, _auditService, _dateTimeProvider, _currentUserService);
+            _alertRepository, _walletRepository, _distributedLock, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -127,24 +127,5 @@ public sealed class ForceFreezeFromFraudAlertHandlerTests
         result.ShouldBeSuccess();
         wallet.IsActive.ShouldBeFalse();
         alert.Status.ShouldBe(FraudAlertStatus.Reviewed);
-    }
-
-    [Fact]
-    public async Task Handle_WhenConcurrencyExceptionThrown_ReturnsConflict()
-    {
-        var adminId = UserId.NewId();
-        var ownerId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
-        var alert = new WalletFraudAlertBuilder().WithUserId(ownerId).Build();
-        var wallet = new WalletBuilder().WithOwnerId(ownerId).Build();
-
-        _alertRepository.GetByIdAsync(Arg.Any<WalletFraudAlertId>(), Arg.Any<CancellationToken>()).Returns(alert);
-        _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(wallet);
-        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
-            .Returns<Task>(_ => throw new ConcurrencyException());
-
-        var result = await _sut.Handle(new ForceFreezeFromFraudAlertCommand(alert.Id.Value, null), CancellationToken.None);
-
-        result.ShouldFailWithType(ErrorType.Conflict);
     }
 }

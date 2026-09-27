@@ -20,7 +20,7 @@ public class AddToWishlistHandlerTests
 
     public AddToWishlistHandlerTests()
     {
-        _sut = new AddToWishlistHandler(_wishlistRepository, _productRepository, _unitOfWork, _dateTimeProvider);
+        _sut = new AddToWishlistHandler(_wishlistRepository, _productRepository, _dateTimeProvider);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class AddToWishlistHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenProductActiveAndNotAlreadyInWishlist_AddsItemAndSavesAndReturnsSuccess()
+    public async Task Handle_WhenProductActiveAndNotAlreadyInWishlist_AddsItemAndReturnsSuccess()
     {
         var userGuid = Guid.NewGuid();
         var productGuid = Guid.NewGuid();
@@ -93,7 +93,7 @@ public class AddToWishlistHandlerTests
         added!.UserId.Value.ShouldBe(userGuid);
         added.ProductId.Value.ShouldBe(productGuid);
         await _wishlistRepository.Received(1).AddAsync(Arg.Any<Wishlists>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

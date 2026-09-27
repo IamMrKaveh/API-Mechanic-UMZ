@@ -21,7 +21,7 @@ public sealed class RequestWalletDebitHandlerTests
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet", true));
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new RequestWalletDebitHandler(_walletRepository, _unitOfWork, _distributedLock, _dateTimeProvider, _currentUserService);
+        _sut = new RequestWalletDebitHandler(_walletRepository, _distributedLock, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class RequestWalletDebitHandlerTests
         result.Value.ShouldNotBe(Guid.Empty);
         wallet.DebitRequests.Count.ShouldBe(1);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -97,22 +97,5 @@ public sealed class RequestWalletDebitHandlerTests
             new RequestWalletDebitCommand(userId.Value, 100_000m, "penalty", null, "idem-1"), CancellationToken.None);
 
         result.IsFailure.ShouldBeTrue();
-    }
-
-    [Fact]
-    public async Task Handle_WhenConcurrencyExceptionThrown_ReturnsConflict()
-    {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
-        var userId = UserId.NewId();
-        var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
-        _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(wallet);
-        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
-            .Returns<Task>(_ => throw new ConcurrencyException());
-
-        var result = await _sut.Handle(
-            new RequestWalletDebitCommand(userId.Value, 100_000m, "penalty", null, "idem-1"), CancellationToken.None);
-
-        result.ShouldFailWithType(ErrorType.Conflict);
     }
 }

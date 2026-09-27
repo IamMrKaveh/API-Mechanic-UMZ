@@ -9,7 +9,6 @@ namespace Application.Wallet.Features.Commands.RejectWalletDebit;
 public sealed class RejectWalletDebitHandler(
     IWalletDebitRequestRepository debitRequestRepository,
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
@@ -46,7 +45,6 @@ public sealed class RejectWalletDebitHandler(
             var now = dateTimeProvider.UtcNow;
             wallet.RejectDebitRequest(requestId, currentUserId, request.RejectionReason?.Trim(), now);
             walletRepository.Update(wallet);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }

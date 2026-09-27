@@ -22,7 +22,6 @@ public class ReserveWalletHandlerTests
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new ReserveWalletHandler(
             _walletRepository,
-            _unitOfWork,
             _dateTimeProvider,
             _auditService);
     }
@@ -59,7 +58,7 @@ public class ReserveWalletHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WithSufficientBalance_CreatesReservationAndSavesChanges()
+    public async Task Handle_WithSufficientBalance_CreatesReservation()
     {
         var command = ValidCommand(amount: 20_000m);
         var wallet = FundedWallet(command.UserId, balance: 100_000m);
@@ -76,7 +75,7 @@ public class ReserveWalletHandlerTests
         wallet.Balance.Amount.ShouldBe(100_000m);
         wallet.AvailableBalance.Amount.ShouldBe(80_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -113,27 +112,5 @@ public class ReserveWalletHandlerTests
         result.IsFailure.ShouldBeTrue();
         wallet.ActiveReservations.ShouldBeEmpty();
         await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
-    }
-
-    [Fact]
-    public async Task Handle_WhenSaveChangesThrowsConcurrencyException_ReturnsConflictAndAudits()
-    {
-        var command = ValidCommand(amount: 10_000m);
-        var wallet = FundedWallet(command.UserId, balance: 100_000m);
-
-        _walletRepository
-            .GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
-            .Returns(wallet);
-        _unitOfWork
-            .SaveChangesAsync(Arg.Any<CancellationToken>())
-            .ThrowsAsync(new ConcurrencyException());
-
-        var result = await _sut.Handle(command, CancellationToken.None);
-
-        result.ShouldFailWith(ErrorCode.Conflict);
-        await _auditService.Received(1).LogSystemEventAsync(
-            "WalletReserveConcurrencyConflict",
-            Arg.Any<string>(),
-            Arg.Any<CancellationToken>());
     }
 }
