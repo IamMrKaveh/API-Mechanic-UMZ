@@ -3,18 +3,10 @@ using Domain.Wallet.ValueObjects;
 
 namespace Domain.Wallet.Events;
 
-public sealed class WalletDebitRequestRejectedEvent(
-    WalletId walletId,
-    UserId ownerId,
-    WalletDebitRequestId requestId,
-    Money amount,
-    UserId rejectedBy,
-    string? rejectionReason) : DomainEvent
-{
-    public WalletId WalletId { get; } = walletId;
-    public UserId OwnerId { get; } = ownerId;
-    public WalletDebitRequestId RequestId { get; } = requestId;
-    public Money Amount { get; } = amount;
-    public UserId RejectedBy { get; } = rejectedBy;
-    public string? RejectionReason { get; } = rejectionReason;
-}
+public sealed record WalletDebitRequestRejectedEvent(
+    WalletId WalletId,
+    UserId OwnerId,
+    WalletDebitRequestId RequestId,
+    Money Amount,
+    UserId RejectedBy,
+    string? RejectionReason) : DomainEvent;

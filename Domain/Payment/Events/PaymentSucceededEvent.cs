@@ -4,16 +4,9 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Payment.Events;
 
-public sealed class PaymentSucceededEvent(
-    PaymentTransactionId paymentTransactionId,
-    OrderId orderId,
-    long refId,
-    UserId userId,
-    Money amount) : DomainEvent
-{
-    public PaymentTransactionId PaymentTransactionId { get; } = paymentTransactionId;
-    public OrderId OrderId { get; } = orderId;
-    public long RefId { get; } = refId;
-    public UserId UserId { get; } = userId;
-    public Money Amount { get; } = amount;
-}
+public sealed record PaymentSucceededEvent(
+    PaymentTransactionId PaymentTransactionId,
+    OrderId OrderId,
+    long RefId,
+    UserId UserId,
+    Money Amount) : DomainEvent;

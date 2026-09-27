@@ -4,16 +4,9 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Security.Events;
 
-public sealed class OtpVerificationFailedEvent(
-    OtpId otpId,
-    UserId userId,
-    OtpPurpose purpose,
-    int attemptNumber,
-    int remainingAttempts) : DomainEvent
-{
-    public OtpId OtpId { get; } = otpId;
-    public UserId UserId { get; } = userId;
-    public OtpPurpose Purpose { get; } = purpose;
-    public int AttemptNumber { get; } = attemptNumber;
-    public int RemainingAttempts { get; } = remainingAttempts;
-}
+public sealed record OtpVerificationFailedEvent(
+    OtpId OtpId,
+    UserId UserId,
+    OtpPurpose Purpose,
+    int AttemptNumber,
+    int RemainingAttempts) : DomainEvent;

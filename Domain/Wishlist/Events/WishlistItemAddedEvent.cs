@@ -4,12 +4,7 @@ using Domain.Wishlist.ValueObjects;
 
 namespace Domain.Wishlist.Events;
 
-public sealed class WishlistItemAddedEvent(
-    WishlistId wishlistId,
-    UserId userId,
-    ProductId productId) : DomainEvent
-{
-    public WishlistId WishlistId { get; } = wishlistId;
-    public UserId UserId { get; } = userId;
-    public ProductId ProductId { get; } = productId;
-}
+public sealed record WishlistItemAddedEvent(
+    WishlistId WishlistId,
+    UserId UserId,
+    ProductId ProductId) : DomainEvent;

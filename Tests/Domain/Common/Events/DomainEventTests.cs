@@ -4,7 +4,7 @@ namespace Tests.Domain.Common.Events;
 
 public class DomainEventTests
 {
-    private sealed class TestEvent : DomainEvent
+    private sealed record TestEvent : DomainEvent
     {
         public TestEvent()
         {

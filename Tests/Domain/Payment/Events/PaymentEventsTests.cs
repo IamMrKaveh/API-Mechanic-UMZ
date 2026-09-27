@@ -29,7 +29,7 @@ public class PaymentEventsTests
         var userId = UserId.NewId();
         var amount = Money.Create(50_000m, "IRT");
 
-        var sut = new PaymentSucceededEvent(paymentTxId, orderId, refId: 12345, userId, amount);
+        var sut = new PaymentSucceededEvent(paymentTxId, orderId, RefId: 12345, userId, amount);
 
         sut.PaymentTransactionId.ShouldBe(paymentTxId);
         sut.OrderId.ShouldBe(orderId);

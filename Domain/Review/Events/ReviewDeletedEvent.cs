@@ -4,13 +4,7 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Review.Events;
 
-public sealed class ReviewDeletedEvent(
-    ReviewId reviewId,
-    ProductId productId,
-    UserId userId)
-    : DomainEvent
-{
-    public ReviewId ReviewId { get; } = reviewId;
-    public ProductId ProductId { get; } = productId;
-    public UserId UserId { get; } = userId;
-}
+public sealed record ReviewDeletedEvent(
+    ReviewId ReviewId,
+    ProductId ProductId,
+    UserId UserId) : DomainEvent;

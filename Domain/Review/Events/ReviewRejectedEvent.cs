@@ -3,13 +3,7 @@ using Domain.Review.ValueObjects;
 
 namespace Domain.Review.Events;
 
-public sealed class ReviewRejectedEvent(
-    ReviewId reviewId,
-    ProductId productId,
-    string? reason)
-    : DomainEvent
-{
-    public ReviewId ReviewId { get; } = reviewId;
-    public ProductId ProductId { get; } = productId;
-    public string? Reason { get; } = reason;
-}
+public sealed record ReviewRejectedEvent(
+    ReviewId ReviewId,
+    ProductId ProductId,
+    string? Reason) : DomainEvent;

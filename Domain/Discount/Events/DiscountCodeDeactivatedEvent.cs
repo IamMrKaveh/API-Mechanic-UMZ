@@ -2,8 +2,4 @@
 
 namespace Domain.Discount.Events;
 
-public sealed class DiscountCodeDeactivatedEvent(DiscountCodeId discountCodeId, string code) : DomainEvent
-{
-    public DiscountCodeId DiscountCodeId { get; } = discountCodeId;
-    public string Code { get; } = code;
-}
+public sealed record DiscountCodeDeactivatedEvent(DiscountCodeId DiscountCodeId, string Code) : DomainEvent;

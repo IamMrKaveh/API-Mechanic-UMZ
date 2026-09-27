@@ -3,10 +3,6 @@ using Domain.Order.ValueObjects;
 
 namespace Domain.Order.Events;
 
-public sealed class OrderStatusDeletedDomainEvent(
-    OrderStatusId orderStatusId,
-    string name) : DomainEvent
-{
-    public OrderStatusId OrderStatusId { get; } = orderStatusId;
-    public string Name { get; } = name;
-}
+public sealed record OrderStatusDeletedDomainEvent(
+    OrderStatusId OrderStatusId,
+    string Name) : DomainEvent;

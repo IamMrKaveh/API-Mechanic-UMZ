@@ -2,7 +2,4 @@
 
 namespace Domain.Payment.Events;
 
-public sealed class PaymentMethodDeactivatedEvent(PaymentMethodId paymentMethodId) : DomainEvent
-{
-    public PaymentMethodId PaymentMethodId { get; } = paymentMethodId;
-}
+public sealed record PaymentMethodDeactivatedEvent(PaymentMethodId PaymentMethodId) : DomainEvent;

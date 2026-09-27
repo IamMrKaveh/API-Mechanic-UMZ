@@ -2,10 +2,6 @@
 
 namespace Domain.User.Events;
 
-public sealed class UserAddressSetAsDefaultEvent(
-    UserId userId,
-    UserAddressId addressId) : DomainEvent
-{
-    public UserId UserId { get; } = userId;
-    public UserAddressId AddressId { get; } = addressId;
-}
+public sealed record UserAddressSetAsDefaultEvent(
+    UserId UserId,
+    UserAddressId AddressId) : DomainEvent;

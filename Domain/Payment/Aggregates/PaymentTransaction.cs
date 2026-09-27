@@ -141,7 +141,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         UpdatedAt = now;
         IsVerificationInProgress = false;
 
-        RaiseDomainEvent(new PaymentSucceededEvent(Id, OrderId, refId, userId: UserId.NewId(), Amount));
+        RaiseDomainEvent(new PaymentSucceededEvent(Id, OrderId, refId, UserId: UserId.NewId(), Amount));
     }
 
     public void MarkAsFailed(DateTime now, string? errorMessage = null)

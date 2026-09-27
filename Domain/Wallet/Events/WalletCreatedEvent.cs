@@ -3,12 +3,7 @@ using Domain.Wallet.ValueObjects;
 
 namespace Domain.Wallet.Events;
 
-public sealed class WalletCreatedEvent(
-    WalletId walletId,
-    UserId ownerId,
-    string currency) : DomainEvent
-{
-    public WalletId WalletId { get; } = walletId;
-    public UserId OwnerId { get; } = ownerId;
-    public string Currency { get; } = currency;
-}
+public sealed record WalletCreatedEvent(
+    WalletId WalletId,
+    UserId OwnerId,
+    string Currency) : DomainEvent;

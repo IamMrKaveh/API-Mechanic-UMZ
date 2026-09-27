@@ -3,10 +3,6 @@ using Domain.Variant.ValueObjects;
 
 namespace Domain.Inventory.Events;
 
-public sealed class StockSetUnlimitedEvent(
+public sealed record StockSetUnlimitedEvent(
     InventoryId InventoryId,
-    VariantId VariantId) : DomainEvent
-{
-    public InventoryId InventoryId { get; } = InventoryId;
-    public VariantId VariantId { get; } = VariantId;
-}
+    VariantId VariantId) : DomainEvent;

@@ -3,10 +3,6 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Security.Events;
 
-public sealed class SessionExpiredEvent(
-    SessionId sessionId,
-    UserId userId) : DomainEvent
-{
-    public SessionId SessionId { get; } = sessionId;
-    public UserId UserId { get; } = userId;
-}
+public sealed record SessionExpiredEvent(
+    SessionId SessionId,
+    UserId UserId) : DomainEvent;

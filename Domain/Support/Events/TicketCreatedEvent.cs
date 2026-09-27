@@ -3,16 +3,9 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Support.Events;
 
-public sealed class TicketCreatedEvent(
-    TicketId ticketId,
-    UserId customerId,
-    string subject,
-    string category,
-    TicketPriority priority) : DomainEvent
-{
-    public TicketId TicketId { get; } = ticketId;
-    public UserId CustomerId { get; } = customerId;
-    public string Subject { get; } = subject;
-    public string Category { get; } = category;
-    public TicketPriority Priority { get; } = priority;
-}
+public sealed record TicketCreatedEvent(
+    TicketId TicketId,
+    UserId CustomerId,
+    string Subject,
+    string Category,
+    TicketPriority Priority) : DomainEvent;

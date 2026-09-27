@@ -3,16 +3,9 @@ using Domain.Wallet.ValueObjects;
 
 namespace Domain.Wallet.Events;
 
-public sealed class WalletDebitRequestApprovedEvent(
-    WalletId walletId,
-    UserId ownerId,
-    WalletDebitRequestId requestId,
-    Money amount,
-    UserId approvedBy) : DomainEvent
-{
-    public WalletId WalletId { get; } = walletId;
-    public UserId OwnerId { get; } = ownerId;
-    public WalletDebitRequestId RequestId { get; } = requestId;
-    public Money Amount { get; } = amount;
-    public UserId ApprovedBy { get; } = approvedBy;
-}
+public sealed record WalletDebitRequestApprovedEvent(
+    WalletId WalletId,
+    UserId OwnerId,
+    WalletDebitRequestId RequestId,
+    Money Amount,
+    UserId ApprovedBy) : DomainEvent;

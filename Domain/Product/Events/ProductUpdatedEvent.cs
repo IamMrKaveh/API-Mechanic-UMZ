@@ -2,14 +2,8 @@ using Domain.Product.ValueObjects;
 
 namespace Domain.Product.Events;
 
-public sealed class ProductUpdatedEvent(
+public sealed record ProductUpdatedEvent(
     ProductId ProductId,
-    ProductName productName,
+    ProductName ProductName,
     ProductSlug Slug,
-    string Description) : DomainEvent
-{
-    public ProductId ProductId { get; } = ProductId;
-    public ProductName ProductName { get; } = productName;
-    public ProductSlug Slug { get; } = Slug;
-    public string Description { get; } = Description;
-}
+    string Description) : DomainEvent;
