@@ -23,9 +23,9 @@ public class UpdateProductVariantShippingHandler(
         var userId = UserId.From(currentUserService.UserId.Value);
         var variantId = VariantId.From(request.VariantId);
 
-        var variant = await variantRepository.GetVariantWithShippingsAsync(variantId, ct);
-        if (variant is null)
-            return ServiceResult.NotFound("واریانت یافت نشد.");
+        var variantResult = await (variantRepository.GetVariantWithShippingsAsync(variantId, ct)).OrNotFoundAsync("واریانت یافت نشد.");
+        if (variantResult.IsFailure) return variantResult.Error;
+        var variant = variantResult.Value;
 
         var allShippings = await shippingRepository.GetAllAsync(false, ct);
         var validIds = allShippings.Select(s => s.Id.Value).ToHashSet();

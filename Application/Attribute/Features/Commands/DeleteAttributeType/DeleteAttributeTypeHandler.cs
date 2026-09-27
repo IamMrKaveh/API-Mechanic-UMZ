@@ -15,9 +15,9 @@ public class DeleteAttributeTypeHandler(
     {
         var attributeTypeId = AttributeTypeId.From(request.Id);
 
-        var attributeType = await repository.GetAttributeTypeByIdAsync(attributeTypeId, ct);
-        if (attributeType is null)
-            return ServiceResult.NotFound("Attribute type not found.");
+        var attributeTypeResult = await (repository.GetAttributeTypeByIdAsync(attributeTypeId, ct)).OrNotFoundAsync("Attribute type not found.");
+        if (attributeTypeResult.IsFailure) return attributeTypeResult.Error;
+        var attributeType = attributeTypeResult.Value;
 
         await repository.DeleteAttributeTypeAsync(attributeType.Id, null, ct);
         await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);

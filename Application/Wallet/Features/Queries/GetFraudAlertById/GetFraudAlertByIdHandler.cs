@@ -10,8 +10,6 @@ public sealed class GetFraudAlertByIdHandler(IWalletFraudAlertQueryService query
         CancellationToken ct)
     {
         var dto = await queryService.GetByIdAsync(request.AlertId, ct);
-        return dto is null
-            ? ServiceResult<WalletFraudAlertDto>.NotFound("هشدار مورد نظر یافت نشد.")
-            : ServiceResult<WalletFraudAlertDto>.Success(dto);
+        return dto.ToResultOrNotFound("هشدار مورد نظر یافت نشد.");
     }
 }

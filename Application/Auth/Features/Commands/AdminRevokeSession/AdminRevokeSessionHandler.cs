@@ -14,10 +14,9 @@ public class AdminRevokeSessionHandler(
     public async Task<ServiceResult> Handle(AdminRevokeSessionCommand request, CancellationToken ct)
     {
         var sessionId = SessionId.From(request.SessionId);
-        var session = await sessionRepository.GetByIdAsync(sessionId, ct);
-
-        if (session is null)
-            return ServiceResult.NotFound("جلسه یافت نشد.");
+        var sessionResult = await (sessionRepository.GetByIdAsync(sessionId, ct)).OrNotFoundAsync("جلسه یافت نشد.");
+        if (sessionResult.IsFailure) return sessionResult.Error;
+        var session = sessionResult.Value;
 
         var targetUserId = UserId.From(request.TargetUserId);
 

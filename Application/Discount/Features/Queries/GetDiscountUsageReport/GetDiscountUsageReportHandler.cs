@@ -14,8 +14,6 @@ public class GetDiscountUsageReportHandler(
         var discountCodeId = DiscountCodeId.From(request.DiscountCodeId);
 
         var report = await discountQueryService.GetUsageReportByIdAsync(discountCodeId, ct);
-        return report is null
-            ? ServiceResult<DiscountUsageReportDto?>.NotFound("کد تخفیف یافت نشد.")
-            : ServiceResult<DiscountUsageReportDto?>.Success(report);
+        return report.ToResultOrNotFound("کد تخفیف یافت نشد.");
     }
 }

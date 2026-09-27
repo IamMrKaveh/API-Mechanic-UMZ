@@ -16,8 +16,6 @@ public sealed class GetVariantShippingHandler(
         var shipping = await variantQueryService
             .GetVariantShippingInfoAsync(variantId, ct);
 
-        return shipping is null
-            ? ServiceResult<VariantShippingInfoDto>.NotFound("اطلاعات حمل و نقل تنوع یافت نشد.")
-            : ServiceResult<VariantShippingInfoDto>.Success(shipping);
+        return shipping.ToResultOrNotFound("اطلاعات حمل و نقل تنوع یافت نشد.");
     }
 }

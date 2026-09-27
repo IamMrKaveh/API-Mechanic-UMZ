@@ -10,8 +10,6 @@ public sealed class GetWalletTransferByIdHandler(IWalletTransferQueryService que
         CancellationToken ct)
     {
         var dto = await queryService.GetByIdAsync(request.Id, ct);
-        return dto is null
-            ? ServiceResult<WalletTransferDto>.NotFound("انتقال مورد نظر یافت نشد.")
-            : ServiceResult<WalletTransferDto>.Success(dto);
+        return dto.ToResultOrNotFound("انتقال مورد نظر یافت نشد.");
     }
 }

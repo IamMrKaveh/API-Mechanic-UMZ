@@ -22,9 +22,9 @@ public sealed class ApproveWalletDebitHandler(
         var currentUserId = UserId.From(currentUserService.UserId!.Value);
         var requestId = WalletDebitRequestId.From(request.RequestId);
 
-        var debitRequest = await debitRequestRepository.GetByIdAsync(requestId, ct);
-        if (debitRequest is null)
-            return ServiceResult<Unit>.NotFound("درخواست کسر یافت نشد.");
+        var debitRequestResult = await (debitRequestRepository.GetByIdAsync(requestId, ct)).OrNotFoundAsync("درخواست کسر یافت نشد.");
+        if (debitRequestResult.IsFailure) return debitRequestResult.Error;
+        var debitRequest = debitRequestResult.Value;
 
         if (!debitRequest.OwnerId.Equals(currentUserId))
             return ServiceResult<Unit>.Forbidden("شما مجاز به تایید این درخواست نیستید.");
@@ -39,9 +39,9 @@ public sealed class ApproveWalletDebitHandler(
 
         try
         {
-            var wallet = await walletRepository.GetByUserIdForUpdateAsync(debitRequest.OwnerId, ct);
-            if (wallet is null)
-                return ServiceResult<Unit>.NotFound("کیف پول یافت نشد.");
+            var walletResult = await (walletRepository.GetByUserIdForUpdateAsync(debitRequest.OwnerId, ct)).OrNotFoundAsync("کیف پول یافت نشد.");
+            if (walletResult.IsFailure) return walletResult.Error;
+            var wallet = walletResult.Value;
 
             var now = dateTimeProvider.UtcNow;
             wallet.ApproveDebitRequest(requestId, currentUserId, now);

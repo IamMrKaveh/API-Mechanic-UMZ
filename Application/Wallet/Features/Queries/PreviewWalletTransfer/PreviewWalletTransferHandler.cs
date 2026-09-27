@@ -33,9 +33,9 @@ public sealed class PreviewWalletTransferHandler(
             return ServiceResult<WalletTransferPreviewDto>.Failure(ex.Message);
         }
 
-        var recipient = await userRepository.GetByPhoneNumberAsync(recipientPhone, ct);
-        if (recipient is null)
-            return ServiceResult<WalletTransferPreviewDto>.NotFound("کاربری با این شماره یافت نشد.");
+        var recipientResult = await (userRepository.GetByPhoneNumberAsync(recipientPhone, ct)).OrNotFoundAsync("کاربری با این شماره یافت نشد.");
+        if (recipientResult.IsFailure) return recipientResult.Error;
+        var recipient = recipientResult.Value;
 
         if (recipient.Id.Equals(fromUserId))
             return ServiceResult<WalletTransferPreviewDto>.Failure("انتقال به کیف پول خود مجاز نیست.");

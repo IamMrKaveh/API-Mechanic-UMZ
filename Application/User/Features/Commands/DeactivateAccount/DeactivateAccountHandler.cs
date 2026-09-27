@@ -15,9 +15,9 @@ public class DeactivateAccountHandler(
         CancellationToken ct)
     {
         var currentUserId = UserId.From(currentUser.UserId!.Value);
-        var user = await userRepository.GetByIdAsync(currentUserId, ct);
-        if (user is null)
-            return ServiceResult.NotFound("کاربر یافت نشد.");
+        var userResult = await (userRepository.GetByIdAsync(currentUserId, ct)).OrNotFoundAsync("کاربر یافت نشد.");
+        if (userResult.IsFailure) return userResult.Error;
+        var user = userResult.Value;
 
         try
         {

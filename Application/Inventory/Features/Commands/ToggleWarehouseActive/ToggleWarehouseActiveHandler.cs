@@ -13,10 +13,9 @@ public class ToggleWarehouseActiveHandler(
     public async Task<ServiceResult> Handle(ToggleWarehouseActiveCommand request, CancellationToken ct)
     {
         var id = WarehouseId.From(request.Id);
-        var warehouse = await warehouseRepository.GetByIdAsync(id, ct);
-
-        if (warehouse is null)
-            return ServiceResult.NotFound("انبار یافت نشد.");
+        var warehouseResult = await (warehouseRepository.GetByIdAsync(id, ct)).OrNotFoundAsync("انبار یافت نشد.");
+        if (warehouseResult.IsFailure) return warehouseResult.Error;
+        var warehouse = warehouseResult.Value;
 
         var now = dateTimeProvider.UtcNow;
 

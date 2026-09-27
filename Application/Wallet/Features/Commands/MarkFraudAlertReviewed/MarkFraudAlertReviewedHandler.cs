@@ -20,9 +20,9 @@ public sealed class MarkFraudAlertReviewedHandler(
             var alertId = WalletFraudAlertId.From(request.AlertId);
             var adminId = UserId.From(currentUserService.UserId!.Value);
 
-            var alert = await repository.GetByIdAsync(alertId, ct);
-            if (alert is null)
-                return ServiceResult<Unit>.NotFound("هشدار مورد نظر یافت نشد.");
+            var alertResult = await (repository.GetByIdAsync(alertId, ct)).OrNotFoundAsync("هشدار مورد نظر یافت نشد.");
+            if (alertResult.IsFailure) return alertResult.Error;
+            var alert = alertResult.Value;
 
             alert.MarkAsReviewed(adminId, request.Note, dateTimeProvider.UtcNow);
 

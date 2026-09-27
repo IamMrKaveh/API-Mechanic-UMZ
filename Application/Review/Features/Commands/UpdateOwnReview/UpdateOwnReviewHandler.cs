@@ -17,9 +17,9 @@ public sealed class UpdateOwnReviewHandler(
         var reviewId = ReviewId.From(request.ReviewId);
         var userId = UserId.From(currentUser.UserId!.Value);
 
-        var review = await reviewRepository.GetByIdAsync(reviewId, ct);
-        if (review is null)
-            return ServiceResult.NotFound("نظر یافت نشد.");
+        var reviewResult = await (reviewRepository.GetByIdAsync(reviewId, ct)).OrNotFoundAsync("نظر یافت نشد.");
+        if (reviewResult.IsFailure) return reviewResult.Error;
+        var review = reviewResult.Value;
 
         if (review.UserId != userId)
             return ServiceResult.Forbidden("امکان ویرایش نظر دیگران وجود ندارد.");

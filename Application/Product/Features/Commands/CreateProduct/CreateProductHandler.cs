@@ -20,14 +20,14 @@ public sealed class CreateProductHandler(
         CancellationToken ct)
     {
         var categoryId = CategoryId.From(request.CategoryId);
-        var category = await categoryRepository.GetByIdAsync(categoryId, ct);
-        if (category is null)
-            return ServiceResult<ProductDetailDto>.NotFound("دسته‌بندی یافت نشد.");
+        var categoryResult = await (categoryRepository.GetByIdAsync(categoryId, ct)).OrNotFoundAsync("دسته‌بندی یافت نشد.");
+        if (categoryResult.IsFailure) return categoryResult.Error;
+        var category = categoryResult.Value;
 
         var brandId = BrandId.From(request.BrandId);
-        var brand = await brandRepository.GetByIdAsync(brandId, ct);
-        if (brand is null)
-            return ServiceResult<ProductDetailDto>.NotFound("برند یافت نشد.");
+        var brandResult = await (brandRepository.GetByIdAsync(brandId, ct)).OrNotFoundAsync("برند یافت نشد.");
+        if (brandResult.IsFailure) return brandResult.Error;
+        var brand = brandResult.Value;
 
         var slug = ProductSlug.GenerateFrom(request.Name);
 

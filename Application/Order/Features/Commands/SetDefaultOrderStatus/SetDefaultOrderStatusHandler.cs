@@ -14,9 +14,9 @@ public class SetDefaultOrderStatusHandler(
         CancellationToken ct)
     {
         var statusId = OrderStatusId.From(request.Id);
-        var status = await orderStatusRepository.GetByIdAsync(statusId, ct);
-        if (status is null)
-            return ServiceResult.NotFound("وضعیت سفارش یافت نشد.");
+        var statusResult = await (orderStatusRepository.GetByIdAsync(statusId, ct)).OrNotFoundAsync("وضعیت سفارش یافت نشد.");
+        if (statusResult.IsFailure) return statusResult.Error;
+        var status = statusResult.Value;
 
         if (!status.IsActive)
             return ServiceResult.Validation("وضعیت غیرفعال نمی‌تواند پیش‌فرض شود.");

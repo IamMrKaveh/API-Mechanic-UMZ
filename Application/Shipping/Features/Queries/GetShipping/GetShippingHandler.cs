@@ -15,8 +15,6 @@ public class GetShippingHandler(
 
         var shipping = await shippingQueryService.GetShippingDetailAsync(shippingId, ct);
 
-        return shipping is null
-            ? ServiceResult<ShippingDto>.NotFound("روش ارسال یافت نشد.")
-            : ServiceResult<ShippingDto>.Success(shipping);
+        return shipping.ToResultOrNotFound("روش ارسال یافت نشد.");
     }
 }

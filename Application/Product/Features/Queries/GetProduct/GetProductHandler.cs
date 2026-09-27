@@ -14,8 +14,6 @@ public sealed class GetProductHandler(
         var productId = ProductId.From(request.Id);
         var dto = await productQueryService.GetProductDetailAsync(productId, ct);
 
-        return dto is null
-            ? ServiceResult<ProductDetailDto>.NotFound("محصول یافت نشد.")
-            : ServiceResult<ProductDetailDto>.Success(dto);
+        return dto.ToResultOrNotFound("محصول یافت نشد.");
     }
 }

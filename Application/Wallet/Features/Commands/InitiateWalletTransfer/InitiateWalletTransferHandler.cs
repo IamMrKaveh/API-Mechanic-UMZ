@@ -38,9 +38,9 @@ public sealed class InitiateWalletTransferHandler(
             if (sender is null || sender.PhoneNumber is null)
                 return ServiceResult<InitiateWalletTransferResultDto>.Failure("اطلاعات کاربر جهت ارسال کد تأیید کامل نیست.");
 
-            var recipient = await userRepository.GetByPhoneNumberAsync(recipientPhone, ct);
-            if (recipient is null)
-                return ServiceResult<InitiateWalletTransferResultDto>.NotFound("کاربری با این شماره یافت نشد.");
+            var recipientResult = await (userRepository.GetByPhoneNumberAsync(recipientPhone, ct)).OrNotFoundAsync("کاربری با این شماره یافت نشد.");
+            if (recipientResult.IsFailure) return recipientResult.Error;
+            var recipient = recipientResult.Value;
 
             if (recipient.Id.Equals(fromUserId))
                 return ServiceResult<InitiateWalletTransferResultDto>.Failure("انتقال به کیف پول خود مجاز نیست.");
@@ -48,9 +48,9 @@ public sealed class InitiateWalletTransferHandler(
             if (!recipient.IsActive)
                 return ServiceResult<InitiateWalletTransferResultDto>.Failure("حساب کاربری گیرنده غیرفعال است.");
 
-            var senderWallet = await walletRepository.GetByUserIdAsync(fromUserId, ct);
-            if (senderWallet is null)
-                return ServiceResult<InitiateWalletTransferResultDto>.NotFound("کیف پول شما یافت نشد.");
+            var senderWalletResult = await (walletRepository.GetByUserIdAsync(fromUserId, ct)).OrNotFoundAsync("کیف پول شما یافت نشد.");
+            if (senderWalletResult.IsFailure) return senderWalletResult.Error;
+            var senderWallet = senderWalletResult.Value;
 
             if (!senderWallet.IsActive)
                 return ServiceResult<InitiateWalletTransferResultDto>.Failure("کیف پول شما در حال حاضر مسدود است.");

@@ -10,10 +10,9 @@ public class GetOrderStatusHandler(
         GetOrderStatusQuery request,
         CancellationToken ct)
     {
-        var status = await orderStatusQueryService.GetByIdAsync(request.Id, ct);
-
-        if (status is null)
-            return ServiceResult<OrderStatusDto>.NotFound("وضعیت سفارش یافت نشد.");
+        var statusResult = await (orderStatusQueryService.GetByIdAsync(request.Id, ct)).OrNotFoundAsync("وضعیت سفارش یافت نشد.");
+        if (statusResult.IsFailure) return statusResult.Error;
+        var status = statusResult.Value;
 
         return ServiceResult<OrderStatusDto>.Success(status);
     }

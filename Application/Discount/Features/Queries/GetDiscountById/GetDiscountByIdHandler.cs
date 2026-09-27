@@ -12,8 +12,6 @@ public class GetDiscountByIdHandler(IDiscountQueryService discountQueryService)
     {
         var discountCodeId = DiscountCodeId.From(request.Id);
         var dto = await discountQueryService.GetDetailByIdAsync(discountCodeId, ct);
-        return dto is null
-            ? ServiceResult<DiscountCodeDetailDto?>.NotFound("یافت نشد")
-            : ServiceResult<DiscountCodeDetailDto?>.Success(dto);
+        return dto.ToResultOrNotFound("یافت نشد");
     }
 }

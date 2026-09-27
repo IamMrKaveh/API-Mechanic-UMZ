@@ -11,10 +11,9 @@ public class GetMediaByIdHandler(IMediaQueryService mediaQueryService)
         CancellationToken ct)
     {
         var mediaId = MediaId.From(request.MediaId);
-        var result = await mediaQueryService.GetByIdAsync(mediaId, ct);
-
-        if (result is null)
-            return ServiceResult<MediaDto>.NotFound("رسانه یافت نشد.");
+        var resultResult = await (mediaQueryService.GetByIdAsync(mediaId, ct)).OrNotFoundAsync("رسانه یافت نشد.");
+        if (resultResult.IsFailure) return resultResult.Error;
+        var result = resultResult.Value;
 
         return ServiceResult<MediaDto>.Success(result);
     }

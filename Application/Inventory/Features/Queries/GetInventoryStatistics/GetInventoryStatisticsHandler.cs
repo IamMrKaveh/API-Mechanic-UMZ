@@ -9,10 +9,9 @@ public class GetInventoryStatisticsHandler(IInventoryQueryService queryService)
         GetInventoryStatisticsQuery request,
         CancellationToken ct)
     {
-        var stats = await queryService.GetStatisticsAsync(ct);
-
-        if (stats is null)
-            return ServiceResult<InventoryStatisticsDto>.NotFound("آماری یافت نشد.");
+        var statsResult = await (queryService.GetStatisticsAsync(ct)).OrNotFoundAsync("آماری یافت نشد.");
+        if (statsResult.IsFailure) return statsResult.Error;
+        var stats = statsResult.Value;
 
         return ServiceResult<InventoryStatisticsDto>.Success(stats);
     }

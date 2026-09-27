@@ -14,9 +14,9 @@ public class RestoreProductHandler(
     {
         var productId = ProductId.From(request.ProductId);
 
-        var product = await productRepository.GetByIdAsync(productId, ct);
-        if (product is null)
-            return ServiceResult.NotFound("Product not found.");
+        var productResult = await (productRepository.GetByIdAsync(productId, ct)).OrNotFoundAsync("Product not found.");
+        if (productResult.IsFailure) return productResult.Error;
+        var product = productResult.Value;
 
         product.Restore();
 

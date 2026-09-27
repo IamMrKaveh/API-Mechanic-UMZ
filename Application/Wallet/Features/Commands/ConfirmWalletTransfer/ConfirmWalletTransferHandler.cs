@@ -34,9 +34,9 @@ public sealed class ConfirmWalletTransferHandler(
             var transferId = WalletTransferId.From(request.TransferId);
             var fromUserId = UserId.From(currentUserService.UserId!.Value);
 
-            var transferPeek = await transferRepository.GetByIdAsync(transferId, ct);
-            if (transferPeek is null)
-                return ServiceResult<ConfirmWalletTransferResultDto>.NotFound("درخواست انتقال یافت نشد.");
+            var transferPeekResult = await (transferRepository.GetByIdAsync(transferId, ct)).OrNotFoundAsync("درخواست انتقال یافت نشد.");
+            if (transferPeekResult.IsFailure) return transferPeekResult.Error;
+            var transferPeek = transferPeekResult.Value;
 
             if (!transferPeek.FromUserId.Equals(fromUserId))
                 return ServiceResult<ConfirmWalletTransferResultDto>.Forbidden("دسترسی به این درخواست انتقال مجاز نیست.");
@@ -60,9 +60,9 @@ public sealed class ConfirmWalletTransferHandler(
                 return ServiceResult<ConfirmWalletTransferResultDto>.Conflict(
                     "عملیات دیگری روی کیف پول گیرنده در حال انجام است. لطفاً چند لحظه بعد تلاش کنید.");
 
-            var transfer = await transferRepository.GetByIdForUpdateAsync(transferId, ct);
-            if (transfer is null)
-                return ServiceResult<ConfirmWalletTransferResultDto>.NotFound("درخواست انتقال یافت نشد.");
+            var transferResult = await (transferRepository.GetByIdForUpdateAsync(transferId, ct)).OrNotFoundAsync("درخواست انتقال یافت نشد.");
+            if (transferResult.IsFailure) return transferResult.Error;
+            var transfer = transferResult.Value;
 
             if (!transfer.FromUserId.Equals(fromUserId))
                 return ServiceResult<ConfirmWalletTransferResultDto>.Forbidden("دسترسی به این درخواست انتقال مجاز نیست.");

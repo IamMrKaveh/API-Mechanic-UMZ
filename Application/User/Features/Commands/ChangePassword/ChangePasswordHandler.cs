@@ -14,9 +14,9 @@ public class ChangePasswordHandler(
     {
         var userId = UserId.From(currentUser.UserId!.Value);
 
-        var user = await userRepository.GetByIdAsync(userId, ct);
-        if (user is null)
-            return ServiceResult.NotFound("کاربر یافت نشد.");
+        var userResult = await (userRepository.GetByIdAsync(userId, ct)).OrNotFoundAsync("کاربر یافت نشد.");
+        if (userResult.IsFailure) return userResult.Error;
+        var user = userResult.Value;
 
         if (!passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
             return ServiceResult.Failure("رمز عبور فعلی نادرست است.");

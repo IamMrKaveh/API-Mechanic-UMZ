@@ -20,9 +20,7 @@ public sealed class GetProductReviewSummaryHandler(
 
             var summary = await reviewQueryService.GetProductReviewSummaryAsync(productId, ct);
 
-            return summary is null
-                ? ServiceResult<ReviewSummaryDto>.NotFound("خلاصه نظرات یافت نشد.")
-                : ServiceResult<ReviewSummaryDto>.Success(summary);
+            return summary.ToResultOrNotFound("خلاصه نظرات یافت نشد.");
         }
         catch (DbException ex)
         {

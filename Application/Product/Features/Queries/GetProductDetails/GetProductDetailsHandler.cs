@@ -13,9 +13,9 @@ public sealed class GetProductDetailsHandler(
     {
         var productId = ProductId.From(request.ProductId);
 
-        var result = await productQueryService.GetPublicProductDetailAsync(productId, ct);
-        if (result is null)
-            return ServiceResult<PublicProductDetailDto?>.NotFound("محصول یافت نشد.");
+        var resultResult = await (productQueryService.GetPublicProductDetailAsync(productId, ct)).OrNotFoundAsync("محصول یافت نشد.");
+        if (resultResult.IsFailure) return resultResult.Error;
+        var result = resultResult.Value;
 
         return ServiceResult<PublicProductDetailDto?>.Success(result);
     }

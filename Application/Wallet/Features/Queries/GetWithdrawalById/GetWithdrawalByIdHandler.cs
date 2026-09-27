@@ -11,9 +11,9 @@ public sealed class GetWithdrawalByIdHandler(
         GetWithdrawalByIdQuery request,
         CancellationToken ct)
     {
-        var dto = await queryService.GetByIdAsync(request.Id, ct);
-        if (dto is null)
-            return ServiceResult<WalletWithdrawalRequestDto>.NotFound("درخواست برداشت یافت نشد.");
+        var dtoResult = await (queryService.GetByIdAsync(request.Id, ct)).OrNotFoundAsync("درخواست برداشت یافت نشد.");
+        if (dtoResult.IsFailure) return dtoResult.Error;
+        var dto = dtoResult.Value;
 
         if (currentUserService.IsAdmin is false)
         {

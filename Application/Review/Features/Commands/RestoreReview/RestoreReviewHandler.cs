@@ -12,9 +12,9 @@ public sealed class RestoreReviewHandler(
     {
         var reviewId = ReviewId.From(request.ReviewId);
 
-        var review = await reviewRepository.GetByIdIncludingDeletedAsync(reviewId, ct);
-        if (review is null)
-            return ServiceResult.NotFound("نظر یافت نشد.");
+        var reviewResult = await (reviewRepository.GetByIdIncludingDeletedAsync(reviewId, ct)).OrNotFoundAsync("نظر یافت نشد.");
+        if (reviewResult.IsFailure) return reviewResult.Error;
+        var review = reviewResult.Value;
 
         var previousIsDeleted = review.IsDeleted;
 

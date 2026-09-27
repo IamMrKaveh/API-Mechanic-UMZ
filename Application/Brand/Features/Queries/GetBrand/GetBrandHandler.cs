@@ -12,8 +12,6 @@ public class GetBrandHandler(
         var brandId = BrandId.From(request.Id);
         var brand = await brandQueryService.GetBrandDetailAsync(brandId, ct);
 
-        return brand is null
-            ? ServiceResult<BrandDetailDto>.NotFound("برند یافت نشد.")
-            : ServiceResult<BrandDetailDto>.Success(brand);
+        return brand.ToResultOrNotFound("برند یافت نشد.");
     }
 }

@@ -14,9 +14,9 @@ public class GetCurrentUserHandler(
     {
         var userId = UserId.From(currentUserService.UserId!.Value);
 
-        var profile = await userQueryService.GetUserProfileAsync(userId, ct);
-        if (profile is null)
-            return ServiceResult<UserProfileDto>.NotFound("کاربر یافت نشد.");
+        var profileResult = await (userQueryService.GetUserProfileAsync(userId, ct)).OrNotFoundAsync("کاربر یافت نشد.");
+        if (profileResult.IsFailure) return profileResult.Error;
+        var profile = profileResult.Value;
 
         return ServiceResult<UserProfileDto>.Success(profile);
     }

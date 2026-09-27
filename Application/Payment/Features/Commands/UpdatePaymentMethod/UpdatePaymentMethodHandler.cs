@@ -20,9 +20,9 @@ public sealed class UpdatePaymentMethodHandler(
             var name = PaymentMethodName.Create(request.Name);
             var fee = PaymentMethodFee.Create(request.FeeAmount, request.FeePercentage);
 
-            var method = await repository.GetByIdAsync(id, ct);
-            if (method is null)
-                return ServiceResult<PaymentMethodDto>.NotFound("روش پرداخت یافت نشد.");
+            var methodResult = await (repository.GetByIdAsync(id, ct)).OrNotFoundAsync("روش پرداخت یافت نشد.");
+            if (methodResult.IsFailure) return methodResult.Error;
+            var method = methodResult.Value;
 
             if (await repository.ExistsByNameAsync(name, id, ct))
                 return ServiceResult<PaymentMethodDto>.Conflict("روش پرداخت با این نام قبلاً ثبت شده است.");

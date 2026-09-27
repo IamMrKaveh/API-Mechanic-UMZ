@@ -11,8 +11,6 @@ public class GetDiscountInfoHandler(IDiscountQueryService discountQueryService)
     {
         var dto = await discountQueryService.GetDiscountInfoByCodeAsync(request.Code, ct);
 
-        return dto is null
-            ? ServiceResult<DiscountInfoDto>.NotFound("کد تخفیف یافت نشد.")
-            : ServiceResult<DiscountInfoDto>.Success(dto);
+        return dto.ToResultOrNotFound("کد تخفیف یافت نشد.");
     }
 }

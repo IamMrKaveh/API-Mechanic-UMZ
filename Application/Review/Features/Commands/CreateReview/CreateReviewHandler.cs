@@ -26,9 +26,9 @@ public sealed class CreateReviewHandler(
             return ServiceResult<ProductReviewDto>.Unauthorized("برای ثبت نظر ابتدا وارد شوید.");
 
         var productId = ProductId.From(request.ProductId);
-        var product = await productRepository.GetByIdAsync(productId, ct);
-        if (product is null)
-            return ServiceResult<ProductReviewDto>.NotFound("محصول یافت نشد.");
+        var productResult = await (productRepository.GetByIdAsync(productId, ct)).OrNotFoundAsync("محصول یافت نشد.");
+        if (productResult.IsFailure) return productResult.Error;
+        var product = productResult.Value;
 
         var userId = UserId.From(currentUser.UserId!.Value);
         OrderId? orderId = request.OrderId.HasValue ? OrderId.From(request.OrderId.Value) : null;

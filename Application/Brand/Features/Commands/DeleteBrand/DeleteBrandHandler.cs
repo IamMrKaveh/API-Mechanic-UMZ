@@ -13,10 +13,9 @@ public class DeleteBrandHandler(
     public async Task<ServiceResult> Handle(DeleteBrandCommand request, CancellationToken ct)
     {
         var brandId = BrandId.From(request.BrandId);
-        var brand = await brandRepository.GetByIdAsync(brandId, ct);
-
-        if (brand is null)
-            return ServiceResult.NotFound("برند یافت نشد.");
+        var brandResult = await (brandRepository.GetByIdAsync(brandId, ct)).OrNotFoundAsync("برند یافت نشد.");
+        if (brandResult.IsFailure) return brandResult.Error;
+        var brand = brandResult.Value;
 
         brand.Deactivate(dateTimeProvider.UtcNow);
         brandRepository.Update(brand);

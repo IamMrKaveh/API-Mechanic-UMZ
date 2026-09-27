@@ -15,10 +15,9 @@ public class UpdateCategoryHandler(
     public async Task<ServiceResult<CategoryDto>> Handle(UpdateCategoryCommand request, CancellationToken ct)
     {
         var categoryId = CategoryId.From(request.Id);
-        var category = await categoryRepository.GetByIdAsync(categoryId, ct);
-
-        if (category is null)
-            return ServiceResult<CategoryDto>.NotFound("دسته‌بندی یافت نشد.");
+        var categoryResult = await (categoryRepository.GetByIdAsync(categoryId, ct)).OrNotFoundAsync("دسته‌بندی یافت نشد.");
+        if (categoryResult.IsFailure) return categoryResult.Error;
+        var category = categoryResult.Value;
 
         var rowVersion = !string.IsNullOrWhiteSpace(request.RowVersion)
             ? Convert.FromBase64String(request.RowVersion)
