@@ -7,7 +7,6 @@ namespace Application.Wallet.Features.Commands.FreezeWallet;
 
 public sealed class FreezeWalletHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
@@ -41,7 +40,6 @@ public sealed class FreezeWalletHandler(
             wallet.Freeze(request.Reason, adminId, dateTimeProvider.UtcNow);
 
             walletRepository.Update(wallet);
-            await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSystemEventAsync(
                 "WalletFrozen",

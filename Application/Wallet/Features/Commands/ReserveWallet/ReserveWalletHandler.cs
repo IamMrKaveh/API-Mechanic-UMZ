@@ -8,7 +8,6 @@ namespace Application.Wallet.Features.Commands.ReserveWallet;
 
 public class ReserveWalletHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider,
     IAuditService auditService)
     : ICommandHandler<ReserveWalletCommand, Unit>
@@ -34,9 +33,7 @@ public class ReserveWalletHandler(
                 $"reservation-{request.WalletId}",
                 now,
                 request.ExpiresAt);
-
             walletRepository.Update(wallet);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }

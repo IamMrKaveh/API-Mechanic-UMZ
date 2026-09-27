@@ -9,7 +9,6 @@ namespace Application.Wishlist.Features.Commands.AddToWishlist;
 public class AddToWishlistHandler(
     IWishlistRepository wishlistRepository,
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<AddToWishlistCommand>
 {
@@ -20,16 +19,14 @@ public class AddToWishlistHandler(
         var userId = UserId.From(request.UserId);
         var productId = ProductId.From(request.ProductId);
 
-        var product = await productRepository.GetByIdAsync(productId, ct);
-        if (product is null || !product.IsActive)
-            return ServiceResult.NotFound("محصول یافت نشد.");
+        var productResult = await productRepository.GetByIdAsync(productId, ct).OrNotFoundAsync(p => !p.IsActive, "محصول یافت نشد.");
+        if (productResult.IsFailure) return productResult.ToServiceResult();
 
         if (await wishlistRepository.ExistsAsync(userId, productId, ct))
             return ServiceResult.Conflict("این محصول قبلاً به علاقه‌مندی‌ها اضافه شده است.");
 
         var wishlistItem = Domain.Wishlist.Aggregates.Wishlist.Create(userId, productId, dateTimeProvider.UtcNow);
         await wishlistRepository.AddAsync(wishlistItem, ct);
-        await unitOfWork.SaveChangesAsync(ct);
 
         return ServiceResult.Success();
     }

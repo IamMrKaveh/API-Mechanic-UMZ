@@ -7,7 +7,6 @@ namespace Application.Wallet.Features.Commands.MarkFraudAlertReviewed;
 
 public sealed class MarkFraudAlertReviewedHandler(
     IWalletFraudAlertRepository repository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
@@ -27,7 +26,6 @@ public sealed class MarkFraudAlertReviewedHandler(
             alert.MarkAsReviewed(adminId, request.Note, dateTimeProvider.UtcNow);
 
             repository.Update(alert);
-            await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSystemEventAsync(
                 "FraudAlertReviewed",

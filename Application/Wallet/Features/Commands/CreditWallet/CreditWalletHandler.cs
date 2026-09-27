@@ -6,7 +6,6 @@ namespace Application.Wallet.Features.Commands.CreditWallet;
 
 public class CreditWalletHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
@@ -65,7 +64,6 @@ public class CreditWalletHandler(
                 request.CorrelationId);
 
             walletRepository.Update(wallet);
-            await unitOfWork.SaveChangesAsync(ct);
 
             if (autoUnfrozen && adminIdForUnfreeze is not null)
             {

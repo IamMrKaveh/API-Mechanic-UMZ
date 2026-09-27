@@ -6,7 +6,6 @@ namespace Application.Wallet.Features.Commands.UnfreezeWallet;
 
 public sealed class UnfreezeWalletHandler(
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
@@ -27,7 +26,6 @@ public sealed class UnfreezeWalletHandler(
             {
                 wallet = Domain.Wallet.Aggregates.Wallet.Create(userId, now);
                 await walletRepository.AddAsync(wallet, ct);
-                await unitOfWork.SaveChangesAsync(ct);
 
                 await auditService.LogSystemEventAsync(
                     "WalletAutoCreatedOnUnfreeze",
@@ -39,7 +37,6 @@ public sealed class UnfreezeWalletHandler(
 
             wallet.Unfreeze(adminId, ManualUnfreezeReason, now);
             walletRepository.Update(wallet);
-            await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSystemEventAsync(
                 "WalletUnfrozen",

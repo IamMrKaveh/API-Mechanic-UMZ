@@ -9,7 +9,6 @@ namespace Application.Wallet.Features.Commands.MarkWithdrawalPaid;
 public sealed class MarkWithdrawalPaidHandler(
     IWalletWithdrawalRepository withdrawalRepository,
     IWalletRepository walletRepository,
-    IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
@@ -61,7 +60,6 @@ public sealed class MarkWithdrawalPaidHandler(
 
             walletRepository.Update(wallet);
             withdrawalRepository.Update(withdrawal);
-            await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSystemEventAsync(
                 "WithdrawalMarkedPaid",

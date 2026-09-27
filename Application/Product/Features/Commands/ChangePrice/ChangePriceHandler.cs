@@ -16,9 +16,9 @@ public sealed class ChangePriceHandler(
         var variantId = VariantId.From(request.VariantId);
         var productId = ProductId.From(request.ProductId);
 
-        var variant = await variantRepository.GetByIdAsync(variantId, ct);
-        if (variant is null || variant.ProductId != productId)
-            return ServiceResult.NotFound("واریانت یافت نشد.");
+        var variantResult = await variantRepository.GetByIdAsync(variantId, ct).OrNotFoundAsync(v => v.ProductId != productId, "واریانت یافت نشد.");
+        if (variantResult.IsFailure) return variantResult.ToServiceResult();
+        var variant = variantResult.Value;
 
         try
         {

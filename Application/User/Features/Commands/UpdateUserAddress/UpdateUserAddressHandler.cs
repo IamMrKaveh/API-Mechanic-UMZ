@@ -16,9 +16,9 @@ public class UpdateUserAddressHandler(
         var addressId = UserAddressId.From(request.AddressId);
         var phoneNumber = PhoneNumber.Create(request.PhoneNumber);
 
-        var user = await userRepository.GetWithAddressesAsync(userId, ct);
-        if (user == null)
-            return ServiceResult.NotFound("User not found.");
+        var userResult = await userRepository.GetWithAddressesAsync(userId, ct).OrNotFoundAsync("User not found.");
+        if (userResult.IsFailure) return userResult.ToServiceResult();
+        var user = userResult.Value;
 
         user.UpdateAddress(
             addressId,

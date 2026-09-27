@@ -19,7 +19,7 @@ public sealed class ReleaseWalletReservationHandlerTests
     public ReleaseWalletReservationHandlerTests()
     {
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new ReleaseWalletReservationHandler(_walletRepository, _unitOfWork, _dateTimeProvider, _auditService);
+        _sut = new ReleaseWalletReservationHandler(_walletRepository, _dateTimeProvider, _auditService);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public sealed class ReleaseWalletReservationHandlerTests
         result.ShouldBeSuccess();
         wallet.AvailableBalance.Amount.ShouldBe(500_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -67,26 +67,5 @@ public sealed class ReleaseWalletReservationHandlerTests
             new ReleaseWalletReservationCommand(userId.Value, Guid.NewGuid()), CancellationToken.None);
 
         result.ShouldBeSuccess();
-    }
-
-    [Fact]
-    public async Task Handle_WhenConcurrencyExceptionThrown_ReturnsConflict()
-    {
-        var userId = UserId.NewId();
-        var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
-        var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(200_000m), "test", DateTime.UtcNow);
-
-        _walletRepository.GetByUserIdForUpdateAsync(userId, Arg.Any<CancellationToken>()).Returns(wallet);
-        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
-            .Returns<Task>(_ => throw new ConcurrencyException());
-
-        var result = await _sut.Handle(
-            new ReleaseWalletReservationCommand(userId.Value, reservationId.Value), CancellationToken.None);
-
-        result.ShouldFailWithType(ErrorType.Conflict);
-        await _auditService.Received().LogSystemEventAsync(
-            "WalletReleaseConcurrencyConflict", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

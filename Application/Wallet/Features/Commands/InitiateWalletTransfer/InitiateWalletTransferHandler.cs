@@ -112,8 +112,6 @@ public sealed class InitiateWalletTransferHandler(
                 return ServiceResult<InitiateWalletTransferResultDto>.Failure(errorMessage);
             }
 
-            await unitOfWork.SaveChangesAsync(ct);
-
             return ServiceResult<InitiateWalletTransferResultDto>.Success(new InitiateWalletTransferResultDto
             {
                 TransferId = transfer.Id.Value,

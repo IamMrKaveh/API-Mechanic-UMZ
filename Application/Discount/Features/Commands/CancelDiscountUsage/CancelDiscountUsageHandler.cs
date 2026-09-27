@@ -18,9 +18,8 @@ public class CancelDiscountUsageHandler(
         if (discountResult.IsFailure) return discountResult.Error;
         var discount = discountResult.Value;
 
-        var usage = discount.Usages.FirstOrDefault(u => u.OrderId == orderId);
-        if (usage is null)
-            return ServiceResult.NotFound("استفاده‌ای برای این سفارش یافت نشد.");
+        var usageResult = discount.Usages.FirstOrDefault(u => u.OrderId == orderId).ToResultOrNotFound("استفاده‌ای برای این سفارش یافت نشد.");
+        if (usageResult.IsFailure) return usageResult.ToServiceResult();
 
         discountRepository.Update(discount);
 

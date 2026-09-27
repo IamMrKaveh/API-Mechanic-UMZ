@@ -11,7 +11,6 @@ namespace Application.Wallet.Features.Commands.RequestWithdrawal;
 public sealed class RequestWithdrawalHandler(
     IWalletRepository walletRepository,
     IWalletWithdrawalRepository withdrawalRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
@@ -102,7 +101,6 @@ public sealed class RequestWithdrawalHandler(
 
             walletRepository.Update(wallet);
             await withdrawalRepository.AddAsync(withdrawal, ct);
-            await unitOfWork.SaveChangesAsync(ct);
 
             return ServiceResult<Guid>.Success(withdrawal.Id.Value);
         }

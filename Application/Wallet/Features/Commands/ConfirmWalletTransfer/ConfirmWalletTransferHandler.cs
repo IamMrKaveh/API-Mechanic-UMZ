@@ -160,8 +160,6 @@ public sealed class ConfirmWalletTransferHandler(
             transfer.MarkCompleted(now);
             transferRepository.Update(transfer);
 
-            await unitOfWork.SaveChangesAsync(ct);
-
             var recipient = await userRepository.GetByIdAsync(transfer.ToUserId, ct);
             var recipientName = BuildDisplayName(recipient);
 

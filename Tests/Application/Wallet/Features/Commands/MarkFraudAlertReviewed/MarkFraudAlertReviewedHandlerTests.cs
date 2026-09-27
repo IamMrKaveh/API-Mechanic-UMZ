@@ -24,7 +24,7 @@ public sealed class MarkFraudAlertReviewedHandlerTests
     public MarkFraudAlertReviewedHandlerTests()
     {
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new MarkFraudAlertReviewedHandler(_repository, _unitOfWork, _auditService, _dateTimeProvider, _currentUserService);
+        _sut = new MarkFraudAlertReviewedHandler(_repository, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public sealed class MarkFraudAlertReviewedHandlerTests
         alert.ReviewNote.ShouldBe("checked");
         alert.ReviewedBy.ShouldBe(adminId);
         _repository.Received(1).Update(alert);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
         await _auditService.Received(1).LogSystemEventAsync(
             "FraudAlertReviewed", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }

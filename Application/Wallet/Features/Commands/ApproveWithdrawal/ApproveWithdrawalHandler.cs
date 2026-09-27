@@ -7,7 +7,6 @@ namespace Application.Wallet.Features.Commands.ApproveWithdrawal;
 
 public sealed class ApproveWithdrawalHandler(
     IWalletWithdrawalRepository withdrawalRepository,
-    IUnitOfWork unitOfWork,
     IDistributedLock distributedLock,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
@@ -39,7 +38,6 @@ public sealed class ApproveWithdrawalHandler(
 
             withdrawal.Approve(adminId, dateTimeProvider.UtcNow);
             withdrawalRepository.Update(withdrawal);
-            await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogSystemEventAsync(
                 "WithdrawalApproved",

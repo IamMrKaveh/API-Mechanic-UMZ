@@ -16,7 +16,6 @@ public class UpdateVariantHandler(
     IInventoryRepository inventoryRepository,
     IAttributeRepository attributeRepository,
     IShippingRepository shippingRepository,
-    IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService,
     IDateTimeProvider dateTimeProvider)
@@ -144,12 +143,6 @@ public class UpdateVariantHandler(
                     return ServiceResult.Validation(adjustResult.Error.Message);
             }
         }
-
-        await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
-        {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-            return true;
-        }, ct);
 
         await auditService.LogProductEventAsync(
             productId,

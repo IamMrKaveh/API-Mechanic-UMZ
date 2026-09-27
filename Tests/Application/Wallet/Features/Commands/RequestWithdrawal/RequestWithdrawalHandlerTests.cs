@@ -25,7 +25,7 @@ public sealed class RequestWithdrawalHandlerTests
     {
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new RequestWithdrawalHandler(
-            _walletRepository, _withdrawalRepository, _unitOfWork, _auditService, _dateTimeProvider, _currentUserService);
+            _walletRepository, _withdrawalRepository, _auditService, _dateTimeProvider, _currentUserService);
     }
 
     [Fact]
@@ -141,28 +141,5 @@ public sealed class RequestWithdrawalHandlerTests
         wallet.AvailableBalance.Amount.ShouldBe(300_000m);
         await _withdrawalRepository.Received(1).AddAsync(Arg.Any<WalletWithdrawalRequest>(), Arg.Any<CancellationToken>());
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Handle_WhenConcurrencyExceptionThrown_ReturnsConflict()
-    {
-        var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
-        var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
-        _withdrawalRepository
-            .CountByUserAndStatusAsync(userId, WalletWithdrawalStatus.Pending, Arg.Any<CancellationToken>())
-            .Returns(0);
-        _walletRepository.GetByUserIdForUpdateAsync(userId, Arg.Any<CancellationToken>()).Returns(wallet);
-        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
-            .Returns<Task>(_ => throw new ConcurrencyException());
-
-        var result = await _sut.Handle(
-            new RequestWithdrawalCommand(200_000m, ValidIban, "Ali Rezaei", null), CancellationToken.None);
-
-        result.ShouldFailWithType(ErrorType.Conflict);
-        await _auditService.Received().LogSystemEventAsync(
-            "WithdrawalRequestConcurrencyConflict", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

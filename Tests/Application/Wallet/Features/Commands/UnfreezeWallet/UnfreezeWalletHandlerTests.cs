@@ -24,7 +24,6 @@ public class UnfreezeWalletHandlerTests
 
         _sut = new UnfreezeWalletHandler(
             _walletRepository,
-            _unitOfWork,
             _auditService,
             _dateTimeProvider,
             _currentUserService);
@@ -52,7 +51,7 @@ public class UnfreezeWalletHandlerTests
         addedWallet.ShouldNotBeNull();
         addedWallet!.OwnerId.Value.ShouldBe(command.UserId);
         addedWallet.IsActive.ShouldBeTrue();
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
         await _auditService.Received(1).LogSystemEventAsync(
             "WalletAutoCreatedOnUnfreeze",
             Arg.Any<string>(),
@@ -60,7 +59,7 @@ public class UnfreezeWalletHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenWalletExistsAndFrozen_UnfreezesWalletAndSavesChangesAndAudits()
+    public async Task Handle_WhenWalletExistsAndFrozen_UnfreezesWalletAndAudits()
     {
         var command = ValidCommand();
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
@@ -78,7 +77,7 @@ public class UnfreezeWalletHandlerTests
         wallet.FrozenAt.ShouldBeNull();
         wallet.FrozenBy.ShouldBeNull();
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
         await _auditService.Received(1).LogSystemEventAsync(
             "WalletUnfrozen",
             Arg.Any<string>(),
@@ -100,30 +99,7 @@ public class UnfreezeWalletHandlerTests
         result.ShouldBeSuccess();
         wallet.IsActive.ShouldBeTrue();
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Handle_WhenSaveChangesThrowsConcurrencyException_ReturnsConflictAndAudits()
-    {
-        var command = ValidCommand();
-        var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
-        wallet.Freeze("prior", UserId.NewId(), DateTime.UtcNow);
-
-        _walletRepository
-            .GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
-            .Returns(wallet);
-        _unitOfWork
-            .SaveChangesAsync(Arg.Any<CancellationToken>())
-            .ThrowsAsync(new ConcurrencyException());
-
-        var result = await _sut.Handle(command, CancellationToken.None);
-
-        result.ShouldFailWith(ErrorCode.Conflict);
-        await _auditService.Received(1).LogSystemEventAsync(
-            "WalletUnfreezeConcurrencyConflict",
-            Arg.Any<string>(),
-            Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

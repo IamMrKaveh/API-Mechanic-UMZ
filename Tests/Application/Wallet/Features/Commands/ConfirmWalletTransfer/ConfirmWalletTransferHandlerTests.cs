@@ -136,7 +136,7 @@ public sealed class ConfirmWalletTransferHandlerTests
         transfer.Status.ShouldBe(WalletTransferStatus.Completed);
         senderWallet.Balance.Amount.ShouldBe(150_000m);
         recipientWallet.Balance.Amount.ShouldBe(50_000m);
-        await _unitOfWork.Received().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

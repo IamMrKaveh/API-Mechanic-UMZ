@@ -28,7 +28,7 @@ public sealed class MarkWithdrawalPaidHandlerTests
 
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new MarkWithdrawalPaidHandler(
-            _withdrawalRepository, _walletRepository, _unitOfWork,
+            _withdrawalRepository, _walletRepository,
             _distributedLock, _auditService, _dateTimeProvider, _currentUserService);
     }
 
@@ -107,33 +107,5 @@ public sealed class MarkWithdrawalPaidHandlerTests
         wallet.Balance.Amount.ShouldBe(300_000m);
         await _auditService.Received(1).LogSystemEventAsync(
             "WithdrawalMarkedPaid", Arg.Any<string>(), Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Handle_WhenConcurrencyExceptionThrown_ReturnsConflict()
-    {
-        var adminId = UserId.NewId();
-        var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
-
-        var wallet = new WalletBuilder().WithOwnerId(userId).Build();
-        wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
-        var reservationId = WalletReservationId.NewId();
-        wallet.CreateReservation(reservationId, Money.Create(200_000m), "withdrawal-request", DateTime.UtcNow);
-
-        var withdrawal = new WalletWithdrawalRequestBuilder()
-            .WithUserId(userId).WithAmount(200_000m).WithReservationId(reservationId).Build();
-
-        _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
-            .Returns(withdrawal);
-        _walletRepository.GetByUserIdForUpdateAsync(userId, Arg.Any<CancellationToken>()).Returns(wallet);
-        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
-            .Returns<Task>(_ => throw new ConcurrencyException());
-
-        var result = await _sut.Handle(new MarkWithdrawalPaidCommand(withdrawal.Id.Value, "REF-1"), CancellationToken.None);
-
-        result.ShouldFailWithType(ErrorType.Conflict);
-        await _auditService.Received().LogSystemEventAsync(
-            "WithdrawalMarkPaidConcurrencyConflict", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }
