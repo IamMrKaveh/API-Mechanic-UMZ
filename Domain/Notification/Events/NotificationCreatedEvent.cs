@@ -3,9 +3,4 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Notification.Events;
 
-public sealed class NotificationCreatedEvent(NotificationId notificationId, UserId userId, NotificationType notificationType) : DomainEvent
-{
-    public NotificationId NotificationId { get; } = notificationId;
-    public UserId UserId { get; } = userId;
-    public NotificationType NotificationType { get; } = notificationType;
-}
+public sealed record NotificationCreatedEvent(NotificationId NotificationId, UserId UserId, NotificationType NotificationType) : DomainEvent;

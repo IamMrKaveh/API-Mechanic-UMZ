@@ -4,12 +4,7 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Security.Events;
 
-public sealed class OtpExpiredEvent(
-    OtpId otpId,
-    UserId userId,
-    OtpPurpose purpose) : DomainEvent
-{
-    public OtpId OtpId { get; } = otpId;
-    public UserId UserId { get; } = userId;
-    public OtpPurpose Purpose { get; } = purpose;
-}
+public sealed record OtpExpiredEvent(
+    OtpId OtpId,
+    UserId UserId,
+    OtpPurpose Purpose) : DomainEvent;

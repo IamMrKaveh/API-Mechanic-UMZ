@@ -2,7 +2,4 @@
 
 namespace Domain.User.Events;
 
-public sealed class UserPasswordChangedEvent(UserId userId) : DomainEvent
-{
-    public UserId UserId { get; } = userId;
-}
+public sealed record UserPasswordChangedEvent(UserId UserId) : DomainEvent;

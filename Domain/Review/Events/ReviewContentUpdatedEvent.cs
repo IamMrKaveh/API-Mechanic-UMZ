@@ -3,13 +3,7 @@ using Domain.Review.ValueObjects;
 
 namespace Domain.Review.Events;
 
-public sealed class ReviewContentUpdatedEvent(
-    ReviewId reviewId,
-    ProductId productId,
-    int newRating)
-    : DomainEvent
-{
-    public ReviewId ReviewId { get; } = reviewId;
-    public ProductId ProductId { get; } = productId;
-    public int NewRating { get; } = newRating;
-}
+public sealed record ReviewContentUpdatedEvent(
+    ReviewId ReviewId,
+    ProductId ProductId,
+    int NewRating) : DomainEvent;

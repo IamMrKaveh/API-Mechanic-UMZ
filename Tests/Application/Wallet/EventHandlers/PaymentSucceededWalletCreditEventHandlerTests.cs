@@ -22,7 +22,7 @@ public class PaymentSucceededWalletCreditEventHandlerTests
     private static PaymentSucceededEvent BuildEvent() => new(
         PaymentTransactionId.NewId(),
         OrderId.NewId(),
-        refId: 987654321,
+        RefId: 987654321,
         UserId.NewId(),
         Money.Create(150_000m, "IRT"));
 

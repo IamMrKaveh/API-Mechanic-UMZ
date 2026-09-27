@@ -3,10 +3,6 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Support.Events;
 
-public sealed class TicketAnsweredEvent(
-    TicketId ticketId,
-    UserId adminId) : DomainEvent
-{
-    public TicketId TicketId { get; } = ticketId;
-    public UserId AdminId { get; } = adminId;
-}
+public sealed record TicketAnsweredEvent(
+    TicketId TicketId,
+    UserId AdminId) : DomainEvent;

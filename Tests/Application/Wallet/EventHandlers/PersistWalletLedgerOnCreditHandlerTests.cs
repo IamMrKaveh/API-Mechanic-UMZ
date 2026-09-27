@@ -25,9 +25,9 @@ public class PersistWalletLedgerOnCreditHandlerTests
         UserId.NewId(),
         Money.Create(10_000m, "IRT"),
         Money.Create(30_000m, "IRT"),
-        description: "شارژ حساب",
-        referenceId: Guid.NewGuid().ToString("N"),
-        idempotencyKey: idempotencyKey);
+        Description: "شارژ حساب",
+        ReferenceId: Guid.NewGuid().ToString("N"),
+        IdempotencyKey: idempotencyKey);
 
     [Fact]
     public async Task Handle_WhenIdempotencyKeyAlreadyExists_DoesNotAddOrSave()

@@ -248,9 +248,9 @@ public class WalletLedgerEntryTests
         var evt = new WalletCreditedEvent(
             walletId, userId, amount, newBalance,
             "credit-desc", "ref-1",
-            idempotencyKey: "idem",
-            correlationId: "corr",
-            topUpId: WalletTopUpId.NewId());
+            IdempotencyKey: "idem",
+            CorrelationId: "corr",
+            TopUpId: WalletTopUpId.NewId());
 
         var sut = WalletLedgerEntry.FromCreditEvent(evt, DateTime.UtcNow);
 
@@ -284,7 +284,7 @@ public class WalletLedgerEntryTests
         var evt = new WalletDebitedEvent(
             walletId, userId, amount, newBalance,
             "debit-desc", "ref-2",
-            transferId: WalletTransferId.NewId());
+            TransferId: WalletTransferId.NewId());
 
         var sut = WalletLedgerEntry.FromDebitEvent(evt, DateTime.UtcNow);
 

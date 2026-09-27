@@ -17,9 +17,9 @@ public class StockAdjustedEventTests
         var sut = new StockAdjustedEvent(
             InventoryId.NewId(),
             VariantId.NewId(),
-            newQuantity: 10,
-            adjustment: adjustment,
-            reason: "x");
+            NewQuantity: 10,
+            Adjustment: adjustment,
+            Reason: "x");
 
         sut.IsIncrease.ShouldBe(expected);
     }

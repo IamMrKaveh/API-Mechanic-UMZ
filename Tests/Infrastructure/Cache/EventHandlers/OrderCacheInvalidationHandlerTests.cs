@@ -59,7 +59,7 @@ public class OrderCacheInvalidationHandlerTests
     {
         var orderId = OrderId.NewId();
         var userId = UserId.NewId();
-        var evt = new OrderCancelledEvent(orderId, SampleOrderNumber(), userId, "user-request", wasPaid: false);
+        var evt = new OrderCancelledEvent(orderId, SampleOrderNumber(), userId, "user-request", WasPaid: false);
         var notification = new DomainEventNotification<OrderCancelledEvent>(evt);
 
         await _sut.Handle(notification, CancellationToken.None);

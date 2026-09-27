@@ -90,7 +90,7 @@ public class ReviewEventsTests
     [Fact]
     public void ReviewVoteChangedEvent_StoresCounts()
     {
-        var sut = new ReviewVoteChangedEvent(ReviewId.NewId(), likeCount: 7, dislikeCount: 2);
+        var sut = new ReviewVoteChangedEvent(ReviewId.NewId(), LikeCount: 7, DislikeCount: 2);
 
         sut.LikeCount.ShouldBe(7);
         sut.DislikeCount.ShouldBe(2);

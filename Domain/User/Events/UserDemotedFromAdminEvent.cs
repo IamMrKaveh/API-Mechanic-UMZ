@@ -2,7 +2,4 @@ using Domain.User.ValueObjects;
 
 namespace Domain.User.Events;
 
-public sealed class UserDemotedFromAdminEvent(UserId userId) : DomainEvent
-{
-    public UserId UserId { get; } = userId;
-}
+public sealed record UserDemotedFromAdminEvent(UserId UserId) : DomainEvent;

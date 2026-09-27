@@ -2,10 +2,6 @@
 
 namespace Domain.User.Events;
 
-public sealed class UserAddressUpdatedEvent(
-    UserId userId,
-    UserAddressId addressId) : DomainEvent
-{
-    public UserId UserId { get; } = userId;
-    public UserAddressId AddressId { get; } = addressId;
-}
+public sealed record UserAddressUpdatedEvent(
+    UserId UserId,
+    UserAddressId AddressId) : DomainEvent;
