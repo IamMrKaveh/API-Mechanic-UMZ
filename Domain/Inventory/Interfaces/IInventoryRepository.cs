@@ -1,14 +1,11 @@
+using Domain.Common.Interfaces;
 using Domain.Inventory.ValueObjects;
 using Domain.Variant.ValueObjects;
 
 namespace Domain.Inventory.Interfaces;
 
-public interface IInventoryRepository
+public interface IInventoryRepository : IRepository<Aggregates.Inventory, InventoryId>
 {
-    Task<Aggregates.Inventory?> GetByIdAsync(
-        InventoryId id,
-        CancellationToken ct = default);
-
     Task<Aggregates.Inventory?> GetByVariantIdAsync(
         VariantId variantId,
         CancellationToken ct = default);
@@ -24,8 +21,4 @@ public interface IInventoryRepository
     Task<IReadOnlyList<Aggregates.Inventory>> GetByReferenceNumberAsync(
         string referenceNumber,
         CancellationToken ct = default);
-
-    Task AddAsync(Aggregates.Inventory inventory, CancellationToken ct = default);
-
-    void Update(Aggregates.Inventory inventory);
 }

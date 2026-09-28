@@ -6,40 +6,38 @@ using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Repositories;
 
-public sealed class WalletTopUpRepository(DBContext context) : IWalletTopUpRepository
+public sealed class WalletTopUpRepository(DBContext context)
+    : Persistence.Repositories.RepositoryBase<WalletTopUp, WalletTopUpId>(context), IWalletTopUpRepository
 {
-    public async Task AddAsync(WalletTopUp topUp, CancellationToken ct = default)
-        => await context.Set<WalletTopUp>().AddAsync(topUp, ct);
-
-    public void Update(WalletTopUp topUp)
+    public override void Update(WalletTopUp topUp)
     {
-        var entry = context.Entry(topUp);
+        var entry = Context.Entry(topUp);
 
         if (entry.State == EntityState.Detached)
         {
-            var local = context.Set<WalletTopUp>().Local.FirstOrDefault(e => e.Id == topUp.Id);
+            var local = Context.Set<WalletTopUp>().Local.FirstOrDefault(e => e.Id == topUp.Id);
             if (local is not null)
             {
                 if (!ReferenceEquals(local, topUp))
                 {
-                    context.Entry(local).CurrentValues.SetValues(topUp);
-                    context.Entry(local).State = EntityState.Modified;
+                    Context.Entry(local).CurrentValues.SetValues(topUp);
+                    Context.Entry(local).State = EntityState.Modified;
                 }
                 else
                 {
-                    context.Entry(local).State = EntityState.Modified;
+                    Context.Entry(local).State = EntityState.Modified;
                 }
                 return;
             }
 
-            var currentXmin = context.Set<WalletTopUp>()
+            var currentXmin = Context.Set<WalletTopUp>()
                 .AsNoTracking()
                 .Where(x => x.Id == topUp.Id)
                 .Select(x => EF.Property<uint>(x, "xmin"))
                 .FirstOrDefault();
 
-            context.Set<WalletTopUp>().Attach(topUp);
-            entry = context.Entry(topUp);
+            Context.Set<WalletTopUp>().Attach(topUp);
+            entry = Context.Entry(topUp);
             entry.Property("xmin").OriginalValue = currentXmin;
             entry.State = EntityState.Modified;
             return;
@@ -49,18 +47,15 @@ public sealed class WalletTopUpRepository(DBContext context) : IWalletTopUpRepos
             entry.State = EntityState.Modified;
     }
 
-    public async Task<WalletTopUp?> GetByIdAsync(WalletTopUpId id, CancellationToken ct = default)
-        => await context.Set<WalletTopUp>().FirstOrDefaultAsync(x => x.Id == id, ct);
-
     public async Task<WalletTopUp?> GetByAuthorityAsync(string authority, CancellationToken ct = default)
-        => await context.Set<WalletTopUp>()
+        => await Context.Set<WalletTopUp>()
             .FirstOrDefaultAsync(x => x.GatewayAuthority == authority, ct);
 
     public async Task<IReadOnlyList<WalletTopUp>> GetPendingOlderThanAsync(
         DateTime cutoffUtc,
         int batchSize,
         CancellationToken ct = default)
-        => await context.Set<WalletTopUp>()
+        => await Context.Set<WalletTopUp>()
             .Where(x => x.Status == WalletTopUpStatus.Pending && x.CreatedAt < cutoffUtc)
             .OrderBy(x => x.CreatedAt)
             .Take(batchSize)
@@ -75,7 +70,7 @@ public sealed class WalletTopUpRepository(DBContext context) : IWalletTopUpRepos
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
-        return await context.Set<WalletTopUp>()
+        return await Context.Set<WalletTopUp>()
             .Where(x => x.UserId == userId)
             .OrderByDescending(x => x.CreatedAt)
             .Skip((page - 1) * pageSize)

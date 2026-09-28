@@ -1,42 +1,37 @@
-﻿using Domain.Product.ValueObjects;
+using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Wishlist.Interfaces;
 
 namespace Infrastructure.Wishlist.Repositories;
 
-public sealed class WishlistRepository(DBContext context) : IWishlistRepository
+public sealed class WishlistRepository(DBContext context)
+    : Persistence.Repositories.RepositoryBase<Domain.Wishlist.Aggregates.Wishlist, Domain.Wishlist.ValueObjects.WishlistId>(context), IWishlistRepository
 {
-    public async Task AddAsync(Domain.Wishlist.Aggregates.Wishlist wishlist, CancellationToken ct = default)
-        => await context.Wishlists.AddAsync(wishlist, ct);
-
-    public void Update(Domain.Wishlist.Aggregates.Wishlist wishlist)
-        => context.Wishlists.Update(wishlist);
-
     public async Task<Domain.Wishlist.Aggregates.Wishlist?> GetByUserAndProductAsync(
         UserId userId, ProductId productId, CancellationToken ct = default)
-        => await context.Wishlists.FirstOrDefaultAsync(
+        => await Context.Wishlists.FirstOrDefaultAsync(
             w => w.UserId == userId && w.ProductId == productId, ct);
 
     public async Task RemoveAsync(UserId userId, ProductId productId, CancellationToken ct = default)
     {
-        var wishlist = await context.Wishlists
+        var wishlist = await Context.Wishlists
             .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == productId, ct);
 
         if (wishlist is not null)
-            context.Wishlists.Remove(wishlist);
+            Context.Wishlists.Remove(wishlist);
     }
 
     public async Task ClearAsync(UserId userId, CancellationToken ct = default)
     {
-        var items = await context.Wishlists
+        var items = await Context.Wishlists
             .Where(w => w.UserId == userId)
             .ToListAsync(ct);
 
         if (items.Count > 0)
-            context.Wishlists.RemoveRange(items);
+            Context.Wishlists.RemoveRange(items);
     }
 
     public async Task<bool> ExistsAsync(UserId userId, ProductId productId, CancellationToken ct = default)
-        => await context.Wishlists.AnyAsync(
+        => await Context.Wishlists.AnyAsync(
             w => w.UserId == userId && w.ProductId == productId, ct);
 }

@@ -1,16 +1,13 @@
-﻿using Domain.Security.Aggregates;
+﻿using Domain.Common.Interfaces;
+using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 
 namespace Domain.Security.Interfaces;
 
-public interface IOtpRepository
+public interface IOtpRepository : IRepository<UserOtp, OtpId>
 {
-    Task<UserOtp?> GetByIdAsync(
-        OtpId otpId,
-        CancellationToken ct = default);
-
     Task<UserOtp?> GetLatestActiveByUserIdAsync(
         UserId userId,
         OtpPurpose purpose,
@@ -21,12 +18,6 @@ public interface IOtpRepository
         OtpPurpose purpose,
         TimeSpan window,
         CancellationToken ct = default);
-
-    Task AddAsync(
-        UserOtp otp,
-        CancellationToken ct = default);
-
-    void Update(UserOtp otp);
 
     Task InvalidateAllActiveByUserIdAsync(
         UserId userId,

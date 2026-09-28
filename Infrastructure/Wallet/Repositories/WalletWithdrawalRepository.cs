@@ -6,35 +6,27 @@ using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Repositories;
 
-public sealed class WalletWithdrawalRepository(DBContext context) : IWalletWithdrawalRepository
+public sealed class WalletWithdrawalRepository(DBContext context)
+    : Persistence.Repositories.RepositoryBase<WalletWithdrawalRequest, WalletWithdrawalRequestId>(context), IWalletWithdrawalRepository
 {
-    public async Task AddAsync(WalletWithdrawalRequest withdrawal, CancellationToken ct = default)
-        => await context.Set<WalletWithdrawalRequest>().AddAsync(withdrawal, ct);
-
-    public void Update(WalletWithdrawalRequest withdrawal)
+    public override void Update(WalletWithdrawalRequest withdrawal)
     {
-        var entry = context.Entry(withdrawal);
+        var entry = Context.Entry(withdrawal);
         if (entry.State == EntityState.Detached)
-            context.Set<WalletWithdrawalRequest>().Attach(withdrawal);
+            Context.Set<WalletWithdrawalRequest>().Attach(withdrawal);
         entry.State = EntityState.Modified;
     }
-
-    public async Task<WalletWithdrawalRequest?> GetByIdAsync(
-        WalletWithdrawalRequestId id,
-        CancellationToken ct = default)
-        => await context.Set<WalletWithdrawalRequest>()
-            .FirstOrDefaultAsync(x => x.Id == id, ct);
 
     public async Task<WalletWithdrawalRequest?> GetByIdForUpdateAsync(
         WalletWithdrawalRequestId id,
         CancellationToken ct = default)
     {
-        var withdrawal = await context.Set<WalletWithdrawalRequest>()
+        var withdrawal = await Context.Set<WalletWithdrawalRequest>()
             .FirstOrDefaultAsync(x => x.Id == id, ct);
 
         if (withdrawal is not null)
         {
-            var entry = context.Entry(withdrawal);
+            var entry = Context.Entry(withdrawal);
             entry.Property("xmin").IsModified = false;
             entry.OriginalValues["xmin"] = entry.CurrentValues["xmin"];
         }
@@ -46,6 +38,6 @@ public sealed class WalletWithdrawalRepository(DBContext context) : IWalletWithd
         UserId userId,
         WalletWithdrawalStatus status,
         CancellationToken ct = default)
-        => await context.Set<WalletWithdrawalRequest>()
+        => await Context.Set<WalletWithdrawalRequest>()
             .CountAsync(x => x.UserId == userId && x.Status == status, ct);
 }

@@ -4,20 +4,15 @@ using Domain.Audit.ValueObjects;
 
 namespace Infrastructure.Audit.Repositories;
 
-public sealed class AuditRepository(DBContext context) : IAuditRepository
+public sealed class AuditRepository(DBContext context)
+    : Persistence.Repositories.RepositoryBase<AuditLog, AuditLogId>(context), IAuditRepository
 {
     public async Task AddAuditLogAsync(
         AuditLog auditLog,
         CancellationToken ct = default)
     {
-        await context.AuditLogs.AddAsync(auditLog, ct);
+        await AddAsync(auditLog, ct);
     }
-
-    public async Task<AuditLog?> GetByIdAsync(
-        AuditLogId id,
-        CancellationToken ct = default) =>
-        await context.AuditLogs
-            .FirstOrDefaultAsync(l => l.Id == id, ct);
 
     public async Task<IReadOnlyList<AuditLog>> GetForArchiveAsync(
         DateTime cutoff,
@@ -27,7 +22,7 @@ public sealed class AuditRepository(DBContext context) : IAuditRepository
         int batchSize,
         CancellationToken ct = default)
     {
-        var query = context.AuditLogs.Where(a => a.CreatedAt < cutoff);
+        var query = Context.AuditLogs.Where(a => a.CreatedAt < cutoff);
 
         if (onlyNonArchived)
             query = query.Where(a => !a.IsArchived);
@@ -50,7 +45,7 @@ public sealed class AuditRepository(DBContext context) : IAuditRepository
         IEnumerable<AuditLog> logs,
         CancellationToken ct = default)
     {
-        context.AuditLogs.RemoveRange(logs);
+        Context.AuditLogs.RemoveRange(logs);
         return Task.CompletedTask;
     }
 }

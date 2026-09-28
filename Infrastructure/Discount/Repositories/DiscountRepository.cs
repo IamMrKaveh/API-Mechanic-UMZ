@@ -4,11 +4,12 @@ using Domain.Discount.ValueObjects;
 
 namespace Infrastructure.Discount.Repositories;
 
-public sealed class DiscountRepository(DBContext context) : IDiscountRepository
+public sealed class DiscountRepository(DBContext context)
+    : Persistence.Repositories.RepositoryBase<DiscountCode, DiscountCodeId>(context), IDiscountRepository
 {
-    public async Task<DiscountCode?> GetByIdAsync(DiscountCodeId id, CancellationToken ct = default)
+    public override async Task<DiscountCode?> GetByIdAsync(DiscountCodeId id, CancellationToken ct = default)
     {
-        return await context.DiscountCodes
+        return await Context.DiscountCodes
             .Include(d => d.Restrictions)
             .Include(d => d.Usages)
             .AsSplitQuery()
@@ -18,7 +19,7 @@ public sealed class DiscountRepository(DBContext context) : IDiscountRepository
     public async Task<DiscountCode?> GetByCodeAsync(string code, CancellationToken ct = default)
     {
         var normalizedCode = code.Trim().ToUpperInvariant();
-        return await context.DiscountCodes
+        return await Context.DiscountCodes
             .Include(d => d.Restrictions)
             .Include(d => d.Usages)
             .AsSplitQuery()
@@ -27,7 +28,7 @@ public sealed class DiscountRepository(DBContext context) : IDiscountRepository
 
     public async Task<DiscountCode?> GetByIdWithUsagesAsync(DiscountCodeId id, CancellationToken ct = default)
     {
-        return await context.DiscountCodes
+        return await Context.DiscountCodes
             .Include(d => d.Restrictions)
             .Include(d => d.Usages)
                 .ThenInclude(u => u.User)
@@ -35,7 +36,4 @@ public sealed class DiscountRepository(DBContext context) : IDiscountRepository
             .FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 
-    public async Task AddAsync(DiscountCode discountCode, CancellationToken ct = default) => await context.DiscountCodes.AddAsync(discountCode, ct);
-
-    public void Update(DiscountCode discountCode) => context.DiscountCodes.Update(discountCode);
 }

@@ -1,20 +1,11 @@
+using Domain.Common.Interfaces;
 using Domain.Support.Aggregates;
 using Domain.Support.ValueObjects;
 
 namespace Domain.Support.Interfaces;
 
-public interface ITicketRepository
+public interface ITicketRepository : IRepository<Ticket, TicketId>
 {
-    Task AddAsync(
-        Ticket ticket,
-        CancellationToken ct = default);
-
-    void Update(Ticket ticket);
-
-    Task<Ticket?> GetByIdAsync(
-        TicketId id,
-        CancellationToken ct = default);
-
     Task<Ticket?> GetByIdWithMessagesAsync(
         TicketId id,
         CancellationToken ct = default);

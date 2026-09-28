@@ -1,19 +1,12 @@
-﻿using Domain.User.ValueObjects;
+﻿using Domain.Common.Interfaces;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.ValueObjects;
 
 namespace Domain.Wallet.Interfaces;
 
-public interface IWalletTransferRepository
+public interface IWalletTransferRepository : IRepository<WalletTransfer, WalletTransferId>
 {
-    Task AddAsync(WalletTransfer transfer, CancellationToken ct = default);
-
-    void Update(WalletTransfer transfer);
-
-    Task<WalletTransfer?> GetByIdAsync(
-        WalletTransferId id,
-        CancellationToken ct = default);
-
     Task<WalletTransfer?> GetByIdForUpdateAsync(
         WalletTransferId id,
         CancellationToken ct = default);

@@ -1,14 +1,11 @@
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
+using Domain.Common.Interfaces;
 
 namespace Domain.Brand.Interfaces;
 
-public interface IBrandRepository
+public interface IBrandRepository : IRepository<Aggregates.Brand, BrandId>
 {
-    Task AddAsync(
-        Aggregates.Brand brand,
-        CancellationToken ct = default);
-
     void Update(Aggregates.Brand brand, byte[]? rowVersion = null);
 
     void SetOriginalRowVersion(
@@ -16,10 +13,6 @@ public interface IBrandRepository
         byte[] rowVersion);
 
     byte[]? GetCurrentRowVersion(Aggregates.Brand entity);
-
-    Task<Aggregates.Brand?> GetByIdAsync(
-        BrandId id,
-        CancellationToken ct = default);
 
     Task<bool> ExistsByNameInCategoryAsync(
         BrandName brandName,

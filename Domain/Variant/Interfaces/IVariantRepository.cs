@@ -1,22 +1,12 @@
+using Domain.Common.Interfaces;
 using Domain.Product.ValueObjects;
 using Domain.Variant.Aggregates;
 using Domain.Variant.ValueObjects;
 
 namespace Domain.Variant.Interfaces;
 
-public interface IVariantRepository
+public interface IVariantRepository : IRepository<ProductVariant, VariantId>
 {
-    Task AddAsync(
-        ProductVariant variant,
-        CancellationToken ct = default);
-
-    void Update(
-        ProductVariant variant);
-
-    Task<ProductVariant?> GetByIdAsync(
-        VariantId id,
-        CancellationToken ct = default);
-
     Task<ProductVariant?> GetForUpdateAsync(
         VariantId id,
         CancellationToken ct = default);
