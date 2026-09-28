@@ -1,3 +1,4 @@
+using Domain.Common.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.Product.ValueObjects;
 using Domain.Review.Aggregates;
@@ -6,14 +7,8 @@ using Domain.User.ValueObjects;
 
 namespace Domain.Review.Interfaces;
 
-public interface IReviewRepository
+public interface IReviewRepository : IRepository<ProductReview, ReviewId>
 {
-    Task AddAsync(
-        ProductReview review,
-        CancellationToken ct = default);
-
-    void Update(ProductReview review);
-
     void Remove(ProductReview review);
 
     Task<bool> UserHasReviewedProductAsync(
@@ -21,10 +16,6 @@ public interface IReviewRepository
         ProductId productId,
         OrderId? orderId,
         CancellationToken ct);
-
-    Task<ProductReview?> GetByIdAsync(
-        ReviewId id,
-        CancellationToken ct = default);
 
     Task<ProductReview?> GetByIdIncludingDeletedAsync(
         ReviewId id,

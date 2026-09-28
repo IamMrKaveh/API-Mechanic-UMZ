@@ -3,24 +3,25 @@ using Domain.Wallet.Interfaces;
 
 namespace Infrastructure.Wallet.Repositories;
 
-public sealed class WalletRepository(DBContext context) : IWalletRepository
+public sealed class WalletRepository(DBContext context)
+    : Persistence.Repositories.RepositoryBase<Domain.Wallet.Aggregates.Wallet, Domain.Wallet.ValueObjects.WalletId>(context), IWalletRepository
 {
     public async Task<Domain.Wallet.Aggregates.Wallet?> GetByUserIdAsync(
         UserId userId, CancellationToken ct = default)
-        => await context.Wallets
+        => await Context.Wallets
             .Include(w => w.Reservations)
             .FirstOrDefaultAsync(w => w.OwnerId == userId, ct);
 
     public async Task<Domain.Wallet.Aggregates.Wallet?> GetByUserIdForUpdateAsync(
         UserId userId, CancellationToken ct = default)
     {
-        var wallet = await context.Wallets
+        var wallet = await Context.Wallets
             .Include(w => w.Reservations)
             .FirstOrDefaultAsync(w => w.OwnerId == userId, ct);
 
         if (wallet is not null)
         {
-            var entry = context.Entry(wallet);
+            var entry = Context.Entry(wallet);
             entry.Property("xmin").IsModified = false;
             entry.OriginalValues["xmin"] = entry.CurrentValues["xmin"];
         }
@@ -30,21 +31,17 @@ public sealed class WalletRepository(DBContext context) : IWalletRepository
 
     public async Task<bool> HasIdempotencyKeyAsync(
         UserId userId, string idempotencyKey, CancellationToken ct = default)
-        => await context.WalletLedgerEntries.AnyAsync(
+        => await Context.WalletLedgerEntries.AnyAsync(
             e => e.OwnerId == userId && e.IdempotencyKey == idempotencyKey, ct);
 
-    public async Task AddAsync(
-        Domain.Wallet.Aggregates.Wallet wallet, CancellationToken ct = default)
-        => await context.Wallets.AddAsync(wallet, ct);
-
-    public void Update(Domain.Wallet.Aggregates.Wallet wallet)
+    public override void Update(Domain.Wallet.Aggregates.Wallet wallet)
     {
-        var entry = context.Entry(wallet);
+        var entry = Context.Entry(wallet);
         switch (entry.State)
         {
             case EntityState.Detached:
-                context.Wallets.Attach(wallet);
-                context.Entry(wallet).State = EntityState.Modified;
+                Context.Wallets.Attach(wallet);
+                Context.Entry(wallet).State = EntityState.Modified;
                 break;
 
             case EntityState.Unchanged:

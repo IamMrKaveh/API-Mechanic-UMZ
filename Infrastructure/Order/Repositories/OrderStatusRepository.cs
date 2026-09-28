@@ -5,22 +5,18 @@ using SharedKernel.Exceptions;
 
 namespace Infrastructure.Order.Repositories;
 
-public sealed class OrderStatusRepository(DBContext context) : IOrderStatusRepository
+public sealed class OrderStatusRepository(DBContext context)
+    : Persistence.Repositories.RepositoryBase<OrderStatus, OrderStatusId>(context), IOrderStatusRepository
 {
-    public async Task<OrderStatus?> GetByIdAsync(
-        OrderStatusId id,
-        CancellationToken ct = default)
-        => await context.OrderStatuses.FirstOrDefaultAsync(s => s.Id == id, ct);
-
     public async Task<OrderStatus?> GetDefaultAsync(
         CancellationToken ct = default)
-        => await context.OrderStatuses.FirstOrDefaultAsync(s => s.IsDefault, ct);
+        => await Context.OrderStatuses.FirstOrDefaultAsync(s => s.IsDefault, ct);
 
     public async Task<bool> IsInUseAsync(
         OrderStatusId id,
         CancellationToken ct = default)
     {
-        var name = await context.OrderStatuses
+        var name = await Context.OrderStatuses
             .AsNoTracking()
             .Where(s => s.Id == id)
             .Select(s => s.Name)
@@ -39,7 +35,7 @@ public sealed class OrderStatusRepository(DBContext context) : IOrderStatusRepos
             return false;
         }
 
-        return await context.Orders
+        return await Context.Orders
             .AsNoTracking()
             .AnyAsync(o => o.Status == statusValue, ct);
     }
@@ -50,7 +46,7 @@ public sealed class OrderStatusRepository(DBContext context) : IOrderStatusRepos
         CancellationToken ct = default)
     {
         var trimmed = name.Trim();
-        var query = context.OrderStatuses
+        var query = Context.OrderStatuses
             .AsNoTracking()
             .Where(s => s.Name == trimmed);
 
@@ -60,26 +56,21 @@ public sealed class OrderStatusRepository(DBContext context) : IOrderStatusRepos
         return await query.AnyAsync(ct);
     }
 
-    public async Task AddAsync(
-        OrderStatus orderStatus,
-        CancellationToken ct = default)
-        => await context.OrderStatuses.AddAsync(orderStatus, ct);
-
     public void Update(OrderStatus orderStatus, byte[]? rowVersion = null)
     {
-        context.OrderStatuses.Update(orderStatus);
+        base.Update(orderStatus);
 
         if (rowVersion is not null && rowVersion.Length > 0)
             SetOriginalRowVersion(orderStatus, rowVersion);
     }
 
     public void Remove(OrderStatus orderStatus)
-        => context.OrderStatuses.Remove(orderStatus);
+        => Context.OrderStatuses.Remove(orderStatus);
 
     public void SetOriginalRowVersion(OrderStatus entity, byte[] rowVersion)
     {
         if (rowVersion is null || rowVersion.Length == 0)
             return;
-        context.Entry(entity).Property(e => e.RowVersion).OriginalValue = rowVersion;
+        Context.Entry(entity).Property(e => e.RowVersion).OriginalValue = rowVersion;
     }
 }

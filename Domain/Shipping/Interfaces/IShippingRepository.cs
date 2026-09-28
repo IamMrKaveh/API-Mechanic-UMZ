@@ -1,15 +1,12 @@
+using Domain.Common.Interfaces;
 using Domain.Shipping.ValueObjects;
 
 namespace Domain.Shipping.Interfaces;
 
-public interface IShippingRepository
+public interface IShippingRepository : IRepository<Aggregates.Shipping, ShippingId>
 {
     Task<ICollection<Aggregates.Shipping>> GetAllAsync(
         bool includeInactive = false,
-        CancellationToken ct = default);
-
-    Task<Aggregates.Shipping?> GetByIdAsync(
-        ShippingId id,
         CancellationToken ct = default);
 
     Task<ICollection<Aggregates.Shipping>> GetByIdsAsync(
@@ -23,10 +20,4 @@ public interface IShippingRepository
         ShippingName shippingName,
         ShippingId? excludeId = null,
         CancellationToken ct = default);
-
-    Task AddAsync(
-        Aggregates.Shipping shipping,
-        CancellationToken ct = default);
-
-    void Update(Aggregates.Shipping shipping);
 }

@@ -1,24 +1,18 @@
-﻿using Domain.Wallet.Aggregates;
+using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
 
 namespace Infrastructure.Wallet.Repositories;
 
-public sealed class WalletFraudAlertRepository(DBContext context) : IWalletFraudAlertRepository
+public sealed class WalletFraudAlertRepository(DBContext context)
+    : Persistence.Repositories.RepositoryBase<WalletFraudAlert, WalletFraudAlertId>(context), IWalletFraudAlertRepository
 {
-    public async Task AddAsync(WalletFraudAlert alert, CancellationToken ct = default)
-        => await context.Set<WalletFraudAlert>().AddAsync(alert, ct);
-
-    public async Task<WalletFraudAlert?> GetByIdAsync(WalletFraudAlertId id, CancellationToken ct = default)
-        => await context.Set<WalletFraudAlert>()
-            .FirstOrDefaultAsync(a => a.Id == id, ct);
-
-    public void Update(WalletFraudAlert alert)
+    public override void Update(WalletFraudAlert alert)
     {
-        var entry = context.Entry(alert);
+        var entry = Context.Entry(alert);
         if (entry.State == EntityState.Detached)
-            context.Set<WalletFraudAlert>().Attach(alert);
+            Context.Set<WalletFraudAlert>().Attach(alert);
 
         entry.State = EntityState.Modified;
     }
@@ -31,7 +25,7 @@ public sealed class WalletFraudAlertRepository(DBContext context) : IWalletFraud
     {
         var cutoff = DateTime.UtcNow.Subtract(cooldown);
 
-        return await context.Set<WalletFraudAlert>()
+        return await Context.Set<WalletFraudAlert>()
             .AsNoTracking()
             .AnyAsync(a =>
                 a.WalletId == walletId

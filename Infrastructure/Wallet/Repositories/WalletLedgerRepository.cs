@@ -4,12 +4,13 @@ using Domain.Wallet.Interfaces;
 
 namespace Infrastructure.Wallet.Repositories;
 
-public sealed class WalletLedgerRepository(DBContext context) : IWalletLedgerRepository
+public sealed class WalletLedgerRepository(DBContext context)
+    : Persistence.Repositories.RepositoryBase<WalletLedgerEntry, Domain.Wallet.ValueObjects.WalletLedgerEntryId>(context), IWalletLedgerRepository
 {
-    public async Task AddAsync(WalletLedgerEntry entry, CancellationToken ct = default)
+    public override async Task AddAsync(WalletLedgerEntry entry, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(entry);
-        await context.WalletLedgerEntries.AddAsync(entry, ct);
+        await Context.WalletLedgerEntries.AddAsync(entry, ct);
     }
 
     public async Task<bool> HasIdempotencyKeyAsync(
@@ -19,7 +20,7 @@ public sealed class WalletLedgerRepository(DBContext context) : IWalletLedgerRep
         if (string.IsNullOrWhiteSpace(idempotencyKey))
             return false;
 
-        return await context.WalletLedgerEntries
+        return await Context.WalletLedgerEntries
             .IgnoreQueryFilters()
             .AnyAsync(e => e.IdempotencyKey == idempotencyKey, ct);
     }
@@ -32,7 +33,7 @@ public sealed class WalletLedgerRepository(DBContext context) : IWalletLedgerRep
         if (string.IsNullOrWhiteSpace(idempotencyKey))
             return false;
 
-        return await context.WalletLedgerEntries
+        return await Context.WalletLedgerEntries
             .IgnoreQueryFilters()
             .AnyAsync(e => e.OwnerId == ownerId && e.IdempotencyKey == idempotencyKey, ct);
     }

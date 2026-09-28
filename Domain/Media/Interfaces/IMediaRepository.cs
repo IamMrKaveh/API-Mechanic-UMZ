@@ -1,19 +1,10 @@
+using Domain.Common.Interfaces;
 using Domain.Media.ValueObjects;
 
 namespace Domain.Media.Interfaces;
 
-public interface IMediaRepository
+public interface IMediaRepository : IRepository<Aggregates.Media, MediaId>
 {
-    Task AddAsync(
-        Aggregates.Media media,
-        CancellationToken ct = default);
-
-    void Update(Aggregates.Media media);
-
-    Task<Aggregates.Media?> GetByIdAsync(
-        MediaId id,
-        CancellationToken ct = default);
-
     Task<IReadOnlyList<Aggregates.Media>> GetByEntityAsync(
         string entityType,
         Guid entityId,

@@ -1,20 +1,11 @@
+using Domain.Common.Interfaces;
 using Domain.User.Entities;
 using Domain.User.ValueObjects;
 
 namespace Domain.User.Interfaces;
 
-public interface IUserRepository
+public interface IUserRepository : IRepository<Aggregates.User, UserId>
 {
-    Task AddAsync(
-        Aggregates.User user,
-        CancellationToken ct = default);
-
-    void Update(Aggregates.User user);
-
-    Task<Aggregates.User?> GetByIdAsync(
-        UserId id,
-        CancellationToken ct = default);
-
     Task<Aggregates.User?> GetByPhoneNumberAsync(
         PhoneNumber phoneNumber,
         CancellationToken ct = default);

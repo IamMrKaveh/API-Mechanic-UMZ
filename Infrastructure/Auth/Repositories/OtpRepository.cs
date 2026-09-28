@@ -1,25 +1,22 @@
-﻿using Domain.Security.Aggregates;
+using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
+using Infrastructure.Persistence.Repositories;
 
 namespace Infrastructure.Auth.Repositories;
 
-public sealed class OtpRepository(DBContext context, IDateTimeProvider dateTimeProvider) : IOtpRepository
+public sealed class OtpRepository(DBContext context, IDateTimeProvider dateTimeProvider)
+    : RepositoryBase<UserOtp, OtpId>(context), IOtpRepository
 {
-    public async Task<UserOtp?> GetByIdAsync(OtpId otpId, CancellationToken ct = default)
-    {
-        return await context.UserOtps.FirstOrDefaultAsync(o => o.Id == otpId, ct);
-    }
-
     public async Task<UserOtp?> GetLatestActiveByUserIdAsync(
         UserId userId,
         OtpPurpose purpose,
         CancellationToken ct = default)
     {
         var now = dateTimeProvider.UtcNow;
-        return await context.UserOtps
+        return await Context.UserOtps
             .Where(o => o.UserId == userId
                      && o.Purpose == purpose
                      && !o.IsVerified
@@ -35,20 +32,10 @@ public sealed class OtpRepository(DBContext context, IDateTimeProvider dateTimeP
         CancellationToken ct = default)
     {
         var since = dateTimeProvider.UtcNow - window;
-        return await context.UserOtps
+        return await Context.UserOtps
             .CountAsync(o => o.UserId == userId
                           && o.Purpose == purpose
                           && o.CreatedAt >= since, ct);
-    }
-
-    public async Task AddAsync(UserOtp otp, CancellationToken ct = default)
-    {
-        await context.UserOtps.AddAsync(otp, ct);
-    }
-
-    public void Update(UserOtp otp)
-    {
-        context.UserOtps.Update(otp);
     }
 
     public async Task InvalidateAllActiveByUserIdAsync(
@@ -57,7 +44,7 @@ public sealed class OtpRepository(DBContext context, IDateTimeProvider dateTimeP
         CancellationToken ct = default)
     {
         var now = dateTimeProvider.UtcNow;
-        var activeOtps = await context.UserOtps
+        var activeOtps = await Context.UserOtps
             .Where(o => o.UserId == userId
                      && o.Purpose == purpose
                      && !o.IsVerified
