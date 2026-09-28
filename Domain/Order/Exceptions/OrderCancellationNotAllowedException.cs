@@ -1,10 +1,13 @@
 ﻿using Domain.Order.ValueObjects;
+using SharedKernel.Exceptions;
 
 namespace Domain.Order.Exceptions;
 
-public sealed class OrderCancellationNotAllowedException(OrderStatusValue currentStatus) : DomainException($"Order in status '{currentStatus.DisplayName}' cannot be cancelled.")
+public sealed class OrderCancellationNotAllowedException(OrderStatusValue currentStatus)
+    : ConflictException<OrderStatusValue>(
+        "ORDER_CANCELLATION_NOT_ALLOWED",
+        currentStatus,
+        $"Order in status '{currentStatus.DisplayName}' cannot be cancelled.")
 {
-    public OrderStatusValue CurrentStatus { get; } = currentStatus;
-
-    public override string ErrorCode => "ORDER_CANCELLATION_NOT_ALLOWED";
+    public OrderStatusValue CurrentStatus => Value;
 }

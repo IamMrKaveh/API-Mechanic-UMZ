@@ -1,13 +1,17 @@
+using SharedKernel.Exceptions;
 using SharedKernel.Localization;
 
 namespace Domain.Wallet.Exceptions;
 
-public sealed class InvalidWalletDebitRequestStatusException(string currentStatus) : DomainException(
+public sealed class InvalidWalletDebitRequestStatusException(string currentStatus)
+    : ConflictException<string>(
         DomainErrorCodes.Wallet.DebitRequestInvalidStatus,
+        currentStatus,
         $"Current request status '{currentStatus}' does not allow this operation.",
         new Dictionary<string, object?>
+        {
+            ["currentStatus"] = currentStatus
+        })
 {
-["currentStatus"] = currentStatus
-})
-{
+    public string CurrentStatus => Value;
 }

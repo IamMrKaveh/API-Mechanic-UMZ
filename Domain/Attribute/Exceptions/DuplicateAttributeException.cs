@@ -1,8 +1,12 @@
-﻿namespace Domain.Attribute.Exceptions;
+﻿using SharedKernel.Exceptions;
 
-public sealed class DuplicateAttributeException(string name) : DomainException($"ویژگی با نام '{name}' قبلاً وجود دارد.")
+namespace Domain.Attribute.Exceptions;
+
+public sealed class DuplicateAttributeException(string name)
+    : AlreadyExistsException<string>(
+        "DUPLICATE_ATTRIBUTE",
+        name,
+        $"ویژگی با نام '{name}' قبلاً وجود دارد.")
 {
-    public string Name { get; } = name;
-
-    public override string ErrorCode => "DUPLICATE_ATTRIBUTE";
+    public string Name => Value;
 }
