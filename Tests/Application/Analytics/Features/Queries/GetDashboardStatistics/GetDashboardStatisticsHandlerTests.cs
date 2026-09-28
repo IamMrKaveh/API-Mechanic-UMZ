@@ -1,50 +1,21 @@
 using Application.Analytics.Contracts;
 using Application.Analytics.Features.Queries.GetDashboardStatistics;
 using Application.Analytics.Features.Shared;
-using Application.Cache.Contracts;
 using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Analytics.Features.Queries.GetDashboardStatistics;
 
 public class GetDashboardStatisticsHandlerTests
 {
-    private readonly IAnalyticsQueryService _analytics = Substitute.For<IAnalyticsQueryService>(); private readonly ICacheService _cache = Substitute.For<ICacheService>(); private readonly GetDashboardStatisticsHandler _sut;
+    private readonly IAnalyticsQueryService _analytics = Substitute.For<IAnalyticsQueryService>(); private readonly GetDashboardStatisticsHandler _sut;
 
     public GetDashboardStatisticsHandlerTests()
     {
-        _sut = new GetDashboardStatisticsHandler(_analytics, _cache);
+        _sut = new GetDashboardStatisticsHandler(_analytics);
     }
 
     [Fact]
-    public async Task Handle_WhenCacheHit_ReturnsCachedValueAndDoesNotCallQueryService()
-    {
-        var from = new DateTime(2026, 05, 01, 0, 0, 0, DateTimeKind.Utc);
-        var to = new DateTime(2026, 05, 31, 0, 0, 0, DateTimeKind.Utc);
-        var cached = new DashboardStatisticsDto { TotalOrders = 123, TotalRevenue = 4567m };
-
-        _cache.GetAsync<DashboardStatisticsDto>(
-                "analytics:dashboard:20260501:20260531",
-                Arg.Any<CancellationToken>())
-              .Returns(cached);
-
-        var query = new GetDashboardStatisticsQuery(from, to);
-
-        var result = await _sut.Handle(query, CancellationToken.None);
-
-        result.ShouldBeSuccess();
-        result.Value.ShouldBeSameAs(cached);
-
-        await _analytics.DidNotReceive().GetDashboardStatisticsAsync(
-            Arg.Any<DateTime?>(), Arg.Any<DateTime?>(), Arg.Any<CancellationToken>());
-        await _cache.DidNotReceive().SetAsync(
-            Arg.Any<string>(),
-            Arg.Any<DashboardStatisticsDto>(),
-            Arg.Any<TimeSpan?>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Handle_WhenCacheMiss_QueriesServiceAndCachesResultForTenMinutes()
+    public async Task Handle_DelegatesToQueryServiceAndReturnsSuccess()
     {
         var from = new DateTime(2026, 05, 01, 0, 0, 0, DateTimeKind.Utc);
         var to = new DateTime(2026, 05, 31, 0, 0, 0, DateTimeKind.Utc);
@@ -62,34 +33,31 @@ public class GetDashboardStatisticsHandlerTests
 
         await _analytics.Received(1).GetDashboardStatisticsAsync(
             from, to, Arg.Any<CancellationToken>());
-        await _cache.Received(1).SetAsync(
-            "analytics:dashboard:20260501:20260531",
-            fresh,
-            TimeSpan.FromMinutes(10),
-            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_WithBothDatesNull_UsesEmptyDateSegmentsInCacheKey()
+    public void Query_CacheKey_IncludesFormattedDates()
     {
-        var fresh = new DashboardStatisticsDto();
+        var query = new GetDashboardStatisticsQuery(
+            new DateTime(2026, 05, 01, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 05, 31, 0, 0, 0, DateTimeKind.Utc));
 
-        _analytics.GetDashboardStatisticsAsync(null, null, Arg.Any<CancellationToken>())
-                  .Returns(fresh);
+        Assert.Equal("analytics:dashboard:20260501:20260531", query.CacheKey);
+    }
 
+    [Fact]
+    public void Query_CacheKey_WithBothDatesNull_UsesEmptyDateSegments()
+    {
         var query = new GetDashboardStatisticsQuery(null, null);
 
-        var result = await _sut.Handle(query, CancellationToken.None);
+        Assert.Equal("analytics:dashboard::", query.CacheKey);
+    }
 
-        result.ShouldBeSuccess();
+    [Fact]
+    public void Query_Expiry_IsTenMinutes()
+    {
+        var query = new GetDashboardStatisticsQuery(null, null);
 
-        await _cache.Received(1).GetAsync<DashboardStatisticsDto>(
-            "analytics:dashboard::",
-            Arg.Any<CancellationToken>());
-        await _cache.Received(1).SetAsync(
-            "analytics:dashboard::",
-            fresh,
-            TimeSpan.FromMinutes(10),
-            Arg.Any<CancellationToken>());
+        Assert.Equal(TimeSpan.FromMinutes(10), query.Expiry);
     }
 }
