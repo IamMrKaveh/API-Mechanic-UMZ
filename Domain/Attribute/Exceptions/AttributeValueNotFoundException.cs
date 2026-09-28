@@ -1,10 +1,13 @@
 using Domain.Attribute.ValueObjects;
+using SharedKernel.Exceptions;
 
 namespace Domain.Attribute.Exceptions;
 
-public sealed class AttributeValueNotFoundException(AttributeValueId attributeValueId) : DomainException($"مقدار ویژگی با شناسه {attributeValueId} یافت نشد.")
+public sealed class AttributeValueNotFoundException(AttributeValueId attributeValueId)
+    : NotFoundException<AttributeValueId>(
+        "ATTRIBUTE_VALUE_NOT_FOUND",
+        attributeValueId,
+        $"مقدار ویژگی با شناسه {attributeValueId} یافت نشد.")
 {
-    public AttributeValueId AttributeValueId { get; } = attributeValueId;
-
-    public override string ErrorCode => "ATTRIBUTE_VALUE_NOT_FOUND";
+    public AttributeValueId AttributeValueId => Value;
 }
