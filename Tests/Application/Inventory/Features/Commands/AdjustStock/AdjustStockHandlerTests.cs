@@ -13,14 +13,14 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.AdjustStock;
 
-public class AdjustStockHandlerTests
+public class AdjustStockHandlerTests : HandlerTestBase
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AdjustStockHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly AdjustStockHandler _sut;
 
     public AdjustStockHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new AdjustStockHandler(_inventoryRepository, _auditService, _currentUserService, _dateTimeProvider);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new AdjustStockHandler(_inventoryRepository, AuditService, CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class AdjustStockHandlerTests
         result.ShouldBeSuccess();
         inventory.StockQuantity.Value.ShouldBe(7);
         _inventoryRepository.Received(1).Update(inventory);
-        await _auditService.Received(1).LogInventoryEventAsync(
+        await AuditService.Received(1).LogInventoryEventAsync(
             inventory.VariantId,
             "AdjustStock",
             Arg.Any<string>(),
@@ -73,7 +73,7 @@ public class AdjustStockHandlerTests
 
         result.ShouldFailWith(ErrorCode.Failure);
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _auditService.DidNotReceiveWithAnyArgs().LogInventoryEventAsync(default!, default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogInventoryEventAsync(default!, default!, default!, default);
     }
 }
 

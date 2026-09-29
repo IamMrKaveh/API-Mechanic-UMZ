@@ -8,19 +8,19 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.User.Features.Queries.GetUserDashboard;
 
-public class GetUserDashboardHandlerTests
+public class GetUserDashboardHandlerTests : HandlerTestBase
 {
-    private readonly IUserQueryService _userQueryService = Substitute.For<IUserQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetUserDashboardHandler _sut;
+    private readonly IUserQueryService _userQueryService = Substitute.For<IUserQueryService>(); private readonly GetUserDashboardHandler _sut;
 
     public GetUserDashboardHandlerTests()
     {
-        _sut = new GetUserDashboardHandler(_userQueryService, _currentUserService);
+        _sut = new GetUserDashboardHandler(_userQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenDashboardNotFound_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _userQueryService
             .GetUserDashboardAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns((UserDashboardDto?)null);
@@ -34,7 +34,7 @@ public class GetUserDashboardHandlerTests
     public async Task Handle_WhenDashboardExists_ReturnsMappedDashboard()
     {
         var userGuid = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         var createdAt = new DateTime(2023, 6, 1, 0, 0, 0, DateTimeKind.Utc);
         var lastLogin = new DateTime(2025, 12, 1, 0, 0, 0, DateTimeKind.Utc);

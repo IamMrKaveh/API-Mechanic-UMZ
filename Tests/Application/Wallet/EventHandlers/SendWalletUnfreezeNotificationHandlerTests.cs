@@ -7,15 +7,14 @@ using Domain.Wallet.ValueObjects;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public sealed class SendWalletUnfreezeNotificationHandlerTests
+public sealed class SendWalletUnfreezeNotificationHandlerTests : HandlerTestBase
 {
     private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly SendWalletUnfreezeNotificationHandler _sut;
 
     public SendWalletUnfreezeNotificationHandlerTests()
     {
-        _sut = new SendWalletUnfreezeNotificationHandler(_notificationService, _auditService);
+        _sut = new SendWalletUnfreezeNotificationHandler(_notificationService, AuditService);
     }
 
     private static WalletUnfrozenEvent BuildEvent(string reason = "review passed")
@@ -46,7 +45,7 @@ public sealed class SendWalletUnfreezeNotificationHandlerTests
             evt.WalletId.Value,
             "Wallet",
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -62,7 +61,7 @@ public sealed class SendWalletUnfreezeNotificationHandlerTests
         await Should.NotThrowAsync(async () =>
             await _sut.Handle(Wrap(evt), CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletUnfreezeNotificationFailed",
             Arg.Is<string>(s => s!.Contains(evt.OwnerId.Value.ToString())
                              && s.Contains("broker error")),

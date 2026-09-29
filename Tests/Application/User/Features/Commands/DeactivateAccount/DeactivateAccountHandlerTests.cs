@@ -12,18 +12,18 @@ using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Application.User.Features.Commands.DeactivateAccount;
 
-public class DeactivateAccountHandlerTests
+public class DeactivateAccountHandlerTests : HandlerTestBase
 {
-    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly ISessionService _sessionService = Substitute.For<ISessionService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly DeactivateAccountHandler _sut;
+    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly ISessionService _sessionService = Substitute.For<ISessionService>(); private readonly DeactivateAccountHandler _sut;
 
     public DeactivateAccountHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _sut = new DeactivateAccountHandler(
             _userRepository,
             _sessionService,
-            _currentUserService,
-            _auditService);
+            CurrentUserService,
+            AuditService);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class DeactivateAccountHandlerTests
         result.ShouldFailWith(ErrorCode.NotFound);
         _userRepository.DidNotReceiveWithAnyArgs().Update(default!);
         await _sessionService.DidNotReceiveWithAnyArgs().RevokeAllSessionsAsync(default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogSecurityEventAsync(
+        await AuditService.DidNotReceiveWithAnyArgs().LogSecurityEventAsync(
             default!, default!, default!, default, default);
     }
 
@@ -59,7 +59,7 @@ public class DeactivateAccountHandlerTests
         await _sessionService.Received(1).RevokeAllSessionsAsync(
             Arg.Is<UserId>(x => x == user.Id),
             Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSecurityEventAsync(
+        await AuditService.Received(1).LogSecurityEventAsync(
             "AccountDeactivated",
             Arg.Any<string>(),
             Arg.Is<IpAddress>(x => x == IpAddress.Unknown),

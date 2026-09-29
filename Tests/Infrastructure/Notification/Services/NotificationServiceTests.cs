@@ -8,16 +8,14 @@ using SharedKernel.Exceptions;
 
 namespace Tests.Infrastructure.Notification.Services;
 
-public class NotificationServiceTests
+public class NotificationServiceTests : HandlerTestBase
 {
     private readonly INotificationRepository _notificationRepository = Substitute.For<INotificationRepository>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly NotificationService _sut;
 
     public NotificationServiceTests()
     {
-        _sut = new NotificationService(_notificationRepository, _auditService, _unitOfWork);
+        _sut = new NotificationService(_notificationRepository, AuditService, UnitOfWork);
     }
 
     private static global::Domain.Notification.Aggregates.Notification NewNotification(UserId userId, string title = "Title") =>
@@ -45,8 +43,8 @@ public class NotificationServiceTests
         captured.Type.Value.ShouldBe(NotificationType.OrderCreated.Value);
         captured.ActionUrl.ShouldBe("/orders/1");
         captured.RelatedEntityType.ShouldBe("Order");
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogSystemEventAsync(
             "NotificationCreated", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -76,7 +74,7 @@ public class NotificationServiceTests
 
         notification.IsRead.ShouldBeTrue();
         _notificationRepository.Received(1).Update(notification);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -88,7 +86,7 @@ public class NotificationServiceTests
         await _sut.MarkAsReadAsync(NotificationId.NewId(), UserId.NewId(), CancellationToken.None);
 
         _notificationRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -101,7 +99,7 @@ public class NotificationServiceTests
         await Should.ThrowAsync<DomainException>(() =>
             _sut.MarkAsReadAsync(notification.Id, UserId.NewId(), CancellationToken.None));
 
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -117,7 +115,7 @@ public class NotificationServiceTests
 
         first.IsRead.ShouldBeTrue();
         second.IsRead.ShouldBeTrue();
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -128,7 +126,7 @@ public class NotificationServiceTests
 
         await _sut.MarkAllAsReadAsync(UserId.NewId(), CancellationToken.None);
 
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -142,7 +140,7 @@ public class NotificationServiceTests
         await _sut.DeleteAsync(notification.Id, userId, CancellationToken.None);
 
         _notificationRepository.Received(1).Remove(notification);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

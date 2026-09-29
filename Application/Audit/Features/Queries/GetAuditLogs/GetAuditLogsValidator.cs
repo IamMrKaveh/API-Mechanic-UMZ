@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using Application.Common.Validation;
 
 namespace Application.Audit.Features.Queries.GetAuditLogs;
 
@@ -35,13 +36,7 @@ public sealed class GetAuditLogsValidator : AbstractValidator<GetAuditLogsQuery>
 
     public GetAuditLogsValidator()
     {
-        RuleFor(x => x.Page)
-            .GreaterThan(0).WithMessage("شماره صفحه باید بزرگتر از صفر باشد.");
-
-        RuleFor(x => x.PageSize)
-            .GreaterThan(0).WithMessage("اندازه صفحه باید بزرگتر از صفر باشد.")
-            .LessThanOrEqualTo(MaxPageSize)
-                .WithMessage($"اندازه صفحه نمی‌تواند بیش از {MaxPageSize} باشد.");
+        this.RuleForPagination(x => x.Page, x => x.PageSize, maxPageSize: MaxPageSize);
 
         RuleFor(x => x.SortBy)
             .Must(sortBy => sortBy is null || AllowedSortColumns.Contains(sortBy))
@@ -79,10 +74,11 @@ public sealed class GetAuditLogsValidator : AbstractValidator<GetAuditLogsQuery>
                 .WithMessage("شناسه کاربر نامعتبر است.")
             .When(x => x.UserId.HasValue);
 
-        RuleFor(x => x)
-            .Must(x => x.From is null || x.To is null || x.From <= x.To)
-            .WithMessage("تاریخ شروع باید کوچکتر یا مساوی تاریخ پایان باشد.")
-            .WithName("DateRange");
+        this.RuleForDateRange(
+            x => x.From,
+            x => x.To,
+            "تاریخ شروع باید کوچکتر یا مساوی تاریخ پایان باشد.",
+            name: "DateRange");
 
         RuleFor(x => x.From)
             .LessThanOrEqualTo(_ => DateTime.UtcNow)

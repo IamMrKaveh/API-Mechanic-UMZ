@@ -10,14 +10,14 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Support.Features.Commands.CreateTicket;
 
-public class CreateTicketHandlerTests
+public class CreateTicketHandlerTests : HandlerTestBase
 {
-    private readonly ITicketRepository _ticketRepository = Substitute.For<ITicketRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly CreateTicketHandler _sut; private readonly Guid _userGuid = Guid.NewGuid(); private readonly DateTime _now = new(2026, 8, 12, 10, 0, 0, DateTimeKind.Utc);
+    private readonly ITicketRepository _ticketRepository = Substitute.For<ITicketRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly CreateTicketHandler _sut; private readonly Guid _userGuid = Guid.NewGuid(); private readonly DateTime _now = new(2026, 8, 12, 10, 0, 0, DateTimeKind.Utc);
 
     public CreateTicketHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)_userGuid);
-        _dateTimeProvider.UtcNow.Returns(_now);
+        CurrentUserService.UserId.Returns((Guid?)_userGuid);
+        DateTimeProvider.UtcNow.Returns(_now);
         _mapper.Map<TicketDto>(Arg.Any<Ticket>())
             .Returns(ci => new TicketDto
             {
@@ -26,7 +26,7 @@ public class CreateTicketHandlerTests
                 Subject = ((Ticket)ci[0]!).Subject
             });
 
-        _sut = new CreateTicketHandler(_ticketRepository, _currentUserService, _dateTimeProvider, _mapper);
+        _sut = new CreateTicketHandler(_ticketRepository, CurrentUserService, DateTimeProvider, _mapper);
     }
 
     [Fact]

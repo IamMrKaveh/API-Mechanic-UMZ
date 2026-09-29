@@ -1,4 +1,6 @@
-﻿namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
+﻿using Application.Common.Validation;
+
+namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
 public class UpdateOrderStatusDefinitionValidator : AbstractValidator<UpdateOrderStatusDefinitionCommand>
 {
@@ -7,8 +9,7 @@ public class UpdateOrderStatusDefinitionValidator : AbstractValidator<UpdateOrde
 
     public UpdateOrderStatusDefinitionValidator()
     {
-        RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("شناسه وضعیت الزامی است.");
+        this.RuleForRequiredId(x => x.Id, "شناسه وضعیت الزامی است.");
 
         RuleFor(x => x.DisplayName)
             .NotEmpty().WithMessage("نام نمایشی وضعیت الزامی است.")

@@ -1,3 +1,5 @@
+using Application.Common.Validation;
+
 namespace Application.Review.Features.Commands.BulkOperation;
 
 public sealed class BulkApproveReviewsValidator : AbstractValidator<BulkApproveReviewsCommand>
@@ -9,7 +11,6 @@ public sealed class BulkApproveReviewsValidator : AbstractValidator<BulkApproveR
             .Must(ids => ids.Count <= 100)
             .WithMessage("در هر درخواست حداکثر ۱۰۰ نظر قابل پردازش است.");
 
-        RuleForEach(x => x.ReviewIds)
-            .NotEmpty().WithMessage("شناسه نظر نامعتبر است.");
+        this.RuleForEachRequiredId(x => x.ReviewIds, "شناسه نظر نامعتبر است.");
     }
 }

@@ -7,10 +7,8 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Search.Services;
 
-public class ElasticBulkServiceTests : IAsyncLifetime
-{
+public class ElasticBulkServiceTests : HandlerTestBase, IAsyncLifetime{
     private FakeElasticsearchServer _server = null!;
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private ElasticBulkService _sut = null!;
 
     public Task InitializeAsync()
@@ -18,7 +16,7 @@ public class ElasticBulkServiceTests : IAsyncLifetime
         _server = new FakeElasticsearchServer();
         _sut = new ElasticBulkService(
             _server.CreateClient(),
-            _auditService,
+            AuditService,
             new ElasticsearchMetrics());
         return Task.CompletedTask;
     }
@@ -56,8 +54,8 @@ public class ElasticBulkServiceTests : IAsyncLifetime
 
         result.ShouldBeTrue();
         _server.Requests.ShouldBeEmpty();
-        await _auditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -72,7 +70,7 @@ public class ElasticBulkServiceTests : IAsyncLifetime
         _server.Requests.Count.ShouldBe(1);
         _server.Requests[0].Path.ShouldContain("_bulk");
         _server.Requests[0].Path.ShouldContain("products_v1");
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("Bulk indexed 2 products")),
             Arg.Any<CancellationToken>());
     }
@@ -85,7 +83,7 @@ public class ElasticBulkServiceTests : IAsyncLifetime
         var result = await _sut.BulkIndexProductsAsync([NewProduct()], CancellationToken.None);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Bulk index products failed")),
             Arg.Any<CancellationToken>());
     }
@@ -94,12 +92,12 @@ public class ElasticBulkServiceTests : IAsyncLifetime
     public async Task BulkIndexProductsAsync_WhenTransportFails_ReturnsFalseAndLogsError()
     {
         var unreachable = new ElasticBulkService(
-            RefusedClient(), _auditService, new ElasticsearchMetrics());
+            RefusedClient(), AuditService, new ElasticsearchMetrics());
 
         var result = await unreachable.BulkIndexProductsAsync([NewProduct()], CancellationToken.None);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Bulk index products failed")),
             Arg.Any<CancellationToken>());
     }
@@ -122,7 +120,7 @@ public class ElasticBulkServiceTests : IAsyncLifetime
 
         result.ShouldBeTrue();
         _server.Requests[0].Path.ShouldContain("categories_v1");
-        await _auditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
     }
 
     [Fact]
@@ -133,7 +131,7 @@ public class ElasticBulkServiceTests : IAsyncLifetime
         var result = await _sut.BulkIndexCategoriesAsync([NewCategory()], CancellationToken.None);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Bulk index categories failed")),
             Arg.Any<CancellationToken>());
     }
@@ -166,7 +164,7 @@ public class ElasticBulkServiceTests : IAsyncLifetime
         var result = await _sut.BulkIndexBrandsAsync([NewBrand()], CancellationToken.None);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Bulk index brands failed")),
             Arg.Any<CancellationToken>());
     }
@@ -201,7 +199,7 @@ public class ElasticBulkServiceTests : IAsyncLifetime
         var result = await _sut.BulkDeleteProductsAsync([ProductId.NewId()], CancellationToken.None);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Bulk delete products failed")),
             Arg.Any<CancellationToken>());
     }
@@ -236,7 +234,7 @@ public class ElasticBulkServiceTests : IAsyncLifetime
         var result = await _sut.BulkUpdateProductsAsync([NewProduct()], CancellationToken.None);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Bulk update products failed")),
             Arg.Any<CancellationToken>());
     }

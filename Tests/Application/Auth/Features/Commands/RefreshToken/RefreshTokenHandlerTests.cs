@@ -12,13 +12,13 @@ using RefreshTokens = Domain.Security.ValueObjects.RefreshToken;
 
 namespace Tests.Application.Auth.Features.Commands.RefreshToken;
 
-public class RefreshTokenHandlerTests
+public class RefreshTokenHandlerTests : HandlerTestBase
 {
-    private readonly IAuthService _authService = Substitute.For<IAuthService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly DateTime _now = new(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc); private readonly RefreshTokenHandler _sut;
+    private readonly IAuthService _authService = Substitute.For<IAuthService>(); private readonly DateTime _now = new(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc); private readonly RefreshTokenHandler _sut;
 
     public RefreshTokenHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(_now);
+        DateTimeProvider.UtcNow.Returns(_now);
 
         var jwtOptions = Options.Create(new JwtOptions
         {
@@ -29,14 +29,14 @@ public class RefreshTokenHandlerTests
             RefreshTokenExpirationDays = 30
         });
 
-        _sut = new RefreshTokenHandler(_authService, _currentUser, _dateTimeProvider, jwtOptions);
+        _sut = new RefreshTokenHandler(_authService, CurrentUserService, DateTimeProvider, jwtOptions);
     }
 
     [Fact]
     public async Task Handle_WhenAuthServiceFails_ReturnsFailureWithSameError()
     {
-        _currentUser.IpAddress.Returns("127.0.0.1");
-        _currentUser.UserAgent.Returns("agent");
+        CurrentUserService.IpAddress.Returns("127.0.0.1");
+        CurrentUserService.UserAgent.Returns("agent");
 
         var incoming = RefreshTokens.Generate();
         _authService
@@ -56,8 +56,8 @@ public class RefreshTokenHandlerTests
     [Fact]
     public async Task Handle_WhenIpAddressIsMissing_UsesUnknownIp()
     {
-        _currentUser.IpAddress.Returns((string?)null);
-        _currentUser.UserAgent.Returns((string?)null);
+        CurrentUserService.IpAddress.Returns((string?)null);
+        CurrentUserService.UserAgent.Returns((string?)null);
 
         var incoming = RefreshTokens.Generate();
 
@@ -91,8 +91,8 @@ public class RefreshTokenHandlerTests
     [Fact]
     public async Task Handle_WhenAuthServiceSucceeds_ReturnsAuthResultWithMappedFields()
     {
-        _currentUser.IpAddress.Returns("10.0.0.5");
-        _currentUser.UserAgent.Returns("test-agent");
+        CurrentUserService.IpAddress.Returns("10.0.0.5");
+        CurrentUserService.UserAgent.Returns("test-agent");
 
         var incoming = RefreshTokens.Generate();
         var newRefreshToken = RefreshTokens.Generate();
@@ -128,8 +128,8 @@ public class RefreshTokenHandlerTests
     [Fact]
     public async Task Handle_WhenAuthServiceSucceeds_AccessTokenExpiresAtMatchesJwtOptions()
     {
-        _currentUser.IpAddress.Returns("10.0.0.5");
-        _currentUser.UserAgent.Returns("test-agent");
+        CurrentUserService.IpAddress.Returns("10.0.0.5");
+        CurrentUserService.UserAgent.Returns("test-agent");
 
         var incoming = RefreshTokens.Generate();
         var refreshTokenResult = new RefreshTokenResult(

@@ -7,19 +7,19 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Payment.Features.Queries.GetPaymentStatus;
 
-public class GetPaymentStatusHandlerTests
+public class GetPaymentStatusHandlerTests : HandlerTestBase
 {
-    private readonly IPaymentQueryService _paymentQueryService = Substitute.For<IPaymentQueryService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly GetPaymentStatusHandler _sut;
+    private readonly IPaymentQueryService _paymentQueryService = Substitute.For<IPaymentQueryService>(); private readonly GetPaymentStatusHandler _sut;
 
     public GetPaymentStatusHandlerTests()
     {
-        _sut = new GetPaymentStatusHandler(_paymentQueryService, _currentUser);
+        _sut = new GetPaymentStatusHandler(_paymentQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenUserIsAnonymous_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new GetPaymentStatusQuery("A123"), CancellationToken.None);
 
@@ -30,7 +30,7 @@ public class GetPaymentStatusHandlerTests
     [Fact]
     public async Task Handle_WhenTransactionNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _paymentQueryService
             .GetByAuthorityAsync("A123", Arg.Any<CancellationToken>())
             .Returns((PaymentTransactionDto?)null);
@@ -46,8 +46,8 @@ public class GetPaymentStatusHandlerTests
         var callerId = Guid.NewGuid();
         var ownerId = Guid.NewGuid();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IsAdmin.Returns(false);
 
         _paymentQueryService
             .GetByAuthorityAsync("A123", Arg.Any<CancellationToken>())
@@ -64,8 +64,8 @@ public class GetPaymentStatusHandlerTests
     {
         var callerId = Guid.NewGuid();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IsAdmin.Returns(false);
 
         _paymentQueryService
             .GetByAuthorityAsync("A123", Arg.Any<CancellationToken>())
@@ -85,8 +85,8 @@ public class GetPaymentStatusHandlerTests
     {
         var callerId = Guid.NewGuid();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IsAdmin.Returns(false);
 
         _paymentQueryService
             .GetByAuthorityAsync("A123", Arg.Any<CancellationToken>())
@@ -106,8 +106,8 @@ public class GetPaymentStatusHandlerTests
     [Fact]
     public async Task Handle_WhenAdminRequestsAnyTransaction_ReturnsSuccess()
     {
-        _currentUser.UserId.Returns(Guid.NewGuid());
-        _currentUser.IsAdmin.Returns(true);
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.IsAdmin.Returns(true);
 
         _paymentQueryService
             .GetByAuthorityAsync("A123", Arg.Any<CancellationToken>())

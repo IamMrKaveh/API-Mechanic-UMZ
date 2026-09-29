@@ -8,13 +8,13 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Media.Features.Commands.DeleteMedia;
 
-public class DeleteMediaHandlerTests
+public class DeleteMediaHandlerTests : HandlerTestBase
 {
-    private readonly IMediaService _mediaService = Substitute.For<IMediaService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly DeleteMediaHandler _sut;
+    private readonly IMediaService _mediaService = Substitute.For<IMediaService>(); private readonly DeleteMediaHandler _sut;
 
     public DeleteMediaHandlerTests()
     {
-        _sut = new DeleteMediaHandler(_mediaService, _currentUserService);
+        _sut = new DeleteMediaHandler(_mediaService, CurrentUserService);
     }
 
     [Fact]
@@ -22,7 +22,7 @@ public class DeleteMediaHandlerTests
     {
         var mediaGuid = Guid.NewGuid();
         var userGuid = Guid.NewGuid();
-        _currentUserService.UserId.Returns(userGuid);
+        CurrentUserService.UserId.Returns(userGuid);
 
         MediaId? capturedMediaId = null;
         UserId? capturedDeletedBy = null;
@@ -51,7 +51,7 @@ public class DeleteMediaHandlerTests
     public async Task Handle_WhenCurrentUserIsNotAuthenticated_DelegatesWithNullDeletedBy()
     {
         var mediaGuid = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         UserId? capturedDeletedBy = null;
         var deletedByCaptured = false;
@@ -73,7 +73,7 @@ public class DeleteMediaHandlerTests
     [Fact]
     public async Task Handle_ReturnsWhateverMediaServiceReturns()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
         var expected = ServiceResult.Failure(Error.NotFound("Media.NotFound", "not-found"));
 
         _mediaService
@@ -89,7 +89,7 @@ public class DeleteMediaHandlerTests
     public async Task Handle_ForwardsCancellationTokenToMediaService()
     {
         using var cts = new CancellationTokenSource();
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
         _mediaService
             .DeleteAsync(Arg.Any<MediaId>(), Arg.Any<UserId?>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());

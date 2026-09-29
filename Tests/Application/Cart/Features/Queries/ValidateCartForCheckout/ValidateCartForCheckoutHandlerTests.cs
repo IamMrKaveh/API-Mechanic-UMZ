@@ -9,20 +9,20 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Cart.Features.Queries.ValidateCartForCheckout;
 
-public class ValidateCartForCheckoutHandlerTests
+public class ValidateCartForCheckoutHandlerTests : HandlerTestBase
 {
-    private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ValidateCartForCheckoutHandler _sut;
+    private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly ValidateCartForCheckoutHandler _sut;
 
     public ValidateCartForCheckoutHandlerTests()
     {
-        _sut = new ValidateCartForCheckoutHandler(_cartQueryService, _currentUserService);
+        _sut = new ValidateCartForCheckoutHandler(_cartQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenNoUserAndNoGuestToken_ReturnsValidationFailure()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns((string?)null);
 
         var result = await _sut.Handle(new ValidateCartForCheckoutQuery(), CancellationToken.None);
 
@@ -35,8 +35,8 @@ public class ValidateCartForCheckoutHandlerTests
     public async Task Handle_WhenUserIsAuthenticated_ReturnsSuccessWithValidationDto()
     {
         var expected = new CartCheckoutValidationDto { IsValid = true };
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.GuestToken.Returns((string?)null);
         _cartQueryService
             .ValidateCartForCheckoutAsync(Arg.Any<UserId?>(), Arg.Any<GuestToken?>(), Arg.Any<CancellationToken>())
             .Returns(expected);
@@ -65,8 +65,8 @@ public class ValidateCartForCheckoutHandlerTests
             }
         }
         };
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns("GUEST-TOKEN-CHK12345");
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns("GUEST-TOKEN-CHK12345");
         _cartQueryService
             .ValidateCartForCheckoutAsync(Arg.Any<UserId?>(), Arg.Any<GuestToken?>(), Arg.Any<CancellationToken>())
             .Returns(expected);

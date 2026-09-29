@@ -12,13 +12,13 @@ using Orders = Domain.Order.Aggregates.Order;
 
 namespace Tests.Application.Order.Features.Commands.RequestReturn;
 
-public class RequestReturnHandlerTests
+public class RequestReturnHandlerTests : HandlerTestBase
 {
-    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly INotificationService _notificationService = Substitute.For<INotificationService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly RequestReturnHandler _sut;
+    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly INotificationService _notificationService = Substitute.For<INotificationService>(); private readonly RequestReturnHandler _sut;
 
     public RequestReturnHandlerTests()
     {
-        _sut = new RequestReturnHandler(_orderRepository, _notificationService, _currentUser);
+        _sut = new RequestReturnHandler(_orderRepository, _notificationService, CurrentUserService);
     }
 
     private static Orders OrderInDeliveredState(Guid userGuid)
@@ -35,7 +35,7 @@ public class RequestReturnHandlerTests
     [Fact]
     public async Task Handle_WhenNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new RequestReturnCommand(Guid.NewGuid(), "reason", null), CancellationToken.None);
 
@@ -45,7 +45,7 @@ public class RequestReturnHandlerTests
     [Fact]
     public async Task Handle_WhenOrderNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns((Orders?)null);
 
         var result = await _sut.Handle(new RequestReturnCommand(Guid.NewGuid(), "reason", null), CancellationToken.None);
@@ -59,8 +59,8 @@ public class RequestReturnHandlerTests
         var owner = Guid.NewGuid();
         var caller = Guid.NewGuid();
         var order = OrderInDeliveredState(owner);
-        _currentUser.UserId.Returns((Guid?)caller);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)caller);
+        CurrentUserService.IsAdmin.Returns(false);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new RequestReturnCommand(order.Id.Value, "reason", null), CancellationToken.None);
@@ -73,7 +73,7 @@ public class RequestReturnHandlerTests
     {
         var owner = Guid.NewGuid();
         var order = OrderInDeliveredState(owner);
-        _currentUser.UserId.Returns((Guid?)owner);
+        CurrentUserService.UserId.Returns((Guid?)owner);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new RequestReturnCommand(order.Id.Value, "reason", "@@bad@@"), CancellationToken.None);
@@ -86,7 +86,7 @@ public class RequestReturnHandlerTests
     {
         var owner = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(owner)).Build();
-        _currentUser.UserId.Returns((Guid?)owner);
+        CurrentUserService.UserId.Returns((Guid?)owner);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new RequestReturnCommand(order.Id.Value, "reason", null), CancellationToken.None);
@@ -101,7 +101,7 @@ public class RequestReturnHandlerTests
     {
         var owner = Guid.NewGuid();
         var order = OrderInDeliveredState(owner);
-        _currentUser.UserId.Returns((Guid?)owner);
+        CurrentUserService.UserId.Returns((Guid?)owner);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new RequestReturnCommand(order.Id.Value, "damaged", null), CancellationToken.None);

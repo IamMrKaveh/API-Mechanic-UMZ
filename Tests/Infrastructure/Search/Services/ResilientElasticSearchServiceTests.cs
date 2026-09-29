@@ -6,11 +6,8 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Search.Services;
 
-public class ResilientElasticSearchServiceTests : IAsyncLifetime
-{
+public class ResilientElasticSearchServiceTests : HandlerTestBase, IAsyncLifetime{
     private FakeElasticsearchServer _server = null!;
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-
     public Task InitializeAsync()
     {
         _server = new FakeElasticsearchServer();
@@ -40,9 +37,9 @@ public class ResilientElasticSearchServiceTests : IAsyncLifetime
         int failureThreshold = 5,
         int breakDurationSeconds = 60) =>
         new(
-            new ElasticsearchService(_server.CreateClient(), _auditService),
-            new ElasticsearchCircuitBreaker(_auditService, BreakerConfig(failureThreshold, breakDurationSeconds)),
-            _auditService);
+            new ElasticsearchService(_server.CreateClient(), AuditService),
+            new ElasticsearchCircuitBreaker(AuditService, BreakerConfig(failureThreshold, breakDurationSeconds)),
+            AuditService);
 
     private static string HitSource(Guid id, string name) =>
         "{\"productId\":\"" + id + "\",\"name\":\"" + name + "\",\"price\":150000}";
@@ -73,7 +70,7 @@ public class ResilientElasticSearchServiceTests : IAsyncLifetime
 
         _server.Requests.Count.ShouldBe(1);
         _server.Requests[0].Path.ShouldContain("products_v1");
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -95,7 +92,7 @@ public class ResilientElasticSearchServiceTests : IAsyncLifetime
         await Should.ThrowAsync<Exception>(() =>
             sut.IndexProductAsync(null!, CancellationToken.None));
 
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("IndexProductAsync failed")),
             Arg.Any<CancellationToken>());
     }
@@ -105,16 +102,16 @@ public class ResilientElasticSearchServiceTests : IAsyncLifetime
     {
         var sut = BuildSut(failureThreshold: 1);
         await OpenCircuitAsync(sut);
-        _auditService.ClearReceivedCalls();
+        AuditService.ClearReceivedCalls();
 
         await sut.IndexProductAsync(
             new ProductSearchDocument { ProductId = Guid.NewGuid(), Name = "P" },
             CancellationToken.None);
 
-        await _auditService.Received(1).LogWarningAsync(
+        await AuditService.Received(1).LogWarningAsync(
             Arg.Is<string>(s => s!.Contains("Circuit breaker open")),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -122,14 +119,14 @@ public class ResilientElasticSearchServiceTests : IAsyncLifetime
     {
         var sut = BuildSut(failureThreshold: 1);
         await OpenCircuitAsync(sut);
-        _auditService.ClearReceivedCalls();
+        AuditService.ClearReceivedCalls();
 
         await sut.IndexCategoryAsync(
             new CategorySearchDocument { CategoryId = Guid.NewGuid(), Name = "C" },
             CancellationToken.None);
 
-        await _auditService.DidNotReceiveWithAnyArgs().LogWarningAsync(default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogWarningAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -137,14 +134,14 @@ public class ResilientElasticSearchServiceTests : IAsyncLifetime
     {
         var sut = BuildSut(failureThreshold: 1);
         await OpenCircuitAsync(sut);
-        _auditService.ClearReceivedCalls();
+        AuditService.ClearReceivedCalls();
 
         await sut.IndexBrandAsync(
             new BrandSearchDocument { BrandId = Guid.NewGuid(), Name = "B" },
             CancellationToken.None);
 
-        await _auditService.DidNotReceiveWithAnyArgs().LogWarningAsync(default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogWarningAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -155,7 +152,7 @@ public class ResilientElasticSearchServiceTests : IAsyncLifetime
         await Should.ThrowAsync<Exception>(() =>
             sut.IndexCategoryAsync(null!, CancellationToken.None));
 
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("IndexCategoryAsync failed")),
             Arg.Any<CancellationToken>());
     }

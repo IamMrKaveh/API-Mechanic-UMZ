@@ -6,20 +6,20 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Notification.Features.Queries.GetUnreadNotificationCount;
 
-public class GetUnreadNotificationCountHandlerTests
+public class GetUnreadNotificationCountHandlerTests : HandlerTestBase
 {
-    private readonly INotificationQueryService _notificationQueryService = Substitute.For<INotificationQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetUnreadNotificationCountHandler _sut;
+    private readonly INotificationQueryService _notificationQueryService = Substitute.For<INotificationQueryService>(); private readonly GetUnreadNotificationCountHandler _sut;
 
     public GetUnreadNotificationCountHandlerTests()
     {
-        _sut = new GetUnreadNotificationCountHandler(_notificationQueryService, _currentUserService);
+        _sut = new GetUnreadNotificationCountHandler(_notificationQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenNotAuthenticated_ReturnsSuccessWithZeroAndDoesNotCallQueryService()
     {
-        _currentUserService.IsAuthenticated.Returns(false);
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         var result = await _sut.Handle(new GetUnreadNotificationCountQuery(), CancellationToken.None);
 
@@ -32,8 +32,8 @@ public class GetUnreadNotificationCountHandlerTests
     [Fact]
     public async Task Handle_WhenAuthenticatedButUserIdIsNull_ReturnsSuccessWithZeroAndDoesNotCallQueryService()
     {
-        _currentUserService.IsAuthenticated.Returns(true);
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new GetUnreadNotificationCountQuery(), CancellationToken.None);
 
@@ -47,8 +47,8 @@ public class GetUnreadNotificationCountHandlerTests
     public async Task Handle_WhenAuthenticatedAndUserIdPresent_ReturnsSuccessWithServiceProvidedCount()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.IsAuthenticated.Returns(true);
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
         _notificationQueryService
             .GetUnreadCountAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns(7);
@@ -63,8 +63,8 @@ public class GetUnreadNotificationCountHandlerTests
     public async Task Handle_WhenAuthenticatedAndUserIdPresent_PassesCurrentUserIdToNotificationQueryService()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.IsAuthenticated.Returns(true);
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
         _notificationQueryService
             .GetUnreadCountAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns(0);
@@ -83,8 +83,8 @@ public class GetUnreadNotificationCountHandlerTests
     [InlineData(int.MaxValue)]
     public async Task Handle_WhenAuthenticated_ReturnsSuccessWithCountReportedByQueryService(int count)
     {
-        _currentUserService.IsAuthenticated.Returns(true);
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _notificationQueryService
             .GetUnreadCountAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns(count);

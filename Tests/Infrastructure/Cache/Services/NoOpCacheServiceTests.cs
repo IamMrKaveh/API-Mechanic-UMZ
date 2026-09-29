@@ -3,13 +3,13 @@ using Infrastructure.Cache.Services;
 
 namespace Tests.Infrastructure.Cache.Services;
 
-public class NoOpCacheServiceTests
+public class NoOpCacheServiceTests : HandlerTestBase
 {
-    private readonly IAuditService _audit = Substitute.For<IAuditService>(); private readonly NoOpCacheService _sut;
+    private readonly NoOpCacheService _sut;
 
     public NoOpCacheServiceTests()
     {
-        _sut = new NoOpCacheService(_audit);
+        _sut = new NoOpCacheService(AuditService);
     }
 
     [Fact]
@@ -18,7 +18,7 @@ public class NoOpCacheServiceTests
         var result = await _sut.GetAsync<string>("k");
 
         result.ShouldBeNull();
-        await _audit.Received(1).LogDebugAsync(
+        await AuditService.Received(1).LogDebugAsync(
             Arg.Is<string>(s => s!.Contains("GetAsync") && s!.Contains("k")),
             Arg.Any<CancellationToken>());
     }
@@ -36,7 +36,7 @@ public class NoOpCacheServiceTests
     {
         await _sut.SetAsync("k", "value", TimeSpan.FromMinutes(1));
 
-        await _audit.Received(1).LogDebugAsync(
+        await AuditService.Received(1).LogDebugAsync(
             Arg.Is<string>(s => s!.Contains("SetAsync") && s!.Contains("k")),
             Arg.Any<CancellationToken>());
     }
@@ -46,7 +46,7 @@ public class NoOpCacheServiceTests
     {
         await _sut.RemoveAsync("k");
 
-        await _audit.Received(1).LogDebugAsync(
+        await AuditService.Received(1).LogDebugAsync(
             Arg.Is<string>(s => s!.Contains("RemoveAsync") && s!.Contains('k')),
             Arg.Any<CancellationToken>());
     }
@@ -56,7 +56,7 @@ public class NoOpCacheServiceTests
     {
         await _sut.RemoveByPrefixAsync("prefix:");
 
-        await _audit.Received(1).LogDebugAsync(
+        await AuditService.Received(1).LogDebugAsync(
             Arg.Is<string>(s => s!.Contains("RemoveByPrefixAsync") && s!.Contains("prefix:")),
             Arg.Any<CancellationToken>());
     }
@@ -67,7 +67,7 @@ public class NoOpCacheServiceTests
         var result = await _sut.ExistsAsync("k");
 
         result.ShouldBeFalse();
-        await _audit.Received(1).LogDebugAsync(
+        await AuditService.Received(1).LogDebugAsync(
             Arg.Is<string>(s => s!.Contains("ExistsAsync") && s!.Contains('k')),
             Arg.Any<CancellationToken>());
     }

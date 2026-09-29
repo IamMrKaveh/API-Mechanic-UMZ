@@ -1,3 +1,5 @@
+using Application.Common.Validation;
+
 namespace Application.Inventory.Features.Commands.BulkAdjustStock;
 
 public class BulkAdjustStockValidator : AbstractValidator<BulkAdjustStockCommand>
@@ -8,7 +10,7 @@ public class BulkAdjustStockValidator : AbstractValidator<BulkAdjustStockCommand
         RuleFor(x => x.Reason).NotEmpty();
         RuleForEach(x => x.Items).ChildRules(item =>
         {
-            item.RuleFor(x => x.VariantId).NotEmpty();
+            item.RuleFor(x => x.VariantId).RequiredId();
             item.RuleFor(x => x.QuantityChange).NotEqual(0).WithMessage("تغییر موجودی نمی‌تواند صفر باشد.");
         });
     }

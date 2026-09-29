@@ -13,7 +13,7 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Infrastructure.Order.Services;
 
-public class CheckoutOrchestrationServiceTests
+public class CheckoutOrchestrationServiceTests : HandlerTestBase
 {
     private readonly ICheckoutAddressResolverService _addressResolver = Substitute.For<ICheckoutAddressResolverService>();
     private readonly ICheckoutCartItemBuilderService _cartItemBuilder = Substitute.For<ICheckoutCartItemBuilderService>();
@@ -25,7 +25,6 @@ public class CheckoutOrchestrationServiceTests
     private readonly ICheckoutPaymentStrategyResolver _strategyResolver = Substitute.For<ICheckoutPaymentStrategyResolver>();
     private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>();
     private readonly ICheckoutPaymentStrategy _strategy = Substitute.For<ICheckoutPaymentStrategy>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly CheckoutOrchestrationService _sut;
 
     public CheckoutOrchestrationServiceTests()
@@ -40,7 +39,7 @@ public class CheckoutOrchestrationServiceTests
             _orderCreation,
             _strategyResolver,
             _cartRepository,
-            _dateTimeProvider);
+            DateTimeProvider);
     }
 
     private static CheckoutFromCartCommand NewCommand(Guid? userId = null) =>

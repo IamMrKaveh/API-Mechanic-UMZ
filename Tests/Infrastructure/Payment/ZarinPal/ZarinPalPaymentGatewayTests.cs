@@ -9,12 +9,10 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Payment.ZarinPal;
 
-public class ZarinPalPaymentGatewayTests
+public class ZarinPalPaymentGatewayTests : HandlerTestBase
 {
     private const string MerchantId = "merchant-id-123";
     private const string StartPayBase = "https://www.zarinpal.com/pg/StartPay/";
-
-    private readonly IAuditService _audit = Substitute.For<IAuditService>();
 
     private static IOptions<ZarinPalOptions> BuildOptions(string startPayBaseUrl = StartPayBase) =>
         Options.Create(new ZarinPalOptions
@@ -57,7 +55,7 @@ public class ZarinPalPaymentGatewayTests
     [Fact]
     public void GatewayName_IsZarinpal()
     {
-        var sut = BuildSut(FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, "{}"), _audit);
+        var sut = BuildSut(FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, "{}"), AuditService);
 
         sut.GatewayName.ShouldBe("Zarinpal");
     }
@@ -66,7 +64,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task InitiateAsync_Success_ReturnsAuthorityAndPaymentUrl()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "A000000000000000000000000001"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var result = await sut.InitiateAsync(
             OrderId.NewId(), Money.Create(150_000m, "IRR"), "desc", "https://shop.example.com/cb");
@@ -80,7 +78,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task InitiateAsync_Success_TrimsTrailingSlashFromStartPayBaseUrl()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH123"));
-        var sut = BuildSut(handler, _audit, BuildOptions("https://pay.example/StartPay///"));
+        var sut = BuildSut(handler, AuditService, BuildOptions("https://pay.example/StartPay///"));
 
         var result = await sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "desc", "https://shop.example.com/cb");
@@ -92,7 +90,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task InitiateAsync_SendsMerchantIdAmountAndMetadata()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
         var orderId = OrderId.NewId();
         var email = Email.Create("user@example.com");
         var phone = PhoneNumber.Create("09123456789");
@@ -121,7 +119,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task InitiateAsync_ToRial_ConvertsCurrencyCorrectly(string currency, double amount, long expectedRial)
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create((decimal)amount, currency), "d", "https://shop.example.com/cb");
 
@@ -133,7 +131,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task InitiateAsync_WhenEmailAndPhoneNull_OmitsMetadataValuesAsNull()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
 
@@ -149,7 +147,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task InitiateAsync_WhenGatewayReturnsError_ThrowsWithMappedMessage(int code, string expectedMessage)
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestErrorJson(code));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb"));
@@ -157,14 +155,14 @@ public class ZarinPalPaymentGatewayTests
         ex.ServiceName.ShouldBe("Zarinpal");
         ex.Message.ShouldBe(expectedMessage);
         ex.ErrorCode.ShouldBe(code.ToString());
-        await _audit.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains($"code={code}")), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains($"code={code}")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task InitiateAsync_WhenBodyIsNull_ThrowsWithFallbackCode()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, "{}");
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb"));
@@ -180,7 +178,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task InitiateAsync_WhenCodeNot100OrAuthorityMissing_Throws(int code, string? authority)
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(code, authority));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         await Should.ThrowAsync<ExternalServiceException>(() => sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb"));
@@ -190,21 +188,21 @@ public class ZarinPalPaymentGatewayTests
     public async Task InitiateAsync_WhenHttpThrows_LogsAndWrapsInExternalServiceException()
     {
         var handler = FakeHttpMessageHandler.ThrowsException(new HttpRequestException("network down"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb"));
 
         ex.ServiceName.ShouldBe("Zarinpal");
         ex.InnerException.ShouldBeOfType<HttpRequestException>();
-        await _audit.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Initiate exception")), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Initiate exception")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task InitiateAsync_WhenResponseIsInvalidJson_ThrowsExternalServiceException()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, "not-json{{{");
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         await Should.ThrowAsync<ExternalServiceException>(() => sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb"));
@@ -214,7 +212,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task InitiateAsync_WhenCancelled_PropagatesCancellation()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
@@ -228,7 +226,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task VerifyAsync_SuccessCodes_ReturnVerifiedResult(int code)
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, VerifyJson(code, 987654L, "6037-****-1111", 1500m));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var result = await sut.VerifyAsync("AUTH1", Money.Create(150_000m, "IRR"));
 
@@ -243,7 +241,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task VerifyAsync_SendsMerchantIdAmountAndAuthority()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, VerifyJson(100));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         await sut.VerifyAsync("AUTH-XYZ", Money.Create(15000m, "IRT"));
 
@@ -258,7 +256,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task VerifyAsync_WhenFailed_ThrowsWithMappedMessageAndCode()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, VerifyErrorJson(-51));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.VerifyAsync("AUTH1", Money.Create(1000m, "IRR")));
 
@@ -271,7 +269,7 @@ public class ZarinPalPaymentGatewayTests
     public async Task VerifyAsync_WhenBodyIsNull_ThrowsWithFallbackCode()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, "{}");
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.VerifyAsync("AUTH1", Money.Create(1000m, "IRR")));
 
@@ -282,19 +280,19 @@ public class ZarinPalPaymentGatewayTests
     public async Task VerifyAsync_WhenHttpThrows_LogsAndWrapsInExternalServiceException()
     {
         var handler = FakeHttpMessageHandler.ThrowsException(new HttpRequestException("timeout"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.VerifyAsync("AUTH1", Money.Create(1000m, "IRR")));
 
         ex.InnerException.ShouldBeOfType<HttpRequestException>();
-        await _audit.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Verify exception")), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Verify exception")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task VerifyAsync_WhenCancelled_PropagatesCancellation()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, VerifyJson(100));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 

@@ -11,26 +11,21 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Wallet.Features.Commands.MarkFraudAlertReviewed;
 
-public sealed class MarkFraudAlertReviewedHandlerTests
+public sealed class MarkFraudAlertReviewedHandlerTests : HandlerTestBase
 {
     private readonly IWalletFraudAlertRepository _repository = Substitute.For<IWalletFraudAlertRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
-
     private readonly MarkFraudAlertReviewedHandler _sut;
 
     public MarkFraudAlertReviewedHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new MarkFraudAlertReviewedHandler(_repository, _auditService, _dateTimeProvider, _currentUserService);
+
+        _sut = new MarkFraudAlertReviewedHandler(_repository, AuditService, DateTimeProvider, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenAlertNotFound_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _repository.GetByIdAsync(Arg.Any<WalletFraudAlertId>(), Arg.Any<CancellationToken>())
             .Returns((WalletFraudAlert?)null);
 
@@ -43,7 +38,7 @@ public sealed class MarkFraudAlertReviewedHandlerTests
     public async Task Handle_WhenAlertOpen_MarksReviewedAndReturnsSuccess()
     {
         var adminId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
         var alert = new WalletFraudAlertBuilder().Build();
         _repository.GetByIdAsync(Arg.Any<WalletFraudAlertId>(), Arg.Any<CancellationToken>()).Returns(alert);
 
@@ -54,8 +49,8 @@ public sealed class MarkFraudAlertReviewedHandlerTests
         alert.ReviewNote.ShouldBe("checked");
         alert.ReviewedBy.ShouldBe(adminId);
         _repository.Received(1).Update(alert);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogSystemEventAsync(
             "FraudAlertReviewed", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -63,7 +58,7 @@ public sealed class MarkFraudAlertReviewedHandlerTests
     public async Task Handle_WhenAlertAlreadyDismissed_ReturnsFailure()
     {
         var adminId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
         var alert = new WalletFraudAlertBuilder().Build();
         alert.Dismiss(adminId, null, DateTime.UtcNow);
         _repository.GetByIdAsync(Arg.Any<WalletFraudAlertId>(), Arg.Any<CancellationToken>()).Returns(alert);

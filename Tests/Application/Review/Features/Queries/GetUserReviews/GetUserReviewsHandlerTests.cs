@@ -10,23 +10,23 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Review.Features.Queries.GetUserReviews;
 
-public class GetUserReviewsHandlerTests
+public class GetUserReviewsHandlerTests : HandlerTestBase
 {
-    private readonly IReviewQueryService _reviewQueryService = Substitute.For<IReviewQueryService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly GetUserReviewsHandler _sut;
+    private readonly IReviewQueryService _reviewQueryService = Substitute.For<IReviewQueryService>(); private readonly GetUserReviewsHandler _sut;
 
     public GetUserReviewsHandlerTests()
     {
         _sut = new GetUserReviewsHandler(
             _reviewQueryService,
-            _currentUser,
+            CurrentUserService,
             NullLogger<GetUserReviewsHandler>.Instance);
     }
 
     [Fact]
     public async Task Handle_WhenAnonymous_ReturnsUnauthorized()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new GetUserReviewsQuery(), CancellationToken.None);
 
@@ -39,9 +39,9 @@ public class GetUserReviewsHandlerTests
     public async Task Handle_WhenNonAdminRequestsAnotherUsersReviews_ReturnsForbidden()
     {
         var callerGuid = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.IsAdmin.Returns(false);
 
         var otherUserId = Guid.NewGuid();
 
@@ -58,9 +58,9 @@ public class GetUserReviewsHandlerTests
     public async Task Handle_WhenUserRequestsOwnReviews_ReturnsSuccessAndUsesCurrentUserId()
     {
         var callerGuid = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.IsAdmin.Returns(false);
 
         var page = new PaginatedResult<ProductReviewDto>(Array.Empty<ProductReviewDto>(), 0, 1, 10);
         _reviewQueryService
@@ -82,9 +82,9 @@ public class GetUserReviewsHandlerTests
     public async Task Handle_WhenAdminRequestsOtherUsersReviews_ReturnsSuccessAndUsesRequestedUserId()
     {
         var callerGuid = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.IsAdmin.Returns(true);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.IsAdmin.Returns(true);
 
         var otherUserId = Guid.NewGuid();
 

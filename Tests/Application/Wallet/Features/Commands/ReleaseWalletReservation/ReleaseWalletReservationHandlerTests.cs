@@ -7,19 +7,15 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.ReleaseWalletReservation;
 
-public sealed class ReleaseWalletReservationHandlerTests
+public sealed class ReleaseWalletReservationHandlerTests : HandlerTestBase
 {
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-
     private readonly ReleaseWalletReservationHandler _sut;
 
     public ReleaseWalletReservationHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new ReleaseWalletReservationHandler(_walletRepository, _dateTimeProvider, _auditService);
+
+        _sut = new ReleaseWalletReservationHandler(_walletRepository, DateTimeProvider, AuditService);
     }
 
     [Fact]
@@ -52,7 +48,7 @@ public sealed class ReleaseWalletReservationHandlerTests
         result.ShouldBeSuccess();
         wallet.AvailableBalance.Amount.ShouldBe(500_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

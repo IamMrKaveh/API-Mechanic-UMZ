@@ -9,19 +9,19 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Order.Features.Queries.GetOrderDetails;
 
-public class GetOrderDetailsHandlerTests
+public class GetOrderDetailsHandlerTests : HandlerTestBase
 {
-    private readonly IOrderQueryService _orderQueryService = Substitute.For<IOrderQueryService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly GetOrderDetailsHandler _sut;
+    private readonly IOrderQueryService _orderQueryService = Substitute.For<IOrderQueryService>(); private readonly GetOrderDetailsHandler _sut;
 
     public GetOrderDetailsHandlerTests()
     {
-        _sut = new GetOrderDetailsHandler(_orderQueryService, _currentUser);
+        _sut = new GetOrderDetailsHandler(_orderQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new GetOrderDetailsQuery(Guid.NewGuid()), CancellationToken.None);
 
@@ -32,7 +32,7 @@ public class GetOrderDetailsHandlerTests
     [Fact]
     public async Task Handle_WhenOrderNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _orderQueryService.GetOrderDetailsAsync(Arg.Any<OrderId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns((OrderDto?)null);
 
         var result = await _sut.Handle(new GetOrderDetailsQuery(Guid.NewGuid()), CancellationToken.None);
@@ -44,7 +44,7 @@ public class GetOrderDetailsHandlerTests
     public async Task Handle_WhenOrderFound_ReturnsSuccessWithDto()
     {
         var userGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
         var dto = new OrderDto { Id = Guid.NewGuid(), OrderNumber = "ORD-1" };
         _orderQueryService.GetOrderDetailsAsync(Arg.Any<OrderId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(dto);
 
@@ -59,7 +59,7 @@ public class GetOrderDetailsHandlerTests
     {
         var userGuid = Guid.NewGuid();
         var orderGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         OrderId? capturedOrder = null;
         UserId? capturedUser = null;

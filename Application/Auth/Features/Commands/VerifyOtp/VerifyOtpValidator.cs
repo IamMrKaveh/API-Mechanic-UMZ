@@ -1,12 +1,12 @@
+using Application.Common.Validation;
+
 namespace Application.Auth.Features.Commands.VerifyOtp;
 
 public class VerifyOtpValidator : AbstractValidator<VerifyOtpCommand>
 {
     public VerifyOtpValidator()
     {
-        RuleFor(x => x.PhoneNumber)
-            .NotEmpty()
-            .Matches(@"^09\d{9}$").WithMessage("فرمت شماره موبایل نامعتبر است.");
+        this.RuleForIranianMobileNumber(x => x.PhoneNumber);
 
         RuleFor(x => x.Code)
             .NotEmpty().WithMessage("کد OTP الزامی است.")

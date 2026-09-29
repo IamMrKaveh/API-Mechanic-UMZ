@@ -17,9 +17,9 @@ using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.AddItemToCart;
 
-public class AddItemToCartHandlerTests
+public class AddItemToCartHandlerTests : HandlerTestBase
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AddItemToCartHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly AddItemToCartHandler _sut;
 
     public AddItemToCartHandlerTests()
     {
@@ -27,7 +27,7 @@ public class AddItemToCartHandlerTests
             _cartRepository,
             _variantRepository,
             _inventoryRepository,
-            _currentUserService, _dateTimeProvider);
+            CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
@@ -104,8 +104,8 @@ public class AddItemToCartHandlerTests
         _inventoryRepository
             .GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(inventory);
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns((string?)null);
 
         var result = await _sut.Handle(
             new AddItemToCartCommand(variantId.Value, 2),
@@ -130,8 +130,8 @@ public class AddItemToCartHandlerTests
         _inventoryRepository
             .GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(inventory);
-        _currentUserService.UserId.Returns((Guid?)userGuid);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.GuestToken.Returns((string?)null);
         _cartRepository
             .FindByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns((Carts?)null);
@@ -171,8 +171,8 @@ public class AddItemToCartHandlerTests
         _inventoryRepository
             .GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(inventory);
-        _currentUserService.UserId.Returns((Guid?)userGuid);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.GuestToken.Returns((string?)null);
         _cartRepository
             .FindByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns(existingCart);
@@ -203,8 +203,8 @@ public class AddItemToCartHandlerTests
         _inventoryRepository
             .GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(inventory);
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns(guestTokenValue);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns(guestTokenValue);
         _cartRepository
             .FindByGuestTokenAsync(Arg.Any<GuestToken>(), Arg.Any<CancellationToken>())
             .Returns((Carts?)null);
@@ -244,8 +244,8 @@ public class AddItemToCartHandlerTests
         _inventoryRepository
             .GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(inventory);
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns(guestTokenValue);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns(guestTokenValue);
         _cartRepository
             .FindByGuestTokenAsync(Arg.Any<GuestToken>(), Arg.Any<CancellationToken>())
             .Returns(existingCart);

@@ -12,14 +12,14 @@ using DomainShipping = Domain.Shipping.Aggregates.Shipping;
 
 namespace Tests.Application.Shipping.Features.Commands.RestoreShipping;
 
-public class RestoreShippingHandlerTests
+public class RestoreShippingHandlerTests : HandlerTestBase
 {
-    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly RestoreShippingHandler _sut;
+    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly RestoreShippingHandler _sut;
 
     public RestoreShippingHandlerTests()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new RestoreShippingHandler(_shippingRepository, _currentUser, _auditService, _cacheService);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new RestoreShippingHandler(_shippingRepository, CurrentUserService, AuditService, _cacheService);
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public class RestoreShippingHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _shippingRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _auditService.DidNotReceiveWithAnyArgs().LogAdminEventAsync(default!, default!, default!);
+        await AuditService.DidNotReceiveWithAnyArgs().LogAdminEventAsync(default!, default!, default!);
         await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
@@ -60,7 +60,7 @@ public class RestoreShippingHandlerTests
     {
         var shipping = new ShippingBuilder().AsDeleted().Build();
         var adminGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)adminGuid);
+        CurrentUserService.UserId.Returns((Guid?)adminGuid);
 
         _shippingRepository
             .GetByIdAsync(Arg.Any<ShippingId>(), Arg.Any<CancellationToken>())
@@ -71,7 +71,7 @@ public class RestoreShippingHandlerTests
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _auditService.Received(1).LogAdminEventAsync(
+        await AuditService.Received(1).LogAdminEventAsync(
             "RestoreShippingMethod",
             Arg.Is<UserId>(u => u == UserId.From(adminGuid)),
             $"Restored shipping method ID: {command.Id}");
@@ -92,7 +92,7 @@ public class RestoreShippingHandlerTests
         result.ShouldBeSuccess();
         shipping.IsActive.ShouldBeTrue();
         _shippingRepository.Received(1).Update(shipping);
-        await _auditService.Received(1).LogAdminEventAsync(
+        await AuditService.Received(1).LogAdminEventAsync(
             "RestoreShippingMethod",
             Arg.Any<UserId>(),
             Arg.Any<string>());

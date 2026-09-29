@@ -8,13 +8,11 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Common.Behaviors;
 
-public class TransactionBehaviorTests
+public class TransactionBehaviorTests : HandlerTestBase
 {
-    private readonly IUnitOfWork _uow = Substitute.For<IUnitOfWork>(); private readonly IAuditService _audit = Substitute.For<IAuditService>();
-
     private void ConfigureUnitOfWorkPassThrough<TResp>()
     {
-        _uow.ExecuteStrategyAsync(
+        UnitOfWork.ExecuteStrategyAsync(
                 Arg.Any<Func<CancellationToken, Task<TResp>>>(),
                 Arg.Any<CancellationToken>())
             .Returns(async ci =>
@@ -28,7 +26,7 @@ public class TransactionBehaviorTests
     [Fact]
     public async Task Handle_WhenRequestIsQuery_BypassesTransactionAndCallsNext()
     {
-        var sut = new TransactionBehavior<TestQuery, ServiceResult<string>>(_uow, _audit);
+        var sut = new TransactionBehavior<TestQuery, ServiceResult<string>>(UnitOfWork, AuditService);
         var invoked = false;
 
         var result = await sut.Handle(
@@ -42,13 +40,13 @@ public class TransactionBehaviorTests
 
         invoked.ShouldBeTrue();
         result.ShouldBeSuccess();
-        await _uow.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
     public async Task Handle_WhenRequestBypassesTransactionBehavior_CallsNextWithoutSaving()
     {
-        var sut = new TransactionBehavior<BypassCommand, ServiceResult>(_uow, _audit);
+        var sut = new TransactionBehavior<BypassCommand, ServiceResult>(UnitOfWork, AuditService);
 
         var result = await sut.Handle(
             new BypassCommand(),
@@ -56,13 +54,13 @@ public class TransactionBehaviorTests
             CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _uow.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
     public async Task Handle_WhenRequestIsManualTransaction_CallsNextWithoutSaving()
     {
-        var sut = new TransactionBehavior<ManualCommand, ServiceResult>(_uow, _audit);
+        var sut = new TransactionBehavior<ManualCommand, ServiceResult>(UnitOfWork, AuditService);
 
         var result = await sut.Handle(
             new ManualCommand(),
@@ -70,14 +68,14 @@ public class TransactionBehaviorTests
             CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _uow.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
     public async Task Handle_WhenHandlerReturnsSuccess_CallsSaveChangesOnce()
     {
         ConfigureUnitOfWorkPassThrough<ServiceResult>();
-        var sut = new TransactionBehavior<StandardCommand, ServiceResult>(_uow, _audit);
+        var sut = new TransactionBehavior<StandardCommand, ServiceResult>(UnitOfWork, AuditService);
 
         var result = await sut.Handle(
             new StandardCommand(),
@@ -85,14 +83,14 @@ public class TransactionBehaviorTests
             CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _uow.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_WhenHandlerReturnsFailure_DoesNotCallSaveChanges()
     {
         ConfigureUnitOfWorkPassThrough<ServiceResult>();
-        var sut = new TransactionBehavior<StandardCommand, ServiceResult>(_uow, _audit);
+        var sut = new TransactionBehavior<StandardCommand, ServiceResult>(UnitOfWork, AuditService);
 
         var result = await sut.Handle(
             new StandardCommand(),
@@ -100,7 +98,7 @@ public class TransactionBehaviorTests
             CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.Validation);
-        await _uow.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -109,10 +107,10 @@ public class TransactionBehaviorTests
         ConfigureUnitOfWorkPassThrough<ServiceResult>();
 
         var pgEx = new PostgresException("duplicate", "ERROR", "ERROR", "23505");
-        _uow.SaveChangesAsync(Arg.Any<CancellationToken>())
+        UnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => Task.FromException(new DbUpdateException("save failed", pgEx)));
 
-        var sut = new TransactionBehavior<StandardCommand, ServiceResult>(_uow, _audit);
+        var sut = new TransactionBehavior<StandardCommand, ServiceResult>(UnitOfWork, AuditService);
 
         var result = await sut.Handle(
             new StandardCommand(),
@@ -122,7 +120,7 @@ public class TransactionBehaviorTests
         result.ShouldFailWith(ErrorCode.UniqueViolation);
         result.Error.Type.ShouldBe(ErrorType.Conflict);
         result.Error.Message.ShouldBe("این رکورد از قبل وجود دارد.");
-        await _audit.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "UniqueConstraintViolation",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -134,10 +132,10 @@ public class TransactionBehaviorTests
         ConfigureUnitOfWorkPassThrough<ServiceResult>();
 
         var pgEx = new PostgresException("duplicate", "ERROR", "ERROR", "23505");
-        _uow.SaveChangesAsync(Arg.Any<CancellationToken>())
+        UnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => Task.FromException(new DbUpdateException("save failed", pgEx)));
 
-        var sut = new TransactionBehavior<MappedUniqueCommand, ServiceResult>(_uow, _audit);
+        var sut = new TransactionBehavior<MappedUniqueCommand, ServiceResult>(UnitOfWork, AuditService);
 
         var result = await sut.Handle(
             new MappedUniqueCommand(),
@@ -154,10 +152,10 @@ public class TransactionBehaviorTests
         ConfigureUnitOfWorkPassThrough<ServiceResult>();
 
         var pgEx = new PostgresException("fk", "ERROR", "ERROR", "23503");
-        _uow.SaveChangesAsync(Arg.Any<CancellationToken>())
+        UnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => Task.FromException(new DbUpdateException("fk failed", pgEx)));
 
-        var sut = new TransactionBehavior<StandardCommand, ServiceResult>(_uow, _audit);
+        var sut = new TransactionBehavior<StandardCommand, ServiceResult>(UnitOfWork, AuditService);
 
         var result = await sut.Handle(
             new StandardCommand(),
@@ -167,7 +165,7 @@ public class TransactionBehaviorTests
         result.ShouldFailWith(ErrorCode.ForeignKeyViolation);
         result.Error.Type.ShouldBe(ErrorType.Conflict);
         result.Error.Message.ShouldBe("این عملیات به دلیل وابستگی به منابع دیگر امکان‌پذیر نیست.");
-        await _audit.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "ForeignKeyViolation",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -178,10 +176,10 @@ public class TransactionBehaviorTests
     {
         ConfigureUnitOfWorkPassThrough<ServiceResult>();
 
-        _uow.SaveChangesAsync(Arg.Any<CancellationToken>())
+        UnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => Task.FromException(new InvalidOperationException("boom")));
 
-        var sut = new TransactionBehavior<StandardCommand, ServiceResult>(_uow, _audit);
+        var sut = new TransactionBehavior<StandardCommand, ServiceResult>(UnitOfWork, AuditService);
 
         await Should.ThrowAsync<InvalidOperationException>(async () =>
             await sut.Handle(
@@ -189,7 +187,7 @@ public class TransactionBehaviorTests
                 _ => Task.FromResult(ServiceResult.Success()),
                 CancellationToken.None));
 
-        await _audit.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "TransactionFailed",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -201,10 +199,10 @@ public class TransactionBehaviorTests
         ConfigureUnitOfWorkPassThrough<ServiceResult<string>>();
 
         var pgEx = new PostgresException("duplicate", "ERROR", "ERROR", "23505");
-        _uow.SaveChangesAsync(Arg.Any<CancellationToken>())
+        UnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => Task.FromException(new DbUpdateException("save failed", pgEx)));
 
-        var sut = new TransactionBehavior<StandardCommandT, ServiceResult<string>>(_uow, _audit);
+        var sut = new TransactionBehavior<StandardCommandT, ServiceResult<string>>(UnitOfWork, AuditService);
 
         var result = await sut.Handle(
             new StandardCommandT(),

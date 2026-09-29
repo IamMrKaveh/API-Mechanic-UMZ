@@ -8,19 +8,16 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Auth.EventHandlers;
 
-public class UserCreatedEventHandlerTests
+public class UserCreatedEventHandlerTests : HandlerTestBase
 {
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ILogger<UserCreatedEventHandler> _logger = Substitute.For<ILogger<UserCreatedEventHandler>>();
     private readonly UserCreatedEventHandler _sut;
 
     public UserCreatedEventHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new UserCreatedEventHandler(_walletRepository, _unitOfWork, _auditService, _dateTimeProvider, _logger);
+
+        _sut = new UserCreatedEventHandler(_walletRepository, UnitOfWork, AuditService, DateTimeProvider, _logger);
     }
 
     private static DomainEventNotification<UserRegisteredEvent> BuildNotification(UserId? userId = null)
@@ -65,7 +62,7 @@ public class UserCreatedEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -76,7 +73,7 @@ public class UserCreatedEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "Wallet creation",
             Arg.Is<string>(s => s!.Contains(userId.Value.ToString())),
             Arg.Any<CancellationToken>());
@@ -95,11 +92,11 @@ public class UserCreatedEventHandlerTests
 
         await Should.NotThrowAsync(() => _sut.Handle(notification, CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             exception.Message,
             Arg.Is<string>(s => s!.Contains(userId.Value.ToString())),
             Arg.Any<CancellationToken>());
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -109,13 +106,13 @@ public class UserCreatedEventHandlerTests
         var notification = BuildNotification(userId);
         var exception = new InvalidOperationException("save changes failed");
 
-        _unitOfWork
+        UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(exception);
 
         await Should.NotThrowAsync(() => _sut.Handle(notification, CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             exception.Message,
             Arg.Is<string>(s => s!.Contains(userId.Value.ToString())),
             Arg.Any<CancellationToken>());
@@ -130,7 +127,7 @@ public class UserCreatedEventHandlerTests
         await _sut.Handle(notification, cts.Token);
 
         await _walletRepository.Received(1).AddAsync(Arg.Any<Wallets>(), cts.Token);
-        await _unitOfWork.Received(1).SaveChangesAsync(cts.Token);
+        await UnitOfWork.Received(1).SaveChangesAsync(cts.Token);
     }
 
     [Fact]
@@ -143,7 +140,7 @@ public class UserCreatedEventHandlerTests
         Received.InOrder(() =>
         {
             _walletRepository.AddAsync(Arg.Any<Wallets>(), Arg.Any<CancellationToken>());
-            _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>());
+            UnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>());
         });
     }
 }

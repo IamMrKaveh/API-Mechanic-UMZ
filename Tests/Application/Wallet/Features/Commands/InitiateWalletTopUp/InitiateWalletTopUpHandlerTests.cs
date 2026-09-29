@@ -12,15 +12,11 @@ using SharedKernel.Exceptions;
 
 namespace Tests.Application.Wallet.Features.Commands.InitiateWalletTopUp;
 
-public sealed class InitiateWalletTopUpHandlerTests
+public sealed class InitiateWalletTopUpHandlerTests : HandlerTestBase
 {
     private readonly IWalletTopUpRepository _topUpRepository = Substitute.For<IWalletTopUpRepository>();
     private readonly IPaymentGatewayFactory _gatewayFactory = Substitute.For<IPaymentGatewayFactory>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly IPaymentGateway _gateway = Substitute.For<IPaymentGateway>();
     private readonly IOptions<ApiBaseUrlOptions> _apiOptions = Options.Create(new ApiBaseUrlOptions { PublicBaseUrl = "https://api.example.com" });
 
@@ -33,16 +29,15 @@ public sealed class InitiateWalletTopUpHandlerTests
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet:topup", true));
 
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new InitiateWalletTopUpHandler(
-            _topUpRepository, _gatewayFactory, _currentUserService,
-            _unitOfWork, _auditService, _distributedLock, _dateTimeProvider, _apiOptions);
+            _topUpRepository, _gatewayFactory, CurrentUserService,
+            UnitOfWork, AuditService, _distributedLock, DateTimeProvider, _apiOptions);
     }
 
     [Fact]
     public async Task Handle_WhenLockNotAcquired_ReturnsFailure()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns((ILockHandle?)null);
 
@@ -54,7 +49,7 @@ public sealed class InitiateWalletTopUpHandlerTests
     [Fact]
     public async Task Handle_WhenGatewaySucceeds_ReturnsSuccessWithPaymentUrl()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _gateway.InitiateAsync(
                 Arg.Any<OrderId>(), Arg.Any<Money>(), Arg.Any<string>(), Arg.Any<string>(),
                 Arg.Any<Email?>(), Arg.Any<PhoneNumber?>(), Arg.Any<CancellationToken>())
@@ -73,7 +68,7 @@ public sealed class InitiateWalletTopUpHandlerTests
     [Fact]
     public async Task Handle_WhenGatewayThrowsExternalServiceException_MarksFailedAndReturnsFailure()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _gateway.InitiateAsync(
                 Arg.Any<OrderId>(), Arg.Any<Money>(), Arg.Any<string>(), Arg.Any<string>(),
                 Arg.Any<Email?>(), Arg.Any<PhoneNumber?>(), Arg.Any<CancellationToken>())
@@ -82,13 +77,13 @@ public sealed class InitiateWalletTopUpHandlerTests
         var result = await _sut.Handle(new InitiateWalletTopUpCommand(50_000m, "zarinpal"), CancellationToken.None);
 
         result.IsFailure.ShouldBeTrue();
-        await _auditService.Received().LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await AuditService.Received().LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_WhenGatewayNameEmpty_UsesZarinpalAsDefault()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _gateway.InitiateAsync(
                 Arg.Any<OrderId>(), Arg.Any<Money>(), Arg.Any<string>(), Arg.Any<string>(),
                 Arg.Any<Email?>(), Arg.Any<PhoneNumber?>(), Arg.Any<CancellationToken>())

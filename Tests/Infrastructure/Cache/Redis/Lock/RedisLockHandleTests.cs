@@ -3,13 +3,11 @@ using StackExchange.Redis;
 
 namespace Tests.Infrastructure.Cache.Redis.Lock;
 
-public class RedisLockHandleTests
+public class RedisLockHandleTests : HandlerTestBase
 {
     private readonly IDatabase _db = Substitute.For<IDatabase>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-
     private RedisLockHandle BuildSut(string key = "lock:order:1", string value = "token-abc") =>
-        new(_db, key, value, _auditService);
+        new(_db, key, value, AuditService);
 
     [Fact]
     public void Resource_ReturnsKey()
@@ -35,7 +33,7 @@ public class RedisLockHandleTests
             Arg.Is<RedisKey[]>(keys => keys.Length == 1 && keys[0].ToString() == "lock:order:7"),
             Arg.Is<RedisValue[]>(values => values.Length == 1 && values[0].ToString() == "tok-7"),
             Arg.Any<CommandFlags>());
-        await _auditService.Received(1).LogDebugAsync(
+        await AuditService.Received(1).LogDebugAsync(
             Arg.Is<string>(s => s!.Contains("lock:order:7")),
             Arg.Any<CancellationToken>());
         sut.IsAcquired.ShouldBeFalse();
@@ -63,7 +61,7 @@ public class RedisLockHandleTests
 
         await sut.ReleaseAsync();
 
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("lock:k")),
             Arg.Any<CancellationToken>());
         sut.IsAcquired.ShouldBeFalse();

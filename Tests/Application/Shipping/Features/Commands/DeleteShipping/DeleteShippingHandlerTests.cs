@@ -10,13 +10,13 @@ using DomainShipping = Domain.Shipping.Aggregates.Shipping;
 
 namespace Tests.Application.Shipping.Features.Commands.DeleteShipping;
 
-public class DeleteShippingHandlerTests
+public class DeleteShippingHandlerTests : HandlerTestBase
 {
-    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteShippingHandler _sut;
+    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteShippingHandler _sut;
 
     public DeleteShippingHandlerTests()
     {
-        _sut = new DeleteShippingHandler(_shippingRepository, _currentUser, _cacheService);
+        _sut = new DeleteShippingHandler(_shippingRepository, CurrentUserService, _cacheService);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class DeleteShippingHandlerTests
         _shippingRepository
             .GetByIdAsync(Arg.Any<ShippingId>(), Arg.Any<CancellationToken>())
             .Returns(shipping);
-        _currentUser.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         var result = await _sut.Handle(new DeleteShippingCommand(shipping.Id.Value), CancellationToken.None);
 
@@ -60,7 +60,7 @@ public class DeleteShippingHandlerTests
         _shippingRepository
             .GetByIdAsync(Arg.Any<ShippingId>(), Arg.Any<CancellationToken>())
             .Returns(shipping);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new DeleteShippingCommand(shipping.Id.Value), CancellationToken.None);
 
@@ -77,7 +77,7 @@ public class DeleteShippingHandlerTests
         _shippingRepository
             .GetByIdAsync(Arg.Any<ShippingId>(), Arg.Any<CancellationToken>())
             .Returns(shipping);
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         var result = await _sut.Handle(new DeleteShippingCommand(shipping.Id.Value), CancellationToken.None);
 

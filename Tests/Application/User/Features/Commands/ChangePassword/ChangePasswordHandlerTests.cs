@@ -6,18 +6,17 @@ using UserAggregate = Domain.User.Aggregates.User;
 
 namespace Tests.Application.User.Features.Commands.ChangePassword;
 
-public class ChangePasswordHandlerTests
+public class ChangePasswordHandlerTests : HandlerTestBase
 {
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
     private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
     private readonly ChangePasswordHandler _sut;
     private readonly Guid _userGuid = Guid.NewGuid();
 
     public ChangePasswordHandlerTests()
     {
-        _sut = new ChangePasswordHandler(_userRepository, _passwordHasher, _currentUser);
-        _currentUser.UserId.Returns((Guid?)_userGuid);
+        _sut = new ChangePasswordHandler(_userRepository, _passwordHasher, CurrentUserService);
+        CurrentUserService.UserId.Returns((Guid?)_userGuid);
     }
 
     [Fact]

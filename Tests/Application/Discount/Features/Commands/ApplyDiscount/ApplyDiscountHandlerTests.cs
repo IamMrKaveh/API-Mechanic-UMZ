@@ -8,23 +8,19 @@ using Domain.User.ValueObjects;
 
 namespace Tests.Application.Discount.Features.Commands.ApplyDiscount;
 
-public class ApplyDiscountHandlerTests
+public class ApplyDiscountHandlerTests : HandlerTestBase
 {
     private readonly IDiscountRepository _repository = Substitute.For<IDiscountRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
-    private readonly IDateTimeProvider _clock = Substitute.For<IDateTimeProvider>();
     private readonly ApplyDiscountHandler _sut;
     private readonly DateTime _now = new(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc);
     private readonly Guid _userGuid = Guid.NewGuid();
 
     public ApplyDiscountHandlerTests()
     {
-        _sut = new ApplyDiscountHandler(_repository, _unitOfWork, _auditService, _currentUser, _clock);
-        _clock.UtcNow.Returns(_now);
-        _currentUser.UserId.Returns((Guid?)_userGuid);
-        _unitOfWork
+        _sut = new ApplyDiscountHandler(_repository, UnitOfWork, AuditService, CurrentUserService, DateTimeProvider);
+        DateTimeProvider.UtcNow.Returns(_now);
+        CurrentUserService.UserId.Returns((Guid?)_userGuid);
+        UnitOfWork
             .ExecuteStrategyAsync(
                 Arg.Any<Func<CancellationToken, Task<ServiceResult>>>(),
                 Arg.Any<CancellationToken>())
@@ -47,7 +43,7 @@ public class ApplyDiscountHandlerTests
 
         result.ShouldFailWithType(ErrorType.NotFound);
         _repository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -84,8 +80,8 @@ public class ApplyDiscountHandlerTests
         typed.Value!.FinalAmount.ShouldBe(180_000m);
         discount.UsageCount.ShouldBe(1);
         _repository.Received(1).Update(discount);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogOrderEventAsync(
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogOrderEventAsync(
             Arg.Is<OrderId>(o => o != null && o.Value == orderId),
             "DiscountApplied",
             Arg.Any<IpAddress>(),
@@ -103,7 +99,7 @@ public class ApplyDiscountHandlerTests
         var result = await _sut.Handle(new ApplyDiscountCommand("SAVE10", 100m, Guid.NewGuid()), CancellationToken.None);
 
         result.IsSuccess.ShouldBeFalse();
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "ApplyDiscountError",
             Arg.Is<string>(s => s != null && s.Contains("db down")),
             Arg.Any<CancellationToken>());
@@ -117,7 +113,7 @@ public class ApplyDiscountHandlerTests
 
         await _sut.Handle(new ApplyDiscountCommand("X", 10m, Guid.NewGuid()), cts.Token);
 
-        await _unitOfWork.Received(1).ExecuteStrategyAsync(
+        await UnitOfWork.Received(1).ExecuteStrategyAsync(
             Arg.Any<Func<CancellationToken, Task<ServiceResult>>>(),
             cts.Token);
     }

@@ -8,16 +8,14 @@ using Domain.Wallet.ValueObjects;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public class PersistWalletLedgerOnCreditHandlerTests
+public class PersistWalletLedgerOnCreditHandlerTests : HandlerTestBase
 {
     private readonly IWalletLedgerRepository _ledgerRepository = Substitute.For<IWalletLedgerRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly PersistWalletLedgerOnCreditHandler _sut;
 
     public PersistWalletLedgerOnCreditHandlerTests()
     {
-        _sut = new PersistWalletLedgerOnCreditHandler(_ledgerRepository, _unitOfWork, _auditService);
+        _sut = new PersistWalletLedgerOnCreditHandler(_ledgerRepository, UnitOfWork, AuditService);
     }
 
     private static WalletCreditedEvent BuildEvent(string? idempotencyKey = "idem-key-1") => new(
@@ -40,7 +38,7 @@ public class PersistWalletLedgerOnCreditHandlerTests
         await _sut.Handle(new DomainEventNotification<WalletCreditedEvent>(evt), CancellationToken.None);
 
         await _ledgerRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -53,7 +51,7 @@ public class PersistWalletLedgerOnCreditHandlerTests
         await _ledgerRepository.DidNotReceiveWithAnyArgs().HasIdempotencyKeyAsync(
             Arg.Any<UserId>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         await _ledgerRepository.Received(1).AddAsync(Arg.Any<WalletLedgerEntry>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -67,7 +65,7 @@ public class PersistWalletLedgerOnCreditHandlerTests
             Arg.Any<UserId>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         await _ledgerRepository.Received(1).AddAsync(
             Arg.Any<WalletLedgerEntry>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -88,7 +86,7 @@ public class PersistWalletLedgerOnCreditHandlerTests
                 e.BalanceAfter == evt.NewBalance &&
                 e.IdempotencyKey == evt.IdempotencyKey),
             Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -99,7 +97,7 @@ public class PersistWalletLedgerOnCreditHandlerTests
             .HasIdempotencyKeyAsync(evt.OwnerId, "k1", Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _unitOfWork
+        UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new DbUpdateException(
                 "outer",
@@ -108,7 +106,7 @@ public class PersistWalletLedgerOnCreditHandlerTests
         await Should.NotThrowAsync(() =>
             _sut.Handle(new DomainEventNotification<WalletCreditedEvent>(evt), CancellationToken.None));
 
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(m => m!.Contains("idempotency", StringComparison.OrdinalIgnoreCase)),
             Arg.Any<CancellationToken>());
     }
@@ -121,7 +119,7 @@ public class PersistWalletLedgerOnCreditHandlerTests
             .HasIdempotencyKeyAsync(evt.OwnerId, "k2", Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _unitOfWork
+        UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new DbUpdateException(
                 "outer",
@@ -130,7 +128,7 @@ public class PersistWalletLedgerOnCreditHandlerTests
         await Should.ThrowAsync<DbUpdateException>(() =>
             _sut.Handle(new DomainEventNotification<WalletCreditedEvent>(evt), CancellationToken.None));
 
-        await _auditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -141,13 +139,13 @@ public class PersistWalletLedgerOnCreditHandlerTests
             .HasIdempotencyKeyAsync(evt.OwnerId, "k3", Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _unitOfWork
+        UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new InvalidOperationException("boom"));
 
         await Should.ThrowAsync<InvalidOperationException>(() =>
             _sut.Handle(new DomainEventNotification<WalletCreditedEvent>(evt), CancellationToken.None));
 
-        await _auditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

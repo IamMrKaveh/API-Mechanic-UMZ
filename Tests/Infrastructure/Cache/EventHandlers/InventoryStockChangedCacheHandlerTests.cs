@@ -10,13 +10,13 @@ using Infrastructure.Cache.EventHandlers;
 
 namespace Tests.Infrastructure.Cache.EventHandlers;
 
-public class InventoryStockChangedCacheHandlerTests
+public class InventoryStockChangedCacheHandlerTests : HandlerTestBase
 {
-    private readonly ICacheInvalidationService _invalidation = Substitute.For<ICacheInvalidationService>(); private readonly IAuditService _audit = Substitute.For<IAuditService>(); private readonly InventoryStockChangedCacheHandler _sut;
+    private readonly ICacheInvalidationService _invalidation = Substitute.For<ICacheInvalidationService>(); private readonly InventoryStockChangedCacheHandler _sut;
 
     public InventoryStockChangedCacheHandlerTests()
     {
-        _sut = new InventoryStockChangedCacheHandler(_invalidation, _audit);
+        _sut = new InventoryStockChangedCacheHandler(_invalidation, AuditService);
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public class InventoryStockChangedCacheHandlerTests
         await _sut.Handle(notification, CancellationToken.None);
 
         await _invalidation.Received(1).InvalidateInventoryCacheAsync(variantId, Arg.Any<CancellationToken>());
-        await _audit.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "CacheEvent",
             Arg.Is<string>(s => s!.Contains(variantId.Value.ToString())),
             Arg.Any<CancellationToken>());
@@ -45,7 +45,7 @@ public class InventoryStockChangedCacheHandlerTests
         await _sut.Handle(notification, CancellationToken.None);
 
         await _invalidation.Received(1).InvalidateInventoryCacheAsync(variantId, Arg.Any<CancellationToken>());
-        await _audit.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "CacheEvent",
             Arg.Is<string>(s => s!.Contains(variantId.Value.ToString())),
             Arg.Any<CancellationToken>());
@@ -61,7 +61,7 @@ public class InventoryStockChangedCacheHandlerTests
         await _sut.Handle(notification, CancellationToken.None);
 
         await _invalidation.Received(1).InvalidateInventoryCacheAsync(variantId, Arg.Any<CancellationToken>());
-        await _audit.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "CacheEvent",
             Arg.Is<string>(s => s!.Contains(variantId.Value.ToString())),
             Arg.Any<CancellationToken>());
@@ -77,7 +77,7 @@ public class InventoryStockChangedCacheHandlerTests
         await _sut.Handle(notification, CancellationToken.None);
 
         await _invalidation.Received(1).InvalidateInventoryCacheAsync(variantId, Arg.Any<CancellationToken>());
-        await _audit.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "CacheEvent",
             Arg.Is<string>(s => s!.Contains(variantId.Value.ToString())),
             Arg.Any<CancellationToken>());
@@ -93,7 +93,7 @@ public class InventoryStockChangedCacheHandlerTests
         await _sut.Handle(notification, CancellationToken.None);
 
         await _invalidation.Received(1).InvalidateInventoryCacheAsync(variantId, Arg.Any<CancellationToken>());
-        await _audit.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "CacheEvent",
             Arg.Is<string>(s => s!.Contains(variantId.Value.ToString())),
             Arg.Any<CancellationToken>());

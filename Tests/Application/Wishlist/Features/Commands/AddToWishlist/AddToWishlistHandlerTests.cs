@@ -14,13 +14,13 @@ using NSubstitute;
 
 namespace Tests.Application.Wishlist.Features.Commands.AddToWishlist;
 
-public class AddToWishlistHandlerTests
+public class AddToWishlistHandlerTests : HandlerTestBase
 {
-    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AddToWishlistHandler _sut;
+    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly AddToWishlistHandler _sut;
 
     public AddToWishlistHandlerTests()
     {
-        _sut = new AddToWishlistHandler(_wishlistRepository, _productRepository, _dateTimeProvider);
+        _sut = new AddToWishlistHandler(_wishlistRepository, _productRepository, DateTimeProvider);
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class AddToWishlistHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         await _wishlistRepository.DidNotReceive().AddAsync(Arg.Any<Wishlists>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class AddToWishlistHandlerTests
 
         result.ShouldFailWith(ErrorCode.Conflict);
         await _wishlistRepository.DidNotReceive().AddAsync(Arg.Any<Wishlists>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class AddToWishlistHandlerTests
         added!.UserId.Value.ShouldBe(userGuid);
         added.ProductId.Value.ShouldBe(productGuid);
         await _wishlistRepository.Received(1).AddAsync(Arg.Any<Wishlists>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

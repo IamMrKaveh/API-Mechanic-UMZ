@@ -1,10 +1,11 @@
-﻿namespace Application.Order.Features.Commands.ActivateOrderStatus;
+﻿using Application.Common.Validation;
+
+namespace Application.Order.Features.Commands.ActivateOrderStatus;
 
 public class ActivateOrderStatusValidator : AbstractValidator<ActivateOrderStatusCommand>
 {
     public ActivateOrderStatusValidator()
     {
-        RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("شناسه وضعیت الزامی است.");
+        this.RuleForRequiredId(x => x.Id, "شناسه وضعیت الزامی است.");
     }
 }

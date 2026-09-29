@@ -9,20 +9,20 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Notification.Features.Queries.GetNotifications;
 
-public class GetNotificationsHandlerTests
+public class GetNotificationsHandlerTests : HandlerTestBase
 {
-    private readonly INotificationQueryService _notificationQueryService = Substitute.For<INotificationQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetNotificationsHandler _sut;
+    private readonly INotificationQueryService _notificationQueryService = Substitute.For<INotificationQueryService>(); private readonly GetNotificationsHandler _sut;
 
     public GetNotificationsHandlerTests()
     {
-        _sut = new GetNotificationsHandler(_notificationQueryService, _currentUserService);
+        _sut = new GetNotificationsHandler(_notificationQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenAuthenticated_ReturnsSuccessWithServiceProvidedResult()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         var expected = PaginatedResult<NotificationDto>.Create(
             new List<NotificationDto>
@@ -47,7 +47,7 @@ public class GetNotificationsHandlerTests
     public async Task Handle_WhenAuthenticated_PassesCurrentUserIdToNotificationQueryService()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
         _notificationQueryService
             .GetByUserIdAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(PaginatedResult<NotificationDto>.Create(new List<NotificationDto>(), 0, 1, 10));
@@ -67,7 +67,7 @@ public class GetNotificationsHandlerTests
     [InlineData(5, 50)]
     public async Task Handle_ForwardsPageAndPageSizeToNotificationQueryService(int page, int pageSize)
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _notificationQueryService
             .GetByUserIdAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(PaginatedResult<NotificationDto>.Create(new List<NotificationDto>(), 0, page, pageSize));
@@ -84,7 +84,7 @@ public class GetNotificationsHandlerTests
     [Fact]
     public async Task Handle_WhenCurrentUserIdIsEmpty_ThrowsDomainException()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.Empty);
+        CurrentUserService.UserId.Returns((Guid?)Guid.Empty);
 
         await Should.ThrowAsync<DomainException>(() =>
             _sut.Handle(new GetNotificationsQuery(), CancellationToken.None));

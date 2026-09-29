@@ -5,10 +5,8 @@ using Microsoft.Extensions.Options;
 
 namespace Tests.Infrastructure.Storage.Services;
 
-public class ClamAvFileScanningServiceTests
+public class ClamAvFileScanningServiceTests : HandlerTestBase
 {
-    private readonly IAuditService _audit = Substitute.For<IAuditService>();
-
     private static IOptions<AntivirusOptions> Options(AntivirusOptions value) =>
         Microsoft.Extensions.Options.Options.Create(value);
 
@@ -17,7 +15,7 @@ public class ClamAvFileScanningServiceTests
     {
         var sut = new ClamAvFileScanningService(
             Options(new AntivirusOptions { IsEnabled = false }),
-            _audit);
+            AuditService);
 
         using var stream = new MemoryStream(new byte[] { 0x00, 0x01, 0x02 });
 
@@ -34,15 +32,15 @@ public class ClamAvFileScanningServiceTests
     {
         var sut = new ClamAvFileScanningService(
             Options(new AntivirusOptions { IsEnabled = false }),
-            _audit);
+            AuditService);
 
         using var stream = new MemoryStream(new byte[] { 0x00 });
 
         await sut.ScanAsync(stream, "any.bin");
 
-        await _audit.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
-        await _audit.DidNotReceiveWithAnyArgs().LogSecurityEventAsync(default!, default!, default!, default, default);
-        await _audit.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSecurityEventAsync(default!, default!, default!, default, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -58,7 +56,7 @@ public class ClamAvFileScanningServiceTests
                 ChunkSizeBytes = 1024,
                 FailClosedOnEngineError = true
             }),
-            _audit);
+            AuditService);
 
         var ex = await Should.ThrowAsync<ArgumentNullException>(async () =>
             await sut.ScanAsync(null!, "any.bin"));
@@ -79,12 +77,12 @@ public class ClamAvFileScanningServiceTests
                 ChunkSizeBytes = 1024,
                 FailClosedOnEngineError = true
             }),
-            _audit);
+            AuditService);
 
         await Should.ThrowAsync<ArgumentNullException>(async () =>
             await sut.ScanAsync(null!, "any.bin"));
 
-        await _audit.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
-        await _audit.DidNotReceiveWithAnyArgs().LogSecurityEventAsync(default!, default!, default!, default, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSecurityEventAsync(default!, default!, default!, default, default);
     }
 }

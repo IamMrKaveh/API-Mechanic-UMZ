@@ -11,14 +11,14 @@ using Orders = Domain.Order.Aggregates.Order;
 
 namespace Tests.Application.Order.Features.Commands.ApproveReturn;
 
-public class ApproveReturnHandlerTests
+public class ApproveReturnHandlerTests : HandlerTestBase
 {
-    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly IInventoryService _inventoryService = Substitute.For<IInventoryService>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly ApproveReturnHandler _sut;
+    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly IInventoryService _inventoryService = Substitute.For<IInventoryService>(); private readonly ApproveReturnHandler _sut;
 
     public ApproveReturnHandlerTests()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new ApproveReturnHandler(_orderRepository, _inventoryService, _unitOfWork, _currentUser);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new ApproveReturnHandler(_orderRepository, _inventoryService, UnitOfWork, CurrentUserService);
     }
 
     private static Orders OrderInDeliveredState()
@@ -67,7 +67,7 @@ public class ApproveReturnHandlerTests
 
         result.ShouldFailWith(ErrorCode.Failure);
         _orderRepository.Received(1).Update(order, Arg.Any<byte[]?>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class ApproveReturnHandlerTests
         result.ShouldBeSuccess();
         order.Status.ShouldBe(OrderStatusValue.Returned);
         _orderRepository.Received(1).Update(order, Arg.Any<byte[]?>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         await _inventoryService.Received(1).ReturnStockForOrderAsync(order.Id, Arg.Any<Guid>(), "approve", Arg.Any<CancellationToken>());
     }
 }

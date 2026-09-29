@@ -5,15 +5,14 @@ using Domain.User.ValueObjects;
 
 namespace Tests.Application.Auth.EventHandlers;
 
-public class UserLoggedInEventHandlerTests
+public class UserLoggedInEventHandlerTests : HandlerTestBase
 {
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly ILogger<UserLoggedInEventHandler> _logger = Substitute.For<ILogger<UserLoggedInEventHandler>>();
     private readonly UserLoggedInEventHandler _sut;
 
     public UserLoggedInEventHandlerTests()
     {
-        _sut = new UserLoggedInEventHandler(_auditService, _logger);
+        _sut = new UserLoggedInEventHandler(AuditService, _logger);
     }
 
     [Fact]
@@ -24,7 +23,7 @@ public class UserLoggedInEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "User login",
             Arg.Is<string>(s => s!.Contains(userId.Value.ToString())),
             Arg.Any<CancellationToken>());
@@ -37,7 +36,7 @@ public class UserLoggedInEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "User login",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -51,7 +50,7 @@ public class UserLoggedInEventHandlerTests
 
         await _sut.Handle(notification, cts.Token);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             Arg.Any<string>(),
             Arg.Any<string>(),
             cts.Token);
@@ -64,7 +63,7 @@ public class UserLoggedInEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        _auditService.ReceivedCalls().Count().ShouldBe(1);
+        AuditService.ReceivedCalls().Count().ShouldBe(1);
     }
 
     [Fact]
@@ -76,11 +75,11 @@ public class UserLoggedInEventHandlerTests
         await _sut.Handle(new DomainEventNotification<UserLoggedInEvent>(new UserLoggedInEvent(user1)), CancellationToken.None);
         await _sut.Handle(new DomainEventNotification<UserLoggedInEvent>(new UserLoggedInEvent(user2)), CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "User login",
             Arg.Is<string>(s => s!.Contains(user1.Value.ToString())),
             Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "User login",
             Arg.Is<string>(s => s!.Contains(user2.Value.ToString())),
             Arg.Any<CancellationToken>());

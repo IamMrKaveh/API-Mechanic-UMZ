@@ -1,11 +1,13 @@
+using Application.Common.Validation;
+
 namespace Application.Variant.Features.Commands.UpdateVariant;
 
 public class UpdateVariantValidator : AbstractValidator<UpdateVariantCommand>
 {
     public UpdateVariantValidator()
     {
-        RuleFor(x => x.ProductId).NotEmpty();
-        RuleFor(x => x.VariantId).NotEmpty();
+        this.RuleForRequiredId(x => x.ProductId);
+        this.RuleForRequiredId(x => x.VariantId);
         RuleFor(x => x.SellingPrice)
             .GreaterThan(0)
             .WithMessage("قیمت فروش واریانت باید بزرگتر از صفر باشد.");

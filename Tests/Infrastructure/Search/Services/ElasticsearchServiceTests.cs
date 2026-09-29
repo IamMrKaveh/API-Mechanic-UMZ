@@ -5,16 +5,14 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Search.Services;
 
-public class ElasticsearchServiceTests : IAsyncLifetime
-{
+public class ElasticsearchServiceTests : HandlerTestBase, IAsyncLifetime{
     private FakeElasticsearchServer _server = null!;
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private ElasticsearchService _sut = null!;
 
     public Task InitializeAsync()
     {
         _server = new FakeElasticsearchServer();
-        _sut = new ElasticsearchService(_server.CreateClient(), _auditService);
+        _sut = new ElasticsearchService(_server.CreateClient(), AuditService);
         return Task.CompletedTask;
     }
 
@@ -46,7 +44,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
         _server.Requests.Count.ShouldBe(1);
         _server.Requests[0].Path.ShouldContain("products_v1");
         _server.Requests[0].Body.ShouldContain(document.ProductId.ToString());
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -57,7 +55,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
 
         await _sut.IndexProductAsync(document, CancellationToken.None);
 
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains(document.ProductId.ToString())),
             Arg.Any<CancellationToken>());
     }
@@ -71,7 +69,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
         await _sut.IndexCategoryAsync(document, CancellationToken.None);
 
         _server.Requests[0].Path.ShouldContain("categories_v1");
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -82,7 +80,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
 
         await _sut.IndexCategoryAsync(document, CancellationToken.None);
 
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains(document.CategoryId.ToString())),
             Arg.Any<CancellationToken>());
     }
@@ -96,7 +94,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
         await _sut.IndexBrandAsync(document, CancellationToken.None);
 
         _server.Requests[0].Path.ShouldContain("brands_v1");
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -107,7 +105,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
 
         await _sut.IndexBrandAsync(document, CancellationToken.None);
 
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains(document.BrandId.ToString())),
             Arg.Any<CancellationToken>());
     }
@@ -152,7 +150,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
         result.Total.ShouldBe(2);
         result.Page.ShouldBe(2);
         result.PageSize.ShouldBe(10);
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -165,7 +163,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
 
         result.Items.ShouldBeEmpty();
         result.Total.ShouldBe(0);
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("SearchProductsAsync failed")),
             Arg.Any<CancellationToken>());
     }
@@ -207,7 +205,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
         var result = await _sut.GetSuggestionsAsync("bra", ct: CancellationToken.None);
 
         result.ShouldBeEmpty();
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -236,7 +234,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
 
         result.Items.ShouldBeEmpty();
         result.Total.ShouldBe(0);
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("SearchWithFuzzyAsync failed")),
             Arg.Any<CancellationToken>());
     }
@@ -270,7 +268,7 @@ public class ElasticsearchServiceTests : IAsyncLifetime
     {
         var unreachable = new ElasticsearchService(
             new ElasticsearchClient(new Uri("http://127.0.0.1:9")),
-            _auditService);
+            AuditService);
 
         var result = await unreachable.GetIndexStatsAsync(CancellationToken.None);
 

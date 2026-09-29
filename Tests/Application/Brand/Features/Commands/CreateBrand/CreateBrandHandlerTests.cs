@@ -15,9 +15,9 @@ using Categories = Domain.Category.Aggregates.Category;
 
 namespace Tests.Application.Brand.Features.Commands.CreateBrand;
 
-public class CreateBrandHandlerTests
+public class CreateBrandHandlerTests : HandlerTestBase
 {
-    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICategoryRepository _categoryRepository = Substitute.For<ICategoryRepository>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CreateBrandHandler _sut;
+    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICategoryRepository _categoryRepository = Substitute.For<ICategoryRepository>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateBrandHandler _sut;
 
     public CreateBrandHandlerTests()
     {
@@ -42,7 +42,7 @@ public class CreateBrandHandlerTests
             _mapper,
             _storageService,
             _cacheService,
-            _dateTimeProvider);
+            DateTimeProvider);
     }
 
     private async Task<Categories> ConfigureExistingCategoryAsync()

@@ -15,9 +15,9 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.CreditWallet;
 
-public class CreditWalletHandlerTests
+public class CreditWalletHandlerTests : HandlerTestBase
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly CreditWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly CreditWalletHandler _sut;
 
     public CreditWalletHandlerTests()
     {
@@ -27,16 +27,15 @@ public class CreditWalletHandlerTests
             .AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(_lockHandle);
 
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUserService.IsAdmin.Returns(false);
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAdmin.Returns(false);
 
         _sut = new CreditWalletHandler(
             _walletRepository,
             _distributedLock,
-            _auditService,
-            _dateTimeProvider,
-            _currentUserService);
+            AuditService,
+            DateTimeProvider,
+            CurrentUserService);
     }
 
     private static CreditWalletCommand ValidCommand(
@@ -71,7 +70,7 @@ public class CreditWalletHandlerTests
         await _walletRepository.DidNotReceiveWithAnyArgs()
             .GetByUserIdForUpdateAsync(default!, default);
         _walletRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -107,7 +106,7 @@ public class CreditWalletHandlerTests
             .GetByUserIdForUpdateAsync(default!, default);
         await _walletRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
         _walletRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -134,7 +133,7 @@ public class CreditWalletHandlerTests
         addedWallet!.OwnerId.Value.ShouldBe(command.UserId);
         addedWallet.Balance.Amount.ShouldBe(50_000m);
         _walletRepository.Received(1).Update(addedWallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -156,7 +155,7 @@ public class CreditWalletHandlerTests
         wallet.Balance.Amount.ShouldBe(25_000m);
         _walletRepository.Received(1).Update(wallet);
         await _walletRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -166,7 +165,7 @@ public class CreditWalletHandlerTests
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
         wallet.Freeze("initial-freeze", UserId.NewId(), DateTime.UtcNow);
 
-        _currentUserService.IsAdmin.Returns(true);
+        CurrentUserService.IsAdmin.Returns(true);
         _walletRepository
             .HasIdempotencyKeyAsync(Arg.Any<UserId>(), command.IdempotencyKey, Arg.Any<CancellationToken>())
             .Returns(false);
@@ -180,8 +179,8 @@ public class CreditWalletHandlerTests
         wallet.IsActive.ShouldBeTrue();
         wallet.Balance.Amount.ShouldBe(10_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletAutoUnfrozenOnAdminCredit",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -194,7 +193,7 @@ public class CreditWalletHandlerTests
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(command.UserId)).Build();
         wallet.Freeze("initial-freeze", UserId.NewId(), DateTime.UtcNow);
 
-        _currentUserService.IsAdmin.Returns(false);
+        CurrentUserService.IsAdmin.Returns(false);
         _walletRepository
             .HasIdempotencyKeyAsync(Arg.Any<UserId>(), command.IdempotencyKey, Arg.Any<CancellationToken>())
             .Returns(false);
@@ -207,7 +206,7 @@ public class CreditWalletHandlerTests
         result.ShouldBeSuccess();
         wallet.IsActive.ShouldBeFalse();
         wallet.Balance.Amount.ShouldBe(10_000m);
-        await _auditService.DidNotReceive().LogSystemEventAsync(
+        await AuditService.DidNotReceive().LogSystemEventAsync(
             "WalletAutoUnfrozenOnAdminCredit",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());

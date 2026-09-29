@@ -8,30 +8,25 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.RequestWithdrawal;
 
-public sealed class RequestWithdrawalHandlerTests
+public sealed class RequestWithdrawalHandlerTests : HandlerTestBase
 {
     private const string ValidIban = "IR580540105180021273113007";
 
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IWalletWithdrawalRepository _withdrawalRepository = Substitute.For<IWalletWithdrawalRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
-
     private readonly RequestWithdrawalHandler _sut;
 
     public RequestWithdrawalHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+
         _sut = new RequestWithdrawalHandler(
-            _walletRepository, _withdrawalRepository, _auditService, _dateTimeProvider, _currentUserService);
+            _walletRepository, _withdrawalRepository, AuditService, DateTimeProvider, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenIbanInvalid_ReturnsValidation()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
 
         var result = await _sut.Handle(
             new RequestWithdrawalCommand(200_000m, "invalid-iban", "Ali Rezaei", null), CancellationToken.None);
@@ -42,7 +37,7 @@ public sealed class RequestWithdrawalHandlerTests
     [Fact]
     public async Task Handle_WhenAccountHolderTooShort_ReturnsValidation()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
 
         var result = await _sut.Handle(
             new RequestWithdrawalCommand(200_000m, ValidIban, "AB", null), CancellationToken.None);
@@ -54,7 +49,7 @@ public sealed class RequestWithdrawalHandlerTests
     public async Task Handle_WhenTooManyPendingWithdrawals_ReturnsConflict()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         _withdrawalRepository
             .CountByUserAndStatusAsync(userId, WalletWithdrawalStatus.Pending, Arg.Any<CancellationToken>())
             .Returns(5);
@@ -69,7 +64,7 @@ public sealed class RequestWithdrawalHandlerTests
     public async Task Handle_WhenWalletDoesNotExist_CreatesWalletAndReturnsFailureForInactivity()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         _withdrawalRepository
             .CountByUserAndStatusAsync(userId, WalletWithdrawalStatus.Pending, Arg.Any<CancellationToken>())
             .Returns(0);
@@ -87,7 +82,7 @@ public sealed class RequestWithdrawalHandlerTests
     public async Task Handle_WhenWalletInactive_ReturnsFailure()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         wallet.Freeze("suspicious", UserId.NewId(), DateTime.UtcNow);
@@ -106,7 +101,7 @@ public sealed class RequestWithdrawalHandlerTests
     public async Task Handle_WhenInsufficientBalance_ReturnsValidation()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         wallet.Credit(Money.Create(50_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _withdrawalRepository
@@ -124,7 +119,7 @@ public sealed class RequestWithdrawalHandlerTests
     public async Task Handle_WhenValid_CreatesReservationAndWithdrawalAndReturnsSuccess()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
         _withdrawalRepository

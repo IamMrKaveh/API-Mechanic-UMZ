@@ -10,13 +10,11 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.CompleteWalletTopUp;
 
-public sealed class CompleteWalletTopUpHandlerTests
+public sealed class CompleteWalletTopUpHandlerTests : HandlerTestBase
 {
     private readonly IWalletTopUpRepository _topUpRepository = Substitute.For<IWalletTopUpRepository>();
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IPaymentGatewayFactory _gatewayFactory = Substitute.For<IPaymentGatewayFactory>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly IPaymentGateway _gateway = Substitute.For<IPaymentGateway>();
 
     private readonly CompleteWalletTopUpHandler _sut;
@@ -24,8 +22,8 @@ public sealed class CompleteWalletTopUpHandlerTests
     public CompleteWalletTopUpHandlerTests()
     {
         _gatewayFactory.GetGateway(Arg.Any<string>()).Returns(_gateway);
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new CompleteWalletTopUpHandler(_topUpRepository, _walletRepository, _gatewayFactory, _dateTimeProvider, _auditService);
+
+        _sut = new CompleteWalletTopUpHandler(_topUpRepository, _walletRepository, _gatewayFactory, DateTimeProvider, AuditService);
     }
 
     [Fact]
@@ -135,7 +133,7 @@ public sealed class CompleteWalletTopUpHandlerTests
         result.Value.StatusText.ShouldBe("succeeded");
         wallet.Balance.Amount.ShouldBe(200_000m);
         topUp.Status.ShouldBe(WalletTopUpStatus.Succeeded);
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletTopUpSucceeded", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 

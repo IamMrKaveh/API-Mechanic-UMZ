@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Application.Common.Validation;
+using FluentValidation;
 
 namespace Application.Wallet.Features.Queries.GetWalletsOverview;
 
@@ -6,11 +7,11 @@ public sealed class GetWalletsOverviewValidator : AbstractValidator<GetWalletsOv
 {
     public GetWalletsOverviewValidator()
     {
-        RuleFor(x => x.Page)
-            .GreaterThanOrEqualTo(1).WithMessage("شماره صفحه باید بزرگ‌تر یا مساوی ۱ باشد.");
-
-        RuleFor(x => x.PageSize)
-            .InclusiveBetween(1, 200).WithMessage("اندازه صفحه باید بین ۱ تا ۲۰۰ باشد.");
+        this.RuleForPagination(
+            x => x.Page,
+            x => x.PageSize,
+            maxPageSize: 200,
+            pageMessage: "شماره صفحه باید بزرگ‌تر یا مساوی ۱ باشد.");
 
         RuleFor(x => x.MinBalance)
             .GreaterThanOrEqualTo(0).When(x => x.MinBalance.HasValue)
@@ -24,8 +25,9 @@ public sealed class GetWalletsOverviewValidator : AbstractValidator<GetWalletsOv
             .Must(x => !x.MinBalance.HasValue || !x.MaxBalance.HasValue || x.MinBalance.Value <= x.MaxBalance.Value)
             .WithMessage("حداقل موجودی نباید بیشتر از حداکثر باشد.");
 
-        RuleFor(x => x)
-            .Must(x => !x.CreatedFrom.HasValue || !x.CreatedTo.HasValue || x.CreatedFrom.Value <= x.CreatedTo.Value)
-            .WithMessage("تاریخ شروع نباید بعد از تاریخ پایان باشد.");
+        this.RuleForDateRange(
+            x => x.CreatedFrom,
+            x => x.CreatedTo,
+            "تاریخ شروع نباید بعد از تاریخ پایان باشد.");
     }
 }

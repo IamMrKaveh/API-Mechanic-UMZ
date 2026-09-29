@@ -8,15 +8,14 @@ using Domain.Wallet.ValueObjects;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public sealed class WalletTopUpSucceededCreditHandlerTests
+public sealed class WalletTopUpSucceededCreditHandlerTests : HandlerTestBase
 {
     private readonly IMediator _mediator = Substitute.For<IMediator>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly WalletTopUpSucceededCreditHandler _sut;
 
     public WalletTopUpSucceededCreditHandlerTests()
     {
-        _sut = new WalletTopUpSucceededCreditHandler(_mediator, _auditService);
+        _sut = new WalletTopUpSucceededCreditHandler(_mediator, AuditService);
     }
 
     private static WalletTopUpSucceededEvent BuildEvent(
@@ -44,12 +43,12 @@ public sealed class WalletTopUpSucceededCreditHandlerTests
 
         await _sut.Handle(Wrap(evt), CancellationToken.None);
 
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("Wallet credited from top-up")
                              && s.Contains("500000")
                              && s.Contains("GW-OK-1")),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -63,11 +62,11 @@ public sealed class WalletTopUpSucceededCreditHandlerTests
 
         await _sut.Handle(Wrap(evt), CancellationToken.None);
 
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("WalletTopUp credit application failed")
                              && s.Contains("GW-FAIL-1")),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
     }
 
     [Fact]
@@ -108,6 +107,6 @@ public sealed class WalletTopUpSucceededCreditHandlerTests
         await _sut.Handle(Wrap(evt), cts.Token);
 
         await _mediator.Received(1).Send(Arg.Any<CreditWalletCommand>(), cts.Token);
-        await _auditService.Received(1).LogInformationAsync(Arg.Any<string>(), cts.Token);
+        await AuditService.Received(1).LogInformationAsync(Arg.Any<string>(), cts.Token);
     }
 }

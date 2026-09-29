@@ -9,9 +9,9 @@ using SharedKernel.ValueObjects;
 
 namespace Tests.Infrastructure.Storage.Services;
 
-public class S3FileStorageServiceTests
+public class S3FileStorageServiceTests : HandlerTestBase
 {
-    private readonly IAmazonS3 _s3 = Substitute.For<IAmazonS3>(); private readonly IAuditService _audit = Substitute.For<IAuditService>(); private readonly IFeatureManager _featureManager = Substitute.For<IFeatureManager>(); private readonly IFileScanningService _scanner = Substitute.For<IFileScanningService>(); private readonly IFileMagicBytesValidator _magicBytes = Substitute.For<IFileMagicBytesValidator>();
+    private readonly IAmazonS3 _s3 = Substitute.For<IAmazonS3>(); private readonly IFeatureManager _featureManager = Substitute.For<IFeatureManager>(); private readonly IFileScanningService _scanner = Substitute.For<IFileScanningService>(); private readonly IFileMagicBytesValidator _magicBytes = Substitute.For<IFileMagicBytesValidator>();
 
     private readonly StorageOptions _defaultOptions = new()
     {
@@ -31,7 +31,7 @@ public class S3FileStorageServiceTests
         new(
             _s3,
             Microsoft.Extensions.Options.Options.Create(options ?? _defaultOptions),
-            _audit,
+            AuditService,
             _featureManager,
             _scanner,
             _magicBytes);
@@ -70,7 +70,7 @@ public class S3FileStorageServiceTests
         await Should.ThrowAsync<DomainException>(async () =>
             await sut.UploadAsync(stream, "spoofed.png", "image/png"));
 
-        await _audit.Received(1).LogSecurityEventAsync(
+        await AuditService.Received(1).LogSecurityEventAsync(
             "MaliciousUploadDetected",
             Arg.Is<string>(s => s!.Contains("spoofed.png") && s.Contains("magic-byte")),
             Arg.Any<IpAddress>(),
@@ -102,7 +102,7 @@ public class S3FileStorageServiceTests
         await Should.ThrowAsync<DomainException>(async () =>
             await sut.UploadAsync(stream, "malware.png", "image/png"));
 
-        await _audit.Received(1).LogSecurityEventAsync(
+        await AuditService.Received(1).LogSecurityEventAsync(
             "MaliciousUploadDetected",
             Arg.Is<string>(s =>
                 s!.Contains("malware.png") &&
@@ -185,12 +185,12 @@ public class S3FileStorageServiceTests
 
         _ = await sut.UploadAsync(stream, "photo.png", "image/png");
 
-        await _audit.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "FileUploaded",
             Arg.Is<string>(s => s!.Contains("photo.png") && s!.Contains(_defaultOptions.Provider)),
             Arg.Any<CancellationToken>());
 
-        await _audit.DidNotReceive().LogSecurityEventAsync(
+        await AuditService.DidNotReceive().LogSecurityEventAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IpAddress>(), Arg.Any<UserId?>(), Arg.Any<CancellationToken>());
     }
 
@@ -207,11 +207,11 @@ public class S3FileStorageServiceTests
         await Should.ThrowAsync<AmazonS3Exception>(async () =>
             await sut.UploadAsync(stream, "photo.png", "image/png"));
 
-        await _audit.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Storage upload failed") && s!.Contains("photo.png")),
             Arg.Any<CancellationToken>());
 
-        await _audit.DidNotReceive().LogSystemEventAsync(
+        await AuditService.DidNotReceive().LogSystemEventAsync(
             "FileUploaded", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -228,7 +228,7 @@ public class S3FileStorageServiceTests
         await Should.ThrowAsync<InvalidOperationException>(async () =>
             await sut.UploadAsync(stream, "photo.png", "image/png"));
 
-        await _audit.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Storage upload failed") && s!.Contains("photo.png")),
             Arg.Any<CancellationToken>());
     }
@@ -242,7 +242,7 @@ public class S3FileStorageServiceTests
 
         deleted.ShouldBeTrue();
         await _s3.Received(1).DeleteObjectAsync("mechanic-test", "some/key.png", Arg.Any<CancellationToken>());
-        await _audit.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -255,7 +255,7 @@ public class S3FileStorageServiceTests
         var deleted = await sut.DeleteAsync("some/key.png");
 
         deleted.ShouldBeFalse();
-        await _audit.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Storage delete failed") && s!.Contains("some/key.png")),
             Arg.Any<CancellationToken>());
     }

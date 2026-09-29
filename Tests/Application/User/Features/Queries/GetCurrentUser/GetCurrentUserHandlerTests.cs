@@ -8,20 +8,20 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.User.Features.Queries.GetCurrentUser;
 
-public class GetCurrentUserHandlerTests
+public class GetCurrentUserHandlerTests : HandlerTestBase
 {
-    private readonly IUserQueryService _userQueryService = Substitute.For<IUserQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetCurrentUserHandler _sut;
+    private readonly IUserQueryService _userQueryService = Substitute.For<IUserQueryService>(); private readonly GetCurrentUserHandler _sut;
 
     public GetCurrentUserHandlerTests()
     {
-        _sut = new GetCurrentUserHandler(_userQueryService, _currentUserService);
+        _sut = new GetCurrentUserHandler(_userQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenProfileExists_ReturnsSuccessWithProfile()
     {
         var userGuid = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
         var expected = new UserProfileDto { Id = userGuid };
 
         _userQueryService
@@ -37,7 +37,7 @@ public class GetCurrentUserHandlerTests
     [Fact]
     public async Task Handle_WhenProfileNotFound_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _userQueryService
             .GetUserProfileAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns((UserProfileDto?)null);

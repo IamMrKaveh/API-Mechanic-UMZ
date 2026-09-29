@@ -7,12 +7,11 @@ using SharedKernel.ValueObjects;
 
 namespace Tests.Infrastructure.Audit.Services;
 
-public class AuditServiceTests
+public class AuditServiceTests : HandlerTestBase
 {
     private readonly IAuditRepository _auditRepository = Substitute.For<IAuditRepository>();
     private readonly IAuditMaskingService _maskingService = Substitute.For<IAuditMaskingService>();
     private readonly IHttpContextAccessor _httpContextAccessor = Substitute.For<IHttpContextAccessor>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ILogger<AuditService> _logger = Substitute.For<ILogger<AuditService>>();
     private readonly AuditService _sut;
 
@@ -20,7 +19,7 @@ public class AuditServiceTests
     {
         _maskingService.MaskSensitiveData(Arg.Any<string>()).Returns(call => call.Arg<string>());
         _sut = new AuditService(
-            _auditRepository, _maskingService, _httpContextAccessor, _unitOfWork, _logger);
+            _auditRepository, _maskingService, _httpContextAccessor, UnitOfWork, _logger);
     }
 
     [Fact]
@@ -43,7 +42,7 @@ public class AuditServiceTests
         captured.EntityId.ShouldBe("order-1");
         captured.Details.ShouldBe("masked details");
         captured.UserAgent.ShouldBe("agent/1.0");
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -66,7 +65,7 @@ public class AuditServiceTests
         await _sut.LogAsync(
             "Error", "Boom", IpAddress.System, null, null, null, "details", null, CancellationToken.None);
 
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     // NOTE: the level helpers below pass an empty action string, which

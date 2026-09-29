@@ -13,17 +13,17 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.ReserveWallet;
 
-public class ReserveWalletHandlerTests
+public class ReserveWalletHandlerTests : HandlerTestBase
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ReserveWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly ReserveWalletHandler _sut;
 
     public ReserveWalletHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+
         _sut = new ReserveWalletHandler(
             _walletRepository,
-            _dateTimeProvider,
-            _auditService);
+            DateTimeProvider,
+            AuditService);
     }
 
     private static ReserveWalletCommand ValidCommand(
@@ -54,7 +54,7 @@ public class ReserveWalletHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _walletRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class ReserveWalletHandlerTests
         wallet.Balance.Amount.ShouldBe(100_000m);
         wallet.AvailableBalance.Amount.ShouldBe(80_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class ReserveWalletHandlerTests
         result.IsFailure.ShouldBeTrue();
         wallet.ActiveReservations.ShouldBeEmpty();
         _walletRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -111,6 +111,6 @@ public class ReserveWalletHandlerTests
 
         result.IsFailure.ShouldBeTrue();
         wallet.ActiveReservations.ShouldBeEmpty();
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 }

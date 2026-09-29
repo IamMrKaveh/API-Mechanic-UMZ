@@ -1,3 +1,5 @@
+using Application.Common.Validation;
+
 namespace Application.Audit.Features.Queries.ExportAuditLogs;
 
 public sealed class ExportAuditLogsValidator : AbstractValidator<ExportAuditLogsQuery>
@@ -52,10 +54,11 @@ public sealed class ExportAuditLogsValidator : AbstractValidator<ExportAuditLogs
             .WithMessage($"نوع موجودیت نمی‌تواند بیش از {MaxEntityTypeLength} کاراکتر باشد.")
             .When(x => !string.IsNullOrWhiteSpace(x.EntityType));
 
-        RuleFor(x => x)
-            .Must(x => x.From is null || x.To is null || x.From <= x.To)
-            .WithMessage("تاریخ شروع باید کوچکتر یا مساوی تاریخ پایان باشد.")
-            .WithName("DateRange");
+        this.RuleForDateRange(
+            x => x.From,
+            x => x.To,
+            "تاریخ شروع باید کوچکتر یا مساوی تاریخ پایان باشد.",
+            name: "DateRange");
 
         RuleFor(x => x.From)
             .LessThanOrEqualTo(_ => DateTime.UtcNow)

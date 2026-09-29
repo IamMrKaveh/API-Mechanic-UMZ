@@ -9,15 +9,14 @@ using Domain.Wallet.Enums;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public class PaymentRefundedWalletEventHandlerTests
+public class PaymentRefundedWalletEventHandlerTests : HandlerTestBase
 {
     private readonly IMediator _mediator = Substitute.For<IMediator>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly PaymentRefundedWalletEventHandler _sut;
 
     public PaymentRefundedWalletEventHandlerTests()
     {
-        _sut = new PaymentRefundedWalletEventHandler(_mediator, _auditService);
+        _sut = new PaymentRefundedWalletEventHandler(_mediator, AuditService);
     }
 
     private static DomainEventNotification<PaymentRefundedEvent> Notification(
@@ -45,7 +44,7 @@ public class PaymentRefundedWalletEventHandlerTests
                 c.ReferenceId == transactionId.Value.ToString() &&
                 c.IdempotencyKey == $"refund-payment-{transactionId.Value}"),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -58,7 +57,7 @@ public class PaymentRefundedWalletEventHandlerTests
             Notification(PaymentTransactionId.NewId(), OrderId.NewId(), UserId.NewId(), 10m),
             CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletRefundFailed",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -75,7 +74,7 @@ public class PaymentRefundedWalletEventHandlerTests
             Notification(transactionId, OrderId.NewId(), UserId.NewId(), 10m),
             CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletPaymentRefundedHandlerError",
             Arg.Is<string>(s => s != null && s.Contains(transactionId.Value.ToString())),
             Arg.Any<CancellationToken>());

@@ -13,24 +13,21 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Presentation.Common.Middleware;
 
-public class SessionActivityMiddlewareTests
+public class SessionActivityMiddlewareTests : HandlerTestBase
 {
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
     private readonly ICacheService _cache = Substitute.For<ICacheService>();
     private readonly ISessionRepository _sessions = Substitute.For<ISessionRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private static readonly DateTime Now = new(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc);
 
     private SessionActivityMiddleware BuildSut(RequestDelegate next)
     {
-        _dateTimeProvider.UtcNow.Returns(Now);
+        DateTimeProvider.UtcNow.Returns(Now);
         var services = new ServiceCollection();
-        services.AddSingleton(_currentUser);
+        services.AddSingleton(CurrentUserService);
         services.AddSingleton(_cache);
         services.AddSingleton(_sessions);
-        services.AddSingleton(_unitOfWork);
-        services.AddSingleton(_dateTimeProvider);
+        services.AddSingleton(UnitOfWork);
+        services.AddSingleton(DateTimeProvider);
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         scopeFactory.CreateScope().Returns(_ => services.BuildServiceProvider().CreateScope());
         return new SessionActivityMiddleware(
@@ -63,7 +60,7 @@ public class SessionActivityMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenSessionIdIsNull_CallsNextOnly()
     {
-        _currentUser.SessionId.Returns((Guid?)null);
+        CurrentUserService.SessionId.Returns((Guid?)null);
         var called = false;
         var sut = BuildSut(_ => { called = true; return Task.CompletedTask; });
 
@@ -76,7 +73,7 @@ public class SessionActivityMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenSessionIdIsEmpty_CallsNextOnly()
     {
-        _currentUser.SessionId.Returns(Guid.Empty);
+        CurrentUserService.SessionId.Returns(Guid.Empty);
         var called = false;
         var sut = BuildSut(_ => { called = true; return Task.CompletedTask; });
 
@@ -90,7 +87,7 @@ public class SessionActivityMiddlewareTests
     public async Task InvokeAsync_WhenCacheHit_SkipsRepositoryUpdate()
     {
         var sessionId = Guid.NewGuid();
-        _currentUser.SessionId.Returns(sessionId);
+        CurrentUserService.SessionId.Returns(sessionId);
         _cache.ExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
         var called = false;
         var sut = BuildSut(_ => { called = true; return Task.CompletedTask; });
@@ -107,7 +104,7 @@ public class SessionActivityMiddlewareTests
     public async Task InvokeAsync_WhenActiveSession_UpdatesActivityAndSetsCache()
     {
         var sessionId = Guid.NewGuid();
-        _currentUser.SessionId.Returns(sessionId);
+        CurrentUserService.SessionId.Returns(sessionId);
         _cache.ExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         var session = new UserSessionBuilder()
             .WithId(SessionId.From(sessionId))
@@ -121,7 +118,7 @@ public class SessionActivityMiddlewareTests
 
         called.ShouldBeTrue();
         _sessions.Received(1).Update(session);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         await _cache.Received(1).SetAsync(
             $"session:activity:{sessionId}", true, TimeSpan.FromMinutes(5),
             Arg.Any<CancellationToken>());
@@ -131,7 +128,7 @@ public class SessionActivityMiddlewareTests
     public async Task InvokeAsync_WhenSessionNotFound_DoesNothing()
     {
         var sessionId = Guid.NewGuid();
-        _currentUser.SessionId.Returns(sessionId);
+        CurrentUserService.SessionId.Returns(sessionId);
         _cache.ExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         _sessions.GetByIdAsync(Arg.Any<SessionId>(), Arg.Any<CancellationToken>())
             .Returns((UserSession?)null);
@@ -140,14 +137,14 @@ public class SessionActivityMiddlewareTests
         await sut.InvokeAsync(BuildContext(authenticated: true));
 
         _sessions.DidNotReceive().Update(Arg.Any<UserSession>());
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
     public async Task InvokeAsync_WhenSessionInactive_DoesNothing()
     {
         var sessionId = Guid.NewGuid();
-        _currentUser.SessionId.Returns(sessionId);
+        CurrentUserService.SessionId.Returns(sessionId);
         _cache.ExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         var revoked = new UserSessionBuilder()
             .WithId(SessionId.From(sessionId))
@@ -160,14 +157,14 @@ public class SessionActivityMiddlewareTests
         await sut.InvokeAsync(BuildContext(authenticated: true));
 
         _sessions.DidNotReceive().Update(Arg.Any<UserSession>());
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
     public async Task InvokeAsync_WhenCacheThrowsCancellation_SwallowsAndStillCallsNext()
     {
         var sessionId = Guid.NewGuid();
-        _currentUser.SessionId.Returns(sessionId);
+        CurrentUserService.SessionId.Returns(sessionId);
         _cache.ExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<bool>(new OperationCanceledException()));
         var called = false;
@@ -182,7 +179,7 @@ public class SessionActivityMiddlewareTests
     public async Task InvokeAsync_WhenRepositoryThrows_SwallowsAndStillCallsNext()
     {
         var sessionId = Guid.NewGuid();
-        _currentUser.SessionId.Returns(sessionId);
+        CurrentUserService.SessionId.Returns(sessionId);
         _cache.ExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         _sessions.GetByIdAsync(Arg.Any<SessionId>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<UserSession?>(new InvalidOperationException("db down")));

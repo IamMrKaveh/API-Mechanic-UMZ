@@ -240,11 +240,4 @@ public class UpdateDiscountValidatorTests
 
         result.IsValid.ShouldBeTrue();
     }
-
-    private sealed class FixedDateTimeProvider(DateTime utcNow) : IDateTimeProvider
-    {
-        public DateTime UtcNow { get; } = utcNow;
-
-        public DateOnly Today => DateOnly.FromDateTime(UtcNow);
-    }
 }

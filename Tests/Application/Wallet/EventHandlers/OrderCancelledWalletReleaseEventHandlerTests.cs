@@ -11,16 +11,15 @@ using Domain.Wallet.Enums;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public class OrderCancelledWalletReleaseEventHandlerTests
+public class OrderCancelledWalletReleaseEventHandlerTests : HandlerTestBase
 {
     private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly IWalletQueryService _queryService = Substitute.For<IWalletQueryService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly OrderCancelledWalletReleaseEventHandler _sut;
 
     public OrderCancelledWalletReleaseEventHandlerTests()
     {
-        _sut = new OrderCancelledWalletReleaseEventHandler(_mediator, _queryService, _auditService);
+        _sut = new OrderCancelledWalletReleaseEventHandler(_mediator, _queryService, AuditService);
     }
 
     private static DomainEventNotification<OrderCancelledEvent> Notification(OrderId orderId, UserId userId) =>
@@ -50,7 +49,7 @@ public class OrderCancelledWalletReleaseEventHandlerTests
                 c.ReferenceId == orderId.Value.ToString() &&
                 c.IdempotencyKey == $"refund-order-{orderId.Value}"),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -86,7 +85,7 @@ public class OrderCancelledWalletReleaseEventHandlerTests
 
         await _sut.Handle(Notification(orderId, userId), CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletRefundFailed",
             Arg.Is<string>(s => s != null && s.Contains(orderId.Value.ToString())),
             Arg.Any<CancellationToken>());
@@ -102,7 +101,7 @@ public class OrderCancelledWalletReleaseEventHandlerTests
 
         await Should.NotThrowAsync(() => _sut.Handle(Notification(orderId, userId), CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletOrderCancelledHandlerError",
             Arg.Is<string>(s => s != null && s.Contains("db down")),
             Arg.Any<CancellationToken>());

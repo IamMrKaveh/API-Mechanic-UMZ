@@ -12,14 +12,14 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.ReverseInventoryTransaction;
 
-public class ReverseInventoryHandlerTests
+public class ReverseInventoryHandlerTests : HandlerTestBase
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ReverseInventoryHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ReverseInventoryHandler _sut;
 
     public ReverseInventoryHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new ReverseInventoryHandler(_inventoryRepository, _auditService, _currentUserService, _dateTimeProvider);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new ReverseInventoryHandler(_inventoryRepository, AuditService, CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public class ReverseInventoryHandlerTests
 
         result.ShouldFailWith(ErrorCode.Failure);
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _auditService.DidNotReceiveWithAnyArgs().LogInventoryEventAsync(default!, default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogInventoryEventAsync(default!, default!, default!, default);
     }
 
     [Fact]

@@ -11,9 +11,8 @@ using Categories = Domain.Category.Aggregates.Category;
 
 namespace Tests.Application.Category.Features.Commands.CreateCategory;
 
-public class CreateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
-{
-    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CreateCategoryHandler _sut;
+public class CreateCategoryHandlerTests : HandlerTestBase, IClassFixture<MapsterConfigFixture>{
+    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateCategoryHandler _sut;
 
     public CreateCategoryHandlerTests(MapsterConfigFixture _)
     {
@@ -24,7 +23,7 @@ public class CreateCategoryHandlerTests : IClassFixture<MapsterConfigFixture>
             .ExistsBySlugAsync(Arg.Any<CategorySlug>(), Arg.Any<CategoryId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new CreateCategoryHandler(_repository, _cacheService, _dateTimeProvider);
+        _sut = new CreateCategoryHandler(_repository, _cacheService, DateTimeProvider);
     }
 
     [Fact]

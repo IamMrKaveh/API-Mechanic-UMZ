@@ -9,16 +9,15 @@ using Domain.User.ValueObjects;
 
 namespace Tests.Application.Support.EventHandlers;
 
-public class TicketAnsweredEventHandlerTests
+public class TicketAnsweredEventHandlerTests : HandlerTestBase
 {
     private readonly ITicketRepository _ticketRepository = Substitute.For<ITicketRepository>();
     private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly TicketAnsweredEventHandler _sut;
 
     public TicketAnsweredEventHandlerTests()
     {
-        _sut = new TicketAnsweredEventHandler(_ticketRepository, _notificationService, _auditService);
+        _sut = new TicketAnsweredEventHandler(_ticketRepository, _notificationService, AuditService);
     }
 
     private static DomainEventNotification<TicketAnsweredEvent> BuildNotification(TicketId ticketId, UserId adminId) =>
@@ -36,7 +35,7 @@ public class TicketAnsweredEventHandlerTests
 
         await _notificationService.DidNotReceiveWithAnyArgs().CreateNotificationAsync(
             default!, default!, default!, default!, default!, default, default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -75,7 +74,7 @@ public class TicketAnsweredEventHandlerTests
 
         await _sut.Handle(BuildNotification(ticketId, UserId.NewId()), CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "Notification Answered",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -106,7 +105,7 @@ public class TicketAnsweredEventHandlerTests
         await Should.NotThrowAsync(() =>
             _sut.Handle(BuildNotification(ticketId, UserId.NewId()), CancellationToken.None));
 
-        await _auditService.Received().LogSystemEventAsync(
+        await AuditService.Received().LogSystemEventAsync(
             "smtp down",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -122,7 +121,7 @@ public class TicketAnsweredEventHandlerTests
         await Should.NotThrowAsync(() =>
             _sut.Handle(BuildNotification(TicketId.NewId(), UserId.NewId()), CancellationToken.None));
 
-        await _auditService.Received().LogSystemEventAsync(
+        await AuditService.Received().LogSystemEventAsync(
             "db offline",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());

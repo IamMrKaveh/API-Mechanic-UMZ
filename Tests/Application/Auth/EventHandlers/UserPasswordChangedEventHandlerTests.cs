@@ -7,17 +7,15 @@ using Domain.User.ValueObjects;
 
 namespace Tests.Application.Auth.EventHandlers;
 
-public class UserPasswordChangedEventHandlerTests
+public class UserPasswordChangedEventHandlerTests : HandlerTestBase
 {
     private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly ILogger<UserPasswordChangedEventHandler> _logger = Substitute.For<ILogger<UserPasswordChangedEventHandler>>();
     private readonly UserPasswordChangedEventHandler _sut;
 
     public UserPasswordChangedEventHandlerTests()
     {
-        _sut = new UserPasswordChangedEventHandler(_sessionRepository, _unitOfWork, _auditService, _logger);
+        _sut = new UserPasswordChangedEventHandler(_sessionRepository, UnitOfWork, AuditService, _logger);
     }
 
     [Fact]
@@ -48,7 +46,7 @@ public class UserPasswordChangedEventHandlerTests
                 userId,
                 SessionRevocationReason.PasswordChanged,
                 Arg.Any<CancellationToken>());
-            _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>());
+            UnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>());
         });
     }
 
@@ -60,7 +58,7 @@ public class UserPasswordChangedEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSecurityEventAsync(
+        await AuditService.Received(1).LogSecurityEventAsync(
             "PasswordChanged",
             Arg.Is<string>(s => s!.Contains(userId.Value.ToString())),
             Arg.Is<IpAddress>(ip => ip == IpAddress.Unknown),
@@ -84,11 +82,11 @@ public class UserPasswordChangedEventHandlerTests
 
         await Should.NotThrowAsync(() => _sut.Handle(notification, CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "PasswordChangedSessionRevocationFailed",
             Arg.Is<string>(s => s!.Contains(userId.Value.ToString()) && s.Contains(exception.Message)),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceive().LogSecurityEventAsync(
+        await AuditService.DidNotReceive().LogSecurityEventAsync(
             Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<IpAddress>(),
@@ -103,13 +101,13 @@ public class UserPasswordChangedEventHandlerTests
         var notification = new DomainEventNotification<UserPasswordChangedEvent>(new UserPasswordChangedEvent(userId));
         var exception = new InvalidOperationException("save failed");
 
-        _unitOfWork
+        UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(exception);
 
         await Should.NotThrowAsync(() => _sut.Handle(notification, CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "PasswordChangedSessionRevocationFailed",
             Arg.Is<string>(s => s!.Contains(exception.Message)),
             Arg.Any<CancellationToken>());
@@ -123,7 +121,7 @@ public class UserPasswordChangedEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.DidNotReceive().LogSystemEventAsync(
+        await AuditService.DidNotReceive().LogSystemEventAsync(
             "PasswordChangedSessionRevocationFailed",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -142,8 +140,8 @@ public class UserPasswordChangedEventHandlerTests
             userId,
             SessionRevocationReason.PasswordChanged,
             cts.Token);
-        await _unitOfWork.Received(1).SaveChangesAsync(cts.Token);
-        await _auditService.Received(1).LogSecurityEventAsync(
+        await UnitOfWork.Received(1).SaveChangesAsync(cts.Token);
+        await AuditService.Received(1).LogSecurityEventAsync(
             Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<IpAddress>(),

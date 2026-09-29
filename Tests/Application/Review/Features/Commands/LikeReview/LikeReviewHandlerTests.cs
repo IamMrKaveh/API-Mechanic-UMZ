@@ -12,11 +12,9 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Review.Features.Commands.LikeReview;
 
-public class LikeReviewHandlerTests
+public class LikeReviewHandlerTests : HandlerTestBase
 {
-    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
-
-    private static IOptions<ReviewSettings> EnabledSettings()
+    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private static IOptions<ReviewSettings> EnabledSettings()
         => Options.Create(new ReviewSettings { EnableLikeDislike = true });
 
     private static IOptions<ReviewSettings> DisabledSettings()
@@ -25,7 +23,7 @@ public class LikeReviewHandlerTests
     [Fact]
     public async Task Handle_WhenFeatureDisabled_ReturnsValidationFailure()
     {
-        var sut = new LikeReviewHandler(_reviewRepository, _currentUser, DisabledSettings());
+        var sut = new LikeReviewHandler(_reviewRepository, CurrentUserService, DisabledSettings());
 
         var result = await sut.Handle(new LikeReviewCommand(Guid.NewGuid()), CancellationToken.None);
 
@@ -36,8 +34,8 @@ public class LikeReviewHandlerTests
     [Fact]
     public async Task Handle_WhenUserIdIsNull_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
-        var sut = new LikeReviewHandler(_reviewRepository, _currentUser, EnabledSettings());
+        CurrentUserService.UserId.Returns((Guid?)null);
+        var sut = new LikeReviewHandler(_reviewRepository, CurrentUserService, EnabledSettings());
 
         var result = await sut.Handle(new LikeReviewCommand(Guid.NewGuid()), CancellationToken.None);
 
@@ -47,8 +45,8 @@ public class LikeReviewHandlerTests
     [Fact]
     public async Task Handle_WhenUserIdIsEmptyGuid_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.Empty);
-        var sut = new LikeReviewHandler(_reviewRepository, _currentUser, EnabledSettings());
+        CurrentUserService.UserId.Returns((Guid?)Guid.Empty);
+        var sut = new LikeReviewHandler(_reviewRepository, CurrentUserService, EnabledSettings());
 
         var result = await sut.Handle(new LikeReviewCommand(Guid.NewGuid()), CancellationToken.None);
 
@@ -58,12 +56,12 @@ public class LikeReviewHandlerTests
     [Fact]
     public async Task Handle_WhenReviewNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _reviewRepository
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns((ProductReview?)null);
 
-        var sut = new LikeReviewHandler(_reviewRepository, _currentUser, EnabledSettings());
+        var sut = new LikeReviewHandler(_reviewRepository, CurrentUserService, EnabledSettings());
 
         var result = await sut.Handle(new LikeReviewCommand(Guid.NewGuid()), CancellationToken.None);
 
@@ -74,7 +72,7 @@ public class LikeReviewHandlerTests
     public async Task Handle_WhenDomainThrowsBecauseReviewNotApproved_ReturnsValidationFailure()
     {
         var voterGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)voterGuid);
+        CurrentUserService.UserId.Returns((Guid?)voterGuid);
 
         var review = new ProductReviewBuilder()
             .WithUserId(UserId.NewId())
@@ -84,7 +82,7 @@ public class LikeReviewHandlerTests
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns(review);
 
-        var sut = new LikeReviewHandler(_reviewRepository, _currentUser, EnabledSettings());
+        var sut = new LikeReviewHandler(_reviewRepository, CurrentUserService, EnabledSettings());
 
         var result = await sut.Handle(new LikeReviewCommand(review.Id.Value), CancellationToken.None);
 
@@ -96,7 +94,7 @@ public class LikeReviewHandlerTests
     public async Task Handle_WhenReviewApprovedAndVoterIsNotOwner_AddsLikeAndUpdatesRepository()
     {
         var voterGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)voterGuid);
+        CurrentUserService.UserId.Returns((Guid?)voterGuid);
 
         var review = new ProductReviewBuilder()
             .WithUserId(UserId.NewId())
@@ -106,7 +104,7 @@ public class LikeReviewHandlerTests
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns(review);
 
-        var sut = new LikeReviewHandler(_reviewRepository, _currentUser, EnabledSettings());
+        var sut = new LikeReviewHandler(_reviewRepository, CurrentUserService, EnabledSettings());
 
         var result = await sut.Handle(new LikeReviewCommand(review.Id.Value), CancellationToken.None);
 

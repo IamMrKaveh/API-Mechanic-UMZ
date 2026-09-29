@@ -7,18 +7,17 @@ using Domain.Discount.ValueObjects;
 
 namespace Tests.Application.Discount.Features.Commands.UpdateDiscount;
 
-public class UpdateDiscountHandlerTests
+public class UpdateDiscountHandlerTests : HandlerTestBase
 {
     private readonly IDiscountRepository _repository = Substitute.For<IDiscountRepository>();
     private readonly IMapper _mapper = Substitute.For<IMapper>();
-    private readonly IDateTimeProvider _clock = Substitute.For<IDateTimeProvider>();
     private readonly UpdateDiscountHandler _sut;
     private readonly DateTime _now = new(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc);
 
     public UpdateDiscountHandlerTests()
     {
-        _sut = new UpdateDiscountHandler(_repository, _mapper, _clock);
-        _clock.UtcNow.Returns(_now);
+        _sut = new UpdateDiscountHandler(_repository, _mapper, DateTimeProvider);
+        DateTimeProvider.UtcNow.Returns(_now);
         _mapper.Map<DiscountDto>(Arg.Any<DiscountCode>())
             .Returns(ci =>
             {

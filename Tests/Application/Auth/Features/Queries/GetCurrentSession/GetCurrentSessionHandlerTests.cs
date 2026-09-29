@@ -4,13 +4,13 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Auth.Features.Queries.GetCurrentSession;
 
-public class GetCurrentSessionHandlerTests
+public class GetCurrentSessionHandlerTests : HandlerTestBase
 {
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetCurrentSessionHandler _sut;
+    private readonly GetCurrentSessionHandler _sut;
 
     public GetCurrentSessionHandlerTests()
     {
-        _sut = new GetCurrentSessionHandler(_currentUserService);
+        _sut = new GetCurrentSessionHandler(CurrentUserService);
     }
 
     [Fact]
@@ -18,12 +18,12 @@ public class GetCurrentSessionHandlerTests
     {
         var userId = Guid.NewGuid();
         var sessionId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)userId);
-        _currentUserService.SessionId.Returns((Guid?)sessionId);
-        _currentUserService.IpAddress.Returns("10.0.0.1");
-        _currentUserService.UserAgent.Returns("xunit-runner");
-        _currentUserService.IsAuthenticated.Returns(true);
-        _currentUserService.IsAdmin.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)userId);
+        CurrentUserService.SessionId.Returns((Guid?)sessionId);
+        CurrentUserService.IpAddress.Returns("10.0.0.1");
+        CurrentUserService.UserAgent.Returns("xunit-runner");
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.IsAdmin.Returns(true);
 
         var result = await _sut.Handle(new GetCurrentSessionQuery(), CancellationToken.None);
 
@@ -39,12 +39,12 @@ public class GetCurrentSessionHandlerTests
     [Fact]
     public async Task Handle_WhenUserAnonymous_ReturnsDtoWithNullIdentityFieldsAndFalseFlags()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.SessionId.Returns((Guid?)null);
-        _currentUserService.IpAddress.Returns((string?)null);
-        _currentUserService.UserAgent.Returns((string?)null);
-        _currentUserService.IsAuthenticated.Returns(false);
-        _currentUserService.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.SessionId.Returns((Guid?)null);
+        CurrentUserService.IpAddress.Returns((string?)null);
+        CurrentUserService.UserAgent.Returns((string?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.IsAdmin.Returns(false);
 
         var result = await _sut.Handle(new GetCurrentSessionQuery(), CancellationToken.None);
 

@@ -12,20 +12,20 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Auth.Features.Commands.RevokeSession;
 
-public class RevokeSessionHandlerTests
+public class RevokeSessionHandlerTests : HandlerTestBase
 {
-    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly RevokeSessionHandler _sut;
+    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly RevokeSessionHandler _sut;
 
     public RevokeSessionHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
-        _sut = new RevokeSessionHandler(_sessionRepository, _currentUser, _dateTimeProvider);
+        DateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
+        _sut = new RevokeSessionHandler(_sessionRepository, CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
     public async Task Handle_WhenSessionNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _sessionRepository
             .GetByIdAsync(Arg.Any<SessionId>(), Arg.Any<CancellationToken>())
             .Returns((UserSession?)null);
@@ -43,7 +43,7 @@ public class RevokeSessionHandlerTests
         var ownerUserId = UserId.NewId();
         var session = new UserSessionBuilder().WithUserId(ownerUserId).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _sessionRepository
             .GetByIdAsync(Arg.Any<SessionId>(), Arg.Any<CancellationToken>())
             .Returns(session);
@@ -61,7 +61,7 @@ public class RevokeSessionHandlerTests
         var callerUserId = UserId.From(callerGuid);
         var session = new UserSessionBuilder().WithUserId(callerUserId).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _sessionRepository
             .GetByIdAsync(Arg.Any<SessionId>(), Arg.Any<CancellationToken>())
             .Returns(session);

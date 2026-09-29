@@ -8,15 +8,14 @@ using Domain.User.ValueObjects;
 
 namespace Tests.Application.Discount.Features.Commands.CancelDiscountUsage;
 
-public class CancelDiscountUsageHandlerTests
+public class CancelDiscountUsageHandlerTests : HandlerTestBase
 {
     private readonly IDiscountRepository _repository = Substitute.For<IDiscountRepository>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly CancelDiscountUsageHandler _sut;
 
     public CancelDiscountUsageHandlerTests()
     {
-        _sut = new CancelDiscountUsageHandler(_repository, _auditService);
+        _sut = new CancelDiscountUsageHandler(_repository, AuditService);
     }
 
     private static DiscountCode CodeWithUsage(Guid orderGuid, out DiscountCodeId codeId)
@@ -62,7 +61,7 @@ public class CancelDiscountUsageHandlerTests
 
         result.ShouldBeSuccess();
         _repository.Received(1).Update(discount);
-        await _auditService.Received(1).LogAsync(
+        await AuditService.Received(1).LogAsync(
             "Discount",
             "CancelDiscountUsage",
             Arg.Any<IpAddress>(),

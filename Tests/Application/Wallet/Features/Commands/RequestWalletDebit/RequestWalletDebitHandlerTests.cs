@@ -6,28 +6,24 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.RequestWalletDebit;
 
-public sealed class RequestWalletDebitHandlerTests
+public sealed class RequestWalletDebitHandlerTests : HandlerTestBase
 {
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
-
     private readonly RequestWalletDebitHandler _sut;
 
     public RequestWalletDebitHandlerTests()
     {
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet", true));
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new RequestWalletDebitHandler(_walletRepository, _distributedLock, _dateTimeProvider, _currentUserService);
+
+        _sut = new RequestWalletDebitHandler(_walletRepository, _distributedLock, DateTimeProvider, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenLockNotAcquired_ReturnsConflict()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns((ILockHandle?)null);
 
@@ -40,7 +36,7 @@ public sealed class RequestWalletDebitHandlerTests
     [Fact]
     public async Task Handle_WhenWalletNotFound_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns((Wallets?)null);
 
@@ -53,7 +49,7 @@ public sealed class RequestWalletDebitHandlerTests
     [Fact]
     public async Task Handle_WhenValid_CreatesDebitRequestAndReturnsRequestId()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         var userId = UserId.NewId();
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
@@ -66,13 +62,13 @@ public sealed class RequestWalletDebitHandlerTests
         result.Value.ShouldNotBe(Guid.Empty);
         wallet.DebitRequests.Count.ShouldBe(1);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_WhenInsufficientBalance_ReturnsFailure()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         var userId = UserId.NewId();
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(wallet);
@@ -86,7 +82,7 @@ public sealed class RequestWalletDebitHandlerTests
     [Fact]
     public async Task Handle_WhenWalletInactive_ReturnsFailure()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         var userId = UserId.NewId();
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));

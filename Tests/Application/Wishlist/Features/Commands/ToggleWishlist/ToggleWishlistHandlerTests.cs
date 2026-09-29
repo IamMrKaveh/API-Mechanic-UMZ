@@ -12,17 +12,17 @@ using NSubstitute;
 
 namespace Tests.Application.Wishlist.Features.Commands.ToggleWishlist;
 
-public class ToggleWishlistHandlerTests
+public class ToggleWishlistHandlerTests : HandlerTestBase
 {
-    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly IWishlistQueryService _wishlistQueryService = Substitute.For<IWishlistQueryService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ToggleWishlistHandler _sut;
+    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly IWishlistQueryService _wishlistQueryService = Substitute.For<IWishlistQueryService>(); private readonly ToggleWishlistHandler _sut;
 
     public ToggleWishlistHandlerTests()
     {
         _sut = new ToggleWishlistHandler(
             _wishlistRepository,
             _wishlistQueryService,
-            _auditService,
-            _currentUserService, _dateTimeProvider);
+            AuditService,
+            CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class ToggleWishlistHandlerTests
         var userGuid = Guid.NewGuid();
         var productGuid = Guid.NewGuid();
 
-        _currentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
         _wishlistQueryService
             .IsInWishlistAsync(Arg.Any<UserId>(), Arg.Any<ProductId>(), Arg.Any<CancellationToken>())
             .Returns(false);
@@ -53,7 +53,7 @@ public class ToggleWishlistHandlerTests
         await _wishlistRepository.Received(1).AddAsync(Arg.Any<Wishlists>(), Arg.Any<CancellationToken>());
         await _wishlistRepository.DidNotReceive().RemoveAsync(
             Arg.Any<UserId>(), Arg.Any<ProductId>(), Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "ToggleWishlist",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -65,7 +65,7 @@ public class ToggleWishlistHandlerTests
         var userGuid = Guid.NewGuid();
         var productGuid = Guid.NewGuid();
 
-        _currentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
         _wishlistQueryService
             .IsInWishlistAsync(Arg.Any<UserId>(), Arg.Any<ProductId>(), Arg.Any<CancellationToken>())
             .Returns(true);
@@ -82,7 +82,7 @@ public class ToggleWishlistHandlerTests
             Arg.Any<CancellationToken>());
         await _wishlistRepository.DidNotReceive().AddAsync(
             Arg.Any<Wishlists>(), Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "ToggleWishlist",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());

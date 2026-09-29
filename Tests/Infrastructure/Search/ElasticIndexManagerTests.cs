@@ -4,11 +4,8 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Search;
 
-public class ElasticIndexManagerTests : IAsyncLifetime
-{
+public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
     private FakeElasticsearchServer _server = null!;
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-
     private const string IndexCreatedAck = """{"acknowledged":true,"shards_acknowledged":true,"index":"x"}""";
     private const string ReindexOk = """{"took":5,"timed_out":false,"total":2,"updated":0,"created":2,"deleted":0,"batches":1,"version_conflicts":0,"noops":0,"retries":{"bulk":0,"search":0},"throttled_millis":0,"requests_per_second":-1,"throttled_until_millis":0,"failures":[]}""";
 
@@ -30,7 +27,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
             })
             .Build();
 
-        return new ElasticIndexManager(_server.CreateClient(), _auditService, configuration);
+        return new ElasticIndexManager(_server.CreateClient(), AuditService, configuration);
     }
 
     [Fact]
@@ -44,7 +41,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
         result.ShouldBeTrue();
         _server.Requests.Count.ShouldBe(1);
         _server.Requests[0].Method.ShouldBe("HEAD");
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s.Contains("already exists")), Arg.Any<CancellationToken>());
     }
 
@@ -63,7 +60,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
         create.Path.ShouldContain("products_v1");
         create.Body.ShouldContain("persian_advanced");
         create.Body.ShouldContain("persian_autocomplete");
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s.Contains("Successfully created index products_v1")), Arg.Any<CancellationToken>());
     }
 
@@ -78,7 +75,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
         var result = await sut.CreateProductIndexAsync();
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s.Contains("Failed to create index products_v1")), Arg.Any<CancellationToken>());
     }
 
@@ -87,13 +84,13 @@ public class ElasticIndexManagerTests : IAsyncLifetime
     {
         var unreachable = new ElasticIndexManager(
             new Elastic.Clients.Elasticsearch.ElasticsearchClient(new Uri("http://127.0.0.1:9")),
-            _auditService,
+            AuditService,
             new ConfigurationBuilder().Build());
 
         var result = await unreachable.CreateProductIndexAsync();
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -106,7 +103,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
 
         result.ShouldBeTrue();
         _server.Requests[0].Path.ShouldContain("categories_v1");
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s.Contains("categories_v1")), Arg.Any<CancellationToken>());
     }
 
@@ -119,7 +116,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
         var result = await sut.CreateCategoryIndexAsync();
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s.Contains("categories_v1")), Arg.Any<CancellationToken>());
     }
 
@@ -133,7 +130,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
 
         result.ShouldBeTrue();
         _server.Requests[0].Path.ShouldContain("brands_v1");
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s.Contains("brands_v1")), Arg.Any<CancellationToken>());
     }
 
@@ -146,7 +143,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
         var result = await sut.CreateBrandIndexAsync();
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s.Contains("brands_v1")), Arg.Any<CancellationToken>());
     }
 
@@ -160,7 +157,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
 
         result.ShouldBeTrue();
         _server.Requests[0].Method.ShouldBe("DELETE");
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s.Contains("Successfully deleted index products_v1")), Arg.Any<CancellationToken>());
     }
 
@@ -173,7 +170,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
         var result = await sut.DeleteIndexAsync("products_v1");
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s.Contains("Failed to delete index")), Arg.Any<CancellationToken>());
     }
 
@@ -193,7 +190,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
     {
         var sut = new ElasticIndexManager(
             new Elastic.Clients.Elasticsearch.ElasticsearchClient(new Uri("http://127.0.0.1:9")),
-            _auditService,
+            AuditService,
             new ConfigurationBuilder().Build());
 
         (await sut.IndexExistsAsync("products_v1")).ShouldBeFalse();
@@ -211,7 +208,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
         _server.Requests[0].Path.ShouldContain("_reindex");
         _server.Requests[0].Body.ShouldContain("products_v1");
         _server.Requests[0].Body.ShouldContain("products_v2");
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s.Contains("Reindex from products_v1 to products_v2 succeeded")), Arg.Any<CancellationToken>());
     }
 
@@ -224,7 +221,7 @@ public class ElasticIndexManagerTests : IAsyncLifetime
         var result = await sut.ReindexAsync("products_v1", "products_v2");
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s.Contains("Reindex failed")), Arg.Any<CancellationToken>());
     }
 

@@ -10,22 +10,20 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Review.Features.Queries.CanReviewProduct;
 
-public class CanReviewProductHandlerTests
+public class CanReviewProductHandlerTests : HandlerTestBase
 {
-    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly IPurchaseVerificationService _purchaseVerificationService = Substitute.For<IPurchaseVerificationService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
-
-    private CanReviewProductHandler CreateSut(bool requirePurchaseVerification = false)
+    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly IPurchaseVerificationService _purchaseVerificationService = Substitute.For<IPurchaseVerificationService>(); private CanReviewProductHandler CreateSut(bool requirePurchaseVerification = false)
         => new(
             _reviewRepository,
             _purchaseVerificationService,
-            _currentUser,
+            CurrentUserService,
             Options.Create(new ReviewSettings { RequirePurchaseVerification = requirePurchaseVerification }));
 
     [Fact]
     public async Task Handle_WhenAnonymous_ReturnsSuccessWithCanReviewFalseAndLoginPrompt()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var sut = CreateSut();
 
@@ -47,8 +45,8 @@ public class CanReviewProductHandlerTests
     public async Task Handle_WhenUserAlreadyReviewed_ReturnsCanReviewFalseWithReason()
     {
         var userGuid = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         _reviewRepository
             .UserHasReviewedProductAsync(
@@ -81,8 +79,8 @@ public class CanReviewProductHandlerTests
     public async Task Handle_WhenPurchaseVerificationRequiredAndUserHasNotPurchased_ReturnsCanReviewFalse()
     {
         var userGuid = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         _reviewRepository
             .UserHasReviewedProductAsync(
@@ -115,8 +113,8 @@ public class CanReviewProductHandlerTests
     public async Task Handle_WhenAuthenticatedNotReviewedAndPurchaseNotRequired_ReturnsCanReviewTrue()
     {
         var userGuid = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         _reviewRepository
             .UserHasReviewedProductAsync(

@@ -6,15 +6,14 @@ using Domain.User.ValueObjects;
 
 namespace Tests.Application.Auth.EventHandlers;
 
-public class AllSessionsRevokedEventHandlerTests
+public class AllSessionsRevokedEventHandlerTests : HandlerTestBase
 {
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly ILogger<AllSessionsRevokedEventHandler> _logger = Substitute.For<ILogger<AllSessionsRevokedEventHandler>>();
     private readonly AllSessionsRevokedEventHandler _sut;
 
     public AllSessionsRevokedEventHandlerTests()
     {
-        _sut = new AllSessionsRevokedEventHandler(_auditService, _logger);
+        _sut = new AllSessionsRevokedEventHandler(AuditService, _logger);
     }
 
     [Fact]
@@ -26,7 +25,7 @@ public class AllSessionsRevokedEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "All Session Revoked",
             Arg.Is<string>(s => s!.Contains(userId.Value.ToString())
                 && s.Contains('5')
@@ -50,7 +49,7 @@ public class AllSessionsRevokedEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             Arg.Any<string>(),
             Arg.Is<string>(s => s!.Contains(reason.ToString()) && s.Contains(count.ToString())),
             Arg.Any<CancellationToken>());
@@ -65,7 +64,7 @@ public class AllSessionsRevokedEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "All Session Revoked",
             Arg.Is<string>(s => s!.Contains('0')),
             Arg.Any<CancellationToken>());
@@ -81,7 +80,7 @@ public class AllSessionsRevokedEventHandlerTests
 
         await _sut.Handle(notification, cts.Token);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             Arg.Any<string>(),
             Arg.Any<string>(),
             cts.Token);
@@ -96,10 +95,10 @@ public class AllSessionsRevokedEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
-        _auditService.ReceivedCalls().Count().ShouldBe(1);
+        AuditService.ReceivedCalls().Count().ShouldBe(1);
     }
 }

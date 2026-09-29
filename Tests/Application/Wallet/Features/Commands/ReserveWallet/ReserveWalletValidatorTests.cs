@@ -104,11 +104,4 @@ public class ReserveWalletValidatorTests
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e => e.PropertyName == nameof(ReserveWalletCommand.ExpiresAt));
     }
-
-    private sealed class FixedDateTimeProvider(DateTime utcNow) : IDateTimeProvider
-    {
-        public DateTime UtcNow { get; } = utcNow;
-
-        public DateOnly Today => DateOnly.FromDateTime(UtcNow);
-    }
 }

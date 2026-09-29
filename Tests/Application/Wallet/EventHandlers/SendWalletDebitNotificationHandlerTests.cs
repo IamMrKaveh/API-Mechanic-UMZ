@@ -7,15 +7,14 @@ using Domain.Wallet.ValueObjects;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public sealed class SendWalletDebitNotificationHandlerTests
+public sealed class SendWalletDebitNotificationHandlerTests : HandlerTestBase
 {
     private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly SendWalletDebitNotificationHandler _sut;
 
     public SendWalletDebitNotificationHandlerTests()
     {
-        _sut = new SendWalletDebitNotificationHandler(_notificationService, _auditService);
+        _sut = new SendWalletDebitNotificationHandler(_notificationService, AuditService);
     }
 
     private static WalletDebitedEvent BuildDebitEvent(
@@ -49,7 +48,7 @@ public sealed class SendWalletDebitNotificationHandlerTests
 
         await _notificationService.DidNotReceiveWithAnyArgs().CreateNotificationAsync(
             default(UserId)!, default!, default!, default!, default, default, default, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -70,7 +69,7 @@ public sealed class SendWalletDebitNotificationHandlerTests
             evt.WalletId.Value,
             "Wallet",
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -86,7 +85,7 @@ public sealed class SendWalletDebitNotificationHandlerTests
         await Should.NotThrowAsync(async () =>
             await _sut.Handle(Wrap(evt), CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletDebitNotificationFailed",
             Arg.Is<string>(s => s!.Contains(evt.OwnerId.Value.ToString())
                              && s.Contains("push failed")),

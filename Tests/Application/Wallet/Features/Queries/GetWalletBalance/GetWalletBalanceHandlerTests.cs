@@ -7,25 +7,22 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Queries.GetWalletBalance;
 
-public class GetWalletBalanceHandlerTests
+public class GetWalletBalanceHandlerTests : HandlerTestBase
 {
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly GetWalletBalanceHandler _sut;
 
     public GetWalletBalanceHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new GetWalletBalanceHandler(_walletRepository, _unitOfWork, _dateTimeProvider, _currentUserService);
+
+        _sut = new GetWalletBalanceHandler(_walletRepository, UnitOfWork, DateTimeProvider, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenWalletExistsForCurrentUser_ReturnsSuccessWithBalancesFromExistingWallet()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(currentUserId)).Build();
 
@@ -43,7 +40,7 @@ public class GetWalletBalanceHandlerTests
         result.Value.AvailableBalance.ShouldBe(wallet.AvailableBalance.Amount);
 
         await _walletRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -51,7 +48,7 @@ public class GetWalletBalanceHandlerTests
     {
         var currentUserId = Guid.NewGuid();
         var requestedUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(requestedUserId)).Build();
 
@@ -74,7 +71,7 @@ public class GetWalletBalanceHandlerTests
     public async Task Handle_WhenWalletDoesNotExist_CreatesNewWalletAndPersistsIt()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         _walletRepository
             .GetByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
@@ -99,14 +96,14 @@ public class GetWalletBalanceHandlerTests
         result.Value.AvailableBalance.ShouldBe(0m);
 
         await _walletRepository.Received(1).AddAsync(Arg.Any<Wallets>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_WhenRequestUserIdIsEmptyGuid_FallsBackToCurrentUserId()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(currentUserId)).Build();
 
@@ -126,7 +123,7 @@ public class GetWalletBalanceHandlerTests
     public async Task Handle_MapsAllBalancePropertiesFromWalletAggregateIntoDto()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         var wallet = new WalletBuilder().WithOwnerId(UserId.From(currentUserId)).Build();
 

@@ -6,18 +6,17 @@ using Domain.Discount.Interfaces;
 
 namespace Tests.Application.Discount.Features.Commands.CreateDiscount;
 
-public class CreateDiscountHandlerTests
+public class CreateDiscountHandlerTests : HandlerTestBase
 {
     private readonly IDiscountRepository _repository = Substitute.For<IDiscountRepository>();
     private readonly IMapper _mapper = Substitute.For<IMapper>();
-    private readonly IDateTimeProvider _clock = Substitute.For<IDateTimeProvider>();
     private readonly CreateDiscountHandler _sut;
     private readonly DateTime _now = new(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc);
 
     public CreateDiscountHandlerTests()
     {
-        _sut = new CreateDiscountHandler(_repository, _mapper, _clock);
-        _clock.UtcNow.Returns(_now);
+        _sut = new CreateDiscountHandler(_repository, _mapper, DateTimeProvider);
+        DateTimeProvider.UtcNow.Returns(_now);
         _mapper.Map<DiscountDto>(Arg.Any<DiscountCode>())
             .Returns(ci =>
             {

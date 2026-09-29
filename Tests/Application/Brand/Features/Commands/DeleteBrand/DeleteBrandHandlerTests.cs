@@ -11,13 +11,13 @@ using Brands = Domain.Brand.Aggregates.Brand;
 
 namespace Tests.Application.Brand.Features.Commands.DeleteBrand;
 
-public class DeleteBrandHandlerTests
+public class DeleteBrandHandlerTests : HandlerTestBase
 {
-    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly DeleteBrandHandler _sut;
+    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteBrandHandler _sut;
 
     public DeleteBrandHandlerTests()
     {
-        _sut = new DeleteBrandHandler(_brandRepository, _cacheService, _dateTimeProvider);
+        _sut = new DeleteBrandHandler(_brandRepository, _cacheService, DateTimeProvider);
     }
 
     [Fact]

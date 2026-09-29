@@ -13,17 +13,16 @@ using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Application.Auth.Features.Commands.GoogleLogin;
 
-public class GoogleLoginHandlerTests
+public class GoogleLoginHandlerTests : HandlerTestBase
 {
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
     private readonly IJwtTokenGenerator _jwtTokenGenerator = Substitute.For<IJwtTokenGenerator>();
     private readonly ISessionService _sessionService = Substitute.For<ISessionService>();
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
     private readonly GoogleLoginHandler _sut;
 
     public GoogleLoginHandlerTests()
     {
-        _sut = new GoogleLoginHandler(_userRepository, _jwtTokenGenerator, _sessionService, _currentUser);
+        _sut = new GoogleLoginHandler(_userRepository, _jwtTokenGenerator, _sessionService, CurrentUserService);
     }
 
     private static RefreshTokenResult BuildSuccessfulSessionResult(Guid userId) =>
@@ -93,7 +92,7 @@ public class GoogleLoginHandlerTests
             .GetByEmailAsync(Arg.Any<Email>(), Arg.Any<CancellationToken>())
             .Returns(existingUser);
 
-        _currentUser.IpAddress.Returns("192.168.1.10");
+        CurrentUserService.IpAddress.Returns("192.168.1.10");
 
         SetupSuccessfulSession(existingUser.Id.Value);
 
@@ -117,7 +116,7 @@ public class GoogleLoginHandlerTests
             .GetByEmailAsync(Arg.Any<Email>(), Arg.Any<CancellationToken>())
             .Returns(existingUser);
 
-        _currentUser.IpAddress.Returns((string?)null);
+        CurrentUserService.IpAddress.Returns((string?)null);
 
         SetupSuccessfulSession(existingUser.Id.Value);
 
@@ -141,7 +140,7 @@ public class GoogleLoginHandlerTests
             .GetByEmailAsync(Arg.Any<Email>(), Arg.Any<CancellationToken>())
             .Returns(existingUser);
 
-        _currentUser.UserAgent.Returns("Mozilla/5.0 TestAgent");
+        CurrentUserService.UserAgent.Returns("Mozilla/5.0 TestAgent");
 
         SetupSuccessfulSession(existingUser.Id.Value);
 

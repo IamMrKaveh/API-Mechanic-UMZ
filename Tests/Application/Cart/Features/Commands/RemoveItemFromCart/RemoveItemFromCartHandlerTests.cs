@@ -15,24 +15,24 @@ using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.RemoveItemFromCart;
 
-public class RemoveItemFromCartHandlerTests
+public class RemoveItemFromCartHandlerTests : HandlerTestBase
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly RemoveItemFromCartHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly RemoveItemFromCartHandler _sut;
 
     public RemoveItemFromCartHandlerTests()
     {
         _sut = new RemoveItemFromCartHandler(
             _cartRepository,
             _cartQueryService,
-            _unitOfWork,
-            _currentUserService, _dateTimeProvider);
+            UnitOfWork,
+            CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
     public async Task Handle_WhenNoUserAndNoGuestToken_ReturnsValidationFailure()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns((string?)null);
 
         var result = await _sut.Handle(
             new RemoveItemFromCartCommand(Guid.NewGuid()),
@@ -40,14 +40,14 @@ public class RemoveItemFromCartHandlerTests
 
         result.ShouldFailWith(ErrorCode.Validation);
         _cartRepository.DidNotReceive().Update(Arg.Any<Carts>());
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
     public async Task Handle_WhenUserHasNoCart_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.GuestToken.Returns((string?)null);
         _cartRepository
             .FindByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns((Carts?)null);
@@ -58,7 +58,7 @@ public class RemoveItemFromCartHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _cartRepository.DidNotReceive().Update(Arg.Any<Carts>());
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -70,8 +70,8 @@ public class RemoveItemFromCartHandlerTests
         new CartItemParametersBuilder().WithVariantId(variantId).WithQuantity(2).AddTo(cart);
         var expectedDto = new CartDetailDto { Id = cart.Id.Value, TotalItems = 0 };
 
-        _currentUserService.UserId.Returns((Guid?)userId.Value);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)userId.Value);
+        CurrentUserService.GuestToken.Returns((string?)null);
         _cartRepository
             .FindByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns(cart);
@@ -87,7 +87,7 @@ public class RemoveItemFromCartHandlerTests
         result.Value.ShouldBe(expectedDto);
         cart.CartItems.ShouldBeEmpty();
         _cartRepository.Received(1).Update(cart);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -100,8 +100,8 @@ public class RemoveItemFromCartHandlerTests
         new CartItemParametersBuilder().WithVariantId(variantId).WithQuantity(4).AddTo(cart);
         var expectedDto = new CartDetailDto { Id = cart.Id.Value };
 
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns(guestTokenValue);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns(guestTokenValue);
         _cartRepository
             .FindByGuestTokenAsync(Arg.Any<GuestToken>(), Arg.Any<CancellationToken>())
             .Returns(cart);
@@ -117,7 +117,7 @@ public class RemoveItemFromCartHandlerTests
         result.Value.ShouldBe(expectedDto);
         cart.CartItems.ShouldBeEmpty();
         _cartRepository.Received(1).Update(cart);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public class RemoveItemFromCartHandlerTests
         var cart = new CartBuilder().ForUser(userId).Build();
         new CartItemParametersBuilder().WithVariantId(variantId).AddTo(cart);
 
-        _currentUserService.UserId.Returns((Guid?)userId.Value);
+        CurrentUserService.UserId.Returns((Guid?)userId.Value);
         _cartRepository
             .FindByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns(cart);

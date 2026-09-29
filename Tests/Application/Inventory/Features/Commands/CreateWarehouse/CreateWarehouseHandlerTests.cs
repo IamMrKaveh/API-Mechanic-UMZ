@@ -11,13 +11,13 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.CreateWarehouse;
 
-public class CreateWarehouseHandlerTests
+public class CreateWarehouseHandlerTests : HandlerTestBase
 {
-    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CreateWarehouseHandler _sut;
+    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateWarehouseHandler _sut;
 
     public CreateWarehouseHandlerTests()
     {
-        _sut = new CreateWarehouseHandler(_warehouseRepository, _cacheService, _dateTimeProvider);
+        _sut = new CreateWarehouseHandler(_warehouseRepository, _cacheService, DateTimeProvider);
     }
 
     [Fact]

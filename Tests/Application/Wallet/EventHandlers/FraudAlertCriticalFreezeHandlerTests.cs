@@ -8,15 +8,14 @@ using Domain.Wallet.ValueObjects;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public class FraudAlertCriticalFreezeHandlerTests
+public class FraudAlertCriticalFreezeHandlerTests : HandlerTestBase
 {
     private readonly IMediator _mediator = Substitute.For<IMediator>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly FraudAlertCriticalFreezeHandler _sut;
 
     public FraudAlertCriticalFreezeHandlerTests()
     {
-        _sut = new FraudAlertCriticalFreezeHandler(_mediator, _auditService);
+        _sut = new FraudAlertCriticalFreezeHandler(_mediator, AuditService);
     }
 
     private static WalletFraudAlertRaisedEvent BuildEvent(FraudAlertSeverity severity) => new(
@@ -39,7 +38,7 @@ public class FraudAlertCriticalFreezeHandlerTests
         await _sut.Handle(notification, CancellationToken.None);
 
         await _mediator.DidNotReceive().Send(Arg.Any<FreezeWalletCommand>(), Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -55,7 +54,7 @@ public class FraudAlertCriticalFreezeHandlerTests
         await _sut.Handle(notification, CancellationToken.None);
 
         await _mediator.Received(1).Send(Arg.Any<FreezeWalletCommand>(), Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "FraudAutoFreezeApplied",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -73,11 +72,11 @@ public class FraudAlertCriticalFreezeHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "FraudAutoFreezeFailed",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceive().LogSystemEventAsync(
+        await AuditService.DidNotReceive().LogSystemEventAsync(
             "FraudAutoFreezeApplied",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -95,7 +94,7 @@ public class FraudAlertCriticalFreezeHandlerTests
 
         await Should.NotThrowAsync(() => _sut.Handle(notification, CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "FraudAutoFreezeError",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());

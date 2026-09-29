@@ -30,6 +30,7 @@ global using SharedKernel.Results;
 global using SharedKernel.ValueObjects;
 global using Shouldly;
 global using Tests.TestInfrastructure.Assertions;
+global using Tests.TestInfrastructure.Base;
 global using Tests.TestInfrastructure.Builders;
 global using Tests.TestInfrastructure.Database;
 global using Tests.TestInfrastructure.Fakes;

@@ -14,14 +14,14 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.BulkAdjustStock;
 
-public class BulkAdjustStockHandlerTests
+public class BulkAdjustStockHandlerTests : HandlerTestBase
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly BulkAdjustStockHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly BulkAdjustStockHandler _sut;
 
     public BulkAdjustStockHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _unitOfWork
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        UnitOfWork
             .ExecuteStrategyAsync(
                 Arg.Any<Func<CancellationToken, Task<int>>>(),
                 Arg.Any<CancellationToken>())
@@ -33,9 +33,9 @@ public class BulkAdjustStockHandlerTests
 
         _sut = new BulkAdjustStockHandler(
             _inventoryRepository,
-            _unitOfWork,
-            _auditService,
-            _currentUserService, _dateTimeProvider);
+            UnitOfWork,
+            AuditService,
+            CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class BulkAdjustStockHandlerTests
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.Failure);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().ExecuteStrategyAsync(default(Func<CancellationToken, Task<int>>)!, default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().ExecuteStrategyAsync(default(Func<CancellationToken, Task<int>>)!, default);
     }
 
     [Fact]
@@ -75,8 +75,8 @@ public class BulkAdjustStockHandlerTests
         v2.StockQuantity.Value.ShouldBe(16);
         _inventoryRepository.Received(1).Update(v1);
         _inventoryRepository.Received(1).Update(v2);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogInventoryEventAsync(
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogInventoryEventAsync(
             Arg.Any<VariantId>(),
             "BulkAdjustStock",
             Arg.Any<string>(),

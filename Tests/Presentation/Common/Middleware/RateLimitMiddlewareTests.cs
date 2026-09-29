@@ -7,10 +7,9 @@ using Presentation.Common.Middleware;
 
 namespace Tests.Presentation.Common.Middleware;
 
-public class RateLimitMiddlewareTests
+public class RateLimitMiddlewareTests : HandlerTestBase
 {
     private readonly IRateLimitService _rateLimit = Substitute.For<IRateLimitService>();
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
     private readonly ILogger<RateLimitMiddleware> _logger =
         Substitute.For<ILogger<RateLimitMiddleware>>();
 
@@ -18,7 +17,7 @@ public class RateLimitMiddlewareTests
     {
         var services = new ServiceCollection();
         services.AddSingleton(_rateLimit);
-        services.AddSingleton(_currentUser);
+        services.AddSingleton(CurrentUserService);
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         scopeFactory.CreateScope().Returns(_ => services.BuildServiceProvider().CreateScope());
         return new RateLimitMiddleware(next, _logger, scopeFactory);
@@ -47,7 +46,7 @@ public class RateLimitMiddlewareTests
     [Fact]
     public async Task InvokeAsync_AnonymousUser_UsesIpKeyWithAnonymousLimit()
     {
-        _currentUser.IsAuthenticated.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(false);
         string? capturedKey = null;
         int capturedMax = 0, capturedWindow = 0;
         _rateLimit.IsLimitedAsync(Arg.Do<string>(k => capturedKey = k), Arg.Do<int>(m => capturedMax = m), Arg.Do<int>(w => capturedWindow = w))
@@ -67,8 +66,8 @@ public class RateLimitMiddlewareTests
     public async Task InvokeAsync_AuthenticatedUser_UsesUserKeyWithAuthenticatedLimit()
     {
         var userId = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns(userId);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns(userId);
         string? capturedKey = null;
         int capturedMax = 0;
         _rateLimit.IsLimitedAsync(Arg.Do<string>(k => capturedKey = k), Arg.Do<int>(m => capturedMax = m), Arg.Any<int>())
@@ -86,7 +85,7 @@ public class RateLimitMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenLimited_Returns429WithRetryAfter()
     {
-        _currentUser.IsAuthenticated.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(false);
         _rateLimit.IsLimitedAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>())
             .Returns((true, TimeSpan.FromSeconds(20)));
         var called = false;

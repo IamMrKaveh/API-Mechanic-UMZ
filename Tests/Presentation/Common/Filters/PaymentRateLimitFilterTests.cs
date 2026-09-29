@@ -10,11 +10,9 @@ using Presentation.Common.Filters;
 
 namespace Tests.Presentation.Common.Filters;
 
-public class PaymentRateLimitFilterTests
+public class PaymentRateLimitFilterTests : HandlerTestBase
 {
     private readonly IRateLimitService _rateLimit = Substitute.For<IRateLimitService>();
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
-
     private static ActionExecutingContext BuildContext(IServiceProvider services, string ip = "1.2.3.4")
     {
         var httpContext = new DefaultHttpContext();
@@ -32,7 +30,7 @@ public class PaymentRateLimitFilterTests
     {
         var services = new ServiceCollection();
         services.AddSingleton(_rateLimit);
-        services.AddSingleton(_currentUser);
+        services.AddSingleton(CurrentUserService);
         return services.BuildServiceProvider();
     }
 
@@ -48,7 +46,7 @@ public class PaymentRateLimitFilterTests
     {
         _rateLimit.IsLimitedAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>())
             .Returns((false, null));
-        _currentUser.IsAuthenticated.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(false);
         var context = BuildContext(BuildServices());
         var called = new[] { false };
 
@@ -62,8 +60,8 @@ public class PaymentRateLimitFilterTests
     public async Task OnActionExecutionAsync_WhenAuthenticated_UsesUserBasedKey()
     {
         var userId = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns(userId);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns(userId);
         string? capturedKey = null;
         int capturedMax = 0, capturedWindow = 0;
         _rateLimit.IsLimitedAsync(Arg.Do<string>(k => capturedKey = k), Arg.Do<int>(m => capturedMax = m), Arg.Do<int>(w => capturedWindow = w))
@@ -80,7 +78,7 @@ public class PaymentRateLimitFilterTests
     [Fact]
     public async Task OnActionExecutionAsync_WhenAnonymous_UsesIpBasedKey()
     {
-        _currentUser.IsAuthenticated.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(false);
         string? capturedKey = null;
         _rateLimit.IsLimitedAsync(Arg.Do<string>(k => capturedKey = k), Arg.Any<int>(), Arg.Any<int>())
             .Returns((false, null));
@@ -94,7 +92,7 @@ public class PaymentRateLimitFilterTests
     [Fact]
     public async Task OnActionExecutionAsync_WhenLimited_Returns429WithoutCallingNext()
     {
-        _currentUser.IsAuthenticated.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(false);
         _rateLimit.IsLimitedAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>())
             .Returns((true, TimeSpan.FromSeconds(90)));
         var context = BuildContext(BuildServices());

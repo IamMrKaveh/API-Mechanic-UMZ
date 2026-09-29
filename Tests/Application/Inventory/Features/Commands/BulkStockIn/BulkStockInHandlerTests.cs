@@ -14,13 +14,13 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.BulkStockIn;
 
-public class BulkStockInHandlerTests
+public class BulkStockInHandlerTests : HandlerTestBase
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly BulkStockInHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly BulkStockInHandler _sut;
 
     public BulkStockInHandlerTests()
     {
-        _unitOfWork
+        UnitOfWork
             .ExecuteStrategyAsync(
                 Arg.Any<Func<CancellationToken, Task<int>>>(),
                 Arg.Any<CancellationToken>())
@@ -32,15 +32,15 @@ public class BulkStockInHandlerTests
 
         _sut = new BulkStockInHandler(
             _inventoryRepository,
-            _unitOfWork,
-            _auditService,
-            _currentUserService, _dateTimeProvider);
+            UnitOfWork,
+            AuditService,
+            CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
     public async Task Handle_WithEmptyItems_ReturnsFailure()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         var command = new BulkStockInCommand(Array.Empty<BulkStockInItem>(), "reason");
 
@@ -52,7 +52,7 @@ public class BulkStockInHandlerTests
     [Fact]
     public async Task Handle_WithAuthenticatedUserAndValidItems_IncreasesEachStockSavesAndAudits()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         var inv = new InventoryBuilder().WithInitialStock(5).Build();
         _inventoryRepository
@@ -69,8 +69,8 @@ public class BulkStockInHandlerTests
         result.ShouldBeSuccess();
         inv.StockQuantity.Value.ShouldBe(9);
         _inventoryRepository.Received(1).Update(inv);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogInventoryEventAsync(
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogInventoryEventAsync(
             Arg.Any<VariantId>(),
             "BulkStockIn",
             Arg.Any<string>(),
@@ -80,7 +80,7 @@ public class BulkStockInHandlerTests
     [Fact]
     public async Task Handle_WhenInventoryMissing_ThrowsDomainException()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         _inventoryRepository
             .GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())

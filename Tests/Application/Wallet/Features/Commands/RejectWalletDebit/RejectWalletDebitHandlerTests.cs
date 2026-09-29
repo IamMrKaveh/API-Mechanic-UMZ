@@ -8,15 +8,11 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.RejectWalletDebit;
 
-public sealed class RejectWalletDebitHandlerTests
+public sealed class RejectWalletDebitHandlerTests : HandlerTestBase
 {
     private readonly IWalletDebitRequestRepository _debitRequestRepository = Substitute.For<IWalletDebitRequestRepository>();
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
-
     private readonly RejectWalletDebitHandler _sut;
 
     public RejectWalletDebitHandlerTests()
@@ -24,15 +20,14 @@ public sealed class RejectWalletDebitHandlerTests
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet", true));
 
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new RejectWalletDebitHandler(
-            _debitRequestRepository, _walletRepository, _distributedLock, _dateTimeProvider, _currentUserService);
+            _debitRequestRepository, _walletRepository, _distributedLock, DateTimeProvider, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenDebitRequestNotFound_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _debitRequestRepository.GetByIdAsync(Arg.Any<WalletDebitRequestId>(), Arg.Any<CancellationToken>())
             .Returns((WalletDebitRequest?)null);
 
@@ -46,7 +41,7 @@ public sealed class RejectWalletDebitHandlerTests
     {
         var ownerId = UserId.NewId();
         var otherUser = UserId.NewId();
-        _currentUserService.UserId.Returns(otherUser.Value);
+        CurrentUserService.UserId.Returns(otherUser.Value);
         var (_, request) = new WalletDebitRequestBuilder().WithOwner(ownerId).Build();
         _debitRequestRepository.GetByIdAsync(Arg.Any<WalletDebitRequestId>(), Arg.Any<CancellationToken>()).Returns(request);
 
@@ -59,7 +54,7 @@ public sealed class RejectWalletDebitHandlerTests
     public async Task Handle_WhenLockNotAcquired_ReturnsConflict()
     {
         var ownerId = UserId.NewId();
-        _currentUserService.UserId.Returns(ownerId.Value);
+        CurrentUserService.UserId.Returns(ownerId.Value);
         var (_, request) = new WalletDebitRequestBuilder().WithOwner(ownerId).Build();
         _debitRequestRepository.GetByIdAsync(Arg.Any<WalletDebitRequestId>(), Arg.Any<CancellationToken>()).Returns(request);
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
@@ -74,7 +69,7 @@ public sealed class RejectWalletDebitHandlerTests
     public async Task Handle_WhenWalletNotFound_ReturnsNotFound()
     {
         var ownerId = UserId.NewId();
-        _currentUserService.UserId.Returns(ownerId.Value);
+        CurrentUserService.UserId.Returns(ownerId.Value);
         var (_, request) = new WalletDebitRequestBuilder().WithOwner(ownerId).Build();
         _debitRequestRepository.GetByIdAsync(Arg.Any<WalletDebitRequestId>(), Arg.Any<CancellationToken>()).Returns(request);
         _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
@@ -89,7 +84,7 @@ public sealed class RejectWalletDebitHandlerTests
     public async Task Handle_WhenValid_RejectsRequestAndReleasesReservation()
     {
         var ownerId = UserId.NewId();
-        _currentUserService.UserId.Returns(ownerId.Value);
+        CurrentUserService.UserId.Returns(ownerId.Value);
         var (wallet, request) = new WalletDebitRequestBuilder()
             .WithOwner(ownerId).WithInitialBalance(500_000m).WithAmount(100_000m).Build();
         _debitRequestRepository.GetByIdAsync(Arg.Any<WalletDebitRequestId>(), Arg.Any<CancellationToken>()).Returns(request);
@@ -100,14 +95,14 @@ public sealed class RejectWalletDebitHandlerTests
         result.ShouldBeSuccess();
         wallet.AvailableBalance.Amount.ShouldBe(500_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_WhenRequestAlreadyProcessed_ReturnsFailure()
     {
         var ownerId = UserId.NewId();
-        _currentUserService.UserId.Returns(ownerId.Value);
+        CurrentUserService.UserId.Returns(ownerId.Value);
         var (wallet, request) = new WalletDebitRequestBuilder()
             .WithOwner(ownerId).WithInitialBalance(500_000m).WithAmount(100_000m).Build();
         wallet.RejectDebitRequest(request.Id, ownerId, "first rejection", DateTime.UtcNow);

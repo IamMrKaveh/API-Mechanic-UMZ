@@ -13,18 +13,18 @@ using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Application.Auth.Features.Commands.SendOtp;
 
-public class SendOtpHandlerTests
+public class SendOtpHandlerTests : HandlerTestBase
 {
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IOtpService _otpService = Substitute.For<IOtpService>(); private readonly IOtpRepository _otpRepository = Substitute.For<IOtpRepository>(); private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly IInitialAdminOptions _initialAdminOptions = Substitute.For<IInitialAdminOptions>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly SendOtpHandler _sut;
+    private readonly IOtpService _otpService = Substitute.For<IOtpService>(); private readonly IOtpRepository _otpRepository = Substitute.For<IOtpRepository>(); private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly IInitialAdminOptions _initialAdminOptions = Substitute.For<IInitialAdminOptions>(); private readonly SendOtpHandler _sut;
 
     public SendOtpHandlerTests()
     {
         _initialAdminOptions.PhoneNumbers.Returns(new List<string>());
-        _dateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
+        DateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
         _otpService
             .SendOtpAsync(Arg.Any<PhoneNumber>(), Arg.Any<OtpCode>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<bool>.Success(true));
-        _sut = new SendOtpHandler(_unitOfWork, _otpService, _otpRepository, _userRepository, _initialAdminOptions, _dateTimeProvider);
+        _sut = new SendOtpHandler(UnitOfWork, _otpService, _otpRepository, _userRepository, _initialAdminOptions, DateTimeProvider);
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class SendOtpHandlerTests
 
         result.IsFailure.ShouldBeTrue();
         await _otpRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class SendOtpHandlerTests
         await _otpRepository.Received(1).AddAsync(
             Arg.Is<UserOtp>(o => o!.UserId == existingUser.Id && o!.Purpose == OtpPurpose.Login),
             Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -171,6 +171,6 @@ public class SendOtpHandlerTests
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.IsFailure.ShouldBeTrue();
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 }

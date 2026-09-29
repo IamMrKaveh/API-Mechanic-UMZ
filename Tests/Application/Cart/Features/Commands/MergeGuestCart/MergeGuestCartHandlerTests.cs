@@ -15,35 +15,35 @@ using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.MergeGuestCart;
 
-public class MergeGuestCartHandlerTests
+public class MergeGuestCartHandlerTests : HandlerTestBase
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly MergeGuestCartHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly MergeGuestCartHandler _sut;
 
     public MergeGuestCartHandlerTests()
     {
-        _sut = new MergeGuestCartHandler(_cartRepository, _auditService, _currentUserService, _dateTimeProvider);
+        _sut = new MergeGuestCartHandler(_cartRepository, AuditService, CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
     public async Task Handle_WhenGuestTokenIsMissing_ReturnsSuccessAndSkipsMerge()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.GuestToken.Returns((string?)null);
 
         var result = await _sut.Handle(new MergeGuestCartCommand(), CancellationToken.None);
 
         result.ShouldBeSuccess();
         await _cartRepository.DidNotReceiveWithAnyArgs().FindByGuestTokenAsync(default!, default);
         await _cartRepository.DidNotReceiveWithAnyArgs().FindByUserIdAsync(default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogAsync(
+        await AuditService.DidNotReceiveWithAnyArgs().LogAsync(
             default!, default!, default!, default, default, default, default, default, default);
     }
 
     [Fact]
     public async Task Handle_WhenGuestCartNotFound_ReturnsSuccessAndSkipsMerge()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUserService.GuestToken.Returns("GUEST-TOKEN-MRG12345");
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.GuestToken.Returns("GUEST-TOKEN-MRG12345");
         _cartRepository
             .FindByGuestTokenAsync(Arg.Any<GuestToken>(), Arg.Any<CancellationToken>())
             .Returns((Carts?)null);
@@ -54,7 +54,7 @@ public class MergeGuestCartHandlerTests
         await _cartRepository.DidNotReceiveWithAnyArgs().FindByUserIdAsync(default!, default);
         _cartRepository.DidNotReceive().Update(Arg.Any<Carts>());
         _cartRepository.DidNotReceive().Remove(Arg.Any<Carts>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogAsync(
+        await AuditService.DidNotReceiveWithAnyArgs().LogAsync(
             default!, default!, default!, default, default, default, default, default, default);
     }
 
@@ -68,8 +68,8 @@ public class MergeGuestCartHandlerTests
             .Build();
         new CartItemParametersBuilder().WithQuantity(2).AddTo(guestCart);
 
-        _currentUserService.UserId.Returns((Guid?)userGuid);
-        _currentUserService.GuestToken.Returns(guestTokenValue);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.GuestToken.Returns(guestTokenValue);
         _cartRepository
             .FindByGuestTokenAsync(Arg.Any<GuestToken>(), Arg.Any<CancellationToken>())
             .Returns(guestCart);
@@ -85,7 +85,7 @@ public class MergeGuestCartHandlerTests
         guestCart.GuestToken.ShouldBeNull();
         _cartRepository.Received(1).Update(guestCart);
         _cartRepository.DidNotReceive().Remove(Arg.Any<Carts>());
-        await _auditService.Received(1).LogAsync(
+        await AuditService.Received(1).LogAsync(
             "Cart",
             "MergeGuestCart",
             Arg.Any<IpAddress>(),
@@ -109,8 +109,8 @@ public class MergeGuestCartHandlerTests
         var sharedVariantId = VariantId.NewId();
         new CartItemParametersBuilder().WithVariantId(sharedVariantId).WithQuantity(2).AddTo(guestCart);
 
-        _currentUserService.UserId.Returns((Guid?)userGuid);
-        _currentUserService.GuestToken.Returns(guestTokenValue);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.GuestToken.Returns(guestTokenValue);
         _cartRepository
             .FindByGuestTokenAsync(Arg.Any<GuestToken>(), Arg.Any<CancellationToken>())
             .Returns(guestCart);
@@ -128,7 +128,7 @@ public class MergeGuestCartHandlerTests
         userCart.CartItems.Single().Quantity.ShouldBe(2);
         _cartRepository.Received(1).Update(userCart);
         _cartRepository.Received(1).Remove(guestCart);
-        await _auditService.Received(1).LogAsync(
+        await AuditService.Received(1).LogAsync(
             "Cart",
             "MergeGuestCart",
             Arg.Any<IpAddress>(),

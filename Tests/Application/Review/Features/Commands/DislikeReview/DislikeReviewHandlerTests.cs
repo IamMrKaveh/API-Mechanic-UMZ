@@ -12,11 +12,9 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Review.Features.Commands.DislikeReview;
 
-public class DislikeReviewHandlerTests
+public class DislikeReviewHandlerTests : HandlerTestBase
 {
-    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
-
-    private static IOptions<ReviewSettings> Enabled()
+    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private static IOptions<ReviewSettings> Enabled()
         => Options.Create(new ReviewSettings { EnableLikeDislike = true });
 
     [Fact]
@@ -24,7 +22,7 @@ public class DislikeReviewHandlerTests
     {
         var sut = new DislikeReviewHandler(
             _reviewRepository,
-            _currentUser,
+            CurrentUserService,
             Options.Create(new ReviewSettings { EnableLikeDislike = false }));
 
         var result = await sut.Handle(new DislikeReviewCommand(Guid.NewGuid()), CancellationToken.None);
@@ -35,8 +33,8 @@ public class DislikeReviewHandlerTests
     [Fact]
     public async Task Handle_WhenUserIdIsNull_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
-        var sut = new DislikeReviewHandler(_reviewRepository, _currentUser, Enabled());
+        CurrentUserService.UserId.Returns((Guid?)null);
+        var sut = new DislikeReviewHandler(_reviewRepository, CurrentUserService, Enabled());
 
         var result = await sut.Handle(new DislikeReviewCommand(Guid.NewGuid()), CancellationToken.None);
 
@@ -46,12 +44,12 @@ public class DislikeReviewHandlerTests
     [Fact]
     public async Task Handle_WhenReviewNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _reviewRepository
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns((ProductReview?)null);
 
-        var sut = new DislikeReviewHandler(_reviewRepository, _currentUser, Enabled());
+        var sut = new DislikeReviewHandler(_reviewRepository, CurrentUserService, Enabled());
 
         var result = await sut.Handle(new DislikeReviewCommand(Guid.NewGuid()), CancellationToken.None);
 
@@ -62,7 +60,7 @@ public class DislikeReviewHandlerTests
     public async Task Handle_WhenReviewApprovedAndVoterIsNotOwner_AddsDislikeAndUpdatesRepository()
     {
         var voterGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)voterGuid);
+        CurrentUserService.UserId.Returns((Guid?)voterGuid);
 
         var review = new ProductReviewBuilder()
             .WithUserId(UserId.NewId())
@@ -72,7 +70,7 @@ public class DislikeReviewHandlerTests
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns(review);
 
-        var sut = new DislikeReviewHandler(_reviewRepository, _currentUser, Enabled());
+        var sut = new DislikeReviewHandler(_reviewRepository, CurrentUserService, Enabled());
 
         var result = await sut.Handle(new DislikeReviewCommand(review.Id.Value), CancellationToken.None);
 

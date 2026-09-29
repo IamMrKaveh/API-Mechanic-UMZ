@@ -4,11 +4,9 @@ using Infrastructure.Location.Services;
 
 namespace Tests.Infrastructure.Location.Services;
 
-public class LocationServiceTests
+public class LocationServiceTests : HandlerTestBase
 {
     private const string ProvincesErrorMessage = "Failed to fetch provinces from the location API."; private const string CitiesErrorMessage = "Failed to fetch cities for province {StateId} from the location API.";
-
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
 
     [Fact]
     public async Task GetProvincesAsync_WhenResponseHasProvinces_ReturnsMappedReadOnlyList()
@@ -23,7 +21,7 @@ public class LocationServiceTests
         result.Count.ShouldBe(2);
         result[0].ShouldBe(new ProvinceDto(1, "Tehran", "TH"));
         result[1].ShouldBe(new ProvinceDto(2, "Isfahan", "IS"));
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -49,7 +47,7 @@ public class LocationServiceTests
 
         result.ShouldNotBeNull();
         result.ShouldBeEmpty();
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -62,7 +60,7 @@ public class LocationServiceTests
 
         result.ShouldNotBeNull();
         result.ShouldBeEmpty();
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -75,7 +73,7 @@ public class LocationServiceTests
         var actual = await Should.ThrowAsync<HttpRequestException>(() => sut.GetProvincesAsync());
 
         actual.ShouldBeSameAs(thrown);
-        await _auditService.Received(1).LogErrorAsync(ProvincesErrorMessage, Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(ProvincesErrorMessage, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -109,7 +107,7 @@ public class LocationServiceTests
 
         handler.LastCancellationToken.CanBeCanceled.ShouldBeTrue();
         handler.LastCancellationToken.IsCancellationRequested.ShouldBeTrue();
-        await _auditService.Received(1).LogErrorAsync(ProvincesErrorMessage, ct);
+        await AuditService.Received(1).LogErrorAsync(ProvincesErrorMessage, ct);
     }
 
     [Fact]
@@ -125,7 +123,7 @@ public class LocationServiceTests
         result.Count.ShouldBe(2);
         result[0].ShouldBe(new CityDto(10, "Karaj", "Alborz", 30));
         result[1].ShouldBe(new CityDto(11, "Nazarabad", "Alborz", 30));
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -151,7 +149,7 @@ public class LocationServiceTests
 
         result.ShouldNotBeNull();
         result.ShouldBeEmpty();
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -164,7 +162,7 @@ public class LocationServiceTests
 
         result.ShouldNotBeNull();
         result.ShouldBeEmpty();
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -177,7 +175,7 @@ public class LocationServiceTests
         var actual = await Should.ThrowAsync<HttpRequestException>(() => sut.GetCitiesByProvinceAsync("15"));
 
         actual.ShouldBeSameAs(thrown);
-        await _auditService.Received(1).LogErrorAsync(CitiesErrorMessage, Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(CitiesErrorMessage, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -196,7 +194,7 @@ public class LocationServiceTests
 
         handler.LastCancellationToken.CanBeCanceled.ShouldBeTrue();
         handler.LastCancellationToken.IsCancellationRequested.ShouldBeTrue();
-        await _auditService.Received(1).LogErrorAsync(CitiesErrorMessage, ct);
+        await AuditService.Received(1).LogErrorAsync(CitiesErrorMessage, ct);
     }
 
     [Theory]
@@ -224,7 +222,7 @@ public class LocationServiceTests
             BaseAddress = new Uri("https://fake.location.local/"),
             Timeout = Timeout.InfiniteTimeSpan
         };
-        return new LocationService(client, _auditService);
+        return new LocationService(client, AuditService);
     }
 
     private static Task<HttpResponseMessage> JsonOk(string json) =>

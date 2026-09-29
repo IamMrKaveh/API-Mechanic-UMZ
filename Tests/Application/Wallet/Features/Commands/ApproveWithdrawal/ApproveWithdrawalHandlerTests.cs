@@ -8,15 +8,10 @@ using SharedKernel.Abstractions.Interfaces;
 
 namespace Tests.Application.Wallet.Features.Commands.ApproveWithdrawal;
 
-public sealed class ApproveWithdrawalHandlerTests
+public sealed class ApproveWithdrawalHandlerTests : HandlerTestBase
 {
     private readonly IWalletWithdrawalRepository _withdrawalRepository = Substitute.For<IWalletWithdrawalRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
-
     private readonly ApproveWithdrawalHandler _sut;
 
     public ApproveWithdrawalHandlerTests()
@@ -24,15 +19,14 @@ public sealed class ApproveWithdrawalHandlerTests
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("withdrawal", true));
 
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new ApproveWithdrawalHandler(_withdrawalRepository, _distributedLock, _auditService, _dateTimeProvider, _currentUserService);
+        _sut = new ApproveWithdrawalHandler(_withdrawalRepository, _distributedLock, AuditService, DateTimeProvider, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenWithdrawalNotFound_ReturnsNotFound()
     {
         var adminId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns((WalletWithdrawalRequest?)null);
 
@@ -45,7 +39,7 @@ public sealed class ApproveWithdrawalHandlerTests
     public async Task Handle_WhenWithdrawalPending_ApprovesAndReturnsSuccess()
     {
         var adminId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
         var withdrawal = new WalletWithdrawalRequestBuilder().WithAmount(200_000m).Build();
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns(withdrawal);
@@ -56,8 +50,8 @@ public sealed class ApproveWithdrawalHandlerTests
         withdrawal.Status.ShouldBe(WalletWithdrawalStatus.Approved);
         withdrawal.ProcessedBy.ShouldBe(adminId);
         _withdrawalRepository.Received(1).Update(withdrawal);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogSystemEventAsync(
             "WithdrawalApproved",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -67,7 +61,7 @@ public sealed class ApproveWithdrawalHandlerTests
     public async Task Handle_WhenWithdrawalAlreadyProcessed_ReturnsFailure()
     {
         var adminId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
         var withdrawal = new WalletWithdrawalRequestBuilder().Build();
         withdrawal.Approve(adminId, DateTime.UtcNow);
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())

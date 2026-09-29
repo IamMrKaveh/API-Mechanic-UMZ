@@ -1,11 +1,12 @@
+using Application.Common.Validation;
+
 namespace Application.Review.Features.Commands.ReplyToReview;
 
 public sealed class ReplyToReviewValidator : AbstractValidator<ReplyToReviewCommand>
 {
     public ReplyToReviewValidator()
     {
-        RuleFor(x => x.ReviewId)
-            .NotEmpty().WithMessage("شناسه نظر الزامی است.");
+        this.RuleForRequiredId(x => x.ReviewId, "شناسه نظر الزامی است.");
 
         RuleFor(x => x.Reply)
             .NotEmpty().WithMessage("متن پاسخ الزامی است.")

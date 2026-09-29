@@ -14,9 +14,9 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.FreezeWallet;
 
-public class FreezeWalletHandlerTests
+public class FreezeWalletHandlerTests : HandlerTestBase
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly FreezeWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly FreezeWalletHandler _sut;
 
     public FreezeWalletHandlerTests()
     {
@@ -26,15 +26,14 @@ public class FreezeWalletHandlerTests
             .AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(_lockHandle);
 
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         _sut = new FreezeWalletHandler(
             _walletRepository,
             _distributedLock,
-            _auditService,
-            _dateTimeProvider,
-            _currentUserService);
+            AuditService,
+            DateTimeProvider,
+            CurrentUserService);
     }
 
     private static FreezeWalletCommand ValidCommand(Guid? userId = null, string reason = "compliance-hold") =>
@@ -52,7 +51,7 @@ public class FreezeWalletHandlerTests
         result.ShouldFailWith(ErrorCode.Conflict);
         await _walletRepository.DidNotReceiveWithAnyArgs()
             .GetByUserIdForUpdateAsync(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -66,7 +65,7 @@ public class FreezeWalletHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _walletRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -87,8 +86,8 @@ public class FreezeWalletHandlerTests
         wallet.FrozenAt.ShouldNotBeNull();
         wallet.FrozenBy.ShouldNotBeNull();
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletFrozen",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());

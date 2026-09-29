@@ -15,9 +15,9 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.DebitWallet;
 
-public class DebitWalletHandlerTests
+public class DebitWalletHandlerTests : HandlerTestBase
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly DebitWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly DebitWalletHandler _sut;
 
     public DebitWalletHandlerTests()
     {
@@ -27,14 +27,13 @@ public class DebitWalletHandlerTests
             .AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(_lockHandle);
 
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         _sut = new DebitWalletHandler(
             _walletRepository,
-            _auditService,
-            _currentUserService,
-            _dateTimeProvider,
+            AuditService,
+            CurrentUserService,
+            DateTimeProvider,
             _distributedLock);
     }
 
@@ -73,7 +72,7 @@ public class DebitWalletHandlerTests
         result.ShouldFailWith(ErrorCode.Conflict);
         await _walletRepository.DidNotReceiveWithAnyArgs()
             .GetByUserIdForUpdateAsync(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -91,7 +90,7 @@ public class DebitWalletHandlerTests
         await _walletRepository.DidNotReceiveWithAnyArgs()
             .GetByUserIdForUpdateAsync(default!, default);
         _walletRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -109,7 +108,7 @@ public class DebitWalletHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _walletRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -129,7 +128,7 @@ public class DebitWalletHandlerTests
 
         result.IsFailure.ShouldBeTrue();
         wallet.Balance.Amount.ShouldBe(100_000m);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -150,7 +149,7 @@ public class DebitWalletHandlerTests
         result.ShouldBeSuccess();
         wallet.Balance.Amount.ShouldBe(70_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -171,14 +170,14 @@ public class DebitWalletHandlerTests
 
         result.IsFailure.ShouldBeTrue();
         wallet.Balance.Amount.ShouldBe(100_000m);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
     public async Task Handle_WithoutExplicitReferenceId_UsesCurrentUserIdAsReferenceAndSucceeds()
     {
         var callerId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)callerId);
+        CurrentUserService.UserId.Returns((Guid?)callerId);
         var command = ValidCommand(amount: 5_000m, referenceId: null);
         var wallet = FundedWallet(command.UserId, balance: 100_000m);
 
@@ -194,6 +193,6 @@ public class DebitWalletHandlerTests
         result.ShouldBeSuccess();
         wallet.Balance.Amount.ShouldBe(95_000m);
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

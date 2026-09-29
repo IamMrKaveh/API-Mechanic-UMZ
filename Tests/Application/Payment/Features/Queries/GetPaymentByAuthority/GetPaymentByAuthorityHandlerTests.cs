@@ -7,19 +7,19 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Payment.Features.Queries.GetPaymentByAuthority;
 
-public class GetPaymentByAuthorityHandlerTests
+public class GetPaymentByAuthorityHandlerTests : HandlerTestBase
 {
-    private readonly IPaymentQueryService _paymentQueryService = Substitute.For<IPaymentQueryService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly GetPaymentByAuthorityHandler _sut;
+    private readonly IPaymentQueryService _paymentQueryService = Substitute.For<IPaymentQueryService>(); private readonly GetPaymentByAuthorityHandler _sut;
 
     public GetPaymentByAuthorityHandlerTests()
     {
-        _sut = new GetPaymentByAuthorityHandler(_paymentQueryService, _currentUser);
+        _sut = new GetPaymentByAuthorityHandler(_paymentQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenUserIsAnonymous_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new GetPaymentByAuthorityQuery("A123"), CancellationToken.None);
 
@@ -30,7 +30,7 @@ public class GetPaymentByAuthorityHandlerTests
     [Fact]
     public async Task Handle_WhenTransactionNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _paymentQueryService
             .GetByAuthorityAsync("A123", Arg.Any<CancellationToken>())
             .Returns((PaymentTransactionDto?)null);
@@ -46,8 +46,8 @@ public class GetPaymentByAuthorityHandlerTests
         var callerId = Guid.NewGuid();
         var ownerId = Guid.NewGuid();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IsAdmin.Returns(false);
 
         var dto = new PaymentTransactionDto { Id = Guid.NewGuid(), UserId = ownerId };
         _paymentQueryService
@@ -64,8 +64,8 @@ public class GetPaymentByAuthorityHandlerTests
     {
         var callerId = Guid.NewGuid();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IsAdmin.Returns(false);
 
         var dto = new PaymentTransactionDto { Id = Guid.NewGuid(), UserId = callerId };
         _paymentQueryService
@@ -81,8 +81,8 @@ public class GetPaymentByAuthorityHandlerTests
     [Fact]
     public async Task Handle_WhenAdminAccessesAnyTransaction_ReturnsSuccess()
     {
-        _currentUser.UserId.Returns(Guid.NewGuid());
-        _currentUser.IsAdmin.Returns(true);
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.IsAdmin.Returns(true);
 
         var dto = new PaymentTransactionDto { Id = Guid.NewGuid(), UserId = Guid.NewGuid() };
         _paymentQueryService

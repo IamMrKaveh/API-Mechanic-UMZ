@@ -12,9 +12,9 @@ using Categories = Domain.Category.Aggregates.Category;
 
 namespace Tests.Application.Category.Features.Commands.ReorderCategories;
 
-public class ReorderCategoriesHandlerTests
+public class ReorderCategoriesHandlerTests : HandlerTestBase
 {
-    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ReorderCategoriesHandler _sut;
+    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ReorderCategoriesHandler _sut;
 
     public ReorderCategoriesHandlerTests()
     {
@@ -25,7 +25,7 @@ public class ReorderCategoriesHandlerTests
             .ExistsBySlugAsync(Arg.Any<CategorySlug>(), Arg.Any<CategoryId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new ReorderCategoriesHandler(_repository, _auditService, _dateTimeProvider);
+        _sut = new ReorderCategoriesHandler(_repository, AuditService, DateTimeProvider);
     }
 
     private static Task<Categories> BuildCategoryAsync() =>
@@ -45,7 +45,7 @@ public class ReorderCategoriesHandlerTests
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _auditService.Received(1).LogAsync(
+        await AuditService.Received(1).LogAsync(
             "Category",
             "ReorderCategories",
             Arg.Any<IpAddress>(),

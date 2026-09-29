@@ -7,20 +7,20 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.User.Features.Queries.GetUserAddresses;
 
-public class GetUserAddressesHandlerTests
+public class GetUserAddressesHandlerTests : HandlerTestBase
 {
-    private readonly IUserQueryService _userQueryService = Substitute.For<IUserQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetUserAddressesHandler _sut;
+    private readonly IUserQueryService _userQueryService = Substitute.For<IUserQueryService>(); private readonly GetUserAddressesHandler _sut;
 
     public GetUserAddressesHandlerTests()
     {
-        _sut = new GetUserAddressesHandler(_userQueryService, _currentUserService);
+        _sut = new GetUserAddressesHandler(_userQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_ReturnsAddressesForCurrentUser()
     {
         var userGuid = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         var addresses = new List<UserAddressDto>
     {
@@ -41,7 +41,7 @@ public class GetUserAddressesHandlerTests
     [Fact]
     public async Task Handle_WhenNoAddresses_ReturnsSuccessWithEmpty()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _userQueryService
             .GetUserAddressesAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<UserAddressDto>());

@@ -12,18 +12,18 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Variant.Features.Commands.RemoveVariant;
 
-public class RemoveVariantHandlerTests
+public class RemoveVariantHandlerTests : HandlerTestBase
 {
-    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly RemoveVariantHandler _sut;
+    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly RemoveVariantHandler _sut;
 
     public RemoveVariantHandlerTests()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
 
         _sut = new RemoveVariantHandler(
             _variantRepository,
-            _auditService,
-            _currentUserService);
+            AuditService,
+            CurrentUserService);
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class RemoveVariantHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _variantRepository.DidNotReceive().Update(Arg.Any<ProductVariant>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogProductEventAsync(default!, default!, default!, default!);
+        await AuditService.DidNotReceiveWithAnyArgs().LogProductEventAsync(default!, default!, default!, default!);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class RemoveVariantHandlerTests
         variant.IsDeleted.ShouldBeTrue();
         variant.IsActive.ShouldBeFalse();
         _variantRepository.Received(1).Update(variant);
-        await _auditService.Received(1).LogProductEventAsync(
+        await AuditService.Received(1).LogProductEventAsync(
             Arg.Is<ProductId>(p => p == productId),
             "RemoveVariant",
             Arg.Any<string>(),

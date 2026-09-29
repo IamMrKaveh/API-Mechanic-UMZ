@@ -8,13 +8,13 @@ using Medias = Domain.Media.Aggregates.Media;
 
 namespace Tests.Application.Media.Features.Commands.CleanupOrphanedMedia;
 
-public class CleanupOrphanedMediaHandlerTests
+public class CleanupOrphanedMediaHandlerTests : HandlerTestBase
 {
-    private readonly IMediaRepository _mediaRepository = Substitute.For<IMediaRepository>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly CleanupOrphanedMediaHandler _sut;
+    private readonly IMediaRepository _mediaRepository = Substitute.For<IMediaRepository>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly CleanupOrphanedMediaHandler _sut;
 
     public CleanupOrphanedMediaHandlerTests()
     {
-        _sut = new CleanupOrphanedMediaHandler(_mediaRepository, _storageService, _auditService);
+        _sut = new CleanupOrphanedMediaHandler(_mediaRepository, _storageService, AuditService);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class CleanupOrphanedMediaHandlerTests
         result.Value.ShouldBe(0);
 
         await _storageService.DidNotReceiveWithAnyArgs().ExistsAsync(default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
         _mediaRepository.DidNotReceiveWithAnyArgs().Update(default!);
     }
 
@@ -53,7 +53,7 @@ public class CleanupOrphanedMediaHandlerTests
 
         _mediaRepository.DidNotReceiveWithAnyArgs().Update(default!);
         await _mediaRepository.DidNotReceiveWithAnyArgs().GetByPathAsync(default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class CleanupOrphanedMediaHandlerTests
         orphan.IsDeleted.ShouldBeTrue();
 
         _mediaRepository.Received(1).Update(orphan);
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "OrphanedMediaCleanup",
             "1 orphaned media record(s) marked for deletion.",
             Arg.Any<CancellationToken>());
@@ -134,7 +134,7 @@ public class CleanupOrphanedMediaHandlerTests
         _mediaRepository.Received(1).Update(first);
         _mediaRepository.Received(1).Update(second);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "OrphanedMediaCleanup",
             "2 orphaned media record(s) marked for deletion.",
             Arg.Any<CancellationToken>());
@@ -156,6 +156,6 @@ public class CleanupOrphanedMediaHandlerTests
         result.Value.ShouldBe(0);
 
         await _storageService.DidNotReceiveWithAnyArgs().ExistsAsync(default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 }

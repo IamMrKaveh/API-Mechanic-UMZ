@@ -79,11 +79,4 @@ public class GetDashboardStatisticsValidatorTests
 
         result.ShouldNotHaveValidationErrorFor(x => x.FromDate);
     }
-
-    private sealed class FixedDateTimeProvider(DateTime utcNow) : IDateTimeProvider
-    {
-        public DateTime UtcNow { get; } = utcNow;
-
-        public DateOnly Today => DateOnly.FromDateTime(UtcNow);
-    }
 }

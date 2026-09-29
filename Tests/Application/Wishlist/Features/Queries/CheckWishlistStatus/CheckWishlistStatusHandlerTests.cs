@@ -7,13 +7,13 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Wishlist.Features.Queries.CheckWishlistStatus;
 
-public class CheckWishlistStatusHandlerTests
+public class CheckWishlistStatusHandlerTests : HandlerTestBase
 {
-    private readonly IWishlistQueryService _wishlistQueryService = Substitute.For<IWishlistQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly CheckWishlistStatusHandler _sut;
+    private readonly IWishlistQueryService _wishlistQueryService = Substitute.For<IWishlistQueryService>(); private readonly CheckWishlistStatusHandler _sut;
 
     public CheckWishlistStatusHandlerTests()
     {
-        _sut = new CheckWishlistStatusHandler(_wishlistQueryService, _currentUserService);
+        _sut = new CheckWishlistStatusHandler(_wishlistQueryService, CurrentUserService);
     }
 
     [Theory]
@@ -24,7 +24,7 @@ public class CheckWishlistStatusHandlerTests
         var userGuid = Guid.NewGuid();
         var productGuid = Guid.NewGuid();
 
-        _currentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
         _wishlistQueryService
             .IsInWishlistAsync(Arg.Any<UserId>(), Arg.Any<ProductId>(), Arg.Any<CancellationToken>())
             .Returns(isInWishlist);
@@ -43,7 +43,7 @@ public class CheckWishlistStatusHandlerTests
         var userGuid = Guid.NewGuid();
         var productGuid = Guid.NewGuid();
 
-        _currentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
         _wishlistQueryService
             .IsInWishlistAsync(Arg.Any<UserId>(), Arg.Any<ProductId>(), Arg.Any<CancellationToken>())
             .Returns(true);

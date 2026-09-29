@@ -7,19 +7,19 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Notification.Features.Commands.MarkAllNotificationsRead;
 
-public class MarkAllNotificationsReadHandlerTests
+public class MarkAllNotificationsReadHandlerTests : HandlerTestBase
 {
-    private readonly INotificationService _notificationService = Substitute.For<INotificationService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly MarkAllNotificationsReadHandler _sut;
+    private readonly INotificationService _notificationService = Substitute.For<INotificationService>(); private readonly MarkAllNotificationsReadHandler _sut;
 
     public MarkAllNotificationsReadHandlerTests()
     {
-        _sut = new MarkAllNotificationsReadHandler(_notificationService, _currentUserService);
+        _sut = new MarkAllNotificationsReadHandler(_notificationService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenAuthenticated_ReturnsSuccess()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         var result = await _sut.Handle(new MarkAllNotificationsReadCommand(), CancellationToken.None);
 
@@ -30,7 +30,7 @@ public class MarkAllNotificationsReadHandlerTests
     public async Task Handle_WhenAuthenticated_DelegatesToNotificationServiceWithCurrentUserId()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         await _sut.Handle(new MarkAllNotificationsReadCommand(), CancellationToken.None);
 
@@ -42,7 +42,7 @@ public class MarkAllNotificationsReadHandlerTests
     [Fact]
     public async Task Handle_WhenCurrentUserIdIsEmpty_ThrowsDomainException()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.Empty);
+        CurrentUserService.UserId.Returns((Guid?)Guid.Empty);
 
         await Should.ThrowAsync<DomainException>(() =>
             _sut.Handle(new MarkAllNotificationsReadCommand(), CancellationToken.None));

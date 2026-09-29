@@ -1,3 +1,5 @@
+using Application.Common.Validation;
+
 namespace Application.Review.Features.Queries.GetReviewsByStatus;
 
 public sealed class GetReviewsByStatusValidator : AbstractValidator<GetReviewsByStatusQuery>
@@ -12,11 +14,7 @@ public sealed class GetReviewsByStatusValidator : AbstractValidator<GetReviewsBy
             .Must(s => AllowedStatuses.Contains(s))
             .WithMessage("پارامتر status نامعتبر است. مقادیر مجاز: Pending، Approved، Rejected، All.");
 
-        RuleFor(x => x.Page)
-            .GreaterThan(0).WithMessage("شماره صفحه باید بزرگ‌تر از صفر باشد.");
-
-        RuleFor(x => x.PageSize)
-            .InclusiveBetween(1, 100).WithMessage("اندازه صفحه باید بین ۱ تا ۱۰۰ باشد.");
+        this.RuleForPagination(x => x.Page, x => x.PageSize);
 
         RuleFor(x => x.MinRating!.Value)
             .InclusiveBetween(1, 5)
@@ -28,8 +26,6 @@ public sealed class GetReviewsByStatusValidator : AbstractValidator<GetReviewsBy
             .When(x => !string.IsNullOrWhiteSpace(x.SearchText))
             .WithMessage("طول متن جست‌وجو نباید بیشتر از ۲۰۰ کاراکتر باشد.");
 
-        RuleFor(x => x)
-            .Must(x => !x.DateFrom.HasValue || !x.DateTo.HasValue || x.DateFrom.Value <= x.DateTo.Value)
-            .WithMessage("بازه‌ی تاریخ نامعتبر است.");
+        this.RuleForDateRange(x => x.DateFrom, x => x.DateTo, "بازه‌ی تاریخ نامعتبر است.");
     }
 }

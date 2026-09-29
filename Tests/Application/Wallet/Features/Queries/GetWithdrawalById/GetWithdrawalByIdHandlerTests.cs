@@ -6,15 +6,14 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Wallet.Features.Queries.GetWithdrawalById;
 
-public class GetWithdrawalByIdHandlerTests
+public class GetWithdrawalByIdHandlerTests : HandlerTestBase
 {
     private readonly IWalletWithdrawalQueryService _queryService = Substitute.For<IWalletWithdrawalQueryService>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly GetWithdrawalByIdHandler _sut;
 
     public GetWithdrawalByIdHandlerTests()
     {
-        _sut = new GetWithdrawalByIdHandler(_queryService, _currentUserService);
+        _sut = new GetWithdrawalByIdHandler(_queryService, CurrentUserService);
     }
 
     private static WalletWithdrawalRequestDto DtoFor(Guid userId, Guid? id = null) => new(
@@ -52,8 +51,8 @@ public class GetWithdrawalByIdHandlerTests
         var callerId = Guid.NewGuid();
         var dto = DtoFor(ownerId);
 
-        _currentUserService.IsAdmin.Returns(true);
-        _currentUserService.UserId.Returns((Guid?)callerId);
+        CurrentUserService.IsAdmin.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)callerId);
         _queryService.GetByIdAsync(dto.Id, Arg.Any<CancellationToken>()).Returns(dto);
 
         var result = await _sut.Handle(new GetWithdrawalByIdQuery(dto.Id), CancellationToken.None);
@@ -67,8 +66,8 @@ public class GetWithdrawalByIdHandlerTests
     {
         var dto = DtoFor(Guid.NewGuid());
 
-        _currentUserService.IsAdmin.Returns(false);
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
         _queryService.GetByIdAsync(dto.Id, Arg.Any<CancellationToken>()).Returns(dto);
 
         var result = await _sut.Handle(new GetWithdrawalByIdQuery(dto.Id), CancellationToken.None);
@@ -83,8 +82,8 @@ public class GetWithdrawalByIdHandlerTests
         var callerId = Guid.NewGuid();
         var dto = DtoFor(ownerId);
 
-        _currentUserService.IsAdmin.Returns(false);
-        _currentUserService.UserId.Returns((Guid?)callerId);
+        CurrentUserService.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)callerId);
         _queryService.GetByIdAsync(dto.Id, Arg.Any<CancellationToken>()).Returns(dto);
 
         var result = await _sut.Handle(new GetWithdrawalByIdQuery(dto.Id), CancellationToken.None);
@@ -98,8 +97,8 @@ public class GetWithdrawalByIdHandlerTests
         var userId = Guid.NewGuid();
         var dto = DtoFor(userId);
 
-        _currentUserService.IsAdmin.Returns(false);
-        _currentUserService.UserId.Returns((Guid?)userId);
+        CurrentUserService.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)userId);
         _queryService.GetByIdAsync(dto.Id, Arg.Any<CancellationToken>()).Returns(dto);
 
         var result = await _sut.Handle(new GetWithdrawalByIdQuery(dto.Id), CancellationToken.None);

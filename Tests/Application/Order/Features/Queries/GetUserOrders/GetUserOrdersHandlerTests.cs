@@ -9,19 +9,19 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Order.Features.Queries.GetUserOrders;
 
-public class GetUserOrdersHandlerTests
+public class GetUserOrdersHandlerTests : HandlerTestBase
 {
-    private readonly IOrderQueryService _orderQueryService = Substitute.For<IOrderQueryService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly GetUserOrdersHandler _sut;
+    private readonly IOrderQueryService _orderQueryService = Substitute.For<IOrderQueryService>(); private readonly GetUserOrdersHandler _sut;
 
     public GetUserOrdersHandlerTests()
     {
-        _sut = new GetUserOrdersHandler(_orderQueryService, _currentUser);
+        _sut = new GetUserOrdersHandler(_orderQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new GetUserOrdersQuery(null, 1, 10), CancellationToken.None);
 
@@ -33,7 +33,7 @@ public class GetUserOrdersHandlerTests
     public async Task Handle_WhenAuthenticated_PassesUserIdPageAndPageSizeToService()
     {
         var userGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         var expected = new PaginatedResult<OrderListItemDto> { Items = new List<OrderListItemDto>(), TotalCount = 0, Page = 2, PageSize = 5 };
         UserId? capturedUser = null;

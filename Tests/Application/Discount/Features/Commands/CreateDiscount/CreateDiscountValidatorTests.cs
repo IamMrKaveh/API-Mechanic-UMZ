@@ -133,11 +133,4 @@ public class CreateDiscountValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.ExpiresAt)
               .WithErrorMessage("تاریخ انقضا باید بعد از تاریخ شروع باشد.");
     }
-
-    private sealed class FixedDateTimeProvider(DateTime utcNow) : IDateTimeProvider
-    {
-        public DateTime UtcNow { get; } = utcNow;
-
-        public DateOnly Today => DateOnly.FromDateTime(DateTime.UtcNow);
-    }
 }

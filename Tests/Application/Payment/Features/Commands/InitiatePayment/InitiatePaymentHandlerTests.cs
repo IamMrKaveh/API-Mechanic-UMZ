@@ -15,19 +15,19 @@ using Orders = Domain.Order.Aggregates.Order;
 
 namespace Tests.Application.Payment.Features.Commands.InitiatePayment;
 
-public class InitiatePaymentHandlerTests
+public class InitiatePaymentHandlerTests : HandlerTestBase
 {
-    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly IPaymentService _paymentService = Substitute.For<IPaymentService>(); private readonly InitiatePaymentHandler _sut;
+    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly IPaymentService _paymentService = Substitute.For<IPaymentService>(); private readonly InitiatePaymentHandler _sut;
 
     public InitiatePaymentHandlerTests()
     {
-        _sut = new InitiatePaymentHandler(_orderRepository, _currentUser, _paymentService);
+        _sut = new InitiatePaymentHandler(_orderRepository, CurrentUserService, _paymentService);
     }
 
     [Fact]
     public async Task Handle_WhenUserIsAnonymous_ReturnsForbidden()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new InitiatePaymentCommand(Guid.NewGuid(), null), CancellationToken.None);
 
@@ -38,8 +38,8 @@ public class InitiatePaymentHandlerTests
     [Fact]
     public async Task Handle_WhenOrderNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns(Guid.NewGuid());
-        _currentUser.IpAddress.Returns((string?)null);
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.IpAddress.Returns((string?)null);
         _orderRepository
             .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
             .Returns((Orders?)null);
@@ -58,8 +58,8 @@ public class InitiatePaymentHandlerTests
         var ownerId = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(ownerId)).Build();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IpAddress.Returns((string?)null);
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IpAddress.Returns((string?)null);
         _orderRepository
             .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
             .Returns(order);
@@ -77,8 +77,8 @@ public class InitiatePaymentHandlerTests
         var callerId = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(callerId)).Build();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IpAddress.Returns("127.0.0.1");
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IpAddress.Returns("127.0.0.1");
         _orderRepository
             .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
             .Returns(order);
@@ -106,8 +106,8 @@ public class InitiatePaymentHandlerTests
         var callerId = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(callerId)).Build();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IpAddress.Returns((string?)null);
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IpAddress.Returns((string?)null);
         _orderRepository
             .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
             .Returns(order);
@@ -136,8 +136,8 @@ public class InitiatePaymentHandlerTests
         var callerId = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(callerId)).Build();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IpAddress.Returns("127.0.0.1");
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IpAddress.Returns("127.0.0.1");
         _orderRepository
             .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
             .Returns(order);
@@ -159,8 +159,8 @@ public class InitiatePaymentHandlerTests
         var callerId = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(callerId)).Build();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IpAddress.Returns("127.0.0.1");
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IpAddress.Returns("127.0.0.1");
         _orderRepository
             .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
             .Returns(order);
@@ -182,8 +182,8 @@ public class InitiatePaymentHandlerTests
         var callerId = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(callerId)).Build();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IpAddress.Returns("127.0.0.1");
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IpAddress.Returns("127.0.0.1");
         _orderRepository
             .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
             .Returns(order);

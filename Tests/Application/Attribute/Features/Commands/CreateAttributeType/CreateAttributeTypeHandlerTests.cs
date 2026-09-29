@@ -10,9 +10,9 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Attribute.Features.Commands.CreateAttributeType;
 
-public class CreateAttributeTypeHandlerTests
+public class CreateAttributeTypeHandlerTests : HandlerTestBase
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CreateAttributeTypeHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateAttributeTypeHandler _sut;
 
     public CreateAttributeTypeHandlerTests()
     {
@@ -20,7 +20,7 @@ public class CreateAttributeTypeHandlerTests
             .AttributeTypeExistsAsync(Arg.Any<string>(), Arg.Any<AttributeTypeId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new CreateAttributeTypeHandler(_repository, _mapper, _cacheService, _dateTimeProvider);
+        _sut = new CreateAttributeTypeHandler(_repository, _mapper, _cacheService, DateTimeProvider);
     }
 
     [Fact]

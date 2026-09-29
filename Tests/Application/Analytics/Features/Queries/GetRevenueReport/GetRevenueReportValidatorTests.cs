@@ -85,11 +85,4 @@ public class GetRevenueReportValidatorTests
         result.ShouldNotHaveValidationErrorFor(x => x.FromDate);
         result.ShouldNotHaveValidationErrorFor(x => x.ToDate);
     }
-
-    private sealed class FixedDateTimeProvider(DateTime utcNow) : IDateTimeProvider
-    {
-        public DateTime UtcNow { get; } = utcNow;
-
-        public DateOnly Today => DateOnly.FromDateTime(UtcNow);
-    }
 }

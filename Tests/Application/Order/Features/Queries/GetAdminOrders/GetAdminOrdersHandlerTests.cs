@@ -8,14 +8,14 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Order.Features.Queries.GetAdminOrders;
 
-public class GetAdminOrdersHandlerTests
+public class GetAdminOrdersHandlerTests : HandlerTestBase
 {
-    private readonly IOrderQueryService _orderQueryService = Substitute.For<IOrderQueryService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly GetAdminOrdersHandler _sut;
+    private readonly IOrderQueryService _orderQueryService = Substitute.For<IOrderQueryService>(); private readonly GetAdminOrdersHandler _sut;
 
     public GetAdminOrdersHandlerTests()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new GetAdminOrdersHandler(_orderQueryService, _currentUser);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new GetAdminOrdersHandler(_orderQueryService, CurrentUserService);
     }
 
     [Fact]

@@ -11,13 +11,13 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.ToggleWarehouseActive;
 
-public class ToggleWarehouseActiveHandlerTests
+public class ToggleWarehouseActiveHandlerTests : HandlerTestBase
 {
-    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ToggleWarehouseActiveHandler _sut;
+    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly ToggleWarehouseActiveHandler _sut;
 
     public ToggleWarehouseActiveHandlerTests()
     {
-        _sut = new ToggleWarehouseActiveHandler(_warehouseRepository, _cacheService, _dateTimeProvider);
+        _sut = new ToggleWarehouseActiveHandler(_warehouseRepository, _cacheService, DateTimeProvider);
     }
 
     [Fact]

@@ -1,10 +1,12 @@
+using Application.Common.Validation;
+
 namespace Application.Variant.Features.Commands.RemoveVariant;
 
 public class RemoveVariantValidator : AbstractValidator<RemoveVariantCommand>
 {
     public RemoveVariantValidator()
     {
-        RuleFor(x => x.ProductId).NotEmpty();
-        RuleFor(x => x.VariantId).NotEmpty();
+        this.RuleForRequiredId(x => x.ProductId);
+        this.RuleForRequiredId(x => x.VariantId);
     }
 }

@@ -6,20 +6,20 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Wishlist.Features.Commands.ClearWishlist;
 
-public class ClearWishlistHandlerTests
+public class ClearWishlistHandlerTests : HandlerTestBase
 {
-    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ClearWishlistHandler _sut;
+    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly ClearWishlistHandler _sut;
 
     public ClearWishlistHandlerTests()
     {
-        _sut = new ClearWishlistHandler(_wishlistRepository, _currentUserService);
+        _sut = new ClearWishlistHandler(_wishlistRepository, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenInvoked_ClearsWishlistForCurrentUserAndReturnsSuccess()
     {
         var userGuid = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         var result = await _sut.Handle(new ClearWishlistCommand(), CancellationToken.None);
 
@@ -27,6 +27,6 @@ public class ClearWishlistHandlerTests
         await _wishlistRepository.Received(1).ClearAsync(
             Arg.Is<UserId>(u => u == UserId.From(userGuid)),
             Arg.Any<CancellationToken>());
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

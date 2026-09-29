@@ -12,15 +12,15 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Support.Features.Commands.ReplyToTicket;
 
-public class ReplyToTicketHandlerTests
+public class ReplyToTicketHandlerTests : HandlerTestBase
 {
-    private readonly ITicketRepository _ticketRepository = Substitute.For<ITicketRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ReplyToTicketHandler _sut; private readonly Guid _userGuid = Guid.NewGuid(); private readonly DateTime _now = new(2026, 8, 12, 10, 0, 0, DateTimeKind.Utc);
+    private readonly ITicketRepository _ticketRepository = Substitute.For<ITicketRepository>(); private readonly ReplyToTicketHandler _sut; private readonly Guid _userGuid = Guid.NewGuid(); private readonly DateTime _now = new(2026, 8, 12, 10, 0, 0, DateTimeKind.Utc);
 
     public ReplyToTicketHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)_userGuid);
-        _dateTimeProvider.UtcNow.Returns(_now);
-        _sut = new ReplyToTicketHandler(_ticketRepository, _currentUserService, _dateTimeProvider);
+        CurrentUserService.UserId.Returns((Guid?)_userGuid);
+        DateTimeProvider.UtcNow.Returns(_now);
+        _sut = new ReplyToTicketHandler(_ticketRepository, CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class ReplyToTicketHandlerTests
         var otherOwner = UserId.NewId();
         var ticket = new TicketBuilder().WithCustomerId(otherOwner).Build();
 
-        _currentUserService.IsAdmin.Returns(false);
+        CurrentUserService.IsAdmin.Returns(false);
         _ticketRepository
             .GetByIdWithMessagesAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns(ticket);
@@ -63,7 +63,7 @@ public class ReplyToTicketHandlerTests
         var customerId = UserId.From(_userGuid);
         var ticket = new TicketBuilder().WithCustomerId(customerId).Build();
 
-        _currentUserService.IsAdmin.Returns(false);
+        CurrentUserService.IsAdmin.Returns(false);
         _ticketRepository
             .GetByIdWithMessagesAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns(ticket);
@@ -88,7 +88,7 @@ public class ReplyToTicketHandlerTests
         var customerId = UserId.NewId();
         var ticket = new TicketBuilder().WithCustomerId(customerId).Build();
 
-        _currentUserService.IsAdmin.Returns(true);
+        CurrentUserService.IsAdmin.Returns(true);
         _ticketRepository
             .GetByIdWithMessagesAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns(ticket);
@@ -115,7 +115,7 @@ public class ReplyToTicketHandlerTests
         var ticket = new TicketBuilder().WithCustomerId(customerId).Build();
         ticket.Close();
 
-        _currentUserService.IsAdmin.Returns(false);
+        CurrentUserService.IsAdmin.Returns(false);
         _ticketRepository
             .GetByIdWithMessagesAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns(ticket);

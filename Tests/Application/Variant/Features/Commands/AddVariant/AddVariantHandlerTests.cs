@@ -27,13 +27,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Tests.Application.Variant.Features.Commands.AddVariant;
 
-public class AddVariantHandlerTests
+public class AddVariantHandlerTests : HandlerTestBase
 {
-    private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAttributeRepository _attributeRepository = Substitute.For<IAttributeRepository>(); private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly ILogger<AddVariantHandler> _logger = Substitute.For<ILogger<AddVariantHandler>>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AddVariantHandler _sut;
+    private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAttributeRepository _attributeRepository = Substitute.For<IAttributeRepository>(); private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ILogger<AddVariantHandler> _logger = Substitute.For<ILogger<AddVariantHandler>>(); private readonly AddVariantHandler _sut;
 
     public AddVariantHandlerTests()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
 
         _variantRepository
             .ExistsBySkuAsync(Arg.Any<Sku>(), Arg.Any<VariantId?>(), Arg.Any<CancellationToken>())
@@ -55,7 +55,7 @@ public class AddVariantHandlerTests
             .GetAttributeValuesByIdsAsync(Arg.Any<IEnumerable<AttributeValueId>>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<Attributes>());
 
-        _unitOfWork
+        UnitOfWork
             .ExecuteStrategyAsync(Arg.Any<Func<CancellationToken, Task<bool>>>(), Arg.Any<CancellationToken>())
             .Returns(async ci =>
             {
@@ -69,10 +69,10 @@ public class AddVariantHandlerTests
             _inventoryRepository,
             _attributeRepository,
             _shippingRepository,
-            _unitOfWork,
-            _auditService,
-            _currentUserService,
-            _dateTimeProvider,
+            UnitOfWork,
+            AuditService,
+            CurrentUserService,
+            DateTimeProvider,
             _logger);
     }
 
@@ -120,7 +120,7 @@ public class AddVariantHandlerTests
     [Fact]
     public async Task Handle_WhenUserNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(ValidCommand(), CancellationToken.None);
 
@@ -232,8 +232,8 @@ public class AddVariantHandlerTests
         result.Value.SellingPrice.ShouldBe(100_000m);
         await _variantRepository.Received(1).AddAsync(Arg.Any<ProductVariant>(), Arg.Any<CancellationToken>());
         await _inventoryRepository.Received(1).AddAsync(Arg.Any<Inventories>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogProductEventAsync(
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogProductEventAsync(
             Arg.Any<ProductId>(),
             "AddVariant",
             Arg.Any<string>(),

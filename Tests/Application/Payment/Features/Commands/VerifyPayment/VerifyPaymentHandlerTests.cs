@@ -13,13 +13,13 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Payment.Features.Commands.VerifyPayment;
 
-public class VerifyPaymentHandlerTests
+public class VerifyPaymentHandlerTests : HandlerTestBase
 {
-    private readonly IPaymentService _paymentService = Substitute.For<IPaymentService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly VerifyPaymentHandler _sut;
+    private readonly IPaymentService _paymentService = Substitute.For<IPaymentService>(); private readonly VerifyPaymentHandler _sut;
 
     public VerifyPaymentHandlerTests()
     {
-        _sut = new VerifyPaymentHandler(_paymentService, _auditService);
+        _sut = new VerifyPaymentHandler(_paymentService, AuditService);
     }
 
     [Theory]
@@ -31,7 +31,7 @@ public class VerifyPaymentHandlerTests
         var result = await _sut.Handle(new VerifyPaymentCommand("A123", status), CancellationToken.None);
 
         result.ShouldFailWithType(ErrorType.Failure);
-        await _auditService.Received(1).LogWarningAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogWarningAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await _paymentService.DidNotReceiveWithAnyArgs().VerifyPaymentAsync(default!, default);
     }
 
@@ -51,7 +51,7 @@ public class VerifyPaymentHandlerTests
         result.ShouldBeSuccess();
         result.Value.ShouldBe(verification);
         await _paymentService.Received(1).VerifyPaymentAsync("A123", Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceive().LogWarningAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await AuditService.DidNotReceive().LogWarningAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class VerifyPaymentHandlerTests
         var result = await _sut.Handle(new VerifyPaymentCommand("A123", "OK"), CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _auditService.Received(1).LogPaymentEventAsync(
+        await AuditService.Received(1).LogPaymentEventAsync(
             Arg.Is<PaymentTransactionId>(x => x == PaymentTransactionId.From(transactionId)),
             "VerifyPayment",
             Arg.Any<IpAddress>(),
@@ -132,7 +132,7 @@ public class VerifyPaymentHandlerTests
         var result = await _sut.Handle(new VerifyPaymentCommand("A123", "OK"), CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _auditService.DidNotReceiveWithAnyArgs().LogPaymentEventAsync(
+        await AuditService.DidNotReceiveWithAnyArgs().LogPaymentEventAsync(
             default!, default!, default!, default, default, default);
     }
 }

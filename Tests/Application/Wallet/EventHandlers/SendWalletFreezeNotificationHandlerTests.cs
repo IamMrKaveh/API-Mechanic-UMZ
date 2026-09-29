@@ -7,15 +7,14 @@ using Domain.Wallet.ValueObjects;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public sealed class SendWalletFreezeNotificationHandlerTests
+public sealed class SendWalletFreezeNotificationHandlerTests : HandlerTestBase
 {
     private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly SendWalletFreezeNotificationHandler _sut;
 
     public SendWalletFreezeNotificationHandlerTests()
     {
-        _sut = new SendWalletFreezeNotificationHandler(_notificationService, _auditService);
+        _sut = new SendWalletFreezeNotificationHandler(_notificationService, AuditService);
     }
 
     private static WalletFrozenEvent BuildEvent(string reason)
@@ -81,7 +80,7 @@ public sealed class SendWalletFreezeNotificationHandlerTests
         await Should.NotThrowAsync(async () =>
             await _sut.Handle(Wrap(evt), CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletFreezeNotificationFailed",
             Arg.Is<string>(s => s!.Contains(evt.OwnerId.Value.ToString())
                              && s.Contains("gateway timeout")),

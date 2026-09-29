@@ -1,18 +1,19 @@
+using Application.Common.Validation;
+
 namespace Application.Wallet.Features.Queries.GetWalletLedger;
 
 public sealed class GetWalletLedgerValidator : AbstractValidator<GetWalletLedgerQuery>
 {
     public GetWalletLedgerValidator()
     {
-        RuleFor(x => x.Page).GreaterThan(0);
-        RuleFor(x => x.PageSize).InclusiveBetween(1, 200);
+        this.RuleForPagination(x => x.Page, x => x.PageSize, maxPageSize: 200);
 
-        When(x => x.FromDate.HasValue && x.ToDate.HasValue, () =>
-        {
-            RuleFor(x => x.FromDate!.Value)
-                .LessThanOrEqualTo(x => x.ToDate!.Value)
-                .WithMessage("FromDate must be less than or equal to ToDate.");
-        });
+        this.RuleForOptionalDateRangeValues(
+            x => x.FromDate,
+            x => x.ToDate,
+            x => x.FromDate!.Value,
+            x => x.ToDate!.Value,
+            message: "FromDate must be less than or equal to ToDate.");
 
         When(x => x.MinAmount.HasValue && x.MaxAmount.HasValue, () =>
         {

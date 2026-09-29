@@ -11,14 +11,14 @@ using RefreshTokens = Domain.Security.ValueObjects.RefreshToken;
 
 namespace Tests.Application.Auth.Features.Commands.Logout;
 
-public class LogoutHandlerTests
+public class LogoutHandlerTests : HandlerTestBase
 {
-    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly LogoutHandler _sut;
+    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly LogoutHandler _sut;
 
     public LogoutHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
-        _sut = new LogoutHandler(_sessionRepository, _currentUser, _dateTimeProvider);
+        DateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
+        _sut = new LogoutHandler(_sessionRepository, CurrentUserService, DateTimeProvider);
     }
 
     [Theory]
@@ -36,7 +36,7 @@ public class LogoutHandlerTests
     [Fact]
     public async Task Handle_WhenCurrentUserIsNull_ReturnsSuccessWithoutCallingRepository()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
         var refreshToken = RefreshTokens.Generate().Value;
 
         var result = await _sut.Handle(new LogoutCommand(refreshToken), CancellationToken.None);
@@ -49,7 +49,7 @@ public class LogoutHandlerTests
     [Fact]
     public async Task Handle_WhenSessionNotFoundForRefreshToken_ReturnsSuccessWithoutUpdating()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _sessionRepository
             .GetByRefreshTokenAsync(Arg.Any<RefreshTokens>(), Arg.Any<CancellationToken>())
             .Returns((UserSession?)null);
@@ -67,7 +67,7 @@ public class LogoutHandlerTests
         var ownerUserId = UserId.NewId();
         var session = new UserSessionBuilder().WithUserId(ownerUserId).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _sessionRepository
             .GetByRefreshTokenAsync(Arg.Any<RefreshTokens>(), Arg.Any<CancellationToken>())
             .Returns(session);
@@ -86,7 +86,7 @@ public class LogoutHandlerTests
         var callerUserId = UserId.From(callerGuid);
         var session = new UserSessionBuilder().WithUserId(callerUserId).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _sessionRepository
             .GetByRefreshTokenAsync(Arg.Any<RefreshTokens>(), Arg.Any<CancellationToken>())
             .Returns(session);

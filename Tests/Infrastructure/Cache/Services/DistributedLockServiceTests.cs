@@ -4,17 +4,16 @@ using StackExchange.Redis;
 
 namespace Tests.Infrastructure.Cache.Services;
 
-public class DistributedLockServiceTests
+public class DistributedLockServiceTests : HandlerTestBase
 {
     private readonly IConnectionMultiplexer _redis = Substitute.For<IConnectionMultiplexer>();
     private readonly IDatabase _db = Substitute.For<IDatabase>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly DistributedLockService _sut;
 
     public DistributedLockServiceTests()
     {
         _redis.GetDatabase(Arg.Any<int>(), Arg.Any<object?>()).Returns(_db);
-        _sut = new DistributedLockService(_redis, _auditService);
+        _sut = new DistributedLockService(_redis, AuditService);
     }
 
     [Fact]

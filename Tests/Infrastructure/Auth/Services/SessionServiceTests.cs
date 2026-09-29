@@ -15,9 +15,9 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Infrastructure.Auth.Services;
 
-public class SessionServiceTests
+public class SessionServiceTests : HandlerTestBase
 {
-    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly SessionService _sut;
+    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly SessionService _sut;
 
     public SessionServiceTests()
     {
@@ -28,7 +28,7 @@ public class SessionServiceTests
 
         var dateTimeProvider = Substitute.For<IDateTimeProvider>();
         dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new SessionService(_sessionRepository, options, _unitOfWork, dateTimeProvider);
+        _sut = new SessionService(_sessionRepository, options, UnitOfWork, dateTimeProvider);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class SessionServiceTests
         result.ShouldBeSuccess();
         await _sessionRepository.Received(1).AddAsync(Arg.Any<UserSession>(), Arg.Any<CancellationToken>());
         _sessionRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public class SessionServiceTests
         existing.RevocationReason.ShouldBe(SessionRevocationReason.UserRequested);
         _sessionRepository.Received(1).Update(existing);
         await _sessionRepository.Received(1).AddAsync(Arg.Any<UserSession>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public class SessionServiceTests
 
         result.ShouldFailWith(ErrorCode.Unauthorized);
         await _sessionRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public class SessionServiceTests
         newSession!.UserId.ShouldBe(userId);
         newSession.DeviceInfo.Value.ShouldBe("device-x");
         newSession.RefreshToken.Value.ShouldNotBe(refreshToken.Value);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -202,6 +202,6 @@ public class SessionServiceTests
         await _sut.RevokeAllSessionsAsync(userId);
 
         await _sessionRepository.Received(1).RevokeAllByUserIdAsync(userId, Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

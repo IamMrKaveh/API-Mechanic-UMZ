@@ -11,17 +11,16 @@ using Xunit;
 
 namespace Tests.Application.Discount.Features.Queries.ValidateDiscount;
 
-public class ValidateDiscountHandlerTests
+public class ValidateDiscountHandlerTests : HandlerTestBase
 {
     private readonly IDiscountQueryService _discountQueryService = Substitute.For<IDiscountQueryService>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly ValidateDiscountHandler _sut;
     private readonly Guid _userId = Guid.NewGuid();
 
     public ValidateDiscountHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)_userId);
-        _sut = new ValidateDiscountHandler(_discountQueryService, _currentUserService);
+        CurrentUserService.UserId.Returns((Guid?)_userId);
+        _sut = new ValidateDiscountHandler(_discountQueryService, CurrentUserService);
     }
 
     [Fact]
