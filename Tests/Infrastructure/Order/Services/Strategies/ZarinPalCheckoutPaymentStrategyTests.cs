@@ -17,26 +17,24 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Infrastructure.Order.Services.Strategies;
 
-public class ZarinPalCheckoutPaymentStrategyTests
+public class ZarinPalCheckoutPaymentStrategyTests : HandlerTestBase
 {
     private readonly IPaymentService _paymentService = Substitute.For<IPaymentService>();
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly IPaymentTransactionRepository _paymentTransactionRepository = Substitute.For<IPaymentTransactionRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly ZarinPalCheckoutPaymentStrategy _sut;
 
     private static readonly DateTime FixedNow = new(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc);
 
     public ZarinPalCheckoutPaymentStrategyTests()
     {
-        _dateTimeProvider.UtcNow.Returns(FixedNow);
+        DateTimeProvider.UtcNow.Returns(FixedNow);
         _sut = new ZarinPalCheckoutPaymentStrategy(
             _paymentService,
             _orderRepository,
             _paymentTransactionRepository,
-            _unitOfWork,
-            _dateTimeProvider);
+            UnitOfWork,
+            DateTimeProvider);
     }
 
     private static CheckoutResultDto NewOrderResult(Guid? orderId = null, decimal finalAmount = 150_000m) => new()

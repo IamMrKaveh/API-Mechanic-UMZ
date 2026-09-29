@@ -11,14 +11,14 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Auth.Features.Commands.AdminRevokeSession;
 
-public class AdminRevokeSessionHandlerTests
+public class AdminRevokeSessionHandlerTests : HandlerTestBase
 {
-    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AdminRevokeSessionHandler _sut;
+    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly AdminRevokeSessionHandler _sut;
 
     public AdminRevokeSessionHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
-        _sut = new AdminRevokeSessionHandler(_sessionRepository, _dateTimeProvider);
+        DateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
+        _sut = new AdminRevokeSessionHandler(_sessionRepository, DateTimeProvider);
     }
 
     [Fact]

@@ -8,11 +8,9 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Communication.Services;
 
-public class SmsServiceTests
+public class SmsServiceTests : HandlerTestBase
 {
     private const string ApiKey = "test-api-key"; private const string OtpTemplate = "verify"; private const string ExpectedLookupUrl = "https://api.kavenegar.com/v1/test-api-key/verify/lookup.json";
-
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
 
     private readonly KavenegarOptions _options = new()
     {
@@ -24,7 +22,7 @@ public class SmsServiceTests
     private SmsService CreateSut(FakeHttpMessageHandler handler)
     {
         var httpClient = new HttpClient(handler);
-        return new SmsService(httpClient, Options.Create(_options), _auditService);
+        return new SmsService(httpClient, Options.Create(_options), AuditService);
     }
 
     [Fact]
@@ -54,7 +52,7 @@ public class SmsServiceTests
 
         await sut.SendOtpSMSAsync(phone, code);
 
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -108,7 +106,7 @@ public class SmsServiceTests
 
         await sut.SendOtpSMSAsync(phone, code);
 
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
                 s.Contains("500") &&
@@ -128,7 +126,7 @@ public class SmsServiceTests
         var result = await sut.SendOtpSMSAsync(phone, code);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
                 s.Contains("Invalid Kavenegar response") &&
@@ -149,7 +147,7 @@ public class SmsServiceTests
         var result = await sut.SendOtpSMSAsync(phone, code);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
                 s.Contains("Kavenegar API error 418") &&
@@ -169,7 +167,7 @@ public class SmsServiceTests
         var result = await sut.SendOtpSMSAsync(phone, code);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
                 s.Contains("Failed to send OTP") &&
@@ -188,7 +186,7 @@ public class SmsServiceTests
         var result = await sut.SendOtpSMSAsync(phone, code);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
                 s.Contains("Failed to send OTP") &&
@@ -211,7 +209,7 @@ public class SmsServiceTests
         var result = await sut.SendOtpSMSAsync(phone, code);
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
                 s.Contains("Failed to send OTP") &&

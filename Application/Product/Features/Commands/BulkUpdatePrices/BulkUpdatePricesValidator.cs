@@ -1,3 +1,5 @@
+using Application.Common.Validation;
+
 namespace Application.Product.Features.Commands.BulkUpdatePrices;
 
 public sealed class BulkUpdatePricesValidator : AbstractValidator<BulkUpdatePricesCommand>
@@ -9,11 +11,9 @@ public sealed class BulkUpdatePricesValidator : AbstractValidator<BulkUpdatePric
 
         RuleForEach(x => x.Updates).ChildRules(u =>
         {
-            u.RuleFor(x => x.ProductId)
-                .NotEmpty().WithMessage("شناسه محصول الزامی است.");
+            u.RuleFor(x => x.ProductId).RequiredId("شناسه محصول الزامی است.");
 
-            u.RuleFor(x => x.VariantId)
-                .NotEmpty().WithMessage("شناسه واریانت الزامی است.");
+            u.RuleFor(x => x.VariantId).RequiredId("شناسه واریانت الزامی است.");
 
             u.RuleFor(x => x.SellingPrice)
                 .GreaterThan(0).WithMessage("قیمت فروش باید بزرگتر از صفر باشد.");

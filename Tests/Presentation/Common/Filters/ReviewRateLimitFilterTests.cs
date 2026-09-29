@@ -13,10 +13,9 @@ using Presentation.Common.Filters;
 
 namespace Tests.Presentation.Common.Filters;
 
-public class ReviewRateLimitFilterTests
+public class ReviewRateLimitFilterTests : HandlerTestBase
 {
     private readonly IRateLimitService _rateLimit = Substitute.For<IRateLimitService>();
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
     private readonly ILogger<ReviewRateLimitFilter> _logger = Substitute.For<ILogger<ReviewRateLimitFilter>>();
 
     private static IOptions<ReviewSettings> BuildSettings(
@@ -36,7 +35,7 @@ public class ReviewRateLimitFilterTests
         });
 
     private ReviewRateLimitFilter BuildFilter(IOptions<ReviewSettings>? settings = null) =>
-        new(_rateLimit, _currentUser, settings ?? BuildSettings(), _logger);
+        new(_rateLimit, CurrentUserService, settings ?? BuildSettings(), _logger);
 
     private static ActionExecutingContext BuildContext(ReviewRateLimitPolicy? policy, string ip = "1.2.3.4")
     {
@@ -80,8 +79,8 @@ public class ReviewRateLimitFilterTests
         ReviewRateLimitPolicy policy, int limit, string keyPrefix, int expectedMax)
     {
         var userId = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns(userId);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns(userId);
         string? capturedKey = null;
         int capturedMax = 0, capturedWindow = 0;
         _rateLimit.IsLimitedAsync(Arg.Do<string>(k => capturedKey = k), Arg.Do<int>(m => capturedMax = m), Arg.Do<int>(w => capturedWindow = w))
@@ -100,8 +99,8 @@ public class ReviewRateLimitFilterTests
     [Fact]
     public async Task OnActionExecutionAsync_PublicRead_UsesIpKeyRegardlessOfAuth()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         string? capturedKey = null;
         int capturedMax = 0;
         _rateLimit.IsLimitedAsync(Arg.Do<string>(k => capturedKey = k), Arg.Do<int>(m => capturedMax = m), Arg.Any<int>())
@@ -117,7 +116,7 @@ public class ReviewRateLimitFilterTests
     [Fact]
     public async Task OnActionExecutionAsync_AnonymousCreateReview_UsesIpSegment()
     {
-        _currentUser.IsAuthenticated.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(false);
         string? capturedKey = null;
         _rateLimit.IsLimitedAsync(Arg.Do<string>(k => capturedKey = k), Arg.Any<int>(), Arg.Any<int>())
             .Returns((false, null));
@@ -131,7 +130,7 @@ public class ReviewRateLimitFilterTests
     [Fact]
     public async Task OnActionExecutionAsync_WhenLimited_Returns429WithRetryAfter()
     {
-        _currentUser.IsAuthenticated.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(false);
         _rateLimit.IsLimitedAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>())
             .Returns((true, TimeSpan.FromSeconds(30)));
         var context = BuildContext(ReviewRateLimitPolicy.Vote);

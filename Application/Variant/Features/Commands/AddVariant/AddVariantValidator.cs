@@ -1,10 +1,12 @@
+using Application.Common.Validation;
+
 namespace Application.Variant.Features.Commands.AddVariant;
 
 public class AddVariantValidator : AbstractValidator<AddVariantCommand>
 {
     public AddVariantValidator()
     {
-        RuleFor(x => x.ProductId).NotEmpty();
+        this.RuleForRequiredId(x => x.ProductId);
 
         RuleFor(x => x.SellingPrice)
             .GreaterThan(0)

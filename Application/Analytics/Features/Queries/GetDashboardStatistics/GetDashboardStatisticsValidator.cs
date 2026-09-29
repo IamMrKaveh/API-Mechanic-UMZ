@@ -1,3 +1,4 @@
+using Application.Common.Validation;
 using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Analytics.Features.Queries.GetDashboardStatistics;
@@ -6,12 +7,7 @@ public sealed class GetDashboardStatisticsValidator : AbstractValidator<GetDashb
 {
     public GetDashboardStatisticsValidator(IDateTimeProvider dateTimeProvider)
     {
-        When(q => q.FromDate.HasValue && q.ToDate.HasValue, () =>
-        {
-            RuleFor(q => q.FromDate)
-                .LessThan(q => q.ToDate)
-                .WithMessage("تاریخ شروع باید قبل از تاریخ پایان باشد.");
-        });
+        this.RuleForOptionalDateRange(q => q.FromDate, q => q.ToDate, allowEqual: false);
 
         When(q => q.FromDate.HasValue, () =>
         {

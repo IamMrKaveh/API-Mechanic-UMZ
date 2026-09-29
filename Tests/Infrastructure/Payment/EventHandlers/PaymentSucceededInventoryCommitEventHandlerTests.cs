@@ -14,12 +14,10 @@ using Orders = Domain.Order.Aggregates.Order;
 
 namespace Tests.Infrastructure.Payment.EventHandlers;
 
-public class PaymentSucceededInventoryCommitEventHandlerTests
+public class PaymentSucceededInventoryCommitEventHandlerTests : HandlerTestBase
 {
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly PaymentSucceededInventoryCommitEventHandler _sut;
 
     public PaymentSucceededInventoryCommitEventHandlerTests()
@@ -27,8 +25,8 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
         _sut = new PaymentSucceededInventoryCommitEventHandler(
             _orderRepository,
             _inventoryRepository,
-            _unitOfWork,
-            _dateTimeProvider);
+            UnitOfWork,
+            DateTimeProvider);
     }
 
     private static PaymentSucceededEvent BuildEvent(OrderId? orderId = null, UserId? userId = null) =>
@@ -82,7 +80,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
         await _orderRepository.Received(1).FindByIdAsync(evt.OrderId, Arg.Any<CancellationToken>());
         await _inventoryRepository.DidNotReceiveWithAnyArgs().GetByVariantIdAsync(default!, default);
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -103,7 +101,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
 
         await _inventoryRepository.Received(1).GetByVariantIdAsync(variantId, Arg.Any<CancellationToken>());
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -124,7 +122,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
         await _sut.Handle(Wrap(BuildEvent(orderId)), CancellationToken.None);
 
         _inventoryRepository.Received(1).Update(inventory);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
 
         inventory.StockQuantity.Value.ShouldBe(7);
         inventory.ReservedQuantity.Value.ShouldBe(0);
@@ -149,7 +147,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
         await _sut.Handle(Wrap(BuildEvent(orderId)), CancellationToken.None);
 
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
 
         inventory.StockQuantity.Value.ShouldBe(10);
         inventory.ReservedQuantity.Value.ShouldBe(1);
@@ -186,7 +184,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
 
         _inventoryRepository.Received(1).Update(inventoryA);
         _inventoryRepository.Received(1).Update(inventoryB);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
 
         inventoryA.StockQuantity.Value.ShouldBe(4);
         inventoryB.StockQuantity.Value.ShouldBe(3);
@@ -206,7 +204,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
         await _sut.Handle(Wrap(evt), CancellationToken.None);
 
         await _inventoryRepository.DidNotReceiveWithAnyArgs().GetByVariantIdAsync(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -220,7 +218,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
 
         await Should.NotThrowAsync(() => _sut.Handle(Wrap(evt), CancellationToken.None));
 
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -240,7 +238,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
         await Should.NotThrowAsync(() => _sut.Handle(Wrap(BuildEvent(orderId)), CancellationToken.None));
 
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -257,7 +255,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
         _inventoryRepository
             .GetByVariantIdAsync(variantId, Arg.Any<CancellationToken>())
             .Returns(inventory);
-        _unitOfWork
+        UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(new DbUpdateConcurrencyException("concurrency"));
 
@@ -284,7 +282,7 @@ public class PaymentSucceededInventoryCommitEventHandlerTests
 
         await _orderRepository.Received(1).FindByIdAsync(orderId, token);
         await _inventoryRepository.Received(1).GetByVariantIdAsync(variantId, token);
-        await _unitOfWork.Received(1).SaveChangesAsync(token);
+        await UnitOfWork.Received(1).SaveChangesAsync(token);
     }
 
     [Fact]

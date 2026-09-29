@@ -19,7 +19,7 @@ using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Application.Auth.Features.Commands.VerifyOtp;
 
-public class VerifyOtpHandlerTests
+public class VerifyOtpHandlerTests : HandlerTestBase
 {
     private const string ValidCode = "135790";
     private const string WrongCode = "246801";
@@ -28,14 +28,12 @@ public class VerifyOtpHandlerTests
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
     private readonly ISessionService _sessionService = Substitute.For<ISessionService>();
     private readonly IJwtTokenGenerator _jwtTokenGenerator = Substitute.For<IJwtTokenGenerator>();
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly DateTime _now = new(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc);
     private readonly VerifyOtpHandler _sut;
 
     public VerifyOtpHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(_now);
+        DateTimeProvider.UtcNow.Returns(_now);
 
         var jwtOptions = Options.Create(new JwtOptions
         {
@@ -51,8 +49,8 @@ public class VerifyOtpHandlerTests
             _userRepository,
             _sessionService,
             _jwtTokenGenerator,
-            _currentUser,
-            _dateTimeProvider,
+            CurrentUserService,
+            DateTimeProvider,
             jwtOptions);
     }
 
@@ -267,7 +265,7 @@ public class VerifyOtpHandlerTests
             .GetLatestActiveByUserIdAsync(Arg.Any<UserId>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
             .Returns(otp);
 
-        _currentUser.UserAgent.Returns("fallback-agent-should-not-be-used");
+        CurrentUserService.UserAgent.Returns("fallback-agent-should-not-be-used");
 
         SetupSuccessfulSession(user.Id.Value);
 
@@ -297,7 +295,7 @@ public class VerifyOtpHandlerTests
             .GetLatestActiveByUserIdAsync(Arg.Any<UserId>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
             .Returns(otp);
 
-        _currentUser.UserAgent.Returns("agent-from-current-user");
+        CurrentUserService.UserAgent.Returns("agent-from-current-user");
 
         SetupSuccessfulSession(user.Id.Value);
 
@@ -327,7 +325,7 @@ public class VerifyOtpHandlerTests
             .GetLatestActiveByUserIdAsync(Arg.Any<UserId>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
             .Returns(otp);
 
-        _currentUser.IpAddress.Returns((string?)null);
+        CurrentUserService.IpAddress.Returns((string?)null);
 
         SetupSuccessfulSession(user.Id.Value);
 

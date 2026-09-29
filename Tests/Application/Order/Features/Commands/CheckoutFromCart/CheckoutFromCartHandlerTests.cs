@@ -7,13 +7,13 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Order.Features.Commands.CheckoutFromCart;
 
-public class CheckoutFromCartHandlerTests
+public class CheckoutFromCartHandlerTests : HandlerTestBase
 {
-    private readonly ICheckoutOrchestrationService _orchestration = Substitute.For<ICheckoutOrchestrationService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly CheckoutFromCartHandler _sut;
+    private readonly ICheckoutOrchestrationService _orchestration = Substitute.For<ICheckoutOrchestrationService>(); private readonly CheckoutFromCartHandler _sut;
 
     public CheckoutFromCartHandlerTests()
     {
-        _sut = new CheckoutFromCartHandler(_orchestration, _currentUser);
+        _sut = new CheckoutFromCartHandler(_orchestration, CurrentUserService);
     }
 
     private static CheckoutFromCartCommand NewCommand() =>
@@ -29,7 +29,7 @@ public class CheckoutFromCartHandlerTests
     [Fact]
     public async Task Handle_WhenUserNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(NewCommand(), CancellationToken.None);
 
@@ -41,9 +41,9 @@ public class CheckoutFromCartHandlerTests
     public async Task Handle_WhenAuthenticated_EnrichesCommandWithUserContextAndDelegatesToOrchestration()
     {
         var userId = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)userId);
-        _currentUser.IpAddress.Returns("127.0.0.1");
-        _currentUser.UserAgent.Returns("agent/1.0");
+        CurrentUserService.UserId.Returns((Guid?)userId);
+        CurrentUserService.IpAddress.Returns("127.0.0.1");
+        CurrentUserService.UserAgent.Returns("agent/1.0");
 
         var expected = ServiceResult<CheckoutResultDto>.Success(new CheckoutResultDto { OrderId = Guid.NewGuid() });
         CheckoutFromCartCommand? captured = null;
@@ -64,9 +64,9 @@ public class CheckoutFromCartHandlerTests
     [Fact]
     public async Task Handle_WhenOrchestrationFails_PropagatesFailure()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUser.IpAddress.Returns(string.Empty);
-        _currentUser.UserAgent.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IpAddress.Returns(string.Empty);
+        CurrentUserService.UserAgent.Returns((string?)null);
 
         _orchestration
             .ProcessCheckoutAsync(Arg.Any<CheckoutFromCartCommand>(), Arg.Any<CancellationToken>())

@@ -12,13 +12,13 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Attribute.Features.Commands.UpdateAttributeValue;
 
-public class UpdateAttributeValueHandlerTests
+public class UpdateAttributeValueHandlerTests : HandlerTestBase
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly UpdateAttributeValueHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateAttributeValueHandler _sut;
 
     public UpdateAttributeValueHandlerTests()
     {
-        _sut = new UpdateAttributeValueHandler(_repository, _cacheService, _dateTimeProvider);
+        _sut = new UpdateAttributeValueHandler(_repository, _cacheService, DateTimeProvider);
     }
 
     [Fact]

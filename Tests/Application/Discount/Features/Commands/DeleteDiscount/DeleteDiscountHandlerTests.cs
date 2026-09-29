@@ -5,17 +5,16 @@ using Domain.Discount.ValueObjects;
 
 namespace Tests.Application.Discount.Features.Commands.DeleteDiscount;
 
-public class DeleteDiscountHandlerTests
+public class DeleteDiscountHandlerTests : HandlerTestBase
 {
     private readonly IDiscountRepository _repository = Substitute.For<IDiscountRepository>();
-    private readonly IDateTimeProvider _clock = Substitute.For<IDateTimeProvider>();
     private readonly DeleteDiscountHandler _sut;
     private readonly DateTime _now = new(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc);
 
     public DeleteDiscountHandlerTests()
     {
-        _sut = new DeleteDiscountHandler(_repository, _clock);
-        _clock.UtcNow.Returns(_now);
+        _sut = new DeleteDiscountHandler(_repository, DateTimeProvider);
+        DateTimeProvider.UtcNow.Returns(_now);
     }
 
     [Fact]

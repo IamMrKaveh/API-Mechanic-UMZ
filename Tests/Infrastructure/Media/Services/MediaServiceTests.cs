@@ -13,13 +13,13 @@ using Medias = Domain.Media.Aggregates.Media;
 
 namespace Tests.Infrastructure.Media.Services;
 
-public class MediaServiceTests
+public class MediaServiceTests : HandlerTestBase
 {
-    private readonly IMediaRepository _mediaRepository = Substitute.For<IMediaRepository>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly MediaService _sut;
+    private readonly IMediaRepository _mediaRepository = Substitute.For<IMediaRepository>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly MediaService _sut;
 
     public MediaServiceTests()
     {
-        _sut = new MediaService(_mediaRepository, _storageService, _auditService, _unitOfWork);
+        _sut = new MediaService(_mediaRepository, _storageService, AuditService, UnitOfWork);
     }
 
     private static Stream NonEmptyStream() => new MemoryStream(new byte[] { 0x1, 0x2, 0x3 });
@@ -121,7 +121,7 @@ public class MediaServiceTests
             entityType: "Product", entityId: entityId);
 
         await _mediaRepository.Received(1).AddAsync(Arg.Any<Medias>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public class MediaServiceTests
         var result = await _sut.DeleteAsync(MediaId.NewId());
 
         result.ShouldFailWith(ErrorCode.NotFound);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class MediaServiceTests
         media.IsDeleted.ShouldBeTrue();
         media.IsActive.ShouldBeFalse();
         _mediaRepository.Received(1).Update(media);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         await _mediaRepository.DidNotReceive().GetByEntityAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
@@ -176,7 +176,7 @@ public class MediaServiceTests
         candidateB.IsPrimary.ShouldBeTrue();
         candidateA.IsPrimary.ShouldBeFalse();
         _mediaRepository.Received(1).Update(candidateB);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -196,7 +196,7 @@ public class MediaServiceTests
         result.ShouldBeSuccess();
         primary.IsDeleted.ShouldBeTrue();
         primary.IsPrimary.ShouldBeFalse();
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -207,7 +207,7 @@ public class MediaServiceTests
         var result = await _sut.SetAsPrimaryAsync(MediaId.NewId());
 
         result.ShouldFailWith(ErrorCode.NotFound);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -224,7 +224,7 @@ public class MediaServiceTests
 
         result.ShouldBeSuccess();
         target.IsPrimary.ShouldBeTrue();
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -247,7 +247,7 @@ public class MediaServiceTests
         target.IsPrimary.ShouldBeTrue();
         _mediaRepository.Received(1).Update(currentPrimary);
         _mediaRepository.Received(1).Update(target);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -267,7 +267,7 @@ public class MediaServiceTests
         result.ShouldBeSuccess();
         target.IsPrimary.ShouldBeTrue();
         _mediaRepository.Received(1).Update(target);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -289,7 +289,7 @@ public class MediaServiceTests
         mediaA.SortOrder.ShouldBe(1);
         _mediaRepository.Received(1).Update(mediaA);
         _mediaRepository.Received(1).Update(mediaB);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -307,6 +307,6 @@ public class MediaServiceTests
         result.ShouldBeSuccess();
         mediaA.SortOrder.ShouldBe(5);
         _mediaRepository.DidNotReceive().Update(Arg.Any<Medias>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

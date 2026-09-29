@@ -19,12 +19,11 @@ using OrderAggregate = Domain.Order.Aggregates.Order;
 
 namespace Tests.Application.Order.Sagas;
 
-public class OrderProcessManagerSagaTests
+public class OrderProcessManagerSagaTests : HandlerTestBase
 {
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly IInventoryService _inventoryService = Substitute.For<IInventoryService>();
     private readonly IOrderProcessStateRepository _stateRepository = Substitute.For<IOrderProcessStateRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ISender _mediator = Substitute.For<ISender>();
     private readonly IFeatureManager _featureManager = Substitute.For<IFeatureManager>();
     private readonly IPaymentInitiator _paymentInitiator = Substitute.For<IPaymentInitiator>();
@@ -34,7 +33,7 @@ public class OrderProcessManagerSagaTests
     {
         _sut = new OrderProcessManagerSaga(
             _orderRepository, _inventoryService, _stateRepository,
-            _unitOfWork, _mediator, _featureManager, _paymentInitiator);
+            UnitOfWork, _mediator, _featureManager, _paymentInitiator);
         _inventoryService.ReserveStockAsync(
                 Arg.Any<VariantId>(), Arg.Any<StockQuantity>(), Arg.Any<string>(),
                 Arg.Any<OrderItemId?>(), Arg.Any<CancellationToken>())
@@ -67,7 +66,7 @@ public class OrderProcessManagerSagaTests
         await _inventoryService.Received(order.OrderItems.Count).ReserveStockAsync(
             Arg.Any<VariantId>(), Arg.Any<StockQuantity>(), $"ORDER-{order.Id.Value}",
             Arg.Any<OrderItemId?>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -220,7 +219,7 @@ public class OrderProcessManagerSagaTests
 
         state.CurrentStep.ShouldBe(ProcessStepEnum.PaymentPending);
         state.RetryCount.ShouldBe(1);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -234,7 +233,7 @@ public class OrderProcessManagerSagaTests
             new PaymentFailedEvent(PaymentTransactionId.NewId(), orderId, "declined")),
             CancellationToken.None));
 
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

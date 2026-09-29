@@ -1,11 +1,12 @@
+using Application.Common.Validation;
+
 namespace Application.Product.Features.Commands.UpdateProductDetails;
 
 public sealed class UpdateProductDetailsValidator : AbstractValidator<UpdateProductDetailsCommand>
 {
     public UpdateProductDetailsValidator()
     {
-        RuleFor(x => x.ProductId)
-            .NotEmpty().WithMessage("شناسه محصول الزامی است.");
+        this.RuleForRequiredId(x => x.ProductId, "شناسه محصول الزامی است.");
 
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("نام محصول الزامی است.")

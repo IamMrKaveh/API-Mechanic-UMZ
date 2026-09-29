@@ -9,28 +9,23 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.RejectWithdrawal;
 
-public sealed class RejectWithdrawalHandlerTests
+public sealed class RejectWithdrawalHandlerTests : HandlerTestBase
 {
     private readonly IWalletWithdrawalRepository _withdrawalRepository = Substitute.For<IWalletWithdrawalRepository>();
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
-
     private readonly RejectWithdrawalHandler _sut;
 
     public RejectWithdrawalHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+
         _sut = new RejectWithdrawalHandler(
-            _withdrawalRepository, _walletRepository, _auditService, _dateTimeProvider, _currentUserService);
+            _withdrawalRepository, _walletRepository, AuditService, DateTimeProvider, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenWithdrawalNotFound_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns((WalletWithdrawalRequest?)null);
 
@@ -43,7 +38,7 @@ public sealed class RejectWithdrawalHandlerTests
     public async Task Handle_WhenWalletNotFound_ReturnsNotFound()
     {
         var adminId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
         var withdrawal = new WalletWithdrawalRequestBuilder().Build();
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns(withdrawal);
@@ -60,7 +55,7 @@ public sealed class RejectWithdrawalHandlerTests
     {
         var adminId = UserId.NewId();
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
 
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
@@ -89,7 +84,7 @@ public sealed class RejectWithdrawalHandlerTests
     {
         var adminId = UserId.NewId();
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
 
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));

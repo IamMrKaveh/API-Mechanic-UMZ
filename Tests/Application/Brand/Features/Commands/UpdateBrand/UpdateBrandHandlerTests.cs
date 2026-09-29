@@ -15,9 +15,9 @@ using Brands = Domain.Brand.Aggregates.Brand;
 
 namespace Tests.Application.Brand.Features.Commands.UpdateBrand;
 
-public class UpdateBrandHandlerTests
+public class UpdateBrandHandlerTests : HandlerTestBase
 {
-    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly IBrandQueryService _brandQueryService = Substitute.For<IBrandQueryService>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly UpdateBrandHandler _sut;
+    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly IBrandQueryService _brandQueryService = Substitute.For<IBrandQueryService>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateBrandHandler _sut;
 
     public UpdateBrandHandlerTests()
     {
@@ -29,10 +29,10 @@ public class UpdateBrandHandlerTests
             _brandRepository,
             _brandQueryService,
             _uniquenessChecker,
-            _unitOfWork,
+            UnitOfWork,
             _storageService,
             _cacheService,
-            _dateTimeProvider);
+            DateTimeProvider);
     }
 
     private async Task<Brands> BuildBrandAsync()
@@ -69,7 +69,7 @@ public class UpdateBrandHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _brandRepository.DidNotReceiveWithAnyArgs().Update(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
         await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
@@ -88,7 +88,7 @@ public class UpdateBrandHandlerTests
         result.ShouldFailWith(ErrorCode.Validation);
         await _storageService.DidNotReceiveWithAnyArgs().UploadAsync(default!, default!, default!, default, default);
         _brandRepository.DidNotReceiveWithAnyArgs().Update(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Theory]
@@ -126,7 +126,7 @@ public class UpdateBrandHandlerTests
         brand.Slug.Value.ShouldBe("renamed");
         brand.Description.ShouldBe("desc");
         _brandRepository.Received(1).Update(brand, Arg.Any<byte[]?>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         await _cacheService.Received(1).RemoveByPrefixAsync("brands:", Arg.Any<CancellationToken>());
     }
 
@@ -242,7 +242,7 @@ public class UpdateBrandHandlerTests
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.NotFound);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

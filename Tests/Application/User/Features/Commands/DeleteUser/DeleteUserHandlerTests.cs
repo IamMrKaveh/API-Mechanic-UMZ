@@ -9,20 +9,20 @@ using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Application.User.Features.Commands.DeleteUser;
 
-public class DeleteUserHandlerTests
+public class DeleteUserHandlerTests : HandlerTestBase
 {
-    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly DeleteUserHandler _sut;
+    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly DeleteUserHandler _sut;
 
     public DeleteUserHandlerTests()
     {
-        _sut = new DeleteUserHandler(_userRepository, _currentUserService);
+        _sut = new DeleteUserHandler(_userRepository, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenTargetIsCurrentUser_ReturnsForbidden()
     {
         var currentGuid = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentGuid);
+        CurrentUserService.UserId.Returns((Guid?)currentGuid);
 
         var result = await _sut.Handle(new DeleteUserCommand(currentGuid), CancellationToken.None);
 
@@ -34,7 +34,7 @@ public class DeleteUserHandlerTests
     [Fact]
     public async Task Handle_WhenUserNotFound_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _userRepository
             .GetByIdAsync(Arg.Any<UserId>())
             .Returns((Users?)null);
@@ -48,7 +48,7 @@ public class DeleteUserHandlerTests
     [Fact]
     public async Task Handle_WhenUserExists_DeactivatesAndUpdatesRepository()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         var user = new UserBuilder().Build();
         _userRepository
             .GetByIdAsync(Arg.Any<UserId>())

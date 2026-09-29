@@ -10,17 +10,15 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Infrastructure.Order.Services;
 
-public class CheckoutOrderCreationServiceTests
+public class CheckoutOrderCreationServiceTests : HandlerTestBase
 {
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly CheckoutOrderCreationService _sut;
 
     public CheckoutOrderCreationServiceTests()
     {
-        _dateTimeProvider.Today.Returns(new DateOnly(2026, 8, 4));
-        _sut = new CheckoutOrderCreationService(_orderRepository, _unitOfWork, _dateTimeProvider);
+        DateTimeProvider.Today.Returns(new DateOnly(2026, 8, 4));
+        _sut = new CheckoutOrderCreationService(_orderRepository, UnitOfWork, DateTimeProvider);
     }
 
     private static (ReceiverInfo receiver, DeliveryAddress address) NewAddress() =>
@@ -47,7 +45,7 @@ public class CheckoutOrderCreationServiceTests
 
         result.ShouldFailWith(ErrorCode.Conflict);
         _orderRepository.DidNotReceiveWithAnyArgs().Add(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -78,7 +76,7 @@ public class CheckoutOrderCreationServiceTests
         captured!.UserId.Value.ShouldBe(userId);
         captured.IdempotencyKey.ShouldBe(idempotencyKey);
         captured.ReceiverInfo.ShouldBe(receiver);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

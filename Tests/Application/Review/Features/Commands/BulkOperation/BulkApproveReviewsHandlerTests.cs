@@ -9,15 +9,15 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Review.Features.Commands.BulkOperation;
 
-public class BulkApproveReviewsHandlerTests
+public class BulkApproveReviewsHandlerTests : HandlerTestBase
 {
-    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly BulkApproveReviewsHandler _sut;
+    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly BulkApproveReviewsHandler _sut;
 
     public BulkApproveReviewsHandlerTests()
     {
-        _sut = new BulkApproveReviewsHandler(_reviewRepository, _unitOfWork);
+        _sut = new BulkApproveReviewsHandler(_reviewRepository, UnitOfWork);
 
-        _unitOfWork
+        UnitOfWork
             .ExecuteStrategyAsync(
                 Arg.Any<Func<CancellationToken, Task<ServiceResult<BulkOperationResult>>>>(),
                 Arg.Any<CancellationToken>())
@@ -120,7 +120,7 @@ public class BulkApproveReviewsHandlerTests
             new BulkApproveReviewsCommand(new[] { review.Id.Value }),
             CancellationToken.None);
 
-        await _unitOfWork.Received(1).ExecuteStrategyAsync(
+        await UnitOfWork.Received(1).ExecuteStrategyAsync(
             Arg.Any<Func<CancellationToken, Task<ServiceResult<BulkOperationResult>>>>(),
             Arg.Any<CancellationToken>());
     }

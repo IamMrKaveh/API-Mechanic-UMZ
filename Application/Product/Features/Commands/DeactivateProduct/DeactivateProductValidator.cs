@@ -1,10 +1,11 @@
-﻿namespace Application.Product.Features.Commands.DeactivateProduct;
+﻿using Application.Common.Validation;
+
+namespace Application.Product.Features.Commands.DeactivateProduct;
 
 public sealed class DeactivateProductValidator : AbstractValidator<DeactivateProductCommand>
 {
     public DeactivateProductValidator()
     {
-        RuleFor(x => x.ProductId)
-            .NotEmpty().WithMessage("شناسه محصول الزامی است.");
+        this.RuleForRequiredId(x => x.ProductId, "شناسه محصول الزامی است.");
     }
 }

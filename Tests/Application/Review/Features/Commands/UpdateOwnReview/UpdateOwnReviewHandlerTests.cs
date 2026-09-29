@@ -10,19 +10,19 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Review.Features.Commands.UpdateOwnReview;
 
-public class UpdateOwnReviewHandlerTests
+public class UpdateOwnReviewHandlerTests : HandlerTestBase
 {
-    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly UpdateOwnReviewHandler _sut;
+    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly UpdateOwnReviewHandler _sut;
 
     public UpdateOwnReviewHandlerTests()
     {
-        _sut = new UpdateOwnReviewHandler(_reviewRepository, _currentUser);
+        _sut = new UpdateOwnReviewHandler(_reviewRepository, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenCurrentUserIdIsNull_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(
             new UpdateOwnReviewCommand(Guid.NewGuid(), 5, "title", "comment"),
@@ -35,7 +35,7 @@ public class UpdateOwnReviewHandlerTests
     [Fact]
     public async Task Handle_WhenReviewNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _reviewRepository
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns((ProductReview?)null);
@@ -59,7 +59,7 @@ public class UpdateOwnReviewHandlerTests
             .WithComment("original comment")
             .Build();
 
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _reviewRepository
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns(review);
@@ -87,7 +87,7 @@ public class UpdateOwnReviewHandlerTests
             .WithComment("old comment")
             .Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _reviewRepository
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns(review);

@@ -6,10 +6,9 @@ using SharedKernel.Abstractions.Interfaces;
 
 namespace Tests.Infrastructure.BackgroundJobs;
 
-public class ElasticsearchOutboxJobTests
+public class ElasticsearchOutboxJobTests : HandlerTestBase
 {
     private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
     private readonly IConfiguration _configuration = new ConfigurationBuilder().Build();
 
@@ -17,7 +16,7 @@ public class ElasticsearchOutboxJobTests
     public async Task ExecuteAsync_OnStart_LogsStartupWithConfiguredValues()
     {
         var job = new ElasticsearchOutboxJob(
-            _scopeFactory, _auditService, _distributedLock, _configuration, Substitute.For<IDateTimeProvider>());
+            _scopeFactory, AuditService, _distributedLock, _configuration, Substitute.For<IDateTimeProvider>());
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();
@@ -29,7 +28,7 @@ public class ElasticsearchOutboxJobTests
         }
         await job.StopAsync(CancellationToken.None);
 
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("Elasticsearch outbox processor started.")),
             Arg.Any<CancellationToken>());
         await _distributedLock.DidNotReceiveWithAnyArgs().AcquireAsync(default!, default, default);

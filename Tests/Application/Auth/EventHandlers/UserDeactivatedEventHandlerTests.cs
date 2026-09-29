@@ -5,16 +5,15 @@ using Domain.User.ValueObjects;
 
 namespace Tests.Application.Auth.EventHandlers;
 
-public class UserDeactivatedEventHandlerTests
+public class UserDeactivatedEventHandlerTests : HandlerTestBase
 {
     private readonly ICacheInvalidationService _cacheInvalidation = Substitute.For<ICacheInvalidationService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly ILogger<UserDeactivatedEventHandler> _logger = Substitute.For<ILogger<UserDeactivatedEventHandler>>();
     private readonly UserDeactivatedEventHandler _sut;
 
     public UserDeactivatedEventHandlerTests()
     {
-        _sut = new UserDeactivatedEventHandler(_cacheInvalidation, _auditService, _logger);
+        _sut = new UserDeactivatedEventHandler(_cacheInvalidation, AuditService, _logger);
     }
 
     [Fact]
@@ -36,7 +35,7 @@ public class UserDeactivatedEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "Deactive User",
             Arg.Is<string>(s => s!.Contains(userId.Value.ToString())),
             Arg.Any<CancellationToken>());
@@ -53,7 +52,7 @@ public class UserDeactivatedEventHandlerTests
         Received.InOrder(() =>
         {
             _cacheInvalidation.InvalidateUserCacheAsync(userId, Arg.Any<CancellationToken>());
-            _auditService.LogSystemEventAsync(
+            AuditService.LogSystemEventAsync(
                 "Deactive User",
                 Arg.Any<string>(),
                 Arg.Any<CancellationToken>());
@@ -70,7 +69,7 @@ public class UserDeactivatedEventHandlerTests
         await _sut.Handle(notification, cts.Token);
 
         await _cacheInvalidation.Received(1).InvalidateUserCacheAsync(userId, cts.Token);
-        await _auditService.Received(1).LogSystemEventAsync(Arg.Any<string>(), Arg.Any<string>(), cts.Token);
+        await AuditService.Received(1).LogSystemEventAsync(Arg.Any<string>(), Arg.Any<string>(), cts.Token);
     }
 
     [Fact]
@@ -82,6 +81,6 @@ public class UserDeactivatedEventHandlerTests
         await _sut.Handle(notification, CancellationToken.None);
 
         _cacheInvalidation.ReceivedCalls().Count().ShouldBe(1);
-        _auditService.ReceivedCalls().Count().ShouldBe(1);
+        AuditService.ReceivedCalls().Count().ShouldBe(1);
     }
 }

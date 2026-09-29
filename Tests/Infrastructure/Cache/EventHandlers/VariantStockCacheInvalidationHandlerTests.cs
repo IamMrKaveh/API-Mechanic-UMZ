@@ -6,13 +6,13 @@ using Infrastructure.Cache.EventHandlers;
 
 namespace Tests.Infrastructure.Cache.EventHandlers;
 
-public class VariantStockCacheInvalidationHandlerTests
+public class VariantStockCacheInvalidationHandlerTests : HandlerTestBase
 {
-    private readonly ICacheService _cache = Substitute.For<ICacheService>(); private readonly IAuditService _audit = Substitute.For<IAuditService>(); private readonly VariantStockCacheInvalidationHandler _sut;
+    private readonly ICacheService _cache = Substitute.For<ICacheService>(); private readonly VariantStockCacheInvalidationHandler _sut;
 
     public VariantStockCacheInvalidationHandlerTests()
     {
-        _sut = new VariantStockCacheInvalidationHandler(_cache, _audit);
+        _sut = new VariantStockCacheInvalidationHandler(_cache, AuditService);
     }
 
     private static VariantStockChangedApplicationNotification BuildNotification(
@@ -117,7 +117,7 @@ public class VariantStockCacheInvalidationHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _audit.Received(1).LogDebugAsync(
+        await AuditService.Received(1).LogDebugAsync(
             Arg.Is<string>(s => s!.Contains(notification.VariantId.ToString()) && s!.Contains(notification.ProductId.ToString())),
             Arg.Any<CancellationToken>());
     }
@@ -133,7 +133,7 @@ public class VariantStockCacheInvalidationHandlerTests
         var act = () => _sut.Handle(notification, CancellationToken.None);
 
         await act.ShouldNotThrowAsync();
-        await _audit.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains(notification.VariantId.ToString())),
             Arg.Any<CancellationToken>());
     }

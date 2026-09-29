@@ -10,14 +10,14 @@ using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Application.User.Features.Commands.UpdateProfile;
 
-public class UpdateProfileHandlerTests
+public class UpdateProfileHandlerTests : HandlerTestBase
 {
-    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly UpdateProfileHandler _sut;
+    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly UpdateProfileHandler _sut;
 
     public UpdateProfileHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new UpdateProfileHandler(_userRepository, _currentUserService);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new UpdateProfileHandler(_userRepository, CurrentUserService);
     }
 
     [Fact]

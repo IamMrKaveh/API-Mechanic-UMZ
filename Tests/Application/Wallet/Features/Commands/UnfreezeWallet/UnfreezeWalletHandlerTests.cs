@@ -13,20 +13,19 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.UnfreezeWallet;
 
-public class UnfreezeWalletHandlerTests
+public class UnfreezeWalletHandlerTests : HandlerTestBase
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly UnfreezeWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly UnfreezeWalletHandler _sut;
 
     public UnfreezeWalletHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         _sut = new UnfreezeWalletHandler(
             _walletRepository,
-            _auditService,
-            _dateTimeProvider,
-            _currentUserService);
+            AuditService,
+            DateTimeProvider,
+            CurrentUserService);
     }
 
     private static UnfreezeWalletCommand ValidCommand(Guid? userId = null) =>
@@ -51,8 +50,8 @@ public class UnfreezeWalletHandlerTests
         addedWallet.ShouldNotBeNull();
         addedWallet!.OwnerId.Value.ShouldBe(command.UserId);
         addedWallet.IsActive.ShouldBeTrue();
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletAutoCreatedOnUnfreeze",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -77,8 +76,8 @@ public class UnfreezeWalletHandlerTests
         wallet.FrozenAt.ShouldBeNull();
         wallet.FrozenBy.ShouldBeNull();
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletUnfrozen",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -99,7 +98,7 @@ public class UnfreezeWalletHandlerTests
         result.ShouldBeSuccess();
         wallet.IsActive.ShouldBeTrue();
         _walletRepository.Received(1).Update(wallet);
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

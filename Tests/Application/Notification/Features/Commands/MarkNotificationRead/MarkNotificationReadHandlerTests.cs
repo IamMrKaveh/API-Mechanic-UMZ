@@ -8,19 +8,19 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Notification.Features.Commands.MarkNotificationRead;
 
-public class MarkNotificationReadHandlerTests
+public class MarkNotificationReadHandlerTests : HandlerTestBase
 {
-    private readonly INotificationService _notificationService = Substitute.For<INotificationService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly MarkNotificationReadHandler _sut;
+    private readonly INotificationService _notificationService = Substitute.For<INotificationService>(); private readonly MarkNotificationReadHandler _sut;
 
     public MarkNotificationReadHandlerTests()
     {
-        _sut = new MarkNotificationReadHandler(_notificationService, _currentUserService);
+        _sut = new MarkNotificationReadHandler(_notificationService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenAuthenticated_ReturnsSuccess()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         var result = await _sut.Handle(
             new MarkNotificationReadCommand(Guid.NewGuid()),
@@ -34,7 +34,7 @@ public class MarkNotificationReadHandlerTests
     {
         var currentUserId = Guid.NewGuid();
         var notificationId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         await _sut.Handle(
             new MarkNotificationReadCommand(notificationId),
@@ -49,7 +49,7 @@ public class MarkNotificationReadHandlerTests
     [Fact]
     public async Task Handle_WithEmptyNotificationId_ThrowsDomainException()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         await Should.ThrowAsync<DomainException>(() =>
             _sut.Handle(new MarkNotificationReadCommand(Guid.Empty), CancellationToken.None));
@@ -58,7 +58,7 @@ public class MarkNotificationReadHandlerTests
     [Fact]
     public async Task Handle_WhenCurrentUserIdIsEmpty_ThrowsDomainException()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.Empty);
+        CurrentUserService.UserId.Returns((Guid?)Guid.Empty);
 
         await Should.ThrowAsync<DomainException>(() =>
             _sut.Handle(new MarkNotificationReadCommand(Guid.NewGuid()), CancellationToken.None));

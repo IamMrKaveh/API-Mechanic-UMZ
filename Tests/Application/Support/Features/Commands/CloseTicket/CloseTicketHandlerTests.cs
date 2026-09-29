@@ -10,14 +10,14 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Support.Features.Commands.CloseTicket;
 
-public class CloseTicketHandlerTests
+public class CloseTicketHandlerTests : HandlerTestBase
 {
-    private readonly ITicketRepository _ticketRepository = Substitute.For<ITicketRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly CloseTicketHandler _sut; private readonly Guid _userGuid = Guid.NewGuid();
+    private readonly ITicketRepository _ticketRepository = Substitute.For<ITicketRepository>(); private readonly CloseTicketHandler _sut; private readonly Guid _userGuid = Guid.NewGuid();
 
     public CloseTicketHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)_userGuid);
-        _sut = new CloseTicketHandler(_ticketRepository, _currentUserService);
+        CurrentUserService.UserId.Returns((Guid?)_userGuid);
+        _sut = new CloseTicketHandler(_ticketRepository, CurrentUserService);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class CloseTicketHandlerTests
         var otherOwner = UserId.NewId();
         var ticket = new TicketBuilder().WithCustomerId(otherOwner).Build();
 
-        _currentUserService.IsAdmin.Returns(false);
+        CurrentUserService.IsAdmin.Returns(false);
         _ticketRepository
             .GetByIdAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns(ticket);
@@ -60,7 +60,7 @@ public class CloseTicketHandlerTests
         var customerId = UserId.From(_userGuid);
         var ticket = new TicketBuilder().WithCustomerId(customerId).Build();
 
-        _currentUserService.IsAdmin.Returns(false);
+        CurrentUserService.IsAdmin.Returns(false);
         _ticketRepository
             .GetByIdAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns(ticket);
@@ -81,7 +81,7 @@ public class CloseTicketHandlerTests
         var otherOwner = UserId.NewId();
         var ticket = new TicketBuilder().WithCustomerId(otherOwner).Build();
 
-        _currentUserService.IsAdmin.Returns(true);
+        CurrentUserService.IsAdmin.Returns(true);
         _ticketRepository
             .GetByIdAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns(ticket);

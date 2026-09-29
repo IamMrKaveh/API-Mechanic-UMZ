@@ -11,9 +11,9 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Attribute.Features.Commands.UpdateAttributeType;
 
-public class UpdateAttributeTypeHandlerTests
+public class UpdateAttributeTypeHandlerTests : HandlerTestBase
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly UpdateAttributeTypeHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateAttributeTypeHandler _sut;
 
     public UpdateAttributeTypeHandlerTests()
     {
@@ -21,7 +21,7 @@ public class UpdateAttributeTypeHandlerTests
             .AttributeTypeExistsAsync(Arg.Any<string>(), Arg.Any<AttributeTypeId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new UpdateAttributeTypeHandler(_repository, _cacheService, _dateTimeProvider);
+        _sut = new UpdateAttributeTypeHandler(_repository, _cacheService, DateTimeProvider);
     }
 
     [Fact]

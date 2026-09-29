@@ -17,28 +17,25 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Infrastructure.Order.Services.Strategies;
 
-public class WalletCheckoutPaymentStrategyTests
+public class WalletCheckoutPaymentStrategyTests : HandlerTestBase
 {
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly IPaymentTransactionRepository _paymentTransactionRepository = Substitute.For<IPaymentTransactionRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly WalletCheckoutPaymentStrategy _sut;
 
     private static readonly DateTime FixedNow = new(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc);
 
     public WalletCheckoutPaymentStrategyTests()
     {
-        _dateTimeProvider.UtcNow.Returns(FixedNow);
+        DateTimeProvider.UtcNow.Returns(FixedNow);
         _sut = new WalletCheckoutPaymentStrategy(
             _walletRepository,
             _orderRepository,
             _paymentTransactionRepository,
-            _unitOfWork,
-            _dateTimeProvider,
-            _auditService);
+            UnitOfWork,
+            DateTimeProvider,
+            AuditService);
     }
 
     private static CheckoutResultDto NewOrderResult(Guid? orderId = null, decimal finalAmount = 150_000m) => new()
@@ -200,7 +197,7 @@ public class WalletCheckoutPaymentStrategyTests
         order.IsPaid.ShouldBeTrue();
         _walletRepository.Received(1).Update(wallet);
         _orderRepository.Received(1).Update(order);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -235,7 +232,7 @@ public class WalletCheckoutPaymentStrategyTests
             "127.0.0.1", null, Guid.NewGuid(), CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.Conflict);
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletCheckoutConcurrencyConflict",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());

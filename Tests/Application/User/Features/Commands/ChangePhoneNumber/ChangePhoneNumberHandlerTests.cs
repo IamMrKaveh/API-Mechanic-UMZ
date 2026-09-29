@@ -10,21 +10,18 @@ using UserOtpAggregate = Domain.Security.Aggregates.UserOtp;
 
 namespace Tests.Application.User.Features.Commands.ChangePhoneNumber;
 
-public class ChangePhoneNumberHandlerTests
+public class ChangePhoneNumberHandlerTests : HandlerTestBase
 {
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
     private readonly IOtpRepository _otpRepository = Substitute.For<IOtpRepository>();
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _clock = Substitute.For<IDateTimeProvider>();
     private readonly ChangePhoneNumberHandler _sut;
     private readonly Guid _userGuid = Guid.NewGuid();
 
     public ChangePhoneNumberHandlerTests()
     {
-        _sut = new ChangePhoneNumberHandler(_userRepository, _otpRepository, _currentUser, _auditService, _clock);
-        _currentUser.UserId.Returns((Guid?)_userGuid);
-        _clock.UtcNow.Returns(_ => DateTime.UtcNow);
+        _sut = new ChangePhoneNumberHandler(_userRepository, _otpRepository, CurrentUserService, AuditService, DateTimeProvider);
+        CurrentUserService.UserId.Returns((Guid?)_userGuid);
+        DateTimeProvider.UtcNow.Returns(_ => DateTime.UtcNow);
     }
 
     [Fact]
@@ -120,7 +117,7 @@ public class ChangePhoneNumberHandlerTests
         result.ShouldBeSuccess();
         user.PhoneNumber!.Value.ShouldBe("09123456789");
         _userRepository.Received(1).Update(user);
-        await _auditService.Received(1).LogSecurityEventAsync(
+        await AuditService.Received(1).LogSecurityEventAsync(
             "PhoneNumberChanged",
             Arg.Any<string>(),
             Arg.Any<IpAddress>(),

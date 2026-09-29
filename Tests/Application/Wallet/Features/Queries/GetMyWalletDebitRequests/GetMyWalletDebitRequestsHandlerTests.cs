@@ -7,15 +7,14 @@ using SharedKernel.Exceptions;
 
 namespace Tests.Application.Wallet.Features.Queries.GetMyWalletDebitRequests;
 
-public sealed class GetMyWalletDebitRequestsHandlerTests
+public sealed class GetMyWalletDebitRequestsHandlerTests : HandlerTestBase
 {
     private readonly IWalletDebitRequestRepository _debitRequestRepository = Substitute.For<IWalletDebitRequestRepository>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly GetMyWalletDebitRequestsHandler _sut;
 
     public GetMyWalletDebitRequestsHandlerTests()
     {
-        _sut = new GetMyWalletDebitRequestsHandler(_debitRequestRepository, _currentUserService);
+        _sut = new GetMyWalletDebitRequestsHandler(_debitRequestRepository, CurrentUserService);
     }
 
     private (UserId ownerId, WalletDebitRequest request) BuildRequest(
@@ -31,7 +30,7 @@ public sealed class GetMyWalletDebitRequestsHandlerTests
         return (ownerId, req);
     }
 
-    private void SetCurrentUser(UserId userId) => _currentUserService.UserId.Returns(userId.Value);
+    private void SetCurrentUser(UserId userId) => CurrentUserService.UserId.Returns(userId.Value);
 
     [Fact]
     public async Task Handle_WhenStatusIsNull_QueriesRepositoryWithNullStatus()
@@ -216,7 +215,7 @@ public sealed class GetMyWalletDebitRequestsHandlerTests
     [Fact]
     public async Task Handle_WhenCurrentUserIdIsEmpty_ThrowsDomainException()
     {
-        _currentUserService.UserId.Returns(Guid.Empty);
+        CurrentUserService.UserId.Returns(Guid.Empty);
 
         var query = new GetMyWalletDebitRequestsQuery(null);
 

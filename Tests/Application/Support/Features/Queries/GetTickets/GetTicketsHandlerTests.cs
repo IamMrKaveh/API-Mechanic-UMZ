@@ -9,13 +9,13 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Support.Features.Queries.GetTickets;
 
-public class GetTicketsHandlerTests
+public class GetTicketsHandlerTests : HandlerTestBase
 {
-    private readonly ITicketQueryService _ticketQueryService = Substitute.For<ITicketQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetTicketsHandler _sut; private readonly Guid _userGuid = Guid.NewGuid();
+    private readonly ITicketQueryService _ticketQueryService = Substitute.For<ITicketQueryService>(); private readonly GetTicketsHandler _sut; private readonly Guid _userGuid = Guid.NewGuid();
 
     public GetTicketsHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)_userGuid);
+        CurrentUserService.UserId.Returns((Guid?)_userGuid);
 
         _ticketQueryService
             .GetTicketsPagedAsync(
@@ -27,7 +27,7 @@ public class GetTicketsHandlerTests
                 Arg.Any<CancellationToken>())
             .Returns(new PaginatedResult<TicketListItemDto>([], 0, 1, 10));
 
-        _sut = new GetTicketsHandler(_ticketQueryService, _currentUserService);
+        _sut = new GetTicketsHandler(_ticketQueryService, CurrentUserService);
     }
 
     [Fact]

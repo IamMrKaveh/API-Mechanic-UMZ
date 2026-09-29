@@ -11,13 +11,13 @@ using Categories = Domain.Category.Aggregates.Category;
 
 namespace Tests.Application.Category.Features.Commands.DeleteCategory;
 
-public class DeleteCategoryHandlerTests
+public class DeleteCategoryHandlerTests : HandlerTestBase
 {
-    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly DeleteCategoryHandler _sut;
+    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteCategoryHandler _sut;
 
     public DeleteCategoryHandlerTests()
     {
-        _sut = new DeleteCategoryHandler(_repository, _cacheService, _dateTimeProvider);
+        _sut = new DeleteCategoryHandler(_repository, _cacheService, DateTimeProvider);
     }
 
     private static Task<Categories> BuildCategoryAsync() =>

@@ -5,11 +5,9 @@ using SharedKernel.Abstractions.Interfaces;
 
 namespace Tests.Infrastructure.BackgroundJobs;
 
-public class AuditRetentionJobTests
+public class AuditRetentionJobTests : HandlerTestBase
 {
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
 
     public AuditRetentionJobTests()
@@ -18,13 +16,13 @@ public class AuditRetentionJobTests
         var provider = Substitute.For<IServiceProvider>();
         _scopeFactory.CreateScope().Returns(scope);
         scope.ServiceProvider.Returns(provider);
-        provider.GetService(typeof(IAuditService)).Returns(_auditService);
+        provider.GetService(typeof(IAuditService)).Returns(AuditService);
     }
 
     [Fact]
     public async Task ExecuteAsync_OnStart_LogsServiceStartedAndWaitsForInitialDelay()
     {
-        var job = new AuditRetentionJob(_scopeFactory, _distributedLock, _dateTimeProvider);
+        var job = new AuditRetentionJob(_scopeFactory, _distributedLock, DateTimeProvider);
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();
@@ -36,7 +34,7 @@ public class AuditRetentionJobTests
         }
         await job.StopAsync(CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "Audit Retention",
             "Audit Retention Service started.",
             Arg.Any<CancellationToken>());

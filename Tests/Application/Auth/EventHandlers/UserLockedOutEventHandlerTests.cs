@@ -5,15 +5,14 @@ using Domain.User.ValueObjects;
 
 namespace Tests.Application.Auth.EventHandlers;
 
-public class UserLockedOutEventHandlerTests
+public class UserLockedOutEventHandlerTests : HandlerTestBase
 {
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly ILogger<UserLockedOutEventHandler> _logger = Substitute.For<ILogger<UserLockedOutEventHandler>>();
     private readonly UserLockedOutEventHandler _sut;
 
     public UserLockedOutEventHandlerTests()
     {
-        _sut = new UserLockedOutEventHandler(_auditService, _logger);
+        _sut = new UserLockedOutEventHandler(AuditService, _logger);
     }
 
     [Fact]
@@ -26,7 +25,7 @@ public class UserLockedOutEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "User Locked out",
             Arg.Is<string>(s =>
                 s!.Contains(userId.Value.ToString())
@@ -48,7 +47,7 @@ public class UserLockedOutEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             Arg.Any<string>(),
             Arg.Is<string>(s => s!.Contains(failedAttempts.ToString())),
             Arg.Any<CancellationToken>());
@@ -64,7 +63,7 @@ public class UserLockedOutEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "User Locked out",
             Arg.Is<string>(s => s!.Contains("100")),
             Arg.Any<CancellationToken>());
@@ -79,7 +78,7 @@ public class UserLockedOutEventHandlerTests
 
         await _sut.Handle(notification, cts.Token);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             Arg.Any<string>(),
             Arg.Any<string>(),
             cts.Token);
@@ -93,6 +92,6 @@ public class UserLockedOutEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        _auditService.ReceivedCalls().Count().ShouldBe(1);
+        AuditService.ReceivedCalls().Count().ShouldBe(1);
     }
 }

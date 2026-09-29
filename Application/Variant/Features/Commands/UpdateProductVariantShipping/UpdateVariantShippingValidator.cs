@@ -1,10 +1,12 @@
-﻿namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
+﻿using Application.Common.Validation;
+
+namespace Application.Variant.Features.Commands.UpdateProductVariantShipping;
 
 public class UpdateVariantShippingValidator : AbstractValidator<UpdateVariantShippingCommand>
 {
     public UpdateVariantShippingValidator()
     {
-        RuleFor(x => x.VariantId).NotEmpty();
+        this.RuleForRequiredId(x => x.VariantId);
         RuleFor(x => x.ShippingMultiplier)
             .InclusiveBetween(0.1m, 100m)
             .WithMessage("ضریب هزینه ارسال باید بین 0.1 تا 100 باشد.");

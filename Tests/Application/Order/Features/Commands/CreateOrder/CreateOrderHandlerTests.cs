@@ -14,9 +14,9 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Order.Features.Commands.CreateOrder;
 
-public class CreateOrderHandlerTests
+public class CreateOrderHandlerTests : HandlerTestBase
 {
-    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IDiscountService _discountService = Substitute.For<IDiscountService>(); private readonly IInventoryService _inventoryService = Substitute.For<IInventoryService>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CreateOrderHandler _sut;
+    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IDiscountService _discountService = Substitute.For<IDiscountService>(); private readonly IInventoryService _inventoryService = Substitute.For<IInventoryService>(); private readonly CreateOrderHandler _sut;
 
     public CreateOrderHandlerTests()
     {
@@ -27,9 +27,9 @@ public class CreateOrderHandlerTests
             _variantRepository,
             _discountService,
             _inventoryService,
-            _unitOfWork,
-            _auditService,
-            _dateTimeProvider);
+            UnitOfWork,
+            AuditService,
+            DateTimeProvider);
     }
 
     [Fact]

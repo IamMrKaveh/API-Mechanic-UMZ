@@ -13,14 +13,14 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Infrastructure.Discount.Services;
 
-public class DiscountServiceTests
+public class DiscountServiceTests : HandlerTestBase
 {
-    private readonly IDiscountRepository _discountRepository = Substitute.For<IDiscountRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly DiscountService _sut;
+    private readonly IDiscountRepository _discountRepository = Substitute.For<IDiscountRepository>(); private readonly DiscountService _sut;
 
     public DiscountServiceTests()
     {
-        _dateTimeProvider.UtcNow.Returns(_ => DateTime.UtcNow);
-        _sut = new DiscountService(_discountRepository, _auditService, _dateTimeProvider);
+        DateTimeProvider.UtcNow.Returns(_ => DateTime.UtcNow);
+        _sut = new DiscountService(_discountRepository, AuditService, DateTimeProvider);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class DiscountServiceTests
             CancellationToken.None);
 
         result.ShouldFailWithType(ErrorType.Failure);
-        await _auditService.DidNotReceive().LogOrderEventAsync(
+        await AuditService.DidNotReceive().LogOrderEventAsync(
             Arg.Any<OrderId>(),
             Arg.Any<string>(),
             Arg.Any<IpAddress>(),
@@ -69,7 +69,7 @@ public class DiscountServiceTests
         result.ShouldFailWithType(ErrorType.Failure);
         discount.UsageCount.ShouldBe(0);
         _discountRepository.DidNotReceive().Update(Arg.Any<DiscountCode>());
-        await _auditService.DidNotReceive().LogOrderEventAsync(
+        await AuditService.DidNotReceive().LogOrderEventAsync(
             Arg.Any<OrderId>(),
             Arg.Any<string>(),
             Arg.Any<IpAddress>(),
@@ -127,7 +127,7 @@ public class DiscountServiceTests
         discount.UsageCount.ShouldBe(1);
         discount.Usages.Count.ShouldBe(1);
         _discountRepository.Received(1).Update(discount);
-        await _auditService.Received(1).LogOrderEventAsync(
+        await AuditService.Received(1).LogOrderEventAsync(
             orderId,
             "DiscountApplied",
             Arg.Any<IpAddress>(),

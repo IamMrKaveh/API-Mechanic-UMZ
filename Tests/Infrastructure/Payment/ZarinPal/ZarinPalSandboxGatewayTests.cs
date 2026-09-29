@@ -9,13 +9,11 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Payment.ZarinPal;
 
-public class ZarinPalSandboxGatewayTests
+public class ZarinPalSandboxGatewayTests : HandlerTestBase
 {
     private const string SandboxMerchant = "sandbox-merchant-1";
     private const string LiveMerchant = "live-merchant-1";
     private const string SandboxStartPay = "https://sandbox.zarinpal.com/pg/StartPay/";
-
-    private readonly IAuditService _audit = Substitute.For<IAuditService>();
 
     private static IOptions<ZarinPalOptions> BuildOptions(
         string? sandboxMerchantId = SandboxMerchant,
@@ -64,7 +62,7 @@ public class ZarinPalSandboxGatewayTests
     [Fact]
     public void GatewayName_IsZarinpalSandbox()
     {
-        var sut = BuildSut(FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, "{}"), _audit);
+        var sut = BuildSut(FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, "{}"), AuditService);
 
         sut.GatewayName.ShouldBe("ZarinpalSandbox");
     }
@@ -73,7 +71,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_Success_ReturnsAuthorityAndSandboxPaymentUrl()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "SANDBOX-AUTH-1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var result = await sut.InitiateAsync(
             OrderId.NewId(), Money.Create(150_000m, "IRR"), "desc", "https://shop.example.com/cb");
@@ -87,7 +85,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_Success_TrimsTrailingSlashFromSandboxStartPay()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit, BuildOptions(sandboxStartPayBaseUrl: "https://sandbox.example/StartPay///"));
+        var sut = BuildSut(handler, AuditService, BuildOptions(sandboxStartPayBaseUrl: "https://sandbox.example/StartPay///"));
 
         var result = await sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
@@ -99,7 +97,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_WhenDescriptionEmpty_UsesDefaultWalletTopUpDescription()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
         var orderId = OrderId.NewId();
 
         await sut.InitiateAsync(orderId, Money.Create(1000m, "IRR"), "", "https://shop.example.com/cb");
@@ -107,7 +105,7 @@ public class ZarinPalSandboxGatewayTests
         emptyDoc.RootElement.GetProperty("description").GetString().ShouldBe($"Wallet TopUp {orderId.Value}");
 
         var handler2 = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut2 = BuildSut(handler2, _audit);
+        var sut2 = BuildSut(handler2, AuditService);
         await sut2.InitiateAsync(orderId, Money.Create(1000m, "IRR"), "   ", "https://shop.example.com/cb");
         using var wsDoc = LastRequestBody(handler2);
         wsDoc.RootElement.GetProperty("description").GetString().ShouldBe($"Wallet TopUp {orderId.Value}");
@@ -117,7 +115,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_WhenDescriptionProvided_UsesProvidedDescription()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "my desc", "https://shop.example.com/cb");
 
@@ -129,7 +127,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_WhenEmailAndPhoneNull_UsesSandboxDefaults()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
         var orderId = OrderId.NewId();
 
         await sut.InitiateAsync(orderId, Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
@@ -144,7 +142,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_WhenEmailAndPhoneProvided_UsesProvidedValues()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         await sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb",
@@ -159,7 +157,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_PrefersSandboxMerchantId()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit, BuildOptions(sandboxMerchantId: SandboxMerchant, merchantId: LiveMerchant));
+        var sut = BuildSut(handler, AuditService, BuildOptions(sandboxMerchantId: SandboxMerchant, merchantId: LiveMerchant));
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
 
@@ -171,7 +169,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_WhenSandboxMerchantIdEmpty_FallsBackToMerchantId()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit, BuildOptions(sandboxMerchantId: "", merchantId: LiveMerchant));
+        var sut = BuildSut(handler, AuditService, BuildOptions(sandboxMerchantId: "", merchantId: LiveMerchant));
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
 
@@ -183,7 +181,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_WhenBothMerchantIdsEmpty_UsesDefaultGuid()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit, BuildOptions(sandboxMerchantId: "  ", merchantId: ""));
+        var sut = BuildSut(handler, AuditService, BuildOptions(sandboxMerchantId: "  ", merchantId: ""));
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
 
@@ -199,7 +197,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_ToRial_ConvertsCurrencyCorrectly(string currency, double amount, long expectedRial)
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create((decimal)amount, currency), "d", "https://shop.example.com/cb");
 
@@ -211,7 +209,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_UsesRequestPath()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit, presetBaseAddress: new Uri("https://sandbox.zarinpal.com/"));
+        var sut = BuildSut(handler, AuditService, presetBaseAddress: new Uri("https://sandbox.zarinpal.com/"));
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
 
@@ -229,7 +227,7 @@ public class ZarinPalSandboxGatewayTests
             captured = new HttpClient(handler, disposeHandler: false);
             return captured;
         });
-        var sut = new ZarinPalSandboxGateway(BuildOptions(sandboxApiBaseUrl: "https://sandbox.zarinpal.com/pg/v4/payment/"), factory, _audit);
+        var sut = new ZarinPalSandboxGateway(BuildOptions(sandboxApiBaseUrl: "https://sandbox.zarinpal.com/pg/v4/payment/"), factory, AuditService);
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
 
@@ -248,7 +246,7 @@ public class ZarinPalSandboxGatewayTests
             captured = new HttpClient(handler, disposeHandler: false);
             return captured;
         });
-        var sut = new ZarinPalSandboxGateway(BuildOptions(sandboxApiBaseUrl: ""), factory, _audit);
+        var sut = new ZarinPalSandboxGateway(BuildOptions(sandboxApiBaseUrl: ""), factory, AuditService);
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
 
@@ -267,7 +265,7 @@ public class ZarinPalSandboxGatewayTests
             captured = new HttpClient(handler, disposeHandler: false) { BaseAddress = preset };
             return captured;
         });
-        var sut = new ZarinPalSandboxGateway(BuildOptions(), factory, _audit);
+        var sut = new ZarinPalSandboxGateway(BuildOptions(), factory, AuditService);
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
 
@@ -285,7 +283,7 @@ public class ZarinPalSandboxGatewayTests
             captured = new HttpClient(handler, disposeHandler: false);
             return captured;
         });
-        var sut = new ZarinPalSandboxGateway(BuildOptions(timeoutSeconds: 45), factory, _audit);
+        var sut = new ZarinPalSandboxGateway(BuildOptions(timeoutSeconds: 45), factory, AuditService);
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
 
@@ -303,7 +301,7 @@ public class ZarinPalSandboxGatewayTests
             captured = new HttpClient(handler, disposeHandler: false);
             return captured;
         });
-        var sut = new ZarinPalSandboxGateway(BuildOptions(timeoutSeconds: 0), factory, _audit);
+        var sut = new ZarinPalSandboxGateway(BuildOptions(timeoutSeconds: 0), factory, AuditService);
 
         await sut.InitiateAsync(OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb");
 
@@ -325,7 +323,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_WhenFailed_MapsErrorCodeToMessage(int code, string expectedMessage)
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(code, code == 100 ? "AUTH1" : null));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         // code 100 with null authority also fails; others fail by code
         if (code == 100)
@@ -341,14 +339,14 @@ public class ZarinPalSandboxGatewayTests
         ex.ServiceName.ShouldBe("ZarinpalSandbox");
         ex.Message.ShouldBe(expectedMessage);
         ex.ErrorCode.ShouldBe(code.ToString());
-        await _audit.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains($"code={code}")), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains($"code={code}")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task InitiateAsync_WhenCodeUnknown_IncludesCodeInMessage()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(-999, null));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb"));
@@ -361,7 +359,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_WhenBodyNull_ThrowsWithFallbackCode()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, "{}");
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb"));
@@ -373,7 +371,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_WhenAuthorityMissing_Throws()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "   "));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         await Should.ThrowAsync<ExternalServiceException>(() => sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb"));
@@ -383,21 +381,21 @@ public class ZarinPalSandboxGatewayTests
     public async Task InitiateAsync_WhenHttpThrows_LogsAndWrapsInExternalServiceException()
     {
         var handler = FakeHttpMessageHandler.ThrowsException(new HttpRequestException("no connection"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.InitiateAsync(
             OrderId.NewId(), Money.Create(1000m, "IRR"), "d", "https://shop.example.com/cb"));
 
         ex.Message.ShouldBe("ارتباط با درگاه پرداخت سندباکس برقرار نشد.");
         ex.InnerException.ShouldBeOfType<HttpRequestException>();
-        await _audit.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Initiate exception")), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Initiate exception")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task InitiateAsync_WhenCancelled_PropagatesCancellation()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, RequestJson(100, "AUTH1"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
@@ -411,7 +409,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task VerifyAsync_SuccessCodes_ReturnVerifiedResult(int code)
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, VerifyJson(code, 777L, "6037-****-2222", 300m));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var result = await sut.VerifyAsync("AUTH1", Money.Create(150_000m, "IRR"));
 
@@ -426,7 +424,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task VerifyAsync_SendsMerchantIdAmountAndAuthority()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, VerifyJson(100));
-        var sut = BuildSut(handler, _audit, BuildOptions(sandboxMerchantId: SandboxMerchant));
+        var sut = BuildSut(handler, AuditService, BuildOptions(sandboxMerchantId: SandboxMerchant));
 
         await sut.VerifyAsync("AUTH-XYZ", Money.Create(2000m, "TOMAN"));
 
@@ -441,7 +439,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task VerifyAsync_WhenFailed_ThrowsWithMappedMessage()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, VerifyJson(-51));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.VerifyAsync("AUTH1", Money.Create(1000m, "IRR")));
 
@@ -454,7 +452,7 @@ public class ZarinPalSandboxGatewayTests
     public async Task VerifyAsync_WhenBodyNull_ThrowsWithFallbackCode()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, "{}");
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.VerifyAsync("AUTH1", Money.Create(1000m, "IRR")));
 
@@ -466,20 +464,20 @@ public class ZarinPalSandboxGatewayTests
     public async Task VerifyAsync_WhenHttpThrows_LogsAndWrapsInExternalServiceException()
     {
         var handler = FakeHttpMessageHandler.ThrowsException(new HttpRequestException("timeout"));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
 
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.VerifyAsync("AUTH1", Money.Create(1000m, "IRR")));
 
         ex.Message.ShouldBe("ارتباط با درگاه پرداخت سندباکس برقرار نشد.");
         ex.InnerException.ShouldBeOfType<HttpRequestException>();
-        await _audit.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Verify exception")), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Verify exception")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task VerifyAsync_WhenCancelled_PropagatesCancellation()
     {
         var handler = FakeHttpMessageHandler.WithResponse(HttpStatusCode.OK, VerifyJson(100));
-        var sut = BuildSut(handler, _audit);
+        var sut = BuildSut(handler, AuditService);
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 

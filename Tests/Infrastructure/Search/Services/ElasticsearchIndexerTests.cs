@@ -3,16 +3,14 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Search.Services;
 
-public class ElasticsearchIndexerTests : IAsyncLifetime
-{
+public class ElasticsearchIndexerTests : HandlerTestBase, IAsyncLifetime{
     private FakeElasticsearchServer _server = null!;
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private ElasticsearchIndexer _sut = null!;
 
     public Task InitializeAsync()
     {
         _server = new FakeElasticsearchServer();
-        _sut = new ElasticsearchIndexer(_server.CreateClient(), _auditService);
+        _sut = new ElasticsearchIndexer(_server.CreateClient(), AuditService);
         return Task.CompletedTask;
     }
 
@@ -27,7 +25,7 @@ public class ElasticsearchIndexerTests : IAsyncLifetime
         var result = await _sut.IndexDocumentAsync("Spaceship", Guid.NewGuid(), Doc(), "Create");
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s.Contains("Unknown entity type 'Spaceship'")), Arg.Any<CancellationToken>());
         _server.Requests.ShouldBeEmpty();
     }
@@ -60,7 +58,7 @@ public class ElasticsearchIndexerTests : IAsyncLifetime
         _server.Requests.Count.ShouldBe(1);
         _server.Requests[0].Path.ShouldContain(expectedIndex);
         _server.Requests[0].Path.ShouldContain(entityId.ToString());
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Theory]
@@ -117,7 +115,7 @@ public class ElasticsearchIndexerTests : IAsyncLifetime
         var result = await _sut.IndexDocumentAsync("Product", entityId, Doc(), "Create");
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s.Contains($"Product:{entityId}")), Arg.Any<CancellationToken>());
     }
 
@@ -127,7 +125,7 @@ public class ElasticsearchIndexerTests : IAsyncLifetime
         var result = await _sut.IndexDocumentAsync("Product", Guid.NewGuid(), "not-json{{{", "Create");
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         _server.Requests.ShouldBeEmpty();
     }
 
@@ -136,12 +134,12 @@ public class ElasticsearchIndexerTests : IAsyncLifetime
     {
         var unreachable = new ElasticsearchIndexer(
             new Elastic.Clients.Elasticsearch.ElasticsearchClient(new Uri("http://127.0.0.1:9")),
-            _auditService);
+            AuditService);
 
         var result = await unreachable.IndexDocumentAsync("Product", Guid.NewGuid(), Doc(), "Create");
 
         result.ShouldBeFalse();
-        await _auditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

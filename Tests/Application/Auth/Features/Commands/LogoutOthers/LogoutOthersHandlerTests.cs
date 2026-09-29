@@ -9,19 +9,19 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Auth.Features.Commands.LogoutOthers;
 
-public class LogoutOthersHandlerTests
+public class LogoutOthersHandlerTests : HandlerTestBase
 {
-    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly LogoutOthersHandler _sut;
+    private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly LogoutOthersHandler _sut;
 
     public LogoutOthersHandlerTests()
     {
-        _sut = new LogoutOthersHandler(_sessionRepository, _currentUser);
+        _sut = new LogoutOthersHandler(_sessionRepository, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenUserNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new LogoutOthersCommand(), CancellationToken.None);
 
@@ -34,8 +34,8 @@ public class LogoutOthersHandlerTests
     public async Task Handle_WhenCurrentSessionIdIsNull_RevokesAllForCallerWithUserRequested()
     {
         var callerGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.SessionId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.SessionId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new LogoutOthersCommand(), CancellationToken.None);
 
@@ -51,8 +51,8 @@ public class LogoutOthersHandlerTests
     public async Task Handle_WhenCurrentSessionIdIsEmpty_RevokesAllForCallerWithUserRequested()
     {
         var callerGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.SessionId.Returns((Guid?)Guid.Empty);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.SessionId.Returns((Guid?)Guid.Empty);
 
         var result = await _sut.Handle(new LogoutOthersCommand(), CancellationToken.None);
 
@@ -69,8 +69,8 @@ public class LogoutOthersHandlerTests
     {
         var callerGuid = Guid.NewGuid();
         var currentSessionGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.SessionId.Returns((Guid?)currentSessionGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.SessionId.Returns((Guid?)currentSessionGuid);
 
         var result = await _sut.Handle(new LogoutOthersCommand(), CancellationToken.None);
 

@@ -11,15 +11,14 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Infrastructure.Order.Services.Strategies;
 
-public class CashOnDeliveryCheckoutPaymentStrategyTests
+public class CashOnDeliveryCheckoutPaymentStrategyTests : HandlerTestBase
 {
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CashOnDeliveryCheckoutPaymentStrategy _sut;
 
     public CashOnDeliveryCheckoutPaymentStrategyTests()
     {
-        _sut = new CashOnDeliveryCheckoutPaymentStrategy(_orderRepository, _unitOfWork);
+        _sut = new CashOnDeliveryCheckoutPaymentStrategy(_orderRepository, UnitOfWork);
     }
 
     private static CheckoutResultDto NewOrderResult(Guid? orderId = null, decimal finalAmount = 150_000m) => new()
@@ -53,7 +52,7 @@ public class CashOnDeliveryCheckoutPaymentStrategyTests
             "127.0.0.1", null, Guid.NewGuid(), CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.NotFound);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -71,7 +70,7 @@ public class CashOnDeliveryCheckoutPaymentStrategyTests
         result.ShouldBeSuccess();
         order.Status.ShouldBe(OrderStatusValue.Pending);
         _orderRepository.Received(1).Update(order);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         result.Value.OrderId.ShouldBe(orderResult.OrderId);
         result.Value.PaymentUrl.ShouldBeNull();
         result.Value.PaymentAuthority.ShouldBeNull();
@@ -95,6 +94,6 @@ public class CashOnDeliveryCheckoutPaymentStrategyTests
         result.ShouldBeSuccess();
         order.Status.ShouldBe(OrderStatusValue.Pending);
         _orderRepository.Received(1).Update(order);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

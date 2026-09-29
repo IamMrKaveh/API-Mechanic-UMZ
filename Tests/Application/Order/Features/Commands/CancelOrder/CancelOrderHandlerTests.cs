@@ -12,19 +12,19 @@ using Orders = Domain.Order.Aggregates.Order;
 
 namespace Tests.Application.Order.Features.Commands.CancelOrder;
 
-public class CancelOrderHandlerTests
+public class CancelOrderHandlerTests : HandlerTestBase
 {
-    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly CancelOrderHandler _sut;
+    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly CancelOrderHandler _sut;
 
     public CancelOrderHandlerTests()
     {
-        _sut = new CancelOrderHandler(_orderRepository, _currentUser);
+        _sut = new CancelOrderHandler(_orderRepository, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenUserIsNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new CancelOrderCommand(Guid.NewGuid(), "reason", null), CancellationToken.None);
 
@@ -36,8 +36,8 @@ public class CancelOrderHandlerTests
     [Fact]
     public async Task Handle_WhenOrderNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUser.IsAdmin.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAdmin.Returns(true);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns((Orders?)null);
 
         var result = await _sut.Handle(new CancelOrderCommand(Guid.NewGuid(), "reason", null), CancellationToken.None);
@@ -53,8 +53,8 @@ public class CancelOrderHandlerTests
         var callerGuid = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(ownerGuid)).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.IsAdmin.Returns(false);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new CancelOrderCommand(order.Id.Value, "reason", null), CancellationToken.None);
@@ -69,8 +69,8 @@ public class CancelOrderHandlerTests
         var callerGuid = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(callerGuid)).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.IsAdmin.Returns(false);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new CancelOrderCommand(order.Id.Value, "reason", "not-base64!!!"), CancellationToken.None);
@@ -89,8 +89,8 @@ public class CancelOrderHandlerTests
         order.StartProcessing();
         order.MarkAsShipped();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.IsAdmin.Returns(false);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new CancelOrderCommand(order.Id.Value, "reason", null), CancellationToken.None);
@@ -105,8 +105,8 @@ public class CancelOrderHandlerTests
         var callerGuid = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(callerGuid)).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.IsAdmin.Returns(false);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new CancelOrderCommand(order.Id.Value, "customer changed mind", null), CancellationToken.None);
@@ -125,8 +125,8 @@ public class CancelOrderHandlerTests
         var expected = new byte[] { 1, 2, 3, 4 };
         var encoded = Convert.ToBase64String(expected);
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.IsAdmin.Returns(false);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new CancelOrderCommand(order.Id.Value, "reason", encoded), CancellationToken.None);
@@ -141,8 +141,8 @@ public class CancelOrderHandlerTests
         var callerGuid = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(callerGuid)).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.IsAdmin.Returns(false);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
         _orderRepository.When(x => x.Update(Arg.Any<Orders>(), Arg.Any<byte[]?>()))
             .Do(_ => throw new ConcurrencyException());
@@ -159,8 +159,8 @@ public class CancelOrderHandlerTests
         var adminGuid = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(ownerGuid)).Build();
 
-        _currentUser.UserId.Returns((Guid?)adminGuid);
-        _currentUser.IsAdmin.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)adminGuid);
+        CurrentUserService.IsAdmin.Returns(true);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new CancelOrderCommand(order.Id.Value, "admin cancel", null), CancellationToken.None);

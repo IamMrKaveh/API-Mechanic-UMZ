@@ -16,13 +16,13 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.CommitStockForOrder;
 
-public class CommitStockForOrderHandlerTests
+public class CommitStockForOrderHandlerTests : HandlerTestBase
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly CommitStockForOrderHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly CommitStockForOrderHandler _sut;
 
     public CommitStockForOrderHandlerTests()
     {
-        _unitOfWork
+        UnitOfWork
             .ExecuteStrategyAsync(
                 Arg.Any<Func<CancellationToken, Task<int>>>(),
                 Arg.Any<CancellationToken>())
@@ -32,7 +32,7 @@ public class CommitStockForOrderHandlerTests
                 return await op!(ci.Arg<CancellationToken>());
             });
 
-        _sut = new CommitStockForOrderHandler(_inventoryRepository, _unitOfWork, _auditService, _dateTimeProvider);
+        _sut = new CommitStockForOrderHandler(_inventoryRepository, UnitOfWork, AuditService, DateTimeProvider);
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class CommitStockForOrderHandlerTests
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.Failure);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().ExecuteStrategyAsync(default(Func<CancellationToken, Task<int>>)!, default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().ExecuteStrategyAsync(default(Func<CancellationToken, Task<int>>)!, default);
     }
 
     [Fact]
@@ -69,8 +69,8 @@ public class CommitStockForOrderHandlerTests
         inv.ReservedQuantity.Value.ShouldBe(0);
         inv.StockQuantity.Value.ShouldBe(6);
         _inventoryRepository.Received(1).Update(inv);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogInventoryEventAsync(
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogInventoryEventAsync(
             inv.VariantId,
             "CommitStockForOrder",
             Arg.Any<string>(),

@@ -7,15 +7,14 @@ using Domain.Wallet.ValueObjects;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public sealed class SendWalletDebitRequestCreatedNotificationHandlerTests
+public sealed class SendWalletDebitRequestCreatedNotificationHandlerTests : HandlerTestBase
 {
     private readonly INotificationService _notificationService = Substitute.For<INotificationService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly SendWalletDebitRequestCreatedNotificationHandler _sut;
 
     public SendWalletDebitRequestCreatedNotificationHandlerTests()
     {
-        _sut = new SendWalletDebitRequestCreatedNotificationHandler(_notificationService, _auditService);
+        _sut = new SendWalletDebitRequestCreatedNotificationHandler(_notificationService, AuditService);
     }
 
     private static WalletDebitRequestCreatedEvent BuildEvent(
@@ -54,7 +53,7 @@ public sealed class SendWalletDebitRequestCreatedNotificationHandlerTests
             evt.WalletId.Value,
             "Wallet",
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -70,7 +69,7 @@ public sealed class SendWalletDebitRequestCreatedNotificationHandlerTests
         await Should.NotThrowAsync(async () =>
             await _sut.Handle(Wrap(evt), CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletDebitRequestCreatedNotificationFailed",
             Arg.Is<string>(s => s!.Contains(evt.OwnerId.Value.ToString())
                              && s.Contains("channel closed")),

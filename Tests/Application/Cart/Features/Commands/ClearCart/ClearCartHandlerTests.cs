@@ -12,20 +12,20 @@ using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.ClearCart;
 
-public class ClearCartHandlerTests
+public class ClearCartHandlerTests : HandlerTestBase
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ClearCartHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly ClearCartHandler _sut;
 
     public ClearCartHandlerTests()
     {
-        _sut = new ClearCartHandler(_cartRepository, _currentUserService, _dateTimeProvider);
+        _sut = new ClearCartHandler(_cartRepository, CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
     public async Task Handle_WhenNoUserAndInvalidGuestToken_ReturnsValidationFailure()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns((string?)null);
 
         var result = await _sut.Handle(new ClearCartCommand(), CancellationToken.None);
 
@@ -36,7 +36,7 @@ public class ClearCartHandlerTests
     [Fact]
     public async Task Handle_WhenUserHasNoCart_ReturnsSuccessAndDoesNotUpdate()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _cartRepository
             .FindByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns((Carts?)null);
@@ -56,7 +56,7 @@ public class ClearCartHandlerTests
         new CartItemParametersBuilder().WithQuantity(3).AddTo(cart);
         cart.CartItems.Count.ShouldBe(2);
 
-        _currentUserService.UserId.Returns((Guid?)userId.Value);
+        CurrentUserService.UserId.Returns((Guid?)userId.Value);
         _cartRepository
             .FindByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns(cart);
@@ -71,8 +71,8 @@ public class ClearCartHandlerTests
     [Fact]
     public async Task Handle_WhenGuestHasNoCart_ReturnsSuccessAndDoesNotUpdate()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns("GUEST-TOKEN-CLR12345");
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns("GUEST-TOKEN-CLR12345");
         _cartRepository
             .FindByGuestTokenAsync(Arg.Any<GuestToken>(), Arg.Any<CancellationToken>())
             .Returns((Carts?)null);
@@ -91,8 +91,8 @@ public class ClearCartHandlerTests
         new CartItemParametersBuilder().AddTo(cart);
         cart.CartItems.Count.ShouldBe(1);
 
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns(guestToken.Value);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns(guestToken.Value);
         _cartRepository
             .FindByGuestTokenAsync(Arg.Any<GuestToken>(), Arg.Any<CancellationToken>())
             .Returns(cart);

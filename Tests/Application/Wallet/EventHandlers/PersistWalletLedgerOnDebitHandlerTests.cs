@@ -8,16 +8,14 @@ using Domain.Wallet.ValueObjects;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public sealed class PersistWalletLedgerOnDebitHandlerTests
+public sealed class PersistWalletLedgerOnDebitHandlerTests : HandlerTestBase
 {
     private readonly IWalletLedgerRepository _ledgerRepository = Substitute.For<IWalletLedgerRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly PersistWalletLedgerOnDebitHandler _sut;
 
     public PersistWalletLedgerOnDebitHandlerTests()
     {
-        _sut = new PersistWalletLedgerOnDebitHandler(_ledgerRepository, _unitOfWork, _auditService);
+        _sut = new PersistWalletLedgerOnDebitHandler(_ledgerRepository, UnitOfWork, AuditService);
     }
 
     private static WalletDebitedEvent BuildDebitEvent(
@@ -51,9 +49,9 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
         await _sut.Handle(Wrap(evt), CancellationToken.None);
 
         await _ledgerRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Theory]
@@ -69,7 +67,7 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
         await _ledgerRepository.DidNotReceiveWithAnyArgs()
             .HasIdempotencyKeyAsync(default(UserId)!, default(string)!, default);
         await _ledgerRepository.Received(1).AddAsync(Arg.Any<WalletLedgerEntry>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -88,7 +86,7 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
         await _sut.Handle(Wrap(evt), CancellationToken.None);
 
         await _ledgerRepository.Received(1).AddAsync(Arg.Any<WalletLedgerEntry>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         captured.ShouldNotBeNull();
         captured!.WalletId.ShouldBe(evt.WalletId);
         captured.OwnerId.ShouldBe(evt.OwnerId);
@@ -104,7 +102,7 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
         _ledgerRepository
             .HasIdempotencyKeyAsync(evt.OwnerId, "race-key", Arg.Any<CancellationToken>())
             .Returns(false);
-        _unitOfWork
+        UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(new DbUpdateException(
                 "update failed",
@@ -112,12 +110,12 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
 
         await _sut.Handle(Wrap(evt), CancellationToken.None);
 
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("WalletLedger debit already persisted")
                              && s.Contains(evt.WalletId.Value.ToString())
                              && s.Contains("race-key")),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -127,7 +125,7 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
         _ledgerRepository
             .HasIdempotencyKeyAsync(evt.OwnerId, "race-key-2", Arg.Any<CancellationToken>())
             .Returns(false);
-        _unitOfWork
+        UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(new DbUpdateException(
                 "update failed",
@@ -135,10 +133,10 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
 
         await _sut.Handle(Wrap(evt), CancellationToken.None);
 
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -151,7 +149,7 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
         var unrelated = new DbUpdateException(
             "update failed",
             new Exception("connection reset by peer"));
-        _unitOfWork
+        UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(unrelated);
 
@@ -159,12 +157,12 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
             await _sut.Handle(Wrap(evt), CancellationToken.None));
 
         ex.ShouldBe(unrelated);
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Failed to persist wallet debit ledger")
                              && s.Contains(evt.WalletId.Value.ToString())
                              && s.Contains("some-key")),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
     }
 
     [Fact]
@@ -175,7 +173,7 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
             .HasIdempotencyKeyAsync(evt.OwnerId, "boom-key", Arg.Any<CancellationToken>())
             .Returns(false);
         var boom = new InvalidOperationException("boom");
-        _unitOfWork
+        UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(boom);
 
@@ -183,7 +181,7 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
             await _sut.Handle(Wrap(evt), CancellationToken.None));
 
         ex.Message.ShouldBe("boom");
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Failed to persist wallet debit ledger")
                              && s.Contains("boom")),
             Arg.Any<CancellationToken>());
@@ -203,8 +201,8 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
         await Should.ThrowAsync<InvalidOperationException>(async () =>
             await _sut.Handle(Wrap(evt), CancellationToken.None));
 
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
-        await _auditService.Received(1).LogErrorAsync(
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
     }
@@ -224,6 +222,6 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests
             .HasIdempotencyKeyAsync(evt.OwnerId, "ct-key", cts.Token);
         await _ledgerRepository.Received(1)
             .AddAsync(Arg.Any<WalletLedgerEntry>(), cts.Token);
-        await _unitOfWork.Received(1).SaveChangesAsync(cts.Token);
+        await UnitOfWork.Received(1).SaveChangesAsync(cts.Token);
     }
 }

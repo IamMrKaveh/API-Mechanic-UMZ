@@ -7,15 +7,14 @@ using SharedKernel.Models;
 
 namespace Tests.Application.Wallet.Features.Queries.GetMyWithdrawals;
 
-public sealed class GetMyWithdrawalsHandlerTests
+public sealed class GetMyWithdrawalsHandlerTests : HandlerTestBase
 {
     private readonly IWalletWithdrawalQueryService _queryService = Substitute.For<IWalletWithdrawalQueryService>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly GetMyWithdrawalsHandler _sut;
 
     public GetMyWithdrawalsHandlerTests()
     {
-        _sut = new GetMyWithdrawalsHandler(_queryService, _currentUserService);
+        _sut = new GetMyWithdrawalsHandler(_queryService, CurrentUserService);
     }
 
     private static WalletWithdrawalRequestDto CreateDto(decimal amount = 100_000m, string status = "Pending") =>
@@ -40,7 +39,7 @@ public sealed class GetMyWithdrawalsHandlerTests
     public async Task Handle_WhenServiceReturnsResults_ReturnsPaginatedSuccess()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         var items = new List<WalletWithdrawalRequestDto> { CreateDto(), CreateDto() };
         var paged = PaginatedResult<WalletWithdrawalRequestDto>.Create(items, 2, 1, 10);
         _queryService.GetByUserAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -59,7 +58,7 @@ public sealed class GetMyWithdrawalsHandlerTests
     public async Task Handle_WhenCalled_PassesCurrentUserIdToService()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         _queryService.GetByUserAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(PaginatedResult<WalletWithdrawalRequestDto>.Create(new List<WalletWithdrawalRequestDto>(), 0, 1, 10));
 
@@ -82,7 +81,7 @@ public sealed class GetMyWithdrawalsHandlerTests
     public async Task Handle_WhenPagingProvided_PropagatesPageAndPageSize(int page, int pageSize)
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         _queryService.GetByUserAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(PaginatedResult<WalletWithdrawalRequestDto>.Create(new List<WalletWithdrawalRequestDto>(), 0, page, pageSize));
 
@@ -99,7 +98,7 @@ public sealed class GetMyWithdrawalsHandlerTests
     public async Task Handle_WhenNoResults_ReturnsEmptyPage()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         _queryService.GetByUserAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(PaginatedResult<WalletWithdrawalRequestDto>.Create(new List<WalletWithdrawalRequestDto>(), 0, 1, 10));
 
@@ -117,7 +116,7 @@ public sealed class GetMyWithdrawalsHandlerTests
     {
         using var cts = new CancellationTokenSource();
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         _queryService.GetByUserAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(PaginatedResult<WalletWithdrawalRequestDto>.Create(new List<WalletWithdrawalRequestDto>(), 0, 1, 10));
 
@@ -132,7 +131,7 @@ public sealed class GetMyWithdrawalsHandlerTests
     [Fact]
     public async Task Handle_WhenCurrentUserIdIsEmpty_ThrowsDomainException()
     {
-        _currentUserService.UserId.Returns(Guid.Empty);
+        CurrentUserService.UserId.Returns(Guid.Empty);
 
         var query = new GetMyWithdrawalsQuery();
 
@@ -145,7 +144,7 @@ public sealed class GetMyWithdrawalsHandlerTests
     public async Task Handle_WhenServiceReturnsResult_ForwardsResultUntouched()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         var expected = PaginatedResult<WalletWithdrawalRequestDto>.Create(
             new List<WalletWithdrawalRequestDto> { CreateDto(500_000m, "Approved") }, 1, 1, 10);
         _queryService.GetByUserAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())

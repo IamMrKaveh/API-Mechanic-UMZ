@@ -8,10 +8,8 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Common.Behaviors;
 
-public class AuditingBehaviorTests
+public class AuditingBehaviorTests : HandlerTestBase
 {
-    private readonly IAuditService _audit = Substitute.For<IAuditService>();
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
     private readonly IAuditContextEnricher _enricher = Substitute.For<IAuditContextEnricher>();
 
     private readonly ILogger<AuditingBehavior<TestCommand, ServiceResult>> _logger =
@@ -21,24 +19,24 @@ public class AuditingBehaviorTests
 
     public AuditingBehaviorTests()
     {
-        _currentUser.IpAddress.Returns("10.0.0.1");
-        _currentUser.UserAgent.Returns("xunit-runner");
-        _currentUser.UserId.Returns((Guid?)null);
-        _currentUser.SessionId.Returns((Guid?)null);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.IpAddress.Returns("10.0.0.1");
+        CurrentUserService.UserAgent.Returns("xunit-runner");
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.SessionId.Returns((Guid?)null);
+        CurrentUserService.IsAdmin.Returns(false);
 
         _enricher.Snapshot().Returns(new Dictionary<string, string>());
 
         _sut = new AuditingBehavior<TestCommand, ServiceResult>(
-            _audit, _currentUser, _enricher, _logger);
+            AuditService, CurrentUserService, _enricher, _logger);
     }
 
     [Fact]
     public async Task Handle_WhenNonAuditableRequest_SkipsAuditing()
     {
         var behavior = new AuditingBehavior<NonAuditableRequest, ServiceResult>(
-            _audit,
-            _currentUser,
+            AuditService,
+            CurrentUserService,
             _enricher,
             Substitute.For<ILogger<AuditingBehavior<NonAuditableRequest, ServiceResult>>>());
 
@@ -48,7 +46,7 @@ public class AuditingBehaviorTests
             CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _audit.DidNotReceiveWithAnyArgs().LogAsync(
+        await AuditService.DidNotReceiveWithAnyArgs().LogAsync(
             default!, default!, default!, default, default, default, default, default, default);
     }
 
@@ -63,7 +61,7 @@ public class AuditingBehaviorTests
             CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _audit.Received(1).LogAsync(
+        await AuditService.Received(1).LogAsync(
             "Security",
             "Login",
             Arg.Any<IpAddress>(),
@@ -87,7 +85,7 @@ public class AuditingBehaviorTests
             CancellationToken.None);
 
         result.IsFailure.ShouldBeTrue();
-        await _audit.Received(1).LogAsync(
+        await AuditService.Received(1).LogAsync(
             "Security",
             "Login.Failed",
             Arg.Any<IpAddress>(),
@@ -112,7 +110,7 @@ public class AuditingBehaviorTests
         var ex = await Should.ThrowAsync<InvalidOperationException>((Func<Task<ServiceResult>>)act);
         ex.Message.ShouldBe("boom");
 
-        await _audit.Received(1).LogAsync(
+        await AuditService.Received(1).LogAsync(
             "Order",
             "Create.Exception",
             Arg.Any<IpAddress>(),
@@ -127,7 +125,7 @@ public class AuditingBehaviorTests
     [Fact]
     public async Task Handle_WhenAuditingItselfThrows_DoesNotBreakOuterFlowOnSuccessPath()
     {
-        _audit
+        AuditService
             .When(x => x.LogAsync(
                 Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IpAddress>(),
                 Arg.Any<UserId?>(), Arg.Any<string?>(), Arg.Any<string?>(),

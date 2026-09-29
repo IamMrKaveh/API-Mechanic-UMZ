@@ -4,16 +4,14 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Search.Services;
 
-public class ElasticsearchStatsServiceTests : IAsyncLifetime
-{
+public class ElasticsearchStatsServiceTests : HandlerTestBase, IAsyncLifetime{
     private FakeElasticsearchServer _server = null!;
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private ElasticsearchStatsService _sut = null!;
 
     public Task InitializeAsync()
     {
         _server = new FakeElasticsearchServer();
-        _sut = new ElasticsearchStatsService(_server.CreateClient(), _auditService);
+        _sut = new ElasticsearchStatsService(_server.CreateClient(), AuditService);
         return Task.CompletedTask;
     }
 
@@ -41,7 +39,7 @@ public class ElasticsearchStatsServiceTests : IAsyncLifetime
         result.NumberOfNodes.ShouldBe(2);
         result.ActivePrimaryShards.ShouldBe(10);
         result.UnavailableReason.ShouldBeNull();
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -72,7 +70,7 @@ public class ElasticsearchStatsServiceTests : IAsyncLifetime
     {
         var unreachable = new ElasticsearchStatsService(
             new ElasticsearchClient(new Uri("http://127.0.0.1:9")),
-            _auditService);
+            AuditService);
 
         var result = await unreachable.GetStatsAsync(CancellationToken.None);
 

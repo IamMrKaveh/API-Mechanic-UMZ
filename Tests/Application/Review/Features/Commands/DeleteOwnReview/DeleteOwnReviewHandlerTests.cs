@@ -10,19 +10,19 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Review.Features.Commands.DeleteOwnReview;
 
-public class DeleteOwnReviewHandlerTests
+public class DeleteOwnReviewHandlerTests : HandlerTestBase
 {
-    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly DeleteOwnReviewHandler _sut;
+    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly DeleteOwnReviewHandler _sut;
 
     public DeleteOwnReviewHandlerTests()
     {
-        _sut = new DeleteOwnReviewHandler(_reviewRepository, _currentUser);
+        _sut = new DeleteOwnReviewHandler(_reviewRepository, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenCurrentUserIdIsNull_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new DeleteOwnReviewCommand(Guid.NewGuid()), CancellationToken.None);
 
@@ -33,7 +33,7 @@ public class DeleteOwnReviewHandlerTests
     [Fact]
     public async Task Handle_WhenReviewNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         _reviewRepository
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
@@ -52,7 +52,7 @@ public class DeleteOwnReviewHandlerTests
         var callerId = Guid.NewGuid();
         var review = new ProductReviewBuilder().WithUserId(ownerId).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerId);
+        CurrentUserService.UserId.Returns((Guid?)callerId);
         _reviewRepository
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns(review);
@@ -71,7 +71,7 @@ public class DeleteOwnReviewHandlerTests
         var ownerId = UserId.From(callerGuid);
         var review = new ProductReviewBuilder().WithUserId(ownerId).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _reviewRepository
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns(review);

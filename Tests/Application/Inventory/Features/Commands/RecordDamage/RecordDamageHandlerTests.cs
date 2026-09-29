@@ -11,14 +11,14 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.RecordDamage;
 
-public class RecordDamageHandlerTests
+public class RecordDamageHandlerTests : HandlerTestBase
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly RecordDamageHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly RecordDamageHandler _sut;
 
     public RecordDamageHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new RecordDamageHandler(_inventoryRepository, _currentUserService, _dateTimeProvider);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new RecordDamageHandler(_inventoryRepository, CurrentUserService, DateTimeProvider);
     }
 
     [Fact]

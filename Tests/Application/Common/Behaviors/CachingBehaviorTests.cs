@@ -4,14 +4,12 @@ using Application.Common.Behaviors;
 
 namespace Tests.Application.Common.Behaviors;
 
-public class CachingBehaviorTests
+public class CachingBehaviorTests : HandlerTestBase
 {
-    private readonly ICacheService _cache = Substitute.For<ICacheService>(); private readonly IAuditService _audit = Substitute.For<IAuditService>();
-
-    [Fact]
+    private readonly ICacheService _cache = Substitute.For<ICacheService>(); [Fact]
     public async Task Handle_WhenRequestIsNotCacheable_CallsNextAndSkipsCache()
     {
-        var sut = new CachingBehavior<NonCacheableRequest, string>(_cache, _audit);
+        var sut = new CachingBehavior<NonCacheableRequest, string>(_cache, AuditService);
         var invoked = false;
 
         var result = await sut.Handle(
@@ -38,7 +36,7 @@ public class CachingBehaviorTests
         _cache.GetAsync<string>("k:hit", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<string?>("cached"));
 
-        var sut = new CachingBehavior<CacheableTestQuery, string>(_cache, _audit);
+        var sut = new CachingBehavior<CacheableTestQuery, string>(_cache, AuditService);
         var invoked = false;
 
         var result = await sut.Handle(
@@ -52,7 +50,7 @@ public class CachingBehaviorTests
 
         invoked.ShouldBeFalse();
         result.ShouldBe("cached");
-        await _audit.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "Cache hit",
             Arg.Is<string>(s => s!.Contains("k:hit")),
             Arg.Any<CancellationToken>());
@@ -67,7 +65,7 @@ public class CachingBehaviorTests
         _cache.GetAsync<string>("k:miss", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<string?>(null));
 
-        var sut = new CachingBehavior<CacheableTestQuery, string>(_cache, _audit);
+        var sut = new CachingBehavior<CacheableTestQuery, string>(_cache, AuditService);
 
         var result = await sut.Handle(
             request,
@@ -90,7 +88,7 @@ public class CachingBehaviorTests
         _cache.GetAsync<string?>("k:null", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<string?>(null));
 
-        var sut = new CachingBehavior<CacheableTestQuery, string?>(_cache, _audit);
+        var sut = new CachingBehavior<CacheableTestQuery, string?>(_cache, AuditService);
 
         var result = await sut.Handle(
             request,

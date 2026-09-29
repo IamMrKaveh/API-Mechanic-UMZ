@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Application.Common.Validation;
+using FluentValidation;
 
 namespace Application.Wallet.Features.Commands.ConfirmWalletTransfer;
 
@@ -6,8 +7,7 @@ public sealed class ConfirmWalletTransferValidator : AbstractValidator<ConfirmWa
 {
     public ConfirmWalletTransferValidator()
     {
-        RuleFor(x => x.TransferId)
-            .NotEmpty().WithMessage("شناسه انتقال الزامی است.");
+        this.RuleForRequiredId(x => x.TransferId, "شناسه انتقال الزامی است.");
 
         RuleFor(x => x.OtpCode)
             .NotEmpty().WithMessage("کد تأیید الزامی است.")

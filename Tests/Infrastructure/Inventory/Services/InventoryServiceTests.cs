@@ -12,17 +12,15 @@ using NSubstitute;
 
 namespace Tests.Infrastructure.Inventory.Services;
 
-public class InventoryServiceTests
+public class InventoryServiceTests : HandlerTestBase
 {
     private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>();
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly InventoryService _sut;
+    private readonly InventoryService _sut;
 
     public InventoryServiceTests()
     {
-        _sut = new InventoryService(_inventoryRepository, _orderRepository, _unitOfWork, _auditService, _dateTimeProvider);
+        _sut = new InventoryService(_inventoryRepository, _orderRepository, UnitOfWork, AuditService, DateTimeProvider);
     }
 
     private static global::Domain.Inventory.Aggregates.Inventory NewInventory(int stock = 10) =>
@@ -38,7 +36,7 @@ public class InventoryServiceTests
             VariantId.NewId(), StockQuantity.Create(2), "REF-1", ct: CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.NotFound);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -54,7 +52,7 @@ public class InventoryServiceTests
         result.ShouldBeSuccess();
         inventory.AvailableQuantity.ShouldBe(7);
         _inventoryRepository.Received(1).Update(inventory);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -69,7 +67,7 @@ public class InventoryServiceTests
 
         result.ShouldFailWith(ErrorCode.Failure);
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -78,7 +76,7 @@ public class InventoryServiceTests
         var inventory = NewInventory(stock: 10);
         _inventoryRepository.GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(inventory);
-        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
+        UnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Throws(new ConcurrencyException("conflict"));
 
         var result = await _sut.ReserveStockAsync(
@@ -101,7 +99,7 @@ public class InventoryServiceTests
         result.ShouldBeSuccess();
         inventory.AvailableQuantity.ShouldBe(10);
         _inventoryRepository.Received(1).Update(inventory);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -128,7 +126,7 @@ public class InventoryServiceTests
 
         result.ShouldBeSuccess();
         _inventoryRepository.Received(1).Update(inventory);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -182,7 +180,7 @@ public class InventoryServiceTests
 
         result.ShouldBeSuccess();
         _inventoryRepository.Received(1).Update(inventory);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -195,14 +193,14 @@ public class InventoryServiceTests
             .Returns(order);
         _inventoryRepository.GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns((global::Domain.Inventory.Aggregates.Inventory?)null);
-        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
+        UnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Throws(new InvalidOperationException("db down"));
 
         var result = await _sut.ReturnStockForOrderAsync(
             order.Id, Guid.NewGuid(), "return", CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.Failure);
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -219,7 +217,7 @@ public class InventoryServiceTests
         result.ShouldBeSuccess();
         inventory.AvailableQuantity.ShouldBe(10);
         _inventoryRepository.Received(1).Update(inventory);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -254,7 +252,7 @@ public class InventoryServiceTests
 
         result.ShouldBeSuccess();
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -262,7 +260,7 @@ public class InventoryServiceTests
     {
         _inventoryRepository.GetByReferenceNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns([]);
-        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
+        UnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Throws(new InvalidOperationException("db down"));
 
         var result = await _sut.RollbackReservationsAsync("REF", CancellationToken.None);

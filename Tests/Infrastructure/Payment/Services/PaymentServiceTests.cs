@@ -19,16 +19,12 @@ using SharedKernel.ValueObjects;
 
 namespace Tests.Infrastructure.Payment.Services;
 
-public class PaymentServiceTests
+public class PaymentServiceTests : HandlerTestBase
 {
     private readonly IPaymentTransactionRepository _paymentRepository = Substitute.For<IPaymentTransactionRepository>();
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly IPaymentGatewayFactory _gatewayFactory = Substitute.For<IPaymentGatewayFactory>();
     private readonly IPaymentGateway _gateway = Substitute.For<IPaymentGateway>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly IPaymentCallbackNonceService _nonceService = Substitute.For<IPaymentCallbackNonceService>();
     private readonly IFeatureManager _featureManager = Substitute.For<IFeatureManager>();
     private readonly PaymentService _sut;
@@ -37,10 +33,10 @@ public class PaymentServiceTests
 
     public PaymentServiceTests()
     {
-        _dateTimeProvider.UtcNow.Returns(FixedNow);
+        DateTimeProvider.UtcNow.Returns(FixedNow);
         _gatewayFactory.GetGateway(Arg.Any<string>()).Returns(_gateway);
         _gateway.GatewayName.Returns("Zarinpal");
-        _currentUserService.FrontendBaseUrl.Returns("https://shop.example.com");
+        CurrentUserService.FrontendBaseUrl.Returns("https://shop.example.com");
         _nonceService.IssueAsync(Arg.Any<Guid>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns("nonce-123");
         _featureManager.IsEnabledAsync(Arg.Any<string>()).Returns(false);
@@ -48,16 +44,16 @@ public class PaymentServiceTests
             _paymentRepository,
             _orderRepository,
             _gatewayFactory,
-            _unitOfWork,
-            _dateTimeProvider,
-            _auditService,
+            UnitOfWork,
+            DateTimeProvider,
+            AuditService,
             Options.Create(new ZarinPalOptions
             {
                 StartPayBaseUrl = "https://pay.example/StartPay/",
                 SandboxStartPayBaseUrl = "https://sandbox.example/StartPay/",
                 UseSandbox = false
             }),
-            _currentUserService,
+            CurrentUserService,
             _nonceService,
             _featureManager);
     }
@@ -132,7 +128,7 @@ public class PaymentServiceTests
         captured!.OrderId.ShouldBe(order.Id);
         order.Status.ShouldBe(OrderStatusValue.Pending);
         _orderRepository.Received(1).Update(order);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -165,7 +161,7 @@ public class PaymentServiceTests
         await Should.ThrowAsync<ExternalServiceException>(() => _sut.InitiatePaymentAsync(
             order.Id, order.FinalAmount, IpAddress.Create("127.0.0.1"), userId, null, CancellationToken.None));
 
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -197,7 +193,7 @@ public class PaymentServiceTests
         result.IsVerified.ShouldBeTrue();
         result.RefId.ShouldBe(123456L);
         order.IsPaid.ShouldBeTrue();
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -236,7 +232,7 @@ public class PaymentServiceTests
         await Should.ThrowAsync<ExternalServiceException>(() =>
             _sut.VerifyPaymentAsync(transaction.Authority.Value, CancellationToken.None));
 
-        await _auditService.Received(1).LogWarningAsync(
+        await AuditService.Received(1).LogWarningAsync(
             Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -261,7 +257,7 @@ public class PaymentServiceTests
         transaction.IsSuccessful().ShouldBeTrue();
         order.IsPaid.ShouldBeTrue();
         _paymentRepository.Received(1).Update(transaction);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -289,7 +285,7 @@ public class PaymentServiceTests
         await Should.ThrowAsync<ExternalServiceException>(() =>
             _sut.ProcessWebhookAsync(transaction.Authority.Value, "OK", "bad-nonce", CancellationToken.None));
 
-        await _auditService.Received(1).LogSecurityEventAsync(
+        await AuditService.Received(1).LogSecurityEventAsync(
             "PaymentWebhookInvalidNonce", Arg.Any<string>(), Arg.Any<IpAddress>(), Arg.Any<UserId?>(), Arg.Any<CancellationToken>());
     }
 
@@ -306,6 +302,6 @@ public class PaymentServiceTests
 
         transaction.IsPending().ShouldBeFalse();
         _paymentRepository.Received(1).Update(transaction);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

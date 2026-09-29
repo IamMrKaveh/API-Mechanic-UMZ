@@ -1,11 +1,13 @@
+using Application.Common.Validation;
+
 namespace Application.Brand.Features.Commands.UpdateBrand;
 
 public sealed class UpdateBrandValidator : AbstractValidator<UpdateBrandCommand>
 {
     public UpdateBrandValidator()
     {
-        RuleFor(x => x.BrandId).NotEmpty().WithMessage("شناسه برند الزامی است.");
-        RuleFor(x => x.CategoryId).NotEmpty().WithMessage("دسته‌بندی الزامی است.");
+        this.RuleForRequiredId(x => x.BrandId, "شناسه برند الزامی است.");
+        this.RuleForRequiredId(x => x.CategoryId, "دسته‌بندی الزامی است.");
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("نام برند الزامی است.")
             .MaximumLength(100).WithMessage("نام برند نمی‌تواند بیش از ۱۰۰ کاراکتر باشد.");

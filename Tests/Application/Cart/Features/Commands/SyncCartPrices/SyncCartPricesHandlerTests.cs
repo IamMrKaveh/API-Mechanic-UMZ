@@ -17,24 +17,24 @@ using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.SyncCartPrices;
 
-public class SyncCartPricesHandlerTests
+public class SyncCartPricesHandlerTests : HandlerTestBase
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly SyncCartPricesHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly SyncCartPricesHandler _sut;
 
     public SyncCartPricesHandlerTests()
     {
         _sut = new SyncCartPricesHandler(
             _cartRepository,
             _variantRepository,
-            _auditService,
-            _currentUserService, _dateTimeProvider);
+            AuditService,
+            CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
     public async Task Handle_WhenNoUserAndNoGuestToken_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns((string?)null);
 
         var result = await _sut.Handle(new SyncCartPricesCommand(), CancellationToken.None);
 
@@ -45,8 +45,8 @@ public class SyncCartPricesHandlerTests
     [Fact]
     public async Task Handle_WhenUserHasNoCart_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.GuestToken.Returns((string?)null);
         _cartRepository
             .FindByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns((Carts?)null);
@@ -60,8 +60,8 @@ public class SyncCartPricesHandlerTests
     [Fact]
     public async Task Handle_WhenGuestHasNoCart_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns("GUEST-TOKEN-SYN12345");
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns("GUEST-TOKEN-SYN12345");
         _cartRepository
             .FindByGuestTokenAsync(Arg.Any<GuestToken>(), Arg.Any<CancellationToken>())
             .Returns((Carts?)null);
@@ -91,8 +91,8 @@ public class SyncCartPricesHandlerTests
             .WithOriginalPrice(150m, "IRT")
             .Build();
 
-        _currentUserService.UserId.Returns((Guid?)userId.Value);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)userId.Value);
+        CurrentUserService.GuestToken.Returns((string?)null);
         _cartRepository
             .FindByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns(cart);
@@ -106,7 +106,7 @@ public class SyncCartPricesHandlerTests
         cart.CartItems.Single().SellingPrice.Amount.ShouldBe(80m);
         cart.CartItems.Single().OriginalPrice.Amount.ShouldBe(150m);
         _cartRepository.Received(1).Update(cart);
-        await _auditService.Received(1).LogAsync(
+        await AuditService.Received(1).LogAsync(
             "Cart",
             "SyncCartPrices",
             Arg.Any<IpAddress>(),
@@ -137,8 +137,8 @@ public class SyncCartPricesHandlerTests
             .WithOriginalPrice(70m, "IRT")
             .Build();
 
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns(guestTokenValue);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns(guestTokenValue);
         _cartRepository
             .FindByGuestTokenAsync(Arg.Any<GuestToken>(), Arg.Any<CancellationToken>())
             .Returns(cart);
@@ -151,7 +151,7 @@ public class SyncCartPricesHandlerTests
         result.ShouldBeSuccess();
         cart.CartItems.Single().SellingPrice.Amount.ShouldBe(45m);
         _cartRepository.Received(1).Update(cart);
-        await _auditService.DidNotReceiveWithAnyArgs().LogAsync(
+        await AuditService.DidNotReceiveWithAnyArgs().LogAsync(
             default!, default!, default!, default, default, default, default, default, default);
     }
 
@@ -167,7 +167,7 @@ public class SyncCartPricesHandlerTests
             .WithOriginalPrice(120m, "IRT")
             .AddTo(cart);
 
-        _currentUserService.UserId.Returns((Guid?)userId.Value);
+        CurrentUserService.UserId.Returns((Guid?)userId.Value);
         _cartRepository
             .FindByUserIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
             .Returns(cart);

@@ -9,27 +9,23 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.CancelWithdrawal;
 
-public sealed class CancelWithdrawalHandlerTests
+public sealed class CancelWithdrawalHandlerTests : HandlerTestBase
 {
     private readonly IWalletWithdrawalRepository _withdrawalRepository = Substitute.For<IWalletWithdrawalRepository>();
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
-
     private readonly CancelWithdrawalHandler _sut;
 
     public CancelWithdrawalHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new CancelWithdrawalHandler(_withdrawalRepository, _walletRepository, _auditService, _dateTimeProvider, _currentUserService);
+
+        _sut = new CancelWithdrawalHandler(_withdrawalRepository, _walletRepository, AuditService, DateTimeProvider, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenWithdrawalNotFound_ReturnsNotFound()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns((WalletWithdrawalRequest?)null);
 
@@ -43,7 +39,7 @@ public sealed class CancelWithdrawalHandlerTests
     {
         var ownerId = UserId.NewId();
         var otherUserId = UserId.NewId();
-        _currentUserService.UserId.Returns(otherUserId.Value);
+        CurrentUserService.UserId.Returns(otherUserId.Value);
         var withdrawal = new WalletWithdrawalRequestBuilder().WithUserId(ownerId).Build();
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns(withdrawal);
@@ -57,7 +53,7 @@ public sealed class CancelWithdrawalHandlerTests
     public async Task Handle_WhenWalletNotFound_ReturnsNotFound()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
         var withdrawal = new WalletWithdrawalRequestBuilder().WithUserId(userId).Build();
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns(withdrawal);
@@ -73,7 +69,7 @@ public sealed class CancelWithdrawalHandlerTests
     public async Task Handle_WhenValid_ReleasesReservationCancelsWithdrawalAndReturnsSuccess()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
 
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
@@ -97,7 +93,7 @@ public sealed class CancelWithdrawalHandlerTests
         wallet.AvailableBalance.Amount.ShouldBe(500_000m);
         _walletRepository.Received(1).Update(wallet);
         _withdrawalRepository.Received(1).Update(withdrawal);
-        await _auditService.Received(1).LogSecurityEventAsync(
+        await AuditService.Received(1).LogSecurityEventAsync(
             "WithdrawalCancelled",
             Arg.Any<string>(),
             Arg.Any<IpAddress>(),
@@ -109,7 +105,7 @@ public sealed class CancelWithdrawalHandlerTests
     public async Task Handle_WhenWithdrawalNotPending_ReturnsFailure()
     {
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(userId.Value);
+        CurrentUserService.UserId.Returns(userId.Value);
 
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));

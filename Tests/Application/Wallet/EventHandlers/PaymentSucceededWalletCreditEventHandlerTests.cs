@@ -8,15 +8,14 @@ using Domain.User.ValueObjects;
 
 namespace Tests.Application.Wallet.EventHandlers;
 
-public class PaymentSucceededWalletCreditEventHandlerTests
+public class PaymentSucceededWalletCreditEventHandlerTests : HandlerTestBase
 {
     private readonly IMediator _mediator = Substitute.For<IMediator>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly PaymentSucceededWalletCreditEventHandler _sut;
 
     public PaymentSucceededWalletCreditEventHandlerTests()
     {
-        _sut = new PaymentSucceededWalletCreditEventHandler(_mediator, _auditService);
+        _sut = new PaymentSucceededWalletCreditEventHandler(_mediator, AuditService);
     }
 
     private static PaymentSucceededEvent BuildEvent() => new(
@@ -70,7 +69,7 @@ public class PaymentSucceededWalletCreditEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -84,7 +83,7 @@ public class PaymentSucceededWalletCreditEventHandlerTests
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletTopUpFailed",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -101,7 +100,7 @@ public class PaymentSucceededWalletCreditEventHandlerTests
 
         await Should.NotThrowAsync(() => _sut.Handle(notification, CancellationToken.None));
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletPaymentSucceededHandlerError",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());

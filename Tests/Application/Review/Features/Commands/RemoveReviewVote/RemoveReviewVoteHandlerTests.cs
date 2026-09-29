@@ -12,11 +12,9 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Review.Features.Commands.RemoveReviewVote;
 
-public class RemoveReviewVoteHandlerTests
+public class RemoveReviewVoteHandlerTests : HandlerTestBase
 {
-    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
-
-    private static IOptions<ReviewSettings> Enabled()
+    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private static IOptions<ReviewSettings> Enabled()
         => Options.Create(new ReviewSettings { EnableLikeDislike = true });
 
     [Fact]
@@ -24,7 +22,7 @@ public class RemoveReviewVoteHandlerTests
     {
         var sut = new RemoveReviewVoteHandler(
             _reviewRepository,
-            _currentUser,
+            CurrentUserService,
             Options.Create(new ReviewSettings { EnableLikeDislike = false }));
 
         var result = await sut.Handle(new RemoveReviewVoteCommand(Guid.NewGuid()), CancellationToken.None);
@@ -35,8 +33,8 @@ public class RemoveReviewVoteHandlerTests
     [Fact]
     public async Task Handle_WhenUserIdIsNull_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
-        var sut = new RemoveReviewVoteHandler(_reviewRepository, _currentUser, Enabled());
+        CurrentUserService.UserId.Returns((Guid?)null);
+        var sut = new RemoveReviewVoteHandler(_reviewRepository, CurrentUserService, Enabled());
 
         var result = await sut.Handle(new RemoveReviewVoteCommand(Guid.NewGuid()), CancellationToken.None);
 
@@ -46,12 +44,12 @@ public class RemoveReviewVoteHandlerTests
     [Fact]
     public async Task Handle_WhenReviewNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _reviewRepository
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns((ProductReview?)null);
 
-        var sut = new RemoveReviewVoteHandler(_reviewRepository, _currentUser, Enabled());
+        var sut = new RemoveReviewVoteHandler(_reviewRepository, CurrentUserService, Enabled());
 
         var result = await sut.Handle(new RemoveReviewVoteCommand(Guid.NewGuid()), CancellationToken.None);
 
@@ -63,7 +61,7 @@ public class RemoveReviewVoteHandlerTests
     {
         var voterGuid = Guid.NewGuid();
         var voterUserId = UserId.From(voterGuid);
-        _currentUser.UserId.Returns((Guid?)voterGuid);
+        CurrentUserService.UserId.Returns((Guid?)voterGuid);
 
         var review = new ProductReviewBuilder()
             .WithUserId(UserId.NewId())
@@ -76,7 +74,7 @@ public class RemoveReviewVoteHandlerTests
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns(review);
 
-        var sut = new RemoveReviewVoteHandler(_reviewRepository, _currentUser, Enabled());
+        var sut = new RemoveReviewVoteHandler(_reviewRepository, CurrentUserService, Enabled());
 
         var result = await sut.Handle(new RemoveReviewVoteCommand(review.Id.Value), CancellationToken.None);
 
@@ -90,7 +88,7 @@ public class RemoveReviewVoteHandlerTests
     public async Task Handle_WhenNoVoteFromUserExists_ReturnsSuccessAsNoOp()
     {
         var voterGuid = Guid.NewGuid();
-        _currentUser.UserId.Returns((Guid?)voterGuid);
+        CurrentUserService.UserId.Returns((Guid?)voterGuid);
 
         var review = new ProductReviewBuilder()
             .WithUserId(UserId.NewId())
@@ -100,7 +98,7 @@ public class RemoveReviewVoteHandlerTests
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<CancellationToken>())
             .Returns(review);
 
-        var sut = new RemoveReviewVoteHandler(_reviewRepository, _currentUser, Enabled());
+        var sut = new RemoveReviewVoteHandler(_reviewRepository, CurrentUserService, Enabled());
 
         var result = await sut.Handle(new RemoveReviewVoteCommand(review.Id.Value), CancellationToken.None);
 

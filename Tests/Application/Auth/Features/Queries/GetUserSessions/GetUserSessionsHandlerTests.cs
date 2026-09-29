@@ -8,19 +8,19 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Auth.Features.Queries.GetUserSessions;
 
-public class GetUserSessionsHandlerTests
+public class GetUserSessionsHandlerTests : HandlerTestBase
 {
-    private readonly IUserQueryService _userQueryService = Substitute.For<IUserQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetUserSessionsHandler _sut;
+    private readonly IUserQueryService _userQueryService = Substitute.For<IUserQueryService>(); private readonly GetUserSessionsHandler _sut;
 
     public GetUserSessionsHandlerTests()
     {
-        _sut = new GetUserSessionsHandler(_userQueryService, _currentUserService);
+        _sut = new GetUserSessionsHandler(_userQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenTargetAndCallerAreNull_ReturnsUnauthorized()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new GetUserSessionsQuery(null), CancellationToken.None);
 
@@ -31,7 +31,7 @@ public class GetUserSessionsHandlerTests
     [Fact]
     public async Task Handle_WhenTargetIsEmptyGuidAndCallerIsNull_ReturnsUnauthorized()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new GetUserSessionsQuery(Guid.Empty), CancellationToken.None);
 
@@ -44,8 +44,8 @@ public class GetUserSessionsHandlerTests
     {
         var targetGuid = Guid.NewGuid();
         var currentSessionGuid = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUserService.SessionId.Returns((Guid?)currentSessionGuid);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.SessionId.Returns((Guid?)currentSessionGuid);
 
         var sessions = new List<UserSessionDto>
     {
@@ -71,8 +71,8 @@ public class GetUserSessionsHandlerTests
     public async Task Handle_WhenTargetIsNullAndCallerAuthenticated_FallsBackToCallerId()
     {
         var callerGuid = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)callerGuid);
-        _currentUserService.SessionId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.SessionId.Returns((Guid?)null);
         _userQueryService
             .GetActiveSessionsAsync(
                 Arg.Any<UserId>(),
@@ -93,7 +93,7 @@ public class GetUserSessionsHandlerTests
     public async Task Handle_WhenSessionsEmpty_ReturnsSuccessWithEmptyPaginatedResult()
     {
         var callerGuid = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _userQueryService
             .GetActiveSessionsAsync(
                 Arg.Any<UserId>(),

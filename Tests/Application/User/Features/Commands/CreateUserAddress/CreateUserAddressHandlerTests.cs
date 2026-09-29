@@ -11,14 +11,14 @@ using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Application.User.Features.Commands.CreateUserAddress;
 
-public class CreateUserAddressHandlerTests
+public class CreateUserAddressHandlerTests : HandlerTestBase
 {
-    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly CreateUserAddressHandler _sut;
+    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly CreateUserAddressHandler _sut;
 
     public CreateUserAddressHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new CreateUserAddressHandler(_userRepository, _currentUserService, _mapper);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new CreateUserAddressHandler(_userRepository, CurrentUserService, _mapper);
     }
 
     private static CreateUserAddressCommand BuildCommand(bool isDefault = false) =>

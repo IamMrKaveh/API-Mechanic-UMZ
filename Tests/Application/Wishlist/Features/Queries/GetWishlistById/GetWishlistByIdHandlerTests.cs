@@ -8,13 +8,13 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Wishlist.Features.Queries.GetWishlistById;
 
-public class GetWishlistByIdHandlerTests
+public class GetWishlistByIdHandlerTests : HandlerTestBase
 {
-    private readonly IWishlistQueryService _wishlistQueryService = Substitute.For<IWishlistQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetWishlistByIdHandler _sut;
+    private readonly IWishlistQueryService _wishlistQueryService = Substitute.For<IWishlistQueryService>(); private readonly GetWishlistByIdHandler _sut;
 
     public GetWishlistByIdHandlerTests()
     {
-        _sut = new GetWishlistByIdHandler(_wishlistQueryService, _currentUserService);
+        _sut = new GetWishlistByIdHandler(_wishlistQueryService, CurrentUserService);
     }
 
     private static PaginatedResult<WishlistItemDto> EmptyPage(int page, int pageSize)
@@ -26,7 +26,7 @@ public class GetWishlistByIdHandlerTests
         var targetUserGuid = Guid.NewGuid();
         var currentUserGuid = Guid.NewGuid();
 
-        _currentUserService.UserId.Returns((Guid?)currentUserGuid);
+        CurrentUserService.UserId.Returns((Guid?)currentUserGuid);
         _wishlistQueryService
             .GetPagedAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(EmptyPage(2, 5));
@@ -48,7 +48,7 @@ public class GetWishlistByIdHandlerTests
     {
         var currentUserGuid = Guid.NewGuid();
 
-        _currentUserService.UserId.Returns((Guid?)currentUserGuid);
+        CurrentUserService.UserId.Returns((Guid?)currentUserGuid);
         _wishlistQueryService
             .GetPagedAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(EmptyPage(1, 10));
@@ -68,7 +68,7 @@ public class GetWishlistByIdHandlerTests
     [Fact]
     public async Task Handle_WhenBothTargetAndCurrentUserAreNull_ThrowsInvalidOperationException()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var query = new GetWishlistByIdQuery(1, 10);
 
@@ -89,7 +89,7 @@ public class GetWishlistByIdHandlerTests
     {
         var currentUserGuid = Guid.NewGuid();
 
-        _currentUserService.UserId.Returns((Guid?)currentUserGuid);
+        CurrentUserService.UserId.Returns((Guid?)currentUserGuid);
         _wishlistQueryService
             .GetPagedAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(EmptyPage(expectedPage, expectedPageSize));
@@ -117,7 +117,7 @@ public class GetWishlistByIdHandlerTests
     };
         var page = new PaginatedResult<WishlistItemDto>(items, totalCount: 2, page: 1, pageSize: 10);
 
-        _currentUserService.UserId.Returns((Guid?)currentUserGuid);
+        CurrentUserService.UserId.Returns((Guid?)currentUserGuid);
         _wishlistQueryService
             .GetPagedAsync(Arg.Any<UserId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(page);

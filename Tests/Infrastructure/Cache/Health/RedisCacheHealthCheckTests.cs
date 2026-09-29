@@ -6,12 +6,10 @@ using StackExchange.Redis;
 
 namespace Tests.Infrastructure.Cache.Health;
 
-public class RedisCacheHealthCheckTests
+public class RedisCacheHealthCheckTests : HandlerTestBase
 {
     private readonly IConnectionMultiplexer _redis = Substitute.For<IConnectionMultiplexer>();
     private readonly IDatabase _db = Substitute.For<IDatabase>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-
     public RedisCacheHealthCheckTests()
     {
         _redis.GetDatabase(Arg.Any<int>(), Arg.Any<object?>()).Returns(_db);
@@ -20,7 +18,7 @@ public class RedisCacheHealthCheckTests
     }
 
     private RedisCacheHealthCheck BuildSut(bool isEnabled = true) =>
-        new(_redis, _auditService,
+        new(_redis, AuditService,
             Options.Create(new CacheOptions { IsEnabled = isEnabled, KeyPrefix = "shop" }));
 
     private static HealthCheckContext Context() =>
@@ -57,7 +55,7 @@ public class RedisCacheHealthCheckTests
         result.Data.ShouldContainKey("CheckLatency");
         result.Data["ConnectedEndpoints"].ShouldBe(1);
         result.Data["IsConnected"].ShouldBe(true);
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -85,6 +83,6 @@ public class RedisCacheHealthCheckTests
         result.Description.ShouldBe("Redis is unreachable");
         result.Exception.ShouldBeOfType<RedisConnectionException>();
         result.Data["Type"].ShouldBe("RedisConnectionException");
-        await _auditService.Received(1).LogErrorAsync("Redis health check failed.", Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync("Redis health check failed.", Arg.Any<CancellationToken>());
     }
 }

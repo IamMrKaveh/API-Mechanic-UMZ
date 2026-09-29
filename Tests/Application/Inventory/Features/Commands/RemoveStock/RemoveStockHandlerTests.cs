@@ -16,19 +16,19 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.RemoveStock;
 
-public class RemoveStockHandlerTests
+public class RemoveStockHandlerTests : HandlerTestBase
 {
-    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly RemoveStockHandler _sut;
+    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly RemoveStockHandler _sut;
 
     public RemoveStockHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _sut = new RemoveStockHandler(
             _variantRepository,
             _inventoryRepository,
-            _auditService,
+            AuditService,
             _cacheService,
-            _currentUserService, _dateTimeProvider);
+            CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class RemoveStockHandlerTests
         result.ShouldBeSuccess();
         inventory.StockQuantity.Value.ShouldBe(7);
         _inventoryRepository.Received(1).Update(inventory);
-        await _auditService.Received(1).LogInventoryEventAsync(
+        await AuditService.Received(1).LogInventoryEventAsync(
             inventory.VariantId,
             "RemoveStock",
             Arg.Any<string>(),

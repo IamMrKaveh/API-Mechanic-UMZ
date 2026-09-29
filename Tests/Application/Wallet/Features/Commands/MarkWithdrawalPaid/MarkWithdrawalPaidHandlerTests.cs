@@ -9,16 +9,11 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Commands.MarkWithdrawalPaid;
 
-public sealed class MarkWithdrawalPaidHandlerTests
+public sealed class MarkWithdrawalPaidHandlerTests : HandlerTestBase
 {
     private readonly IWalletWithdrawalRepository _withdrawalRepository = Substitute.For<IWalletWithdrawalRepository>();
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
-
     private readonly MarkWithdrawalPaidHandler _sut;
 
     public MarkWithdrawalPaidHandlerTests()
@@ -26,16 +21,15 @@ public sealed class MarkWithdrawalPaidHandlerTests
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet", true));
 
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         _sut = new MarkWithdrawalPaidHandler(
             _withdrawalRepository, _walletRepository,
-            _distributedLock, _auditService, _dateTimeProvider, _currentUserService);
+            _distributedLock, AuditService, DateTimeProvider, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenWithdrawalNotFound_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns((WalletWithdrawalRequest?)null);
 
@@ -48,7 +42,7 @@ public sealed class MarkWithdrawalPaidHandlerTests
     public async Task Handle_WhenLockNotAcquired_ReturnsConflict()
     {
         var adminId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
         var withdrawal = new WalletWithdrawalRequestBuilder().Build();
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns(withdrawal);
@@ -64,7 +58,7 @@ public sealed class MarkWithdrawalPaidHandlerTests
     public async Task Handle_WhenWalletNotFound_ReturnsNotFound()
     {
         var adminId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
         var withdrawal = new WalletWithdrawalRequestBuilder().Build();
         _withdrawalRepository.GetByIdForUpdateAsync(Arg.Any<WalletWithdrawalRequestId>(), Arg.Any<CancellationToken>())
             .Returns(withdrawal);
@@ -81,7 +75,7 @@ public sealed class MarkWithdrawalPaidHandlerTests
     {
         var adminId = UserId.NewId();
         var userId = UserId.NewId();
-        _currentUserService.UserId.Returns(adminId.Value);
+        CurrentUserService.UserId.Returns(adminId.Value);
 
         var wallet = new WalletBuilder().WithOwnerId(userId).Build();
         wallet.Credit(Money.Create(500_000m), "seed", Guid.NewGuid().ToString(), DateTime.UtcNow, Guid.NewGuid().ToString("N"));
@@ -105,7 +99,7 @@ public sealed class MarkWithdrawalPaidHandlerTests
         withdrawal.Status.ShouldBe(WalletWithdrawalStatus.Paid);
         withdrawal.BankReferenceNumber.ShouldBe("REF-XYZ");
         wallet.Balance.Amount.ShouldBe(300_000m);
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WithdrawalMarkedPaid", Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

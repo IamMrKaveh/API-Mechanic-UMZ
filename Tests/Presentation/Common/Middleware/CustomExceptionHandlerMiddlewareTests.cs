@@ -13,16 +13,15 @@ using System.Runtime.CompilerServices;
 
 namespace Tests.Presentation.Common.Middleware;
 
-public class CustomExceptionHandlerMiddlewareTests
+public class CustomExceptionHandlerMiddlewareTests : HandlerTestBase
 {
-    private readonly IAuditService _audit = Substitute.For<IAuditService>();
     private readonly ILogger<CustomExceptionHandlerMiddleware> _logger =
         Substitute.For<ILogger<CustomExceptionHandlerMiddleware>>();
 
     private CustomExceptionHandlerMiddleware BuildSut(RequestDelegate next)
     {
         var services = new ServiceCollection();
-        services.AddSingleton(_audit);
+        services.AddSingleton(AuditService);
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         scopeFactory.CreateScope().Returns(_ => services.BuildServiceProvider().CreateScope());
         return new CustomExceptionHandlerMiddleware(next, scopeFactory, _logger);
@@ -74,7 +73,7 @@ public class CustomExceptionHandlerMiddlewareTests
         doc.RootElement.GetProperty("status").GetInt32().ShouldBe(400);
         doc.RootElement.GetProperty("errorCode").GetString().ShouldBe("VALIDATION_ERROR");
         doc.RootElement.GetProperty("errors").GetProperty("Name")[0].GetString().ShouldBe("نام الزامی است.");
-        await _audit.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -174,7 +173,7 @@ public class CustomExceptionHandlerMiddlewareTests
         context.Response.StatusCode.ShouldBe(500);
         using var doc = ReadProblem(context);
         doc.RootElement.GetProperty("errorCode").GetString().ShouldBe("INTERNAL_SERVER_ERROR");
-        await _audit.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -204,7 +203,7 @@ public class CustomExceptionHandlerMiddlewareTests
         doc.RootElement.GetProperty("status").GetInt32().ShouldBe(500);
         doc.RootElement.GetProperty("traceId").GetString().ShouldBe(context.TraceIdentifier);
         doc.RootElement.GetProperty("instance").GetString().ShouldBe("/api/orders");
-        await _audit.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s.Contains(nameof(InvalidOperationException))),
             Arg.Any<CancellationToken>());
     }

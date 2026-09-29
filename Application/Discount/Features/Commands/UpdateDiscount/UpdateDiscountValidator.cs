@@ -1,4 +1,5 @@
-﻿using Domain.Discount.Enums;
+﻿using Application.Common.Validation;
+using Domain.Discount.Enums;
 using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Discount.Features.Commands.UpdateDiscount;
@@ -7,8 +8,7 @@ public class UpdateDiscountValidator : AbstractValidator<UpdateDiscountCommand>
 {
     public UpdateDiscountValidator(IDateTimeProvider dateTimeProvider)
     {
-        RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("شناسه کد تخفیف الزامی است.");
+        this.RuleForRequiredId(x => x.Id, "شناسه کد تخفیف الزامی است.");
 
         RuleFor(x => x.Value)
             .GreaterThan(0)

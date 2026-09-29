@@ -12,9 +12,9 @@ using Products = Domain.Product.Aggregates.Product;
 
 namespace Tests.Application.Review.Features.Commands.CreateReview;
 
-public class CreateReviewHandlerTests
+public class CreateReviewHandlerTests : HandlerTestBase
 {
-    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly IPurchaseVerificationService _purchaseVerificationService = Substitute.For<IPurchaseVerificationService>(); private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly ReviewDomainService _reviewDomainService; private readonly IOptions<ReviewSettings> _reviewSettings = Options.Create(new ReviewSettings()); private readonly CreateReviewHandler _sut;
+    private readonly IReviewRepository _reviewRepository = Substitute.For<IReviewRepository>(); private readonly IPurchaseVerificationService _purchaseVerificationService = Substitute.For<IPurchaseVerificationService>(); private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly ReviewDomainService _reviewDomainService; private readonly IOptions<ReviewSettings> _reviewSettings = Options.Create(new ReviewSettings()); private readonly CreateReviewHandler _sut;
 
     public CreateReviewHandlerTests()
     {
@@ -23,7 +23,7 @@ public class CreateReviewHandlerTests
             _reviewDomainService,
             _reviewRepository,
             _productRepository,
-            _currentUser,
+            CurrentUserService,
             _reviewSettings,
             _mapper);
     }
@@ -31,7 +31,7 @@ public class CreateReviewHandlerTests
     [Fact]
     public async Task Handle_WhenCurrentUserIdIsNull_ReturnsUnauthorizedAndDoesNotLoadProduct()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(
             new CreateReviewCommand(Guid.NewGuid(), null, 5, "t", "c"),
@@ -45,7 +45,7 @@ public class CreateReviewHandlerTests
     [Fact]
     public async Task Handle_WhenProductNotFound_ReturnsNotFoundAndDoesNotAddReview()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _productRepository
             .GetByIdAsync(Arg.Any<ProductId>(), Arg.Any<CancellationToken>())
             .Returns((Products?)null);
@@ -64,7 +64,7 @@ public class CreateReviewHandlerTests
         var productId = Guid.NewGuid();
         ProductId? captured = null;
 
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _productRepository
             .GetByIdAsync(
                 Arg.Do<ProductId>(x => captured = x),

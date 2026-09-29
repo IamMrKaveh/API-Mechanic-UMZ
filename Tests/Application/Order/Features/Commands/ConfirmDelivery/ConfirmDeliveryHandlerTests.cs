@@ -12,13 +12,13 @@ using Orders = Domain.Order.Aggregates.Order;
 
 namespace Tests.Application.Order.Features.Commands.ConfirmDelivery;
 
-public class ConfirmDeliveryHandlerTests
+public class ConfirmDeliveryHandlerTests : HandlerTestBase
 {
-    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly ConfirmDeliveryHandler _sut;
+    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly ConfirmDeliveryHandler _sut;
 
     public ConfirmDeliveryHandlerTests()
     {
-        _sut = new ConfirmDeliveryHandler(_orderRepository, _currentUser);
+        _sut = new ConfirmDeliveryHandler(_orderRepository, CurrentUserService);
     }
 
     private static Orders OrderInShippedState(Guid userGuid)
@@ -34,7 +34,7 @@ public class ConfirmDeliveryHandlerTests
     [Fact]
     public async Task Handle_WhenUserNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new ConfirmDeliveryCommand(Guid.NewGuid(), null), CancellationToken.None);
 
@@ -45,7 +45,7 @@ public class ConfirmDeliveryHandlerTests
     [Fact]
     public async Task Handle_WhenOrderNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns((Orders?)null);
 
         var result = await _sut.Handle(new ConfirmDeliveryCommand(Guid.NewGuid(), null), CancellationToken.None);
@@ -60,8 +60,8 @@ public class ConfirmDeliveryHandlerTests
         var callerGuid = Guid.NewGuid();
         var order = OrderInShippedState(ownerGuid);
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.IsAdmin.Returns(false);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new ConfirmDeliveryCommand(order.Id.Value, null), CancellationToken.None);
@@ -75,7 +75,7 @@ public class ConfirmDeliveryHandlerTests
         var callerGuid = Guid.NewGuid();
         var order = OrderInShippedState(callerGuid);
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new ConfirmDeliveryCommand(order.Id.Value, "!!!"), CancellationToken.None);
@@ -89,7 +89,7 @@ public class ConfirmDeliveryHandlerTests
         var callerGuid = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(callerGuid)).Build();
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new ConfirmDeliveryCommand(order.Id.Value, null), CancellationToken.None);
@@ -104,7 +104,7 @@ public class ConfirmDeliveryHandlerTests
         var callerGuid = Guid.NewGuid();
         var order = OrderInShippedState(callerGuid);
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
 
         var result = await _sut.Handle(new ConfirmDeliveryCommand(order.Id.Value, null), CancellationToken.None);
@@ -121,7 +121,7 @@ public class ConfirmDeliveryHandlerTests
         var callerGuid = Guid.NewGuid();
         var order = OrderInShippedState(callerGuid);
 
-        _currentUser.UserId.Returns((Guid?)callerGuid);
+        CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
         _orderRepository.When(x => x.Update(Arg.Any<Orders>(), Arg.Any<byte[]?>()))
             .Do(_ => throw new ConcurrencyException());

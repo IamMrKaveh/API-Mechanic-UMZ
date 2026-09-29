@@ -10,23 +10,23 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Review.Features.Queries.GetProductReviews;
 
-public class GetProductReviewsHandlerTests
+public class GetProductReviewsHandlerTests : HandlerTestBase
 {
-    private readonly IReviewQueryService _reviewQueryService = Substitute.For<IReviewQueryService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly GetProductReviewsHandler _sut;
+    private readonly IReviewQueryService _reviewQueryService = Substitute.For<IReviewQueryService>(); private readonly GetProductReviewsHandler _sut;
 
     public GetProductReviewsHandlerTests()
     {
         _sut = new GetProductReviewsHandler(
             _reviewQueryService,
-            _currentUser,
+            CurrentUserService,
             NullLogger<GetProductReviewsHandler>.Instance);
     }
 
     [Fact]
     public async Task Handle_WhenAnonymous_PassesNullCurrentUserIdToQueryService()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var page = new PaginatedResult<ProductReviewDto>(Array.Empty<ProductReviewDto>(), 0, 1, 10);
         _reviewQueryService
@@ -57,8 +57,8 @@ public class GetProductReviewsHandlerTests
     public async Task Handle_WhenAuthenticated_PassesCurrentUserIdToQueryService()
     {
         var userGuid = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         var page = new PaginatedResult<ProductReviewDto>(Array.Empty<ProductReviewDto>(), 0, 1, 10);
         _reviewQueryService
@@ -88,8 +88,8 @@ public class GetProductReviewsHandlerTests
     [Fact]
     public async Task Handle_PropagatesQueryOptionsFromRequestToQueryService()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var expected = new PaginatedResult<ProductReviewDto>(Array.Empty<ProductReviewDto>(), 0, 2, 25);
         _reviewQueryService

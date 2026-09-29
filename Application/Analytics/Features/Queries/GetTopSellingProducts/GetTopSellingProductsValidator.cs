@@ -1,3 +1,5 @@
+using Application.Common.Validation;
+
 namespace Application.Analytics.Features.Queries.GetTopSellingProducts;
 
 public sealed class GetTopSellingProductsValidator : AbstractValidator<GetTopSellingProductsQuery>
@@ -8,11 +10,6 @@ public sealed class GetTopSellingProductsValidator : AbstractValidator<GetTopSel
             .InclusiveBetween(1, 100)
             .WithMessage("تعداد باید بین ۱ و ۱۰۰ باشد.");
 
-        When(q => q.FromDate.HasValue && q.ToDate.HasValue, () =>
-        {
-            RuleFor(q => q.FromDate)
-                .LessThan(q => q.ToDate)
-                .WithMessage("تاریخ شروع باید قبل از تاریخ پایان باشد.");
-        });
+        this.RuleForOptionalDateRange(q => q.FromDate, q => q.ToDate, allowEqual: false);
     }
 }

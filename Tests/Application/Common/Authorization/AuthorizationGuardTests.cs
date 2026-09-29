@@ -6,17 +6,15 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Common.Authorization;
 
-public class AuthorizationGuardTests
+public class AuthorizationGuardTests : HandlerTestBase
 {
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
-
     [Fact]
     public void EnsureAuthenticated_WhenNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
-        var sut = AuthorizationGuard.EnsureAuthenticated(_currentUser);
+        var sut = AuthorizationGuard.EnsureAuthenticated(CurrentUserService);
 
         sut.ShouldFailWith(ErrorCode.Unauthorized);
     }
@@ -24,10 +22,10 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureAuthenticated_WhenUserIdNull_ReturnsUnauthorized()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
-        var sut = AuthorizationGuard.EnsureAuthenticated(_currentUser);
+        var sut = AuthorizationGuard.EnsureAuthenticated(CurrentUserService);
 
         sut.ShouldFailWith(ErrorCode.Unauthorized);
     }
@@ -35,10 +33,10 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureAuthenticated_WhenUserIdEmpty_ReturnsUnauthorized()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)Guid.Empty);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.Empty);
 
-        var sut = AuthorizationGuard.EnsureAuthenticated(_currentUser);
+        var sut = AuthorizationGuard.EnsureAuthenticated(CurrentUserService);
 
         sut.ShouldFailWith(ErrorCode.Unauthorized);
     }
@@ -46,10 +44,10 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureAuthenticated_WhenAuthenticatedWithValidUserId_ReturnsSuccess()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
-        var sut = AuthorizationGuard.EnsureAuthenticated(_currentUser);
+        var sut = AuthorizationGuard.EnsureAuthenticated(CurrentUserService);
 
         sut.ShouldBeSuccess();
     }
@@ -57,10 +55,10 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureOwnerOrAdmin_WhenNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
-        var sut = AuthorizationGuard.EnsureOwnerOrAdmin(_currentUser, Guid.NewGuid());
+        var sut = AuthorizationGuard.EnsureOwnerOrAdmin(CurrentUserService, Guid.NewGuid());
 
         sut.ShouldFailWith(ErrorCode.Unauthorized);
     }
@@ -68,11 +66,11 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureOwnerOrAdmin_WhenAdmin_ReturnsSuccessRegardlessOfOwner()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUser.IsAdmin.Returns(true);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAdmin.Returns(true);
 
-        var sut = AuthorizationGuard.EnsureOwnerOrAdmin(_currentUser, Guid.NewGuid());
+        var sut = AuthorizationGuard.EnsureOwnerOrAdmin(CurrentUserService, Guid.NewGuid());
 
         sut.ShouldBeSuccess();
     }
@@ -80,11 +78,11 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureOwnerOrAdmin_WhenNotAdminAndDifferentOwner_ReturnsForbidden()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAdmin.Returns(false);
 
-        var sut = AuthorizationGuard.EnsureOwnerOrAdmin(_currentUser, Guid.NewGuid());
+        var sut = AuthorizationGuard.EnsureOwnerOrAdmin(CurrentUserService, Guid.NewGuid());
 
         sut.ShouldFailWith(ErrorCode.Forbidden);
     }
@@ -93,11 +91,11 @@ public class AuthorizationGuardTests
     public void EnsureOwnerOrAdmin_WhenNotAdminAndSameOwner_ReturnsSuccess()
     {
         var userId = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)userId);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)userId);
+        CurrentUserService.IsAdmin.Returns(false);
 
-        var sut = AuthorizationGuard.EnsureOwnerOrAdmin(_currentUser, userId);
+        var sut = AuthorizationGuard.EnsureOwnerOrAdmin(CurrentUserService, userId);
 
         sut.ShouldBeSuccess();
     }
@@ -106,11 +104,11 @@ public class AuthorizationGuardTests
     public void EnsureOwnerOrAdmin_WithUserIdOverload_DelegatesToGuidOverload()
     {
         var userId = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)userId);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)userId);
+        CurrentUserService.IsAdmin.Returns(false);
 
-        var sut = AuthorizationGuard.EnsureOwnerOrAdmin(_currentUser, UserId.From(userId));
+        var sut = AuthorizationGuard.EnsureOwnerOrAdmin(CurrentUserService, UserId.From(userId));
 
         sut.ShouldBeSuccess();
     }
@@ -118,10 +116,10 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureAdmin_WhenNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
-        var sut = AuthorizationGuard.EnsureAdmin(_currentUser);
+        var sut = AuthorizationGuard.EnsureAdmin(CurrentUserService);
 
         sut.ShouldFailWith(ErrorCode.Unauthorized);
     }
@@ -129,11 +127,11 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureAdmin_WhenAuthenticatedButNotAdmin_ReturnsForbidden()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAdmin.Returns(false);
 
-        var sut = AuthorizationGuard.EnsureAdmin(_currentUser);
+        var sut = AuthorizationGuard.EnsureAdmin(CurrentUserService);
 
         sut.ShouldFailWith(ErrorCode.Forbidden);
     }
@@ -141,11 +139,11 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureAdmin_WhenAdmin_ReturnsSuccess()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUser.IsAdmin.Returns(true);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAdmin.Returns(true);
 
-        var sut = AuthorizationGuard.EnsureAdmin(_currentUser);
+        var sut = AuthorizationGuard.EnsureAdmin(CurrentUserService);
 
         sut.ShouldBeSuccess();
     }
@@ -153,10 +151,10 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureAuthenticatedT_WhenNotAuthenticated_ReturnsUnauthorizedFailure()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
-        var sut = AuthorizationGuard.EnsureAuthenticated<string>(_currentUser);
+        var sut = AuthorizationGuard.EnsureAuthenticated<string>(CurrentUserService);
 
         sut.ShouldFailWith(ErrorCode.Unauthorized);
     }
@@ -164,10 +162,10 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureAuthenticatedT_WhenAuthenticated_ReturnsSuccessWithDefaultValue()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
-        var sut = AuthorizationGuard.EnsureAuthenticated<int>(_currentUser);
+        var sut = AuthorizationGuard.EnsureAuthenticated<int>(CurrentUserService);
 
         sut.ShouldBeSuccess();
         sut.Value.ShouldBe(0);
@@ -176,10 +174,10 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureOwnerOrAdminT_WhenNotAuthenticated_ReturnsUnauthorizedFailure()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
-        var sut = AuthorizationGuard.EnsureOwnerOrAdmin<string>(_currentUser, Guid.NewGuid());
+        var sut = AuthorizationGuard.EnsureOwnerOrAdmin<string>(CurrentUserService, Guid.NewGuid());
 
         sut.ShouldFailWith(ErrorCode.Unauthorized);
     }
@@ -187,11 +185,11 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureOwnerOrAdminT_WhenAdmin_ReturnsSuccess()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUser.IsAdmin.Returns(true);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAdmin.Returns(true);
 
-        var sut = AuthorizationGuard.EnsureOwnerOrAdmin<string>(_currentUser, Guid.NewGuid());
+        var sut = AuthorizationGuard.EnsureOwnerOrAdmin<string>(CurrentUserService, Guid.NewGuid());
 
         sut.ShouldBeSuccess();
     }
@@ -199,11 +197,11 @@ public class AuthorizationGuardTests
     [Fact]
     public void EnsureOwnerOrAdminT_WhenNotAdminAndDifferentOwner_ReturnsForbidden()
     {
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.IsAdmin.Returns(false);
 
-        var sut = AuthorizationGuard.EnsureOwnerOrAdmin<string>(_currentUser, Guid.NewGuid());
+        var sut = AuthorizationGuard.EnsureOwnerOrAdmin<string>(CurrentUserService, Guid.NewGuid());
 
         sut.ShouldFailWith(ErrorCode.Forbidden);
     }
@@ -212,11 +210,11 @@ public class AuthorizationGuardTests
     public void EnsureOwnerOrAdminT_WhenNotAdminAndSameOwner_ReturnsSuccess()
     {
         var userId = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)userId);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)userId);
+        CurrentUserService.IsAdmin.Returns(false);
 
-        var sut = AuthorizationGuard.EnsureOwnerOrAdmin<string>(_currentUser, userId);
+        var sut = AuthorizationGuard.EnsureOwnerOrAdmin<string>(CurrentUserService, userId);
 
         sut.ShouldBeSuccess();
     }

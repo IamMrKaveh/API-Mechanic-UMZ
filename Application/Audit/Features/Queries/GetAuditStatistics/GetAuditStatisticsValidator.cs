@@ -1,3 +1,5 @@
+using Application.Common.Validation;
+
 namespace Application.Audit.Features.Queries.GetAuditStatistics;
 
 public sealed class GetAuditStatisticsValidator : AbstractValidator<GetAuditStatisticsQuery>
@@ -7,10 +9,11 @@ public sealed class GetAuditStatisticsValidator : AbstractValidator<GetAuditStat
 
     public GetAuditStatisticsValidator()
     {
-        RuleFor(x => x)
-            .Must(x => x.From is null || x.To is null || x.From <= x.To)
-            .WithMessage("تاریخ شروع باید کوچکتر یا مساوی تاریخ پایان باشد.")
-            .WithName("DateRange");
+        this.RuleForDateRange(
+            x => x.From,
+            x => x.To,
+            "تاریخ شروع باید کوچکتر یا مساوی تاریخ پایان باشد.",
+            name: "DateRange");
 
         RuleFor(x => x)
             .Must(x => !x.From.HasValue || !x.To.HasValue

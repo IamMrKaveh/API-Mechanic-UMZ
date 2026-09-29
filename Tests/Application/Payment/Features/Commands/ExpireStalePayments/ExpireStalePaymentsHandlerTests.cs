@@ -7,20 +7,20 @@ using PaymentTransactions = Domain.Payment.Aggregates.PaymentTransaction;
 
 namespace Tests.Application.Payment.Features.Commands.ExpireStalePayments;
 
-public class ExpireStalePaymentsHandlerTests
+public class ExpireStalePaymentsHandlerTests : HandlerTestBase
 {
-    private readonly IPaymentTransactionRepository _paymentRepository = Substitute.For<IPaymentTransactionRepository>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ExpireStalePaymentsHandler _sut;
+    private readonly IPaymentTransactionRepository _paymentRepository = Substitute.For<IPaymentTransactionRepository>(); private readonly ExpireStalePaymentsHandler _sut;
 
     public ExpireStalePaymentsHandlerTests()
     {
-        _sut = new ExpireStalePaymentsHandler(_paymentRepository, _dateTimeProvider);
+        _sut = new ExpireStalePaymentsHandler(_paymentRepository, DateTimeProvider);
     }
 
     [Fact]
     public async Task Handle_WhenNoExpiredTransactions_ReturnsZeroAndDoesNotUpdate()
     {
         var now = DateTime.UtcNow;
-        _dateTimeProvider.UtcNow.Returns(now);
+        DateTimeProvider.UtcNow.Returns(now);
         _paymentRepository
             .GetPendingExpiredTransactionsAsync(now, Arg.Any<CancellationToken>())
             .Returns(Array.Empty<PaymentTransactions>());
@@ -44,7 +44,7 @@ public class ExpireStalePaymentsHandlerTests
         tx1.IsPending().ShouldBeTrue();
         tx2.IsPending().ShouldBeTrue();
 
-        _dateTimeProvider.UtcNow.Returns(now);
+        DateTimeProvider.UtcNow.Returns(now);
         _paymentRepository
             .GetPendingExpiredTransactionsAsync(now, Arg.Any<CancellationToken>())
             .Returns(new[] { tx1, tx2 });
@@ -67,7 +67,7 @@ public class ExpireStalePaymentsHandlerTests
 
         var tx = new PaymentTransactionBuilder().WithNow(future).WithExpiryMinutes(20).Build();
 
-        _dateTimeProvider.UtcNow.Returns(now);
+        DateTimeProvider.UtcNow.Returns(now);
         _paymentRepository
             .GetPendingExpiredTransactionsAsync(now, Arg.Any<CancellationToken>())
             .Returns(new[] { tx });

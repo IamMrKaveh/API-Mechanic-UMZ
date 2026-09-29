@@ -10,12 +10,10 @@ using Products = Domain.Product.Aggregates.Product;
 
 namespace Tests.Application.Review.EventHandlers;
 
-public class UpdateProductStatsOnReviewRestoredHandlerTests
+public class UpdateProductStatsOnReviewRestoredHandlerTests : HandlerTestBase
 {
     private readonly IReviewQueryService _reviewQueryService = Substitute.For<IReviewQueryService>();
     private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-
     private readonly ILogger<UpdateProductStatsOnReviewRestoredHandler> _logger =
         Substitute.For<ILogger<UpdateProductStatsOnReviewRestoredHandler>>();
 
@@ -26,7 +24,7 @@ public class UpdateProductStatsOnReviewRestoredHandlerTests
         _sut = new UpdateProductStatsOnReviewRestoredHandler(
             _reviewQueryService,
             _productRepository,
-            _unitOfWork,
+            UnitOfWork,
             _logger);
     }
 
@@ -59,7 +57,7 @@ public class UpdateProductStatsOnReviewRestoredHandlerTests
         await _productRepository.Received(1).GetByIdAsync(evt.ProductId, Arg.Any<CancellationToken>());
         await _reviewQueryService.DidNotReceiveWithAnyArgs().GetProductReviewSummaryAsync(default!, default);
         _productRepository.DidNotReceiveWithAnyArgs().Update(default!, default);
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
@@ -85,7 +83,7 @@ public class UpdateProductStatsOnReviewRestoredHandlerTests
         product.ReviewCount.ShouldBe(5);
 
         _productRepository.Received(1).Update(product, Arg.Any<byte[]?>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -111,7 +109,7 @@ public class UpdateProductStatsOnReviewRestoredHandlerTests
         product.ReviewCount.ShouldBe(0);
 
         _productRepository.Received(1).Update(product, Arg.Any<byte[]?>());
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -181,7 +179,7 @@ public class UpdateProductStatsOnReviewRestoredHandlerTests
         // Assert
         await _productRepository.Received(1).GetByIdAsync(product.Id, token);
         await _reviewQueryService.Received(1).GetProductReviewSummaryAsync(product.Id, token);
-        await _unitOfWork.Received(1).SaveChangesAsync(token);
+        await UnitOfWork.Received(1).SaveChangesAsync(token);
     }
 
     [Fact]

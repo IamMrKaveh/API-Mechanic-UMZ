@@ -9,14 +9,14 @@ using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Application.User.Features.Commands.DeleteUserAddress;
 
-public class DeleteUserAddressHandlerTests
+public class DeleteUserAddressHandlerTests : HandlerTestBase
 {
-    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly DeleteUserAddressHandler _sut;
+    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly DeleteUserAddressHandler _sut;
 
     public DeleteUserAddressHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new DeleteUserAddressHandler(_userRepository, _currentUserService);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new DeleteUserAddressHandler(_userRepository, CurrentUserService);
     }
 
     [Fact]

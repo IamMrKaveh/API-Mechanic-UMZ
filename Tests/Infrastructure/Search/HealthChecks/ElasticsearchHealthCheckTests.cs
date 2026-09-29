@@ -6,11 +6,8 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Search.HealthChecks;
 
-public class ElasticsearchHealthCheckTests : IAsyncLifetime
-{
+public class ElasticsearchHealthCheckTests : HandlerTestBase, IAsyncLifetime{
     private FakeElasticsearchServer _server = null!;
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-
     public Task InitializeAsync()
     {
         _server = new FakeElasticsearchServer();
@@ -22,7 +19,7 @@ public class ElasticsearchHealthCheckTests : IAsyncLifetime
     private ElasticsearchHealthCheck CreateSut() => new(
         _server.CreateClient(),
         Options.Create(new ElasticsearchOptions()),
-        _auditService);
+        AuditService);
 
     [Fact]
     public async Task CheckHealthAsync_WhenPingSucceeds_ReturnsHealthy()
@@ -33,7 +30,7 @@ public class ElasticsearchHealthCheckTests : IAsyncLifetime
 
         result.Status.ShouldBe(HealthStatus.Healthy);
         result.Description.ShouldBe("Elasticsearch is reachable");
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -45,7 +42,7 @@ public class ElasticsearchHealthCheckTests : IAsyncLifetime
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
         result.Description.ShouldBe("Elasticsearch ping failed");
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -54,13 +51,13 @@ public class ElasticsearchHealthCheckTests : IAsyncLifetime
         var unreachable = new ElasticsearchHealthCheck(
             new Elastic.Clients.Elasticsearch.ElasticsearchClient(new Uri("http://127.0.0.1:9")),
             Options.Create(new ElasticsearchOptions()),
-            _auditService);
+            AuditService);
 
         var result = await unreachable.CheckHealthAsync(new HealthCheckContext());
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
         result.Description.ShouldBe("Elasticsearch ping failed");
-        await _auditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
 
     [Fact]
@@ -72,12 +69,12 @@ public class ElasticsearchHealthCheckTests : IAsyncLifetime
         var throwing = new ElasticsearchHealthCheck(
             new Elastic.Clients.Elasticsearch.ElasticsearchClient(settings),
             Options.Create(new ElasticsearchOptions()),
-            _auditService);
+            AuditService);
 
         var result = await throwing.CheckHealthAsync(new HealthCheckContext());
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s.Contains("Elasticsearch health check failed")), Arg.Any<CancellationToken>());
     }
 

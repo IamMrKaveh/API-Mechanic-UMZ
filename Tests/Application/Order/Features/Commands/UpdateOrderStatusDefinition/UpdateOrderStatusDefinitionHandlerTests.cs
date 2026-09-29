@@ -9,13 +9,13 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
-public class UpdateOrderStatusDefinitionHandlerTests
+public class UpdateOrderStatusDefinitionHandlerTests : HandlerTestBase
 {
-    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateOrderStatusDefinitionHandler _sut;
+    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateOrderStatusDefinitionHandler _sut;
 
     public UpdateOrderStatusDefinitionHandlerTests()
     {
-        _sut = new UpdateOrderStatusDefinitionHandler(_repository, _auditService, _cacheService);
+        _sut = new UpdateOrderStatusDefinitionHandler(_repository, AuditService, _cacheService);
     }
 
     [Fact]

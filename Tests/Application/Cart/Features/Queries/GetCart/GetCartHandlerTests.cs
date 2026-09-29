@@ -8,20 +8,20 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Cart.Features.Queries.GetCart;
 
-public class GetCartHandlerTests
+public class GetCartHandlerTests : HandlerTestBase
 {
-    private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetCartHandler _sut;
+    private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly GetCartHandler _sut;
 
     public GetCartHandlerTests()
     {
-        _sut = new GetCartHandler(_cartQueryService, _currentUserService);
+        _sut = new GetCartHandler(_cartQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenNoUserAndNoGuestToken_ReturnsSuccessWithEmptyDto()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns((string?)null);
 
         var result = await _sut.Handle(new GetCartQuery(), CancellationToken.None);
 
@@ -36,8 +36,8 @@ public class GetCartHandlerTests
     [Fact]
     public async Task Handle_WhenUserHasNoCart_ReturnsSuccessWithEmptyDto()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.GuestToken.Returns((string?)null);
         _cartQueryService
             .GetCartDetailAsync(Arg.Any<UserId?>(), Arg.Any<GuestToken?>(), Arg.Any<CancellationToken>())
             .Returns((CartDetailDto?)null);
@@ -58,8 +58,8 @@ public class GetCartHandlerTests
             TotalItems = 3,
             TotalPrice = 150m
         };
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.GuestToken.Returns((string?)null);
         _cartQueryService
             .GetCartDetailAsync(Arg.Any<UserId?>(), Arg.Any<GuestToken?>(), Arg.Any<CancellationToken>())
             .Returns(expected);
@@ -75,8 +75,8 @@ public class GetCartHandlerTests
     {
         UserId? capturedUserId = null;
         GuestToken? capturedGuestToken = null;
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns("GUEST-TOKEN-ABC12345");
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns("GUEST-TOKEN-ABC12345");
         _cartQueryService
             .GetCartDetailAsync(
                 Arg.Do<UserId?>(u => capturedUserId = u),

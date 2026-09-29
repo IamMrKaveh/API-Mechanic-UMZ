@@ -13,14 +13,14 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.ReconcileStock;
 
-public class ReconcileStockHandlerTests
+public class ReconcileStockHandlerTests : HandlerTestBase
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly ReconcileStockHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ReconcileStockHandler _sut;
 
     public ReconcileStockHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new ReconcileStockHandler(_inventoryRepository, _auditService, _currentUserService, _dateTimeProvider);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new ReconcileStockHandler(_inventoryRepository, AuditService, CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class ReconcileStockHandlerTests
         result.ShouldBeSuccess();
         inventory.StockQuantity.Value.ShouldBe(15);
         _inventoryRepository.Received(1).Update(inventory);
-        await _auditService.Received(1).LogInventoryEventAsync(
+        await AuditService.Received(1).LogInventoryEventAsync(
             inventory.VariantId,
             "ReconcileStock",
             Arg.Any<string>(),

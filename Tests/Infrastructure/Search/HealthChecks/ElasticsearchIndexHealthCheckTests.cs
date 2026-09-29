@@ -4,11 +4,8 @@ using Tests.TestInfrastructure.Fakes;
 
 namespace Tests.Infrastructure.Search.HealthChecks;
 
-public class ElasticsearchIndexHealthCheckTests : IAsyncLifetime
-{
+public class ElasticsearchIndexHealthCheckTests : HandlerTestBase, IAsyncLifetime{
     private FakeElasticsearchServer _server = null!;
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-
     public Task InitializeAsync()
     {
         _server = new FakeElasticsearchServer();
@@ -17,7 +14,7 @@ public class ElasticsearchIndexHealthCheckTests : IAsyncLifetime
 
     public async Task DisposeAsync() => await _server.DisposeAsync();
 
-    private ElasticsearchIndexHealthCheck CreateSut() => new(_server.CreateClient(), _auditService);
+    private ElasticsearchIndexHealthCheck CreateSut() => new(_server.CreateClient(), AuditService);
 
     [Fact]
     public async Task CheckHealthAsync_WhenAllIndicesExist_ReturnsHealthy()
@@ -62,14 +59,14 @@ public class ElasticsearchIndexHealthCheckTests : IAsyncLifetime
             .ThrowExceptions();
         var throwing = new ElasticsearchIndexHealthCheck(
             new Elastic.Clients.Elasticsearch.ElasticsearchClient(settings),
-            _auditService);
+            AuditService);
         _server.Router = (_, _) => (FakeElasticsearchServer.Bodies.Error500, 500);
 
         var result = await throwing.CheckHealthAsync(new HealthCheckContext());
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
         result.Description.ShouldContain("connectivity failures");
-        await _auditService.Received(3).LogErrorAsync(
+        await AuditService.Received(3).LogErrorAsync(
             Arg.Is<string>(s => s.Contains("index existence check failed")), Arg.Any<CancellationToken>());
     }
 
@@ -78,7 +75,7 @@ public class ElasticsearchIndexHealthCheckTests : IAsyncLifetime
     {
         var unreachable = new ElasticsearchIndexHealthCheck(
             new Elastic.Clients.Elasticsearch.ElasticsearchClient(new Uri("http://127.0.0.1:9")),
-            _auditService);
+            AuditService);
 
         var result = await unreachable.CheckHealthAsync(new HealthCheckContext());
 

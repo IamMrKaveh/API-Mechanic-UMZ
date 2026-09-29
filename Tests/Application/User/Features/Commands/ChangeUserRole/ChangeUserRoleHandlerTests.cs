@@ -5,17 +5,16 @@ using UserAggregate = Domain.User.Aggregates.User;
 
 namespace Tests.Application.User.Features.Commands.ChangeUserRole;
 
-public class ChangeUserRoleHandlerTests
+public class ChangeUserRoleHandlerTests : HandlerTestBase
 {
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
-    private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>();
     private readonly ChangeUserRoleHandler _sut;
     private readonly Guid _adminGuid = Guid.NewGuid();
 
     public ChangeUserRoleHandlerTests()
     {
-        _sut = new ChangeUserRoleHandler(_userRepository, _currentUser);
-        _currentUser.UserId.Returns((Guid?)_adminGuid);
+        _sut = new ChangeUserRoleHandler(_userRepository, CurrentUserService);
+        CurrentUserService.UserId.Returns((Guid?)_adminGuid);
     }
 
     [Fact]
@@ -36,7 +35,7 @@ public class ChangeUserRoleHandlerTests
         var admin = new UserBuilder().Build();
         admin.PromoteToAdmin();
         _userRepository.GetActiveByIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(admin);
-        _currentUser.UserId.Returns((Guid?)admin.Id.Value);
+        CurrentUserService.UserId.Returns((Guid?)admin.Id.Value);
 
         var result = await _sut.Handle(new ChangeUserRoleCommand(admin.Id.Value, false), CancellationToken.None);
 

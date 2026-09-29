@@ -12,9 +12,9 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Infrastructure.Auth.Services;
 
-public class OtpServiceTests
+public class OtpServiceTests : HandlerTestBase
 {
-    private readonly IOtpRepository _otpRepository = Substitute.For<IOtpRepository>(); private readonly ISmsService _smsService = Substitute.For<ISmsService>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly OtpService _sut;
+    private readonly IOtpRepository _otpRepository = Substitute.For<IOtpRepository>(); private readonly ISmsService _smsService = Substitute.For<ISmsService>(); private readonly OtpService _sut;
 
     public OtpServiceTests()
     {
@@ -24,7 +24,7 @@ public class OtpServiceTests
             MaxOtpPerWindow = 3,
         });
 
-        _sut = new OtpService(_otpRepository, _smsService, options, _auditService);
+        _sut = new OtpService(_otpRepository, _smsService, options, AuditService);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class OtpServiceTests
         var result = await _sut.SendOtpAsync(phone, code, OtpPurpose.Login);
 
         result.IsFailure.ShouldBeTrue();
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "SendOtpFailed",
             Arg.Is<string>(details => details!.Contains("09121234567") && details!.Contains("sms provider down")),
             Arg.Any<CancellationToken>());

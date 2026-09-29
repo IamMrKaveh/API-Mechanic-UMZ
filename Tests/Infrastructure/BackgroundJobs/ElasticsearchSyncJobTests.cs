@@ -5,10 +5,9 @@ using Microsoft.Extensions.Options;
 
 namespace Tests.Infrastructure.BackgroundJobs;
 
-public class ElasticsearchSyncJobTests
+public class ElasticsearchSyncJobTests : HandlerTestBase
 {
     private readonly IServiceProvider _serviceProvider = Substitute.For<IServiceProvider>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
 
     [Fact]
@@ -16,7 +15,7 @@ public class ElasticsearchSyncJobTests
     {
         var job = new ElasticsearchSyncJob(
             _serviceProvider,
-            _auditService,
+            AuditService,
             _distributedLock,
             Microsoft.Extensions.Options.Options.Create(new ElasticsearchOptions { IsEnabled = false }));
 
@@ -26,7 +25,7 @@ public class ElasticsearchSyncJobTests
             await job.ExecuteTask.WaitAsync(TimeSpan.FromSeconds(10));
         await job.StopAsync(CancellationToken.None);
 
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             "Elasticsearch sync is disabled",
             Arg.Any<CancellationToken>());
         await _distributedLock.DidNotReceiveWithAnyArgs().AcquireAsync(default!, default, default);
@@ -37,7 +36,7 @@ public class ElasticsearchSyncJobTests
     {
         var job = new ElasticsearchSyncJob(
             _serviceProvider,
-            _auditService,
+            AuditService,
             _distributedLock,
             Microsoft.Extensions.Options.Options.Create(new ElasticsearchOptions { IsEnabled = true }));
 

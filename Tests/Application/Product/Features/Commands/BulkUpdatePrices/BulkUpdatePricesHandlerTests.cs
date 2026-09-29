@@ -7,16 +7,15 @@ using Domain.Variant.ValueObjects;
 
 namespace Tests.Application.Product.Features.Commands.BulkUpdatePrices;
 
-public class BulkUpdatePricesHandlerTests
+public class BulkUpdatePricesHandlerTests : HandlerTestBase
 {
     private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private readonly ICacheService _cacheService = Substitute.For<ICacheService>();
     private readonly BulkUpdatePricesHandler _sut;
 
     public BulkUpdatePricesHandlerTests()
     {
-        _sut = new BulkUpdatePricesHandler(_variantRepository, _auditService, _cacheService);
+        _sut = new BulkUpdatePricesHandler(_variantRepository, AuditService, _cacheService);
     }
 
     [Fact]
@@ -37,7 +36,7 @@ public class BulkUpdatePricesHandlerTests
         variant.OriginalPrice.Amount.ShouldBe(180m);
         _variantRepository.Received(1).Update(variant);
         await _cacheService.Received(1).RemoveAsync($"product:{variant.ProductId.Value}", Arg.Any<CancellationToken>());
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "BulkPriceUpdate",
             Arg.Is<string>(s => s != null && s.Contains(variant.Id.Value.ToString())),
             Arg.Any<CancellationToken>());
@@ -92,7 +91,7 @@ public class BulkUpdatePricesHandlerTests
         result.ShouldBeSuccess();
         variant.SellingPrice.Amount.ShouldBe(100m);
         _variantRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "BulkPriceUpdate",
             Arg.Is<string>(s => s != null && s.Contains("خطاها")),
             Arg.Any<CancellationToken>());

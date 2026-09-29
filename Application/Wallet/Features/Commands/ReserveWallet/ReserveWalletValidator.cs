@@ -1,3 +1,4 @@
+using Application.Common.Validation;
 using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Wallet.Features.Commands.ReserveWallet;
@@ -6,11 +7,9 @@ public sealed class ReserveWalletValidator : AbstractValidator<ReserveWalletComm
 {
     public ReserveWalletValidator(IDateTimeProvider dateTimeProvider)
     {
-        RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("شناسه کاربر الزامی است.");
+        this.RuleForRequiredId(x => x.UserId, "شناسه کاربر الزامی است.");
 
-        RuleFor(x => x.WalletId)
-            .NotEmpty().WithMessage("شناسه کیف پول الزامی است.");
+        this.RuleForRequiredId(x => x.WalletId, "شناسه کیف پول الزامی است.");
 
         RuleFor(x => x.Amount)
             .GreaterThan(0).WithMessage("مبلغ رزرو باید بزرگتر از صفر باشد.")

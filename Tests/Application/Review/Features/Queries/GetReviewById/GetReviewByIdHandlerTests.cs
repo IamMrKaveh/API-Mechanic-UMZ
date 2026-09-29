@@ -10,23 +10,23 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Review.Features.Queries.GetReviewById;
 
-public class GetReviewByIdHandlerTests
+public class GetReviewByIdHandlerTests : HandlerTestBase
 {
-    private readonly IReviewQueryService _reviewQueryService = Substitute.For<IReviewQueryService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly GetReviewByIdHandler _sut;
+    private readonly IReviewQueryService _reviewQueryService = Substitute.For<IReviewQueryService>(); private readonly GetReviewByIdHandler _sut;
 
     public GetReviewByIdHandlerTests()
     {
         _sut = new GetReviewByIdHandler(
             _reviewQueryService,
-            _currentUser,
+            CurrentUserService,
             NullLogger<GetReviewByIdHandler>.Instance);
     }
 
     [Fact]
     public async Task Handle_WhenQueryServiceReturnsNull_ReturnsNotFound()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         _reviewQueryService
             .GetByIdAsync(Arg.Any<ReviewId>(), Arg.Any<UserId?>(), Arg.Any<CancellationToken>())
@@ -42,8 +42,8 @@ public class GetReviewByIdHandlerTests
     [Fact]
     public async Task Handle_WhenAnonymous_PassesNullCurrentUserIdToQueryService()
     {
-        _currentUser.IsAuthenticated.Returns(false);
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.IsAuthenticated.Returns(false);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var dto = new ProductReviewDto { Id = Guid.NewGuid() };
         _reviewQueryService
@@ -66,8 +66,8 @@ public class GetReviewByIdHandlerTests
     public async Task Handle_WhenAuthenticated_PassesCurrentUserIdToQueryService()
     {
         var userGuid = Guid.NewGuid();
-        _currentUser.IsAuthenticated.Returns(true);
-        _currentUser.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.IsAuthenticated.Returns(true);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
 
         var dto = new ProductReviewDto { Id = Guid.NewGuid() };
         _reviewQueryService

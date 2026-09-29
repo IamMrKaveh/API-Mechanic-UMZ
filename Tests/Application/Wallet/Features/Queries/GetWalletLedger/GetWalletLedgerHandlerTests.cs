@@ -8,15 +8,14 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Wallet.Features.Queries.GetWalletLedger;
 
-public class GetWalletLedgerHandlerTests
+public class GetWalletLedgerHandlerTests : HandlerTestBase
 {
     private readonly IWalletQueryService _walletQueryService = Substitute.For<IWalletQueryService>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly GetWalletLedgerHandler _sut;
 
     public GetWalletLedgerHandlerTests()
     {
-        _sut = new GetWalletLedgerHandler(_walletQueryService, _currentUserService);
+        _sut = new GetWalletLedgerHandler(_walletQueryService, CurrentUserService);
     }
 
     private static PaginatedResult<WalletLedgerEntryDto> EmptyPage(int page = 1, int size = 10)
@@ -25,7 +24,7 @@ public class GetWalletLedgerHandlerTests
     [Fact]
     public async Task Handle_WhenCurrentUserIsNullAndRequestUserIdIsNull_ReturnsUnauthorized()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new GetWalletLedgerQuery(), CancellationToken.None);
 
@@ -37,7 +36,7 @@ public class GetWalletLedgerHandlerTests
     [Fact]
     public async Task Handle_WhenCurrentUserIsNullAndRequestUserIdIsEmpty_ReturnsUnauthorized()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var query = new GetWalletLedgerQuery(UserId: Guid.Empty);
 
@@ -51,7 +50,7 @@ public class GetWalletLedgerHandlerTests
     {
         var currentUserId = Guid.NewGuid();
         var requestedUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         _walletQueryService
             .GetLedgerPageAsync(
@@ -87,7 +86,7 @@ public class GetWalletLedgerHandlerTests
     public async Task Handle_WhenRequestUserIdIsEmpty_FallsBackToCurrentUser()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         UserId? capturedUserId = null;
         _walletQueryService
@@ -112,7 +111,7 @@ public class GetWalletLedgerHandlerTests
     public async Task Handle_PropagatesPaginationAndFilterFieldsToQueryService()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         var from = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var to = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -162,7 +161,7 @@ public class GetWalletLedgerHandlerTests
     public async Task Handle_WhenQueryServiceReturnsPage_WrapsPageInSuccessServiceResult()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         var entries = new List<WalletLedgerEntryDto>
         {
@@ -193,7 +192,7 @@ public class GetWalletLedgerHandlerTests
     public async Task Handle_DefaultsIncludeInactiveUsersToFalseWhenNotProvided()
     {
         var currentUserId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         bool capturedIncludeInactive = true;
         _walletQueryService

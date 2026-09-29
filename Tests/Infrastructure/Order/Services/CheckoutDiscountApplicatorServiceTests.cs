@@ -10,17 +10,15 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Infrastructure.Order.Services;
 
-public class CheckoutDiscountApplicatorServiceTests
+public class CheckoutDiscountApplicatorServiceTests : HandlerTestBase
 {
     private readonly IDiscountRepository _discountRepository = Substitute.For<IDiscountRepository>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly CheckoutDiscountApplicatorService _sut;
 
     public CheckoutDiscountApplicatorServiceTests()
     {
-        _dateTimeProvider.UtcNow.Returns(_ => DateTime.UtcNow);
-        _sut = new CheckoutDiscountApplicatorService(_discountRepository, _auditService, _dateTimeProvider);
+        DateTimeProvider.UtcNow.Returns(_ => DateTime.UtcNow);
+        _sut = new CheckoutDiscountApplicatorService(_discountRepository, AuditService, DateTimeProvider);
     }
 
     [Theory]
@@ -35,7 +33,7 @@ public class CheckoutDiscountApplicatorServiceTests
         result.Value.DiscountAmount.Amount.ShouldBe(0m);
         result.Value.DiscountCodeId.ShouldBeNull();
         await _discountRepository.DidNotReceiveWithAnyArgs().GetByCodeAsync(default!, default);
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -102,7 +100,7 @@ public class CheckoutDiscountApplicatorServiceTests
         result.Value.DiscountAmount.Amount.ShouldBe(50_000m);
         result.Value.DiscountCodeId.ShouldBe(discount.Id.Value);
         _discountRepository.Received(1).Update(discount);
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "CheckoutDiscountApplied",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());

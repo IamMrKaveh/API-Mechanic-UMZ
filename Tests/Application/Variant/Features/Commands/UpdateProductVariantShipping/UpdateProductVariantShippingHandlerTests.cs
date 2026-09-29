@@ -15,13 +15,13 @@ using Shippings = Domain.Shipping.Aggregates.Shipping;
 
 namespace Tests.Application.Variant.Features.Commands.UpdateProductVariantShipping;
 
-public class UpdateProductVariantShippingHandlerTests
+public class UpdateProductVariantShippingHandlerTests : HandlerTestBase
 {
-    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly UpdateProductVariantShippingHandler _sut;
+    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly UpdateProductVariantShippingHandler _sut;
 
     public UpdateProductVariantShippingHandlerTests()
     {
-        _currentUserService.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
 
         _shippingRepository
             .GetAllAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>())
@@ -33,8 +33,8 @@ public class UpdateProductVariantShippingHandlerTests
         _sut = new UpdateProductVariantShippingHandler(
             _variantRepository,
             _shippingRepository,
-            _auditService,
-            _currentUserService);
+            AuditService,
+            CurrentUserService);
     }
 
     private static ProductVariant BuildVariant()
@@ -47,7 +47,7 @@ public class UpdateProductVariantShippingHandlerTests
     [Fact]
     public async Task Handle_WhenUserNotAuthenticated_ReturnsUnauthorized()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var command = new UpdateVariantShippingCommand(
             Guid.NewGuid(),
@@ -128,7 +128,7 @@ public class UpdateProductVariantShippingHandlerTests
 
         result.ShouldBeSuccess();
         _variantRepository.Received(1).Update(variant);
-        await _auditService.Received(1).LogInventoryEventAsync(
+        await AuditService.Received(1).LogInventoryEventAsync(
             Arg.Any<VariantId>(),
             "UpdateVariantShippings",
             Arg.Any<string>(),

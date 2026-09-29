@@ -9,13 +9,13 @@ using Wishlists = Domain.Wishlist.Aggregates.Wishlist;
 
 namespace Tests.Application.Wishlist.Features.Commands.RemoveFromWishlist;
 
-public class RemoveFromWishlistHandlerTests
+public class RemoveFromWishlistHandlerTests : HandlerTestBase
 {
-    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly RemoveFromWishlistHandler _sut;
+    private readonly IWishlistRepository _wishlistRepository = Substitute.For<IWishlistRepository>(); private readonly RemoveFromWishlistHandler _sut;
 
     public RemoveFromWishlistHandlerTests()
     {
-        _sut = new RemoveFromWishlistHandler(_wishlistRepository, _currentUserService);
+        _sut = new RemoveFromWishlistHandler(_wishlistRepository, CurrentUserService);
     }
 
     [Fact]
@@ -24,7 +24,7 @@ public class RemoveFromWishlistHandlerTests
         var userGuid = Guid.NewGuid();
         var productGuid = Guid.NewGuid();
 
-        _currentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
         _wishlistRepository
             .GetByUserAndProductAsync(Arg.Any<UserId>(), Arg.Any<ProductId>(), Arg.Any<CancellationToken>())
             .Returns((Wishlists?)null);
@@ -36,7 +36,7 @@ public class RemoveFromWishlistHandlerTests
         result.ShouldBeSuccess();
         await _wishlistRepository.DidNotReceive().RemoveAsync(
             Arg.Any<UserId>(), Arg.Any<ProductId>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class RemoveFromWishlistHandlerTests
             .WithProductId(ProductId.From(productGuid))
             .Build();
 
-        _currentUserService.UserId.Returns((Guid?)userGuid);
+        CurrentUserService.UserId.Returns((Guid?)userGuid);
         _wishlistRepository
             .GetByUserAndProductAsync(Arg.Any<UserId>(), Arg.Any<ProductId>(), Arg.Any<CancellationToken>())
             .Returns(existing);
@@ -63,6 +63,6 @@ public class RemoveFromWishlistHandlerTests
             Arg.Is<UserId>(u => u == UserId.From(userGuid)),
             Arg.Is<ProductId>(p => p == ProductId.From(productGuid)),
             Arg.Any<CancellationToken>());
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

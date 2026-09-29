@@ -9,13 +9,11 @@ using Wallets = Domain.Wallet.Aggregates.Wallet;
 
 namespace Tests.Application.Wallet.Features.Queries.PreviewWalletTransfer;
 
-public class PreviewWalletTransferHandlerTests
+public class PreviewWalletTransferHandlerTests : HandlerTestBase
 {
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
     private readonly IWalletTransferRepository _transferRepository = Substitute.For<IWalletTransferRepository>();
-    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
-
     private readonly WalletTransferOptions _options = new()
     {
         MinimumAmount = 10_000m,
@@ -31,14 +29,14 @@ public class PreviewWalletTransferHandlerTests
 
     public PreviewWalletTransferHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         _sut = new PreviewWalletTransferHandler(
             _userRepository,
             _walletRepository,
             _transferRepository,
             Options.Create(_options),
-            _currentUserService);
+            CurrentUserService);
     }
 
     private static Users NewRecipient(string phone = "09121234567")
@@ -75,7 +73,7 @@ public class PreviewWalletTransferHandlerTests
     public async Task Handle_WhenRecipientIsSameAsSender_ReturnsFailure()
     {
         var recipient = NewRecipient();
-        _currentUserService.UserId.Returns((Guid?)recipient.Id.Value);
+        CurrentUserService.UserId.Returns((Guid?)recipient.Id.Value);
 
         _userRepository
             .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
@@ -162,7 +160,7 @@ public class PreviewWalletTransferHandlerTests
     public async Task Handle_WhenAmountExceedsRemainingDailyLimit_ReturnsPreviewWithDailyLimitWarning()
     {
         var recipient = NewRecipient();
-        var senderId = _currentUserService.UserId!.Value;
+        var senderId = CurrentUserService.UserId!.Value;
         var senderWallet = new WalletBuilder().WithOwnerId(UserId.From(senderId)).Build();
 
         _userRepository
@@ -192,7 +190,7 @@ public class PreviewWalletTransferHandlerTests
     public async Task Handle_WhenAmountBelowMinimumAmount_ReturnsPreviewWithMinimumAmountWarning()
     {
         var recipient = NewRecipient();
-        var senderId = _currentUserService.UserId!.Value;
+        var senderId = CurrentUserService.UserId!.Value;
         var senderWallet = new WalletBuilder().WithOwnerId(UserId.From(senderId)).Build();
 
         _userRepository
@@ -223,7 +221,7 @@ public class PreviewWalletTransferHandlerTests
     public async Task Handle_HappyPath_ReturnsPreviewWithCanProceedTrueAndNoWarning()
     {
         var recipient = NewRecipient();
-        var senderId = _currentUserService.UserId!.Value;
+        var senderId = CurrentUserService.UserId!.Value;
 
         var senderWallet = new WalletBuilder().WithOwnerId(UserId.From(senderId)).Build();
 
@@ -275,7 +273,7 @@ public class PreviewWalletTransferHandlerTests
     public async Task Handle_UsesTodayInUtcAsDayForDailyLimitLookup()
     {
         var recipient = NewRecipient();
-        var senderId = _currentUserService.UserId!.Value;
+        var senderId = CurrentUserService.UserId!.Value;
         var senderWallet = new WalletBuilder().WithOwnerId(UserId.From(senderId)).Build();
 
         _userRepository
@@ -304,7 +302,7 @@ public class PreviewWalletTransferHandlerTests
     public async Task Handle_PassesSenderUserIdBuiltFromCurrentUserToTransferRepository()
     {
         var recipient = NewRecipient();
-        var senderId = _currentUserService.UserId!.Value;
+        var senderId = CurrentUserService.UserId!.Value;
 
         _userRepository
             .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())

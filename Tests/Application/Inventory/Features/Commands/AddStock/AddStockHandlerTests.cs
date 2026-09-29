@@ -13,14 +13,14 @@ using NSubstitute;
 
 namespace Tests.Application.Inventory.Features.Commands.AddStock;
 
-public class AddStockHandlerTests
+public class AddStockHandlerTests : HandlerTestBase
 {
-    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly AddStockHandler _sut;
+    private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly AddStockHandler _sut;
 
     public AddStockHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new AddStockHandler(_inventoryRepository, _auditService, _currentUserService, _dateTimeProvider);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new AddStockHandler(_inventoryRepository, AuditService, CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class AddStockHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _auditService.DidNotReceiveWithAnyArgs().LogInventoryEventAsync(default!, default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogInventoryEventAsync(default!, default!, default!, default);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class AddStockHandlerTests
         result.ShouldBeSuccess();
         inventory.StockQuantity.Value.ShouldBe(14);
         _inventoryRepository.Received(1).Update(inventory);
-        await _auditService.Received(1).LogInventoryEventAsync(
+        await AuditService.Received(1).LogInventoryEventAsync(
             inventory.VariantId,
             "AddStock",
             Arg.Any<string>(),

@@ -12,14 +12,14 @@ using Tests.TestInfrastructure.Builders;
 
 namespace Tests.Application.Support.Features.Queries.GetTicketDetails;
 
-public class GetTicketDetailsHandlerTests
+public class GetTicketDetailsHandlerTests : HandlerTestBase
 {
-    private readonly ITicketRepository _ticketRepository = Substitute.For<ITicketRepository>(); private readonly ITicketQueryService _ticketQueryService = Substitute.For<ITicketQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetTicketDetailsHandler _sut; private readonly Guid _userGuid = Guid.NewGuid();
+    private readonly ITicketRepository _ticketRepository = Substitute.For<ITicketRepository>(); private readonly ITicketQueryService _ticketQueryService = Substitute.For<ITicketQueryService>(); private readonly GetTicketDetailsHandler _sut; private readonly Guid _userGuid = Guid.NewGuid();
 
     public GetTicketDetailsHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)_userGuid);
-        _sut = new GetTicketDetailsHandler(_ticketRepository, _ticketQueryService, _currentUserService);
+        CurrentUserService.UserId.Returns((Guid?)_userGuid);
+        _sut = new GetTicketDetailsHandler(_ticketRepository, _ticketQueryService, CurrentUserService);
     }
 
     [Fact]

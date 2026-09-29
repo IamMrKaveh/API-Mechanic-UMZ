@@ -9,14 +9,14 @@ using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Application.User.Features.Commands.UpdateUserAddress;
 
-public class UpdateUserAddressHandlerTests
+public class UpdateUserAddressHandlerTests : HandlerTestBase
 {
-    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly UpdateUserAddressHandler _sut;
+    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly UpdateUserAddressHandler _sut;
 
     public UpdateUserAddressHandlerTests()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new UpdateUserAddressHandler(_userRepository, _currentUserService);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new UpdateUserAddressHandler(_userRepository, CurrentUserService);
     }
 
     private static UpdateUserAddressCommand BuildCommand(Guid addressId, bool isDefault = false) =>

@@ -10,14 +10,14 @@ using Orders = Domain.Order.Aggregates.Order;
 
 namespace Tests.Application.Order.Features.Commands.DeleteOrder;
 
-public class DeleteOrderHandlerTests
+public class DeleteOrderHandlerTests : HandlerTestBase
 {
-    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly IAuditService _auditService = Substitute.For<IAuditService>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly DeleteOrderHandler _sut;
+    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly DeleteOrderHandler _sut;
 
     public DeleteOrderHandlerTests()
     {
-        _currentUser.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new DeleteOrderHandler(_orderRepository, _auditService, _currentUser);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        _sut = new DeleteOrderHandler(_orderRepository, AuditService, CurrentUserService);
     }
 
     [Fact]

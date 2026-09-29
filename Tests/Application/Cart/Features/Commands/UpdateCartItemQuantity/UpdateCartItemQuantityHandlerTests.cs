@@ -19,9 +19,9 @@ using NSubstitute;
 
 namespace Tests.Application.Cart.Features.Commands.UpdateCartItemQuantity;
 
-public class UpdateCartItemQuantityHandlerTests
+public class UpdateCartItemQuantityHandlerTests : HandlerTestBase
 {
-    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>(); private readonly UpdateCartItemQuantityHandler _sut;
+    private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>(); private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly UpdateCartItemQuantityHandler _sut;
 
     public UpdateCartItemQuantityHandlerTests()
     {
@@ -30,15 +30,15 @@ public class UpdateCartItemQuantityHandlerTests
             _variantRepository,
             _inventoryRepository,
             _cartQueryService,
-            _unitOfWork,
-            _currentUserService, _dateTimeProvider);
+            UnitOfWork,
+            CurrentUserService, DateTimeProvider);
     }
 
     [Fact]
     public async Task Handle_WhenNoUserAndNoGuestToken_ReturnsValidationFailure()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns((string?)null);
 
         var result = await _sut.Handle(
             new UpdateCartItemQuantityCommand(Guid.NewGuid(), 3),
@@ -46,13 +46,13 @@ public class UpdateCartItemQuantityHandlerTests
 
         result.ShouldFailWith(ErrorCode.Validation);
         _cartRepository.DidNotReceive().Update(Arg.Any<Carts>());
-        await _unitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 
     [Fact]
     public async Task Handle_WhenVariantNotFound_ReturnsNotFound()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _variantRepository
             .GetByIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns((ProductVariant?)null);
@@ -71,7 +71,7 @@ public class UpdateCartItemQuantityHandlerTests
         var variantId = VariantId.NewId();
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
 
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _variantRepository
             .GetByIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(variant);
@@ -93,7 +93,7 @@ public class UpdateCartItemQuantityHandlerTests
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
         var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 1, isUnlimited: false);
 
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _variantRepository
             .GetByIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(variant);
@@ -116,7 +116,7 @@ public class UpdateCartItemQuantityHandlerTests
         var variant = new ProductVariantBuilder().WithId(variantId).Build();
         var inventory = Inventories.Create(variantId, DateTime.UtcNow, initialStock: 100);
 
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _variantRepository
             .GetByIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(variant);
@@ -146,7 +146,7 @@ public class UpdateCartItemQuantityHandlerTests
         new CartItemParametersBuilder().WithVariantId(variantId).WithQuantity(2).AddTo(cart);
         var expectedDto = new CartDetailDto { Id = cart.Id.Value, TotalItems = 7 };
 
-        _currentUserService.UserId.Returns((Guid?)userId.Value);
+        CurrentUserService.UserId.Returns((Guid?)userId.Value);
         _variantRepository
             .GetByIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(variant);
@@ -168,7 +168,7 @@ public class UpdateCartItemQuantityHandlerTests
         result.Value.ShouldBe(expectedDto);
         cart.CartItems.Single().Quantity.ShouldBe(7);
         _cartRepository.Received(1).Update(cart);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -182,8 +182,8 @@ public class UpdateCartItemQuantityHandlerTests
         var cart = new CartBuilder().ForGuest(guestToken).Build();
         new CartItemParametersBuilder().WithVariantId(variantId).WithQuantity(1).AddTo(cart);
 
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns(guestTokenValue);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns(guestTokenValue);
         _variantRepository
             .GetByIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(variant);
@@ -204,7 +204,7 @@ public class UpdateCartItemQuantityHandlerTests
         result.ShouldBeSuccess();
         cart.CartItems.Single().Quantity.ShouldBe(4);
         _cartRepository.Received(1).Update(cart);
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }
 

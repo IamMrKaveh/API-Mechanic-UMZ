@@ -12,19 +12,19 @@ using Orders = Domain.Order.Aggregates.Order;
 
 namespace Tests.Application.Payment.Features.Queries.GetPaymentsByOrder;
 
-public class GetPaymentsByOrderHandlerTests
+public class GetPaymentsByOrderHandlerTests : HandlerTestBase
 {
-    private readonly IPaymentQueryService _paymentQueryService = Substitute.For<IPaymentQueryService>(); private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly GetPaymentsByOrderHandler _sut;
+    private readonly IPaymentQueryService _paymentQueryService = Substitute.For<IPaymentQueryService>(); private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>(); private readonly GetPaymentsByOrderHandler _sut;
 
     public GetPaymentsByOrderHandlerTests()
     {
-        _sut = new GetPaymentsByOrderHandler(_paymentQueryService, _orderRepository, _currentUser);
+        _sut = new GetPaymentsByOrderHandler(_paymentQueryService, _orderRepository, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenUserIsAnonymous_ReturnsUnauthorized()
     {
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
 
         var result = await _sut.Handle(new GetPaymentsByOrderQuery(Guid.NewGuid()), CancellationToken.None);
 
@@ -35,7 +35,7 @@ public class GetPaymentsByOrderHandlerTests
     [Fact]
     public async Task Handle_WhenOrderNotFound_ReturnsNotFound()
     {
-        _currentUser.UserId.Returns(Guid.NewGuid());
+        CurrentUserService.UserId.Returns(Guid.NewGuid());
         _orderRepository
             .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
             .Returns((Orders?)null);
@@ -52,8 +52,8 @@ public class GetPaymentsByOrderHandlerTests
         var ownerId = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(ownerId)).Build();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IsAdmin.Returns(false);
         _orderRepository
             .FindByIdAsync(Arg.Is<OrderId>(x => x == order.Id), Arg.Any<CancellationToken>())
             .Returns(order);
@@ -70,8 +70,8 @@ public class GetPaymentsByOrderHandlerTests
         var callerId = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(callerId)).Build();
 
-        _currentUser.UserId.Returns(callerId);
-        _currentUser.IsAdmin.Returns(false);
+        CurrentUserService.UserId.Returns(callerId);
+        CurrentUserService.IsAdmin.Returns(false);
         _orderRepository
             .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
             .Returns(order);
@@ -97,8 +97,8 @@ public class GetPaymentsByOrderHandlerTests
         var adminId = Guid.NewGuid();
         var order = new OrderBuilder().WithUserId(UserId.From(ownerId)).Build();
 
-        _currentUser.UserId.Returns(adminId);
-        _currentUser.IsAdmin.Returns(true);
+        CurrentUserService.UserId.Returns(adminId);
+        CurrentUserService.IsAdmin.Returns(true);
         _orderRepository
             .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
             .Returns(order);

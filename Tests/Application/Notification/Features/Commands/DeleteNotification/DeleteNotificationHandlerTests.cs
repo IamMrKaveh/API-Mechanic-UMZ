@@ -8,19 +8,19 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Notification.Features.Commands.DeleteNotification;
 
-public class DeleteNotificationHandlerTests
+public class DeleteNotificationHandlerTests : HandlerTestBase
 {
-    private readonly INotificationService _notificationService = Substitute.For<INotificationService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly DeleteNotificationHandler _sut;
+    private readonly INotificationService _notificationService = Substitute.For<INotificationService>(); private readonly DeleteNotificationHandler _sut;
 
     public DeleteNotificationHandlerTests()
     {
-        _sut = new DeleteNotificationHandler(_notificationService, _currentUserService);
+        _sut = new DeleteNotificationHandler(_notificationService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenAuthenticated_ReturnsSuccess()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         var result = await _sut.Handle(
             new DeleteNotificationCommand(Guid.NewGuid()),
@@ -34,7 +34,7 @@ public class DeleteNotificationHandlerTests
     {
         var currentUserId = Guid.NewGuid();
         var notificationId = Guid.NewGuid();
-        _currentUserService.UserId.Returns((Guid?)currentUserId);
+        CurrentUserService.UserId.Returns((Guid?)currentUserId);
 
         await _sut.Handle(
             new DeleteNotificationCommand(notificationId),
@@ -49,7 +49,7 @@ public class DeleteNotificationHandlerTests
     [Fact]
     public async Task Handle_WithEmptyNotificationId_ThrowsDomainException()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
 
         await Should.ThrowAsync<DomainException>(() =>
             _sut.Handle(new DeleteNotificationCommand(Guid.Empty), CancellationToken.None));
@@ -58,7 +58,7 @@ public class DeleteNotificationHandlerTests
     [Fact]
     public async Task Handle_WhenCurrentUserIdIsEmpty_ThrowsDomainException()
     {
-        _currentUserService.UserId.Returns((Guid?)Guid.Empty);
+        CurrentUserService.UserId.Returns((Guid?)Guid.Empty);
 
         await Should.ThrowAsync<DomainException>(() =>
             _sut.Handle(new DeleteNotificationCommand(Guid.NewGuid()), CancellationToken.None));

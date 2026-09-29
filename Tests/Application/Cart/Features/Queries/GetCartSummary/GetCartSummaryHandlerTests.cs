@@ -9,20 +9,20 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Cart.Features.Queries.GetCartSummary;
 
-public class GetCartSummaryHandlerTests
+public class GetCartSummaryHandlerTests : HandlerTestBase
 {
-    private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>(); private readonly GetCartSummaryHandler _sut;
+    private readonly ICartQueryService _cartQueryService = Substitute.For<ICartQueryService>(); private readonly GetCartSummaryHandler _sut;
 
     public GetCartSummaryHandlerTests()
     {
-        _sut = new GetCartSummaryHandler(_cartQueryService, _currentUserService);
+        _sut = new GetCartSummaryHandler(_cartQueryService, CurrentUserService);
     }
 
     [Fact]
     public async Task Handle_WhenNoUserAndNoGuestToken_ReturnsValidationFailure()
     {
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns((string?)null);
 
         var result = await _sut.Handle(new GetCartSummaryQuery(), CancellationToken.None);
 
@@ -35,8 +35,8 @@ public class GetCartSummaryHandlerTests
     public async Task Handle_WhenUserIsAuthenticated_ReturnsSuccessWithSummary()
     {
         var expected = new CartSummaryDto { ItemCount = 2, TotalQuantity = 5, TotalPrice = 200m };
-        _currentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _currentUserService.GuestToken.Returns((string?)null);
+        CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
+        CurrentUserService.GuestToken.Returns((string?)null);
         _cartQueryService
             .GetCartSummaryAsync(Arg.Any<UserId?>(), Arg.Any<GuestToken?>(), Arg.Any<CancellationToken>())
             .Returns(expected);
@@ -51,8 +51,8 @@ public class GetCartSummaryHandlerTests
     public async Task Handle_WhenGuestTokenValid_ReturnsSuccessWithSummary()
     {
         var expected = new CartSummaryDto { ItemCount = 1, TotalQuantity = 1, TotalPrice = 50m };
-        _currentUserService.UserId.Returns((Guid?)null);
-        _currentUserService.GuestToken.Returns("GUEST-TOKEN-XYZ98765");
+        CurrentUserService.UserId.Returns((Guid?)null);
+        CurrentUserService.GuestToken.Returns("GUEST-TOKEN-XYZ98765");
         _cartQueryService
             .GetCartSummaryAsync(Arg.Any<UserId?>(), Arg.Any<GuestToken?>(), Arg.Any<CancellationToken>())
             .Returns(expected);

@@ -10,13 +10,13 @@ using PaymentMethods = Domain.Payment.Aggregates.PaymentMethod;
 
 namespace Tests.Application.Payment.Features.Commands.DeletePaymentMethod;
 
-public class DeletePaymentMethodHandlerTests
+public class DeletePaymentMethodHandlerTests : HandlerTestBase
 {
-    private readonly IPaymentMethodRepository _repository = Substitute.For<IPaymentMethodRepository>(); private readonly ICurrentUserService _currentUser = Substitute.For<ICurrentUserService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeletePaymentMethodHandler _sut;
+    private readonly IPaymentMethodRepository _repository = Substitute.For<IPaymentMethodRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeletePaymentMethodHandler _sut;
 
     public DeletePaymentMethodHandlerTests()
     {
-        _sut = new DeletePaymentMethodHandler(_repository, _currentUser, _cacheService);
+        _sut = new DeletePaymentMethodHandler(_repository, CurrentUserService, _cacheService);
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class DeletePaymentMethodHandlerTests
     public async Task Handle_WhenAnonymousCallerAndMethodExists_SoftDeletesWithoutDeletedBy()
     {
         var method = new PaymentMethodBuilder().Build();
-        _currentUser.UserId.Returns((Guid?)null);
+        CurrentUserService.UserId.Returns((Guid?)null);
         _repository
             .GetByIdAsync(Arg.Is<PaymentMethodId>(x => x == method.Id), Arg.Any<CancellationToken>())
             .Returns(method);
@@ -56,7 +56,7 @@ public class DeletePaymentMethodHandlerTests
     {
         var method = new PaymentMethodBuilder().Build();
         var userId = Guid.NewGuid();
-        _currentUser.UserId.Returns(userId);
+        CurrentUserService.UserId.Returns(userId);
         _repository
             .GetByIdAsync(Arg.Is<PaymentMethodId>(x => x == method.Id), Arg.Any<CancellationToken>())
             .Returns(method);
