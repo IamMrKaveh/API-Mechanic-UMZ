@@ -1,11 +1,12 @@
-using Application.Analytics.Constants;
 using Application.Analytics.Features.Shared;
+using NexGen.MediatR.Extensions.Caching.Attributes;
 
 namespace Application.Analytics.Features.Queries.GetInventoryReport;
 
-public sealed record GetInventoryReportQuery : IQuery<InventoryReportDto>, ICacheableQuery
-{
-    public string CacheKey => AnalyticsCacheKeys.InventoryReport;
-
-    public TimeSpan? Expiry => TimeSpan.FromMinutes(5);
-}
+[RequestOutputCache(
+    tags:
+    [
+        CacheTags.Manual.Analytics
+    ],
+    expirationInSeconds: 300)]
+public sealed record GetInventoryReportQuery : IQuery<InventoryReportDto>;

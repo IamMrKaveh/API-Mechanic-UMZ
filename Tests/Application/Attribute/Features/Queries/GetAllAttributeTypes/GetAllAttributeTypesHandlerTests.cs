@@ -1,4 +1,3 @@
-using Application.Attribute.Constants;
 using Application.Attribute.Features.Queries.GetAllAttributeTypes;
 using Application.Attribute.Features.Shared;
 using Application.Cache.Contracts;
@@ -17,15 +16,6 @@ public class GetAllAttributeTypesHandlerTests
     public GetAllAttributeTypesHandlerTests()
     {
         _sut = new GetAllAttributeTypesHandler(_repository, _mapper);
-    }
-
-    [Fact]
-    public void Query_ImplementsCacheableQueryWithExpectedKeyAndExpiry()
-    {
-        var query = new GetAllAttributeTypesQuery();
-
-        ((ICacheableQuery)query).CacheKey.ShouldBe(AttributeCacheKeys.AllTypes);
-        ((ICacheableQuery)query).Expiry.ShouldBe(TimeSpan.FromHours(1));
     }
 
     [Fact]

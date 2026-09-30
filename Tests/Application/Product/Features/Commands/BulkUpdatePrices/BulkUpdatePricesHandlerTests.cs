@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Product.Features.Commands.BulkUpdatePrices;
 using Application.Product.Features.Shared;
 using Domain.Variant.Aggregates;
@@ -10,16 +9,16 @@ namespace Tests.Application.Product.Features.Commands.BulkUpdatePrices;
 public class BulkUpdatePricesHandlerTests : HandlerTestBase
 {
     private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>();
-    private readonly ICacheService _cacheService = Substitute.For<ICacheService>();
+ 
     private readonly BulkUpdatePricesHandler _sut;
 
     public BulkUpdatePricesHandlerTests()
     {
-        _sut = new BulkUpdatePricesHandler(_variantRepository, AuditService, _cacheService);
+        _sut = new BulkUpdatePricesHandler(_variantRepository, AuditService);
     }
 
     [Fact]
-    public async Task Handle_WhenVariantFound_UpdatesPriceInvalidatesCacheAndAudits()
+    public async Task Handle_WhenVariantFound_UpdatesPriceAndAudits()
     {
         var variant = new ProductVariantBuilder().WithSellingPrice(100m).WithOriginalPrice(120m).Build();
         _variantRepository.GetByIdsAsync(Arg.Any<IEnumerable<VariantId>>(), Arg.Any<CancellationToken>())
@@ -35,7 +34,6 @@ public class BulkUpdatePricesHandlerTests : HandlerTestBase
         variant.SellingPrice.Amount.ShouldBe(150m);
         variant.OriginalPrice.Amount.ShouldBe(180m);
         _variantRepository.Received(1).Update(variant);
-        await _cacheService.Received(1).RemoveAsync($"product:{variant.ProductId.Value}", Arg.Any<CancellationToken>());
         await AuditService.Received(1).LogSystemEventAsync(
             "BulkPriceUpdate",
             Arg.Is<string>(s => s != null && s.Contains(variant.Id.Value.ToString())),
@@ -71,7 +69,6 @@ public class BulkUpdatePricesHandlerTests : HandlerTestBase
 
         result.ShouldBeSuccess();
         _variantRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]

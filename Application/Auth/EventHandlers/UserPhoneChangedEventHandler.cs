@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace Application.Auth.EventHandlers;
 
 public sealed class UserPhoneChangedEventHandler(
-    ICacheInvalidationService cacheInvalidation,
+
     IAuditService auditService,
     ILogger<UserPhoneChangedEventHandler> logger)
     : INotificationHandler<DomainEventNotification<UserPhoneChangedEvent>>
@@ -24,7 +24,6 @@ public sealed class UserPhoneChangedEventHandler(
             ["EventName"] = nameof(UserPhoneChangedEvent)
         }))
         {
-            await cacheInvalidation.InvalidateUserCacheAsync(domainEvent.UserId, ct);
 
             logger.LogInformation(
                 "Phone changed for user {UserId} from {OldPhone} to {NewPhone}",

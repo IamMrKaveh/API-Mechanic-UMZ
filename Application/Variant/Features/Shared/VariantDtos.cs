@@ -5,16 +5,6 @@ using Domain.Variant.Aggregates;
 
 namespace Application.Variant.Features.Shared;
 
-public record VariantStockChangedApplicationNotification : INotification
-{
-    public Guid VariantId { get; init; }
-    public Guid ProductId { get; init; }
-    public int QuantityChanged { get; init; }
-    public int NewOnHand { get; init; }
-    public int NewReserved { get; init; }
-    public int NewAvailable { get; init; }
-    public bool IsInStock { get; init; }
-}
 
 public sealed record ProductVariantViewDto
 {

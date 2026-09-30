@@ -1,5 +1,4 @@
 using Application.Brand.Features.Commands.DeleteBrand;
-using Application.Cache.Contracts;
 using Domain.Brand.Exceptions;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
@@ -13,11 +12,11 @@ namespace Tests.Application.Brand.Features.Commands.DeleteBrand;
 
 public class DeleteBrandHandlerTests : HandlerTestBase
 {
-    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteBrandHandler _sut;
+    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly DeleteBrandHandler _sut;
 
     public DeleteBrandHandlerTests()
     {
-        _sut = new DeleteBrandHandler(_brandRepository, _cacheService, DateTimeProvider);
+        _sut = new DeleteBrandHandler(_brandRepository, DateTimeProvider);
     }
 
     [Fact]
@@ -33,7 +32,6 @@ public class DeleteBrandHandlerTests : HandlerTestBase
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _brandRepository.DidNotReceive().Update(Arg.Any<Brands>(), Arg.Any<byte[]?>());
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -50,7 +48,6 @@ public class DeleteBrandHandlerTests : HandlerTestBase
 
         result.ShouldBeSuccess();
         brand.IsActive.ShouldBeFalse();
-        await _cacheService.Received(1).RemoveByPrefixAsync("brands:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

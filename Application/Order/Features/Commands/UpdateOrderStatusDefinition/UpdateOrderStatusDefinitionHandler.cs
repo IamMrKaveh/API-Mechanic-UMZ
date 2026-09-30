@@ -5,8 +5,7 @@ namespace Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
 public class UpdateOrderStatusDefinitionHandler(
     IOrderStatusRepository orderStatusRepository,
-    IAuditService auditService,
-    ICacheService cacheService)
+    IAuditService auditService)
     : ICommandHandler<UpdateOrderStatusDefinitionCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -41,7 +40,6 @@ public class UpdateOrderStatusDefinitionHandler(
 
         orderStatusRepository.Update(status, rowVersion);
 
-        await cacheService.RemoveByPrefixAsync("order-status:", ct);
 
         await auditService.LogSystemEventAsync(
             "OrderStatusUpdated",

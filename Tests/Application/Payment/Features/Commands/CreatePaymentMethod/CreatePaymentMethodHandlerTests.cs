@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Payment.Features.Commands.CreatePaymentMethod;
 using Application.Payment.Features.Shared;
 using Domain.Payment.Interfaces;
@@ -11,11 +10,11 @@ namespace Tests.Application.Payment.Features.Commands.CreatePaymentMethod;
 
 public class CreatePaymentMethodHandlerTests
 {
-    private readonly IPaymentMethodRepository _repository = Substitute.For<IPaymentMethodRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreatePaymentMethodHandler _sut;
+    private readonly IPaymentMethodRepository _repository = Substitute.For<IPaymentMethodRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly CreatePaymentMethodHandler _sut;
 
     public CreatePaymentMethodHandlerTests()
     {
-        _sut = new CreatePaymentMethodHandler(_repository, _mapper, _cacheService);
+        _sut = new CreatePaymentMethodHandler(_repository, _mapper);
     }
 
     private static CreatePaymentMethodCommand ValidCommand() =>
@@ -32,7 +31,6 @@ public class CreatePaymentMethodHandlerTests
 
         result.ShouldFailWith(ErrorCode.Conflict);
         await _repository.DidNotReceive().AddAsync(Arg.Any<PaymentMethods>(), Arg.Any<CancellationToken>());
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -69,7 +67,6 @@ public class CreatePaymentMethodHandlerTests
         result.ShouldBeSuccess();
         result.Value.ShouldBe(expected);
         await _repository.Received(1).AddAsync(Arg.Any<PaymentMethods>(), Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveByPrefixAsync("payment-methods:", Arg.Any<CancellationToken>());
     }
 
     [Theory]

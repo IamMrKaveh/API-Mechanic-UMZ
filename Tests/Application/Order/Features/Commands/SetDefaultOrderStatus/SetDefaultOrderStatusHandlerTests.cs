@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Order.Features.Commands.SetDefaultOrderStatus;
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
@@ -10,11 +9,11 @@ namespace Tests.Application.Order.Features.Commands.SetDefaultOrderStatus;
 
 public class SetDefaultOrderStatusHandlerTests
 {
-    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly SetDefaultOrderStatusHandler _sut;
+    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly SetDefaultOrderStatusHandler _sut;
 
     public SetDefaultOrderStatusHandlerTests()
     {
-        _sut = new SetDefaultOrderStatusHandler(_repository, _cacheService);
+        _sut = new SetDefaultOrderStatusHandler(_repository);
     }
 
     [Fact]
@@ -51,7 +50,6 @@ public class SetDefaultOrderStatusHandlerTests
 
         result.ShouldBeSuccess();
         _repository.DidNotReceive().Update(Arg.Any<OrderStatus>(), Arg.Any<byte[]?>());
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -71,7 +69,6 @@ public class SetDefaultOrderStatusHandlerTests
         newStatus.IsDefault.ShouldBeTrue();
         _repository.Received(1).Update(currentDefault, Arg.Any<byte[]?>());
         _repository.Received(1).Update(newStatus, Arg.Any<byte[]?>());
-        await _cacheService.Received(1).RemoveByPrefixAsync("order-status:", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -86,6 +83,5 @@ public class SetDefaultOrderStatusHandlerTests
         result.ShouldBeSuccess();
         newStatus.IsDefault.ShouldBeTrue();
         _repository.Received(1).Update(newStatus, Arg.Any<byte[]?>());
-        await _cacheService.Received(1).RemoveByPrefixAsync("order-status:", Arg.Any<CancellationToken>());
     }
 }

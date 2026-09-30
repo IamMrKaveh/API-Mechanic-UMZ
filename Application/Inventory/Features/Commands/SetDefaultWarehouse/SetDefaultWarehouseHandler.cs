@@ -6,7 +6,6 @@ namespace Application.Inventory.Features.Commands.SetDefaultWarehouse;
 
 public class SetDefaultWarehouseHandler(
     IWarehouseRepository warehouseRepository,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<SetDefaultWarehouseCommand>
 {
@@ -28,7 +27,6 @@ public class SetDefaultWarehouseHandler(
 
         warehouse.SetAsDefault(now);
         warehouseRepository.Update(warehouse);
-        await cacheService.RemoveByPrefixAsync("warehouses:", ct);
 
         return ServiceResult.Success();
     }

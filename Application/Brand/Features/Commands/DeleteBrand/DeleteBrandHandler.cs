@@ -6,7 +6,6 @@ namespace Application.Brand.Features.Commands.DeleteBrand;
 
 public class DeleteBrandHandler(
     IBrandRepository brandRepository,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<DeleteBrandCommand>
 {
@@ -19,7 +18,6 @@ public class DeleteBrandHandler(
 
         brand.Deactivate(dateTimeProvider.UtcNow);
         brandRepository.Update(brand);
-        await cacheService.RemoveByPrefixAsync("brands:", ct);
 
         return ServiceResult.Success();
     }

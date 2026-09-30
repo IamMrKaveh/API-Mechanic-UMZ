@@ -8,7 +8,6 @@ public interface ICacheService
 
     Task RemoveAsync(string key, CancellationToken ct = default);
 
-    Task RemoveByPrefixAsync(string prefix, CancellationToken ct = default);
 
     Task<bool> ExistsAsync(string key, CancellationToken ct = default);
 }

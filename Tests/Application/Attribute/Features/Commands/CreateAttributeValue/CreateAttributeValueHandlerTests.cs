@@ -1,7 +1,5 @@
-using Application.Attribute.Constants;
 using Application.Attribute.Features.Commands.CreateAttributeValue;
 using Application.Attribute.Features.Shared;
-using Application.Cache.Contracts;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
@@ -14,15 +12,15 @@ namespace Tests.Application.Attribute.Features.Commands.CreateAttributeValue;
 
 public class CreateAttributeValueHandlerTests : HandlerTestBase
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateAttributeValueHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly CreateAttributeValueHandler _sut;
 
     public CreateAttributeValueHandlerTests()
     {
-        _sut = new CreateAttributeValueHandler(_repository, _mapper, _cacheService, DateTimeProvider);
+        _sut = new CreateAttributeValueHandler(_repository, _mapper, DateTimeProvider);
     }
 
     [Fact]
-    public async Task Handle_WhenParentTypeNotFound_ReturnsNotFoundAndDoesNotPersistOrInvalidateCache()
+    public async Task Handle_WhenParentTypeNotFound_ReturnsNotFoundAndDoesNotPersist()
     {
         _repository
             .GetAttributeTypeWithValuesAsync(Arg.Any<AttributeTypeId>(), Arg.Any<CancellationToken>())
@@ -36,11 +34,10 @@ public class CreateAttributeValueHandlerTests : HandlerTestBase
 
         await _repository.DidNotReceiveWithAnyArgs().AttributeValueExistsAsync(default!, default!, default, default);
         await _repository.DidNotReceiveWithAnyArgs().UpdateAttributeTypeAsync(default!, default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]
-    public async Task Handle_WhenValueAlreadyExists_ReturnsConflictAndDoesNotPersistOrInvalidateCache()
+    public async Task Handle_WhenValueAlreadyExists_ReturnsConflictAndDoesNotPersist()
     {
         var type = await new AttributeTypeBuilder().BuildAsync();
 
@@ -63,11 +60,10 @@ public class CreateAttributeValueHandlerTests : HandlerTestBase
         result.ShouldFailWith(ErrorCode.Conflict);
 
         await _repository.DidNotReceiveWithAnyArgs().UpdateAttributeTypeAsync(default!, default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]
-    public async Task Handle_WhenValid_AddsValueToAggregatePersistsAndInvalidatesCacheReturningMappedDto()
+    public async Task Handle_WhenValid_AddsValueToAggregatePersistsReturningMappedDto()
     {
         var type = await new AttributeTypeBuilder().BuildAsync();
 
@@ -101,7 +97,6 @@ public class CreateAttributeValueHandlerTests : HandlerTestBase
         added.SortOrder.ShouldBe(4);
 
         await _repository.Received(1).UpdateAttributeTypeAsync(type, Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveAsync(AttributeCacheKeys.AllTypes, Arg.Any<CancellationToken>());
     }
 
     [Fact]

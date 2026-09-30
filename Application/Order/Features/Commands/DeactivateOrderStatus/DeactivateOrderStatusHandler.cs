@@ -5,8 +5,7 @@ using Domain.Order.ValueObjects;
 namespace Application.Order.Features.Commands.DeactivateOrderStatus;
 
 public class DeactivateOrderStatusHandler(
-    IOrderStatusRepository orderStatusRepository,
-    ICacheService cacheService)
+    IOrderStatusRepository orderStatusRepository)
     : ICommandHandler<DeactivateOrderStatusCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -32,7 +31,6 @@ public class DeactivateOrderStatusHandler(
 
         orderStatusRepository.Update(status);
 
-        await cacheService.RemoveByPrefixAsync("order-status:", ct);
 
         return ServiceResult.Success();
     }

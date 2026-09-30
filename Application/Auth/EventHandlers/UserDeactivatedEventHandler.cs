@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace Application.Auth.EventHandlers;
 
 public sealed class UserDeactivatedEventHandler(
-    ICacheInvalidationService cacheInvalidation,
+
     IAuditService auditService,
     ILogger<UserDeactivatedEventHandler> logger)
     : INotificationHandler<DomainEventNotification<UserDeactivatedEvent>>
@@ -24,7 +24,6 @@ public sealed class UserDeactivatedEventHandler(
             ["EventName"] = nameof(UserDeactivatedEvent)
         }))
         {
-            await cacheInvalidation.InvalidateUserCacheAsync(domainEvent.UserId, ct);
 
             logger.LogInformation("User {UserId} deactivated", domainEvent.UserId);
 

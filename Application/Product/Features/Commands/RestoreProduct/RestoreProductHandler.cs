@@ -4,8 +4,7 @@ using Domain.Product.ValueObjects;
 namespace Application.Product.Features.Commands.RestoreProduct;
 
 public class RestoreProductHandler(
-    IProductRepository productRepository,
-    ICacheService cacheService)
+    IProductRepository productRepository)
     : ICommandHandler<RestoreProductCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -22,8 +21,6 @@ public class RestoreProductHandler(
 
         productRepository.Update(product);
 
-        await cacheService.RemoveAsync($"product:{request.ProductId}", ct);
-        await cacheService.RemoveAsync($"brand:{product.BrandId}", ct);
 
         return ServiceResult.Success();
     }

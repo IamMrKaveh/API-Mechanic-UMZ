@@ -6,7 +6,6 @@ namespace Application.Inventory.Features.Commands.CreateWarehouse;
 
 public class CreateWarehouseHandler(
     IWarehouseRepository warehouseRepository,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateWarehouseCommand>
 {
@@ -39,7 +38,6 @@ public class CreateWarehouseHandler(
             request.IsDefault);
 
         await warehouseRepository.AddAsync(warehouse, ct);
-        await cacheService.RemoveByPrefixAsync("warehouses:", ct);
 
         return ServiceResult.Success();
     }

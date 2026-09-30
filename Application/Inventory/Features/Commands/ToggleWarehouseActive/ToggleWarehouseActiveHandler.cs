@@ -6,7 +6,6 @@ namespace Application.Inventory.Features.Commands.ToggleWarehouseActive;
 
 public class ToggleWarehouseActiveHandler(
     IWarehouseRepository warehouseRepository,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<ToggleWarehouseActiveCommand>
 {
@@ -25,7 +24,6 @@ public class ToggleWarehouseActiveHandler(
             warehouse.Deactivate(now);
 
         warehouseRepository.Update(warehouse);
-        await cacheService.RemoveByPrefixAsync("warehouses:", ct);
 
         return ServiceResult.Success();
     }

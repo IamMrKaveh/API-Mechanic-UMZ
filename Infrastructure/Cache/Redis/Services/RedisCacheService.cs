@@ -58,25 +58,6 @@ public sealed class RedisCacheService(
         }
     }
 
-    public async Task RemoveByPrefixAsync(string prefix, CancellationToken ct = default)
-    {
-        try
-        {
-            var server = redis.GetServer(redis.GetEndPoints().First());
-            var pattern = $"{_options.KeyPrefix}:{prefix}*";
-            var keys = new List<RedisKey>();
-
-            await foreach (var key in server.KeysAsync(pattern: pattern))
-                keys.Add(key);
-
-            if (keys.Count > 0)
-                await _db.KeyDeleteAsync([.. keys]);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Cache remove by prefix failed for prefix {Prefix}", prefix);
-        }
-    }
 
     public async Task<bool> ExistsAsync(string key, CancellationToken ct = default)
     {

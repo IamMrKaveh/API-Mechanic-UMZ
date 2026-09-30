@@ -38,41 +38,4 @@ public class GetTopSellingProductsHandlerTests
             count, from, to, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public void Query_CacheKey_IncludesCountAndFormattedDates()
-    {
-        var query = new GetTopSellingProductsQuery(
-            5,
-            new DateTime(2026, 04, 01, 0, 0, 0, DateTimeKind.Utc),
-            new DateTime(2026, 04, 30, 0, 0, 0, DateTimeKind.Utc));
-
-        Assert.Equal("analytics:top-products:5:20260401:20260430", query.CacheKey);
-    }
-
-    [Fact]
-    public void Query_CacheKey_WithBothDatesNull_UsesEmptyDateSegments()
-    {
-        var query = new GetTopSellingProductsQuery(10, null, null);
-
-        Assert.Equal("analytics:top-products:10::", query.CacheKey);
-    }
-
-    [Theory]
-    [InlineData(1)]
-    [InlineData(25)]
-    [InlineData(100)]
-    public void Query_CacheKey_IncludesCountVerbatim(int count)
-    {
-        var query = new GetTopSellingProductsQuery(count, null, null);
-
-        Assert.Equal($"analytics:top-products:{count}::", query.CacheKey);
-    }
-
-    [Fact]
-    public void Query_Expiry_IsFifteenMinutes()
-    {
-        var query = new GetTopSellingProductsQuery();
-
-        Assert.Equal(TimeSpan.FromMinutes(15), query.Expiry);
-    }
 }

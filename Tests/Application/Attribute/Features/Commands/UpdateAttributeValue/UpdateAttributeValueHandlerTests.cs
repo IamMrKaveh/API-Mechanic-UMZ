@@ -1,6 +1,4 @@
-using Application.Attribute.Constants;
 using Application.Attribute.Features.Commands.UpdateAttributeValue;
-using Application.Cache.Contracts;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Entities;
 using Domain.Attribute.Interfaces;
@@ -14,11 +12,11 @@ namespace Tests.Application.Attribute.Features.Commands.UpdateAttributeValue;
 
 public class UpdateAttributeValueHandlerTests : HandlerTestBase
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateAttributeValueHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly UpdateAttributeValueHandler _sut;
 
     public UpdateAttributeValueHandlerTests()
     {
-        _sut = new UpdateAttributeValueHandler(_repository, _cacheService, DateTimeProvider);
+        _sut = new UpdateAttributeValueHandler(_repository, DateTimeProvider);
     }
 
     [Fact]
@@ -37,7 +35,6 @@ public class UpdateAttributeValueHandlerTests : HandlerTestBase
         await _repository.DidNotReceiveWithAnyArgs().AttributeValueExistsAsync(default!, default!, default, default);
         await _repository.DidNotReceiveWithAnyArgs().GetAttributeTypeWithValuesAsync(default!, default);
         await _repository.DidNotReceiveWithAnyArgs().UpdateAttributeTypeAsync(default!, default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]
@@ -66,7 +63,6 @@ public class UpdateAttributeValueHandlerTests : HandlerTestBase
 
         await _repository.DidNotReceiveWithAnyArgs().GetAttributeTypeWithValuesAsync(default!, default);
         await _repository.DidNotReceiveWithAnyArgs().UpdateAttributeTypeAsync(default!, default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]
@@ -151,11 +147,10 @@ public class UpdateAttributeValueHandlerTests : HandlerTestBase
         result.ShouldFailWith(ErrorCode.NotFound);
 
         await _repository.DidNotReceiveWithAnyArgs().UpdateAttributeTypeAsync(default!, default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]
-    public async Task Handle_WhenValid_AppliesUpdateOnAggregatePersistsAndInvalidatesCache()
+    public async Task Handle_WhenValid_AppliesUpdateOnAggregatePersists()
     {
         var type = await new AttributeTypeBuilder().BuildAsync();
         var existingValue = type.AddValue("red", "Red", DateTime.UtcNow, "#FF0000", 1);
@@ -189,7 +184,6 @@ public class UpdateAttributeValueHandlerTests : HandlerTestBase
         existingValue.IsActive.ShouldBeFalse();
 
         await _repository.Received(1).UpdateAttributeTypeAsync(type, Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveAsync(AttributeCacheKeys.AllTypes, Arg.Any<CancellationToken>());
     }
 
     [Theory]

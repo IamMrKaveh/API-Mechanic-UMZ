@@ -8,17 +8,6 @@ namespace Tests.Application.Variant.Features.Shared;
 
 public class VariantDtosTests
 {
-    [Fact]
-    public void StockChangedNotification_Defaults_AreZero()
-    {
-        var n = new VariantStockChangedApplicationNotification();
-
-        n.VariantId.ShouldBe(default(Guid));
-        n.QuantityChanged.ShouldBe(0);
-        n.NewAvailable.ShouldBe(0);
-        n.IsInStock.ShouldBeFalse();
-        n.ShouldBeAssignableTo<INotification>();
-    }
 
     [Fact]
     public void ProductVariantViewDto_Defaults_AreEmpty()

@@ -13,7 +13,6 @@ public sealed class CreateBrandHandler(
     IBrandUniquenessChecker brandUniquenessChecker,
     IMapper mapper,
     IStorageService storageService,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateBrandCommand, BrandDetailDto>
 {
@@ -69,7 +68,6 @@ public sealed class CreateBrandHandler(
             ct);
 
         await brandRepository.AddAsync(brand, ct);
-        await cacheService.RemoveByPrefixAsync("brands:", ct);
 
         var dto = mapper.Map<BrandDetailDto>(brand);
         return ServiceResult<BrandDetailDto>.Success(dto);

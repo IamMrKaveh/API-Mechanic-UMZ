@@ -1,7 +1,6 @@
 using Application.Brand.Contracts;
 using Application.Brand.Features.Commands.UpdateBrand;
 using Application.Brand.Features.Shared;
-using Application.Cache.Contracts;
 using Application.Common.Interfaces;
 using Application.Media.Contracts;
 using Domain.Brand.Interfaces;
@@ -17,7 +16,7 @@ namespace Tests.Application.Brand.Features.Commands.UpdateBrand;
 
 public class UpdateBrandHandlerTests : HandlerTestBase
 {
-    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly IBrandQueryService _brandQueryService = Substitute.For<IBrandQueryService>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateBrandHandler _sut;
+    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>(); private readonly IBrandQueryService _brandQueryService = Substitute.For<IBrandQueryService>(); private readonly IBrandUniquenessChecker _uniquenessChecker = Substitute.For<IBrandUniquenessChecker>(); private readonly IStorageService _storageService = Substitute.For<IStorageService>(); private readonly UpdateBrandHandler _sut;
 
     public UpdateBrandHandlerTests()
     {
@@ -31,7 +30,6 @@ public class UpdateBrandHandlerTests : HandlerTestBase
             _uniquenessChecker,
             UnitOfWork,
             _storageService,
-            _cacheService,
             DateTimeProvider);
     }
 
@@ -70,7 +68,6 @@ public class UpdateBrandHandlerTests : HandlerTestBase
         result.ShouldFailWith(ErrorCode.NotFound);
         _brandRepository.DidNotReceiveWithAnyArgs().Update(default!, default);
         await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -127,7 +124,6 @@ public class UpdateBrandHandlerTests : HandlerTestBase
         brand.Description.ShouldBe("desc");
         _brandRepository.Received(1).Update(brand, Arg.Any<byte[]?>());
         await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveByPrefixAsync("brands:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

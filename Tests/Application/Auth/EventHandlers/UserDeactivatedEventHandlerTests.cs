@@ -7,24 +7,12 @@ namespace Tests.Application.Auth.EventHandlers;
 
 public class UserDeactivatedEventHandlerTests : HandlerTestBase
 {
-    private readonly ICacheInvalidationService _cacheInvalidation = Substitute.For<ICacheInvalidationService>();
     private readonly ILogger<UserDeactivatedEventHandler> _logger = Substitute.For<ILogger<UserDeactivatedEventHandler>>();
     private readonly UserDeactivatedEventHandler _sut;
 
     public UserDeactivatedEventHandlerTests()
     {
-        _sut = new UserDeactivatedEventHandler(_cacheInvalidation, AuditService, _logger);
-    }
-
-    [Fact]
-    public async Task Handle_WithValidEvent_InvalidatesUserCacheOnce()
-    {
-        var userId = UserId.NewId();
-        var notification = new DomainEventNotification<UserDeactivatedEvent>(new UserDeactivatedEvent(userId));
-
-        await _sut.Handle(notification, CancellationToken.None);
-
-        await _cacheInvalidation.Received(1).InvalidateUserCacheAsync(userId, Arg.Any<CancellationToken>());
+        _sut = new UserDeactivatedEventHandler(AuditService, _logger);
     }
 
     [Fact]
@@ -42,25 +30,7 @@ public class UserDeactivatedEventHandlerTests : HandlerTestBase
     }
 
     [Fact]
-    public async Task Handle_InvalidatesCacheBeforeLoggingAuditEvent()
-    {
-        var userId = UserId.NewId();
-        var notification = new DomainEventNotification<UserDeactivatedEvent>(new UserDeactivatedEvent(userId));
-
-        await _sut.Handle(notification, CancellationToken.None);
-
-        Received.InOrder(() =>
-        {
-            _cacheInvalidation.InvalidateUserCacheAsync(userId, Arg.Any<CancellationToken>());
-            AuditService.LogSystemEventAsync(
-                "Deactive User",
-                Arg.Any<string>(),
-                Arg.Any<CancellationToken>());
-        });
-    }
-
-    [Fact]
-    public async Task Handle_PassesCancellationTokenToBothDependencies()
+    public async Task Handle_PassesCancellationTokenToAuditService()
     {
         using var cts = new CancellationTokenSource();
         var userId = UserId.NewId();
@@ -68,19 +38,17 @@ public class UserDeactivatedEventHandlerTests : HandlerTestBase
 
         await _sut.Handle(notification, cts.Token);
 
-        await _cacheInvalidation.Received(1).InvalidateUserCacheAsync(userId, cts.Token);
         await AuditService.Received(1).LogSystemEventAsync(Arg.Any<string>(), Arg.Any<string>(), cts.Token);
     }
 
     [Fact]
-    public async Task Handle_InvokesEachDependencyExactlyOnce()
+    public async Task Handle_LogsAuditEventExactlyOnce()
     {
         var userId = UserId.NewId();
         var notification = new DomainEventNotification<UserDeactivatedEvent>(new UserDeactivatedEvent(userId));
 
         await _sut.Handle(notification, CancellationToken.None);
 
-        _cacheInvalidation.ReceivedCalls().Count().ShouldBe(1);
         AuditService.ReceivedCalls().Count().ShouldBe(1);
     }
 }

@@ -1,6 +1,4 @@
-using Application.Attribute.Constants;
 using Application.Attribute.Features.Commands.DeleteAttributeType;
-using Application.Cache.Contracts;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
@@ -12,15 +10,15 @@ namespace Tests.Application.Attribute.Features.Commands.DeleteAttributeType;
 
 public class DeleteAttributeTypeHandlerTests
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteAttributeTypeHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly DeleteAttributeTypeHandler _sut;
 
     public DeleteAttributeTypeHandlerTests()
     {
-        _sut = new DeleteAttributeTypeHandler(_repository, _cacheService);
+        _sut = new DeleteAttributeTypeHandler(_repository);
     }
 
     [Fact]
-    public async Task Handle_WhenTypeNotFound_ReturnsNotFoundAndDoesNotDeleteOrInvalidateCache()
+    public async Task Handle_WhenTypeNotFound_ReturnsNotFoundAndDoesNotDelete()
     {
         _repository
             .GetAttributeTypeByIdAsync(Arg.Any<AttributeTypeId>(), Arg.Any<CancellationToken>())
@@ -31,11 +29,10 @@ public class DeleteAttributeTypeHandlerTests
         result.ShouldFailWith(ErrorCode.NotFound);
 
         await _repository.DidNotReceiveWithAnyArgs().DeleteAttributeTypeAsync(default!, default, default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]
-    public async Task Handle_WhenTypeExists_DeletesByAggregateIdWithNullDeletedByAndInvalidatesAllTypesCache()
+    public async Task Handle_WhenTypeExists_DeletesByAggregateIdWithNullDeletedBy()
     {
         var existing = await new AttributeTypeBuilder().WithName("color").BuildAsync();
 
@@ -52,7 +49,6 @@ public class DeleteAttributeTypeHandlerTests
             null,
             Arg.Any<CancellationToken>());
 
-        await _cacheService.Received(1).RemoveAsync(AttributeCacheKeys.AllTypes, Arg.Any<CancellationToken>());
     }
 
     [Fact]

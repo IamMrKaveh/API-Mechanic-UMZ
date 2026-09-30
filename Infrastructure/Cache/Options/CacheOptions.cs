@@ -13,11 +13,6 @@ public sealed class CacheOptions
     [Range(1, 1440)]
     public int DefaultExpirationMinutes { get; init; } = 30;
 
-    [Range(1, 1440)]
-    public int ShortExpirationMinutes { get; init; } = 5;
-
-    [Range(1, 10080)]
-    public int LongExpirationMinutes { get; init; } = 120;
 
     [Required(AllowEmptyStrings = false)]
     public string KeyPrefix { get; init; } = "shop";

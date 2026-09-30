@@ -1,5 +1,4 @@
 using Application.Attribute.Adapters;
-using Application.Attribute.Constants;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
@@ -8,7 +7,6 @@ namespace Application.Attribute.Features.Commands.UpdateAttributeType;
 
 public class UpdateAttributeTypeHandler(
     IAttributeRepository repository,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<UpdateAttributeTypeCommand>
 {
@@ -34,7 +32,6 @@ public class UpdateAttributeTypeHandler(
             ct);
 
         await repository.UpdateAttributeTypeAsync(attributeType, ct);
-        await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult.Success();
     }

@@ -74,32 +74,6 @@ public class InMemoryCacheServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task RemoveByPrefixAsync_RemovesAllMatchingKeysAndPreservesOthers()
-    {
-        await _sut.SetAsync("orders:1", "a");
-        await _sut.SetAsync("orders:2", "b");
-        await _sut.SetAsync("products:1", "c");
-
-        await _sut.RemoveByPrefixAsync("orders:");
-
-        (await _sut.GetAsync<string>("orders:1")).ShouldBeNull();
-        (await _sut.GetAsync<string>("orders:2")).ShouldBeNull();
-        (await _sut.GetAsync<string>("products:1")).ShouldBe("c");
-    }
-
-    [Fact]
-    public async Task RemoveByPrefixAsync_MatchesPrefixCaseInsensitively()
-    {
-        await _sut.SetAsync("Orders:1", "a");
-        await _sut.SetAsync("ORDERS:2", "b");
-
-        await _sut.RemoveByPrefixAsync("orders:");
-
-        (await _sut.GetAsync<string>("Orders:1")).ShouldBeNull();
-        (await _sut.GetAsync<string>("ORDERS:2")).ShouldBeNull();
-    }
-
-    [Fact]
     public async Task SetAsync_WithoutExpiry_KeyIsRetrievableImmediately()
     {
         await _sut.SetAsync("k-default", "value");

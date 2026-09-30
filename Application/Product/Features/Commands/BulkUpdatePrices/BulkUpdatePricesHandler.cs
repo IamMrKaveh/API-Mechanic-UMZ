@@ -5,8 +5,7 @@ namespace Application.Product.Features.Commands.BulkUpdatePrices;
 
 public sealed class BulkUpdatePricesHandler(
     IVariantRepository variantRepository,
-    IAuditService auditService,
-    ICacheService cacheService)
+    IAuditService auditService)
     : ICommandHandler<BulkUpdatePricesCommand>
 {
     public async Task<ServiceResult> Handle(BulkUpdatePricesCommand request, CancellationToken ct)
@@ -16,7 +15,7 @@ public sealed class BulkUpdatePricesHandler(
         var variants = await variantRepository.GetByIdsAsync(variantIds, ct);
 
         var errors = new List<string>();
-        var affectedProductIds = new HashSet<Guid>();
+
         var changesLog = new List<string>();
 
         foreach (var variant in variants)
@@ -34,7 +33,7 @@ public sealed class BulkUpdatePricesHandler(
                     variantRepository.Update(variant);
 
                     changesLog.Add($"Variant {variant.Id.Value}: Selling={update.SellingPrice}");
-                    affectedProductIds.Add(variant.ProductId.Value);
+
                 }
                 catch (DomainException ex)
                 {
@@ -43,10 +42,6 @@ public sealed class BulkUpdatePricesHandler(
             }
         }
 
-        foreach (var productId in affectedProductIds)
-        {
-            await cacheService.RemoveAsync($"product:{productId}", ct);
-        }
 
         await auditService.LogSystemEventAsync(
             "BulkPriceUpdate",

@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Category.Features.Commands.UpdateCategory;
 using Domain.Category.Interfaces;
 using Domain.Category.ValueObjects;
@@ -13,7 +12,7 @@ using Categories = Domain.Category.Aggregates.Category;
 namespace Tests.Application.Category.Features.Commands.UpdateCategory;
 
 public class UpdateCategoryHandlerTests : HandlerTestBase, IClassFixture<MapsterConfigFixture>{
-    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateCategoryHandler _sut;
+    private readonly ICategoryRepository _repository = Substitute.For<ICategoryRepository>(); private readonly UpdateCategoryHandler _sut;
 
     public UpdateCategoryHandlerTests(MapsterConfigFixture _)
     {
@@ -24,7 +23,7 @@ public class UpdateCategoryHandlerTests : HandlerTestBase, IClassFixture<Mapster
             .ExistsBySlugAsync(Arg.Any<CategorySlug>(), Arg.Any<CategoryId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new UpdateCategoryHandler(_repository, _cacheService, DateTimeProvider);
+        _sut = new UpdateCategoryHandler(_repository, DateTimeProvider);
     }
 
     private async Task<Categories> BuildActiveCategoryAsync() =>
@@ -47,7 +46,6 @@ public class UpdateCategoryHandlerTests : HandlerTestBase, IClassFixture<Mapster
         var result = await _sut.Handle(command, CancellationToken.None);
 
         result.ShouldFailWithType(ErrorType.NotFound);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -67,7 +65,6 @@ public class UpdateCategoryHandlerTests : HandlerTestBase, IClassFixture<Mapster
         result.Value.Name.ShouldBe("Renamed");
         result.Value.Slug.ShouldBe("renamed");
         result.Value.Description.ShouldBe("new desc");
-        await _cacheService.Received(1).RemoveByPrefixAsync("categories:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -2,8 +2,6 @@ namespace Infrastructure.Cache.Services;
 
 public sealed class InMemoryCacheService(IMemoryCache cache) : ICacheService
 {
-    private readonly ConcurrentDictionary<string, bool> _trackedKeys = new();
-
     public Task<T?> GetAsync<T>(string key, CancellationToken ct = default)
     {
         cache.TryGetValue(key, out T? value);
@@ -17,28 +15,12 @@ public sealed class InMemoryCacheService(IMemoryCache cache) : ICacheService
             AbsoluteExpirationRelativeToNow = expiry ?? TimeSpan.FromMinutes(30)
         };
         cache.Set(key, value, options);
-        _trackedKeys.TryAdd(key, true);
         return Task.CompletedTask;
     }
 
     public Task RemoveAsync(string key, CancellationToken ct = default)
     {
         cache.Remove(key);
-        _trackedKeys.TryRemove(key, out _);
-        return Task.CompletedTask;
-    }
-
-    public Task RemoveByPrefixAsync(string prefix, CancellationToken ct = default)
-    {
-        var keys = _trackedKeys.Keys
-            .Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        foreach (var key in keys)
-        {
-            cache.Remove(key);
-            _trackedKeys.TryRemove(key, out _);
-        }
         return Task.CompletedTask;
     }
 

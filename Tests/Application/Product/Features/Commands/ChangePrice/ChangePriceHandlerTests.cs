@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Product.Features.Commands.ChangePrice;
 using Domain.Product.ValueObjects;
 using Domain.Variant.Aggregates;
@@ -12,11 +11,11 @@ namespace Tests.Application.Product.Features.Commands.ChangePrice;
 
 public class ChangePriceHandlerTests
 {
-    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly ChangePriceHandler _sut;
+    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly ChangePriceHandler _sut;
 
     public ChangePriceHandlerTests()
     {
-        _sut = new ChangePriceHandler(_variantRepository, _cacheService);
+        _sut = new ChangePriceHandler(_variantRepository);
     }
 
     [Fact]
@@ -37,7 +36,6 @@ public class ChangePriceHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _variantRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]
@@ -62,11 +60,10 @@ public class ChangePriceHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _variantRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]
-    public async Task Handle_WhenVariantMatchesProduct_ChangesPriceUpdatesAndInvalidatesCaches()
+    public async Task Handle_WhenVariantMatchesProduct_ChangesPriceUpdates()
     {
         var productId = ProductId.NewId();
         var variant = new ProductVariantBuilder()
@@ -91,8 +88,6 @@ public class ChangePriceHandlerTests
         result.ShouldBeSuccess();
         variant.SellingPrice.Amount.ShouldBe(100_000m);
         _variantRepository.Received(1).Update(variant);
-        await _cacheService.Received(1).RemoveAsync($"product:{productId.Value}", Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveAsync($"variant:{variant.Id.Value}", Arg.Any<CancellationToken>());
     }
 
     [Fact]

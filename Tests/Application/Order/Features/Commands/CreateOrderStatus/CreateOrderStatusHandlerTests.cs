@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Order.Features.Commands.CreateOrderStatus;
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
@@ -9,11 +8,11 @@ namespace Tests.Application.Order.Features.Commands.CreateOrderStatus;
 
 public class CreateOrderStatusHandlerTests
 {
-    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateOrderStatusHandler _sut;
+    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly CreateOrderStatusHandler _sut;
 
     public CreateOrderStatusHandlerTests()
     {
-        _sut = new CreateOrderStatusHandler(_repository, _cacheService);
+        _sut = new CreateOrderStatusHandler(_repository);
     }
 
     [Fact]
@@ -27,11 +26,10 @@ public class CreateOrderStatusHandlerTests
 
         result.ShouldFailWith(ErrorCode.Validation);
         await _repository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
-    public async Task Handle_WhenNameUnique_CreatesStatusPersistsInvalidatesCacheAndReturnsMappedDto()
+    public async Task Handle_WhenNameUnique_CreatesStatusPersistsAndReturnsMappedDto()
     {
         _repository.ExistsByNameAsync("paid", null, Arg.Any<CancellationToken>()).Returns(false);
 
@@ -58,6 +56,5 @@ public class CreateOrderStatusHandlerTests
         result.Value.AllowCancel.ShouldBeTrue();
         result.Value.AllowEdit.ShouldBeTrue();
 
-        await _cacheService.Received(1).RemoveByPrefixAsync("order-status:", Arg.Any<CancellationToken>());
     }
 }

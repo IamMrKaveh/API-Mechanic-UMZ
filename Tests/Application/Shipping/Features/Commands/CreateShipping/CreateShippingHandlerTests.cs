@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Shipping.Features.Commands.CreateShipping;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
@@ -11,11 +10,11 @@ namespace Tests.Application.Shipping.Features.Commands.CreateShipping;
 
 public class CreateShippingHandlerTests : IClassFixture<MapsterConfigFixture>
 {
-    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateShippingHandler _sut;
+    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly CreateShippingHandler _sut;
 
     public CreateShippingHandlerTests(MapsterConfigFixture fixture)
     {
-        _sut = new CreateShippingHandler(_shippingRepository, fixture.Mapper, _cacheService);
+        _sut = new CreateShippingHandler(_shippingRepository, fixture.Mapper);
     }
 
     [Fact]
@@ -31,7 +30,6 @@ public class CreateShippingHandlerTests : IClassFixture<MapsterConfigFixture>
 
         result.ShouldFailWith(ErrorCode.Conflict);
         await _shippingRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -84,7 +82,6 @@ public class CreateShippingHandlerTests : IClassFixture<MapsterConfigFixture>
         captured.DeliveryTime.MaxDays.ShouldBe(2);
 
         await _shippingRepository.Received(1).AddAsync(Arg.Any<DomainShipping>(), Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveByPrefixAsync("shippings:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

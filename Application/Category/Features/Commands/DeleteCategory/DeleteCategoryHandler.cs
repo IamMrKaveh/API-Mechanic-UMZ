@@ -6,7 +6,6 @@ namespace Application.Category.Features.Commands.DeleteCategory;
 
 public class DeleteCategoryHandler(
     ICategoryRepository categoryRepository,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<DeleteCategoryCommand>
 {
@@ -23,7 +22,6 @@ public class DeleteCategoryHandler(
 
         category.Deactivate(dateTimeProvider.UtcNow);
         categoryRepository.Update(category);
-        await cacheService.RemoveByPrefixAsync("categories:", ct);
 
         return ServiceResult.Success();
     }

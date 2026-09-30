@@ -1,4 +1,3 @@
-using Application.Attribute.Constants;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
@@ -7,7 +6,6 @@ namespace Application.Attribute.Features.Commands.UpdateAttributeValue;
 
 public class UpdateAttributeValueHandler(
     IAttributeRepository repository,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<UpdateAttributeValueCommand>
 {
@@ -49,7 +47,6 @@ public class UpdateAttributeValueHandler(
             dateTimeProvider.UtcNow);
 
         await repository.UpdateAttributeTypeAsync(type, ct);
-        await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult.Success();
     }

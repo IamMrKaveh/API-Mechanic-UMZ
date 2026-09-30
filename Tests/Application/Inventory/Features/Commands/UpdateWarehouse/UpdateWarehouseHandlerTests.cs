@@ -1,5 +1,4 @@
-﻿using Application.Cache.Contracts;
-using Application.Inventory.Features.Commands.UpdateWarehouse;
+﻿using Application.Inventory.Features.Commands.UpdateWarehouse;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
 using SharedKernel.Results;
@@ -13,11 +12,11 @@ namespace Tests.Application.Inventory.Features.Commands.UpdateWarehouse;
 
 public class UpdateWarehouseHandlerTests : HandlerTestBase
 {
-    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateWarehouseHandler _sut;
+    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly UpdateWarehouseHandler _sut;
 
     public UpdateWarehouseHandlerTests()
     {
-        _sut = new UpdateWarehouseHandler(_warehouseRepository, _cacheService, DateTimeProvider);
+        _sut = new UpdateWarehouseHandler(_warehouseRepository, DateTimeProvider);
     }
 
     [Fact]
@@ -32,7 +31,6 @@ public class UpdateWarehouseHandlerTests : HandlerTestBase
             CancellationToken.None);
 
         result.ShouldFailWith(ErrorCode.NotFound);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -54,7 +52,6 @@ public class UpdateWarehouseHandlerTests : HandlerTestBase
         warehouse.Phone.ShouldBe("091");
         warehouse.Priority.ShouldBe(9);
         _warehouseRepository.Received(1).Update(warehouse);
-        await _cacheService.Received(1).RemoveByPrefixAsync("warehouses:", Arg.Any<CancellationToken>());
     }
 }
 

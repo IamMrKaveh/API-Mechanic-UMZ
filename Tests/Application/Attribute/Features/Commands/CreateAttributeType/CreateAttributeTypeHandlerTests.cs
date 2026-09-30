@@ -1,7 +1,5 @@
-using Application.Attribute.Constants;
 using Application.Attribute.Features.Commands.CreateAttributeType;
 using Application.Attribute.Features.Shared;
-using Application.Cache.Contracts;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
@@ -12,7 +10,7 @@ namespace Tests.Application.Attribute.Features.Commands.CreateAttributeType;
 
 public class CreateAttributeTypeHandlerTests : HandlerTestBase
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateAttributeTypeHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly IMapper _mapper = Substitute.For<IMapper>(); private readonly CreateAttributeTypeHandler _sut;
 
     public CreateAttributeTypeHandlerTests()
     {
@@ -20,11 +18,11 @@ public class CreateAttributeTypeHandlerTests : HandlerTestBase
             .AttributeTypeExistsAsync(Arg.Any<string>(), Arg.Any<AttributeTypeId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new CreateAttributeTypeHandler(_repository, _mapper, _cacheService, DateTimeProvider);
+        _sut = new CreateAttributeTypeHandler(_repository, _mapper, DateTimeProvider);
     }
 
     [Fact]
-    public async Task Handle_WhenValid_AddsAggregateInvalidatesCacheAndReturnsMappedDto()
+    public async Task Handle_WhenValid_AddsAggregateAndReturnsMappedDto()
     {
         var command = new CreateAttributeTypeCommand("color", "Color", 3);
         var expectedDto = new AttributeTypeDto { Name = "color", DisplayName = "Color", SortOrder = 3 };
@@ -36,7 +34,6 @@ public class CreateAttributeTypeHandlerTests : HandlerTestBase
         result.Value.ShouldBe(expectedDto);
 
         await _repository.Received(1).AddAttributeTypeAsync(Arg.Any<AttributeType>(), Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveAsync(AttributeCacheKeys.AllTypes, Arg.Any<CancellationToken>());
     }
 
     [Fact]
