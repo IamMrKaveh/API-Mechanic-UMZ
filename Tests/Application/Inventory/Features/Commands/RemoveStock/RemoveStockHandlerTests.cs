@@ -1,5 +1,4 @@
 ﻿using Application.Audit.Contracts;
-using Application.Cache.Contracts;
 using Application.Common.Interfaces;
 using Application.Inventory.Features.Commands.RemoveStock;
 using Domain.Inventory.Interfaces;
@@ -18,7 +17,7 @@ namespace Tests.Application.Inventory.Features.Commands.RemoveStock;
 
 public class RemoveStockHandlerTests : HandlerTestBase
 {
-    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly RemoveStockHandler _sut;
+    private readonly IVariantRepository _variantRepository = Substitute.For<IVariantRepository>(); private readonly IInventoryRepository _inventoryRepository = Substitute.For<IInventoryRepository>(); private readonly RemoveStockHandler _sut;
 
     public RemoveStockHandlerTests()
     {
@@ -27,7 +26,6 @@ public class RemoveStockHandlerTests : HandlerTestBase
             _variantRepository,
             _inventoryRepository,
             AuditService,
-            _cacheService,
             CurrentUserService, DateTimeProvider);
     }
 
@@ -65,7 +63,7 @@ public class RemoveStockHandlerTests : HandlerTestBase
     }
 
     [Fact]
-    public async Task Handle_WithValidState_DecreasesStockAuditsAndInvalidatesCaches()
+    public async Task Handle_WithValidState_DecreasesStockAudits()
     {
         var variant = new ProductVariantBuilder().Build();
         var inventory = new InventoryBuilder().WithVariantId(variant.Id).WithInitialStock(10).Build();
@@ -89,8 +87,6 @@ public class RemoveStockHandlerTests : HandlerTestBase
             "RemoveStock",
             Arg.Any<string>(),
             Arg.Any<UserId?>());
-        await _cacheService.Received(1).RemoveAsync($"product:{variant.ProductId.Value}", Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveAsync($"variant:{variant.Id.Value}", Arg.Any<CancellationToken>());
     }
 
     [Fact]

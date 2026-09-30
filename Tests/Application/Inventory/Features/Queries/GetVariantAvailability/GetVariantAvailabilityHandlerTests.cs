@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Inventory.Contracts;
 using Application.Inventory.Features.Queries.GetVariantAvailability;
 using Application.Inventory.Features.Shared;
@@ -10,44 +9,17 @@ namespace Tests.Application.Inventory.Features.Queries.GetVariantAvailability;
 
 public class GetVariantAvailabilityHandlerTests
 {
-    private readonly ICacheService _cacheService = Substitute.For<ICacheService>();
     private readonly IInventoryQueryService _inventoryQueryService = Substitute.For<IInventoryQueryService>();
     private readonly GetVariantAvailabilityHandler _sut;
 
     public GetVariantAvailabilityHandlerTests()
     {
-        _sut = new GetVariantAvailabilityHandler(_cacheService, _inventoryQueryService);
+        _sut = new GetVariantAvailabilityHandler(_inventoryQueryService);
     }
 
     [Fact]
-    public async Task Handle_WhenCacheHit_ReturnsSuccessWithCachedValueAndDoesNotQueryService()
+    public async Task Handle_WhenVariantNotFound_ReturnsNotFound()
     {
-        var cached = new VariantAvailabilityDto
-        {
-            VariantId = Guid.NewGuid(),
-            IsAvailable = true,
-            AvailableQuantity = 3,
-            IsUnlimited = false,
-            IsLowStock = false
-        };
-
-        _cacheService
-            .GetAsync<VariantAvailabilityDto>(Arg.Any<string>())
-            .Returns(cached);
-
-        var result = await _sut.Handle(new GetVariantAvailabilityQuery(cached.VariantId), CancellationToken.None);
-
-        result.ShouldBeSuccess();
-        result.Value.ShouldBeSameAs(cached);
-        await _inventoryQueryService.DidNotReceiveWithAnyArgs().GetByVariantIdAsync(default!, default);
-    }
-
-    [Fact]
-    public async Task Handle_WhenCacheMissAndVariantNotFound_ReturnsNotFound()
-    {
-        _cacheService
-            .GetAsync<VariantAvailabilityDto>(Arg.Any<string>())
-            .Returns((VariantAvailabilityDto?)null);
         _inventoryQueryService
             .GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns((InventoryDto?)null);
@@ -58,7 +30,7 @@ public class GetVariantAvailabilityHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenCacheMissAndInventoryExists_ReturnsSuccessAndPopulatesCache()
+    public async Task Handle_WhenInventoryExists_ReturnsMappedAvailability()
     {
         var variantId = Guid.NewGuid();
         var inventory = new InventoryDto
@@ -70,9 +42,6 @@ public class GetVariantAvailabilityHandlerTests
             IsLowStock = true
         };
 
-        _cacheService
-            .GetAsync<VariantAvailabilityDto>(Arg.Any<string>())
-            .Returns((VariantAvailabilityDto?)null);
         _inventoryQueryService
             .GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(inventory);
@@ -84,12 +53,6 @@ public class GetVariantAvailabilityHandlerTests
         result.Value.IsAvailable.ShouldBeTrue();
         result.Value.AvailableQuantity.ShouldBe(4);
         result.Value.IsLowStock.ShouldBeTrue();
-
-        await _cacheService.Received(1).SetAsync(
-            Arg.Any<string>(),
-            Arg.Any<VariantAvailabilityDto>(),
-            Arg.Any<TimeSpan?>(),
-            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -104,9 +67,6 @@ public class GetVariantAvailabilityHandlerTests
             AvailableStock = 0
         };
 
-        _cacheService
-            .GetAsync<VariantAvailabilityDto>(Arg.Any<string>())
-            .Returns((VariantAvailabilityDto?)null);
         _inventoryQueryService
             .GetByVariantIdAsync(Arg.Any<VariantId>(), Arg.Any<CancellationToken>())
             .Returns(inventory);

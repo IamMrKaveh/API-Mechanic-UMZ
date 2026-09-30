@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Order.Features.Commands.ActivateOrderStatus;
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
@@ -10,11 +9,11 @@ namespace Tests.Application.Order.Features.Commands.ActivateOrderStatus;
 
 public class ActivateOrderStatusHandlerTests
 {
-    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly ActivateOrderStatusHandler _sut;
+    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly ActivateOrderStatusHandler _sut;
 
     public ActivateOrderStatusHandlerTests()
     {
-        _sut = new ActivateOrderStatusHandler(_repository, _cacheService);
+        _sut = new ActivateOrderStatusHandler(_repository);
     }
 
     [Fact]
@@ -26,11 +25,10 @@ public class ActivateOrderStatusHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _repository.DidNotReceive().Update(Arg.Any<OrderStatus>(), Arg.Any<byte[]?>());
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
-    public async Task Handle_WhenAlreadyActive_ReturnsSuccessWithoutUpdatingOrInvalidatingCache()
+    public async Task Handle_WhenAlreadyActive_ReturnsSuccessWithoutUpdating()
     {
         var status = OrderStatus.Create("paid", "Paid");
 
@@ -40,11 +38,10 @@ public class ActivateOrderStatusHandlerTests
 
         result.ShouldBeSuccess();
         _repository.DidNotReceive().Update(Arg.Any<OrderStatus>(), Arg.Any<byte[]?>());
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
-    public async Task Handle_WhenInactive_ActivatesUpdatesAndInvalidatesCache()
+    public async Task Handle_WhenInactive_ActivatesUpdates()
     {
         var status = OrderStatus.Create("paid", "Paid");
         status.Deactivate();
@@ -56,6 +53,5 @@ public class ActivateOrderStatusHandlerTests
         result.ShouldBeSuccess();
         status.IsActive.ShouldBeTrue();
         _repository.Received(1).Update(status, Arg.Any<byte[]?>());
-        await _cacheService.Received(1).RemoveByPrefixAsync("order-status:", Arg.Any<CancellationToken>());
     }
 }

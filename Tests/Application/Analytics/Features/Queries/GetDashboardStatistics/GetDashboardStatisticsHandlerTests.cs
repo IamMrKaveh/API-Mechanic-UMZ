@@ -35,29 +35,4 @@ public class GetDashboardStatisticsHandlerTests
             from, to, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public void Query_CacheKey_IncludesFormattedDates()
-    {
-        var query = new GetDashboardStatisticsQuery(
-            new DateTime(2026, 05, 01, 0, 0, 0, DateTimeKind.Utc),
-            new DateTime(2026, 05, 31, 0, 0, 0, DateTimeKind.Utc));
-
-        Assert.Equal("analytics:dashboard:20260501:20260531", query.CacheKey);
-    }
-
-    [Fact]
-    public void Query_CacheKey_WithBothDatesNull_UsesEmptyDateSegments()
-    {
-        var query = new GetDashboardStatisticsQuery(null, null);
-
-        Assert.Equal("analytics:dashboard::", query.CacheKey);
-    }
-
-    [Fact]
-    public void Query_Expiry_IsTenMinutes()
-    {
-        var query = new GetDashboardStatisticsQuery(null, null);
-
-        Assert.Equal(TimeSpan.FromMinutes(10), query.Expiry);
-    }
 }

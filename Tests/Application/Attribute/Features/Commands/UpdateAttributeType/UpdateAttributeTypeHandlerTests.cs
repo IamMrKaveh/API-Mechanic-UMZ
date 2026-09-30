@@ -1,6 +1,4 @@
-using Application.Attribute.Constants;
 using Application.Attribute.Features.Commands.UpdateAttributeType;
-using Application.Cache.Contracts;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
@@ -13,7 +11,7 @@ namespace Tests.Application.Attribute.Features.Commands.UpdateAttributeType;
 
 public class UpdateAttributeTypeHandlerTests : HandlerTestBase
 {
-    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateAttributeTypeHandler _sut;
+    private readonly IAttributeRepository _repository = Substitute.For<IAttributeRepository>(); private readonly UpdateAttributeTypeHandler _sut;
 
     public UpdateAttributeTypeHandlerTests()
     {
@@ -21,11 +19,11 @@ public class UpdateAttributeTypeHandlerTests : HandlerTestBase
             .AttributeTypeExistsAsync(Arg.Any<string>(), Arg.Any<AttributeTypeId?>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
-        _sut = new UpdateAttributeTypeHandler(_repository, _cacheService, DateTimeProvider);
+        _sut = new UpdateAttributeTypeHandler(_repository, DateTimeProvider);
     }
 
     [Fact]
-    public async Task Handle_WhenTypeNotFound_ReturnsNotFoundAndDoesNotPersistOrInvalidateCache()
+    public async Task Handle_WhenTypeNotFound_ReturnsNotFoundAndDoesNotPersist()
     {
         _repository
             .GetAttributeTypeByIdAsync(Arg.Any<AttributeTypeId>(), Arg.Any<CancellationToken>())
@@ -38,11 +36,10 @@ public class UpdateAttributeTypeHandlerTests : HandlerTestBase
         result.ShouldFailWith(ErrorCode.NotFound);
 
         await _repository.DidNotReceiveWithAnyArgs().UpdateAttributeTypeAsync(default!, default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]
-    public async Task Handle_WithAllFieldsProvided_AppliesChangesPersistsAndInvalidatesCache()
+    public async Task Handle_WithAllFieldsProvided_AppliesChangesPersists()
     {
         var existing = await new AttributeTypeBuilder().WithName("color").WithSortOrder(0).WithIsActive(true).BuildAsync();
 
@@ -61,7 +58,6 @@ public class UpdateAttributeTypeHandlerTests : HandlerTestBase
         existing.IsActive.ShouldBeFalse();
 
         await _repository.Received(1).UpdateAttributeTypeAsync(existing, Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveAsync(AttributeCacheKeys.AllTypes, Arg.Any<CancellationToken>());
     }
 
     [Theory]

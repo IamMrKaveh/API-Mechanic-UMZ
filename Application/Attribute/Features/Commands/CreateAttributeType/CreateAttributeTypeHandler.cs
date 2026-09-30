@@ -1,5 +1,4 @@
 using Application.Attribute.Adapters;
-using Application.Attribute.Constants;
 using Application.Attribute.Features.Shared;
 using Domain.Attribute.Aggregates;
 using Domain.Attribute.Interfaces;
@@ -10,7 +9,6 @@ namespace Application.Attribute.Features.Commands.CreateAttributeType;
 public class CreateAttributeTypeHandler(
     IAttributeRepository repository,
     IMapper mapper,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateAttributeTypeCommand, AttributeTypeDto>
 {
@@ -29,7 +27,6 @@ public class CreateAttributeTypeHandler(
             ct);
 
         await repository.AddAttributeTypeAsync(attributeType, ct);
-        await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult<AttributeTypeDto>.Success(mapper.Map<AttributeTypeDto>(attributeType));
     }

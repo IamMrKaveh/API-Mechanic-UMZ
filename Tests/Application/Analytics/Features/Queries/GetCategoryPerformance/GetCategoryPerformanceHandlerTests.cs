@@ -37,29 +37,4 @@ public class GetCategoryPerformanceHandlerTests
             from, to, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public void Query_CacheKey_IncludesFormattedDates()
-    {
-        var query = new GetCategoryPerformanceQuery(
-            new DateTime(2026, 01, 01, 0, 0, 0, DateTimeKind.Utc),
-            new DateTime(2026, 02, 01, 0, 0, 0, DateTimeKind.Utc));
-
-        Assert.Equal("analytics:category-perf:20260101:20260201", query.CacheKey);
-    }
-
-    [Fact]
-    public void Query_CacheKey_WithBothDatesNull_UsesEmptyDateSegments()
-    {
-        var query = new GetCategoryPerformanceQuery(null, null);
-
-        Assert.Equal("analytics:category-perf::", query.CacheKey);
-    }
-
-    [Fact]
-    public void Query_Expiry_IsFifteenMinutes()
-    {
-        var query = new GetCategoryPerformanceQuery(null, null);
-
-        Assert.Equal(TimeSpan.FromMinutes(15), query.Expiry);
-    }
 }

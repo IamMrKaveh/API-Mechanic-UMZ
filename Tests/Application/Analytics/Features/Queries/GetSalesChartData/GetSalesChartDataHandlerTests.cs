@@ -38,27 +38,4 @@ public class GetSalesChartDataHandlerTests
             from, to, groupBy, Arg.Any<CancellationToken>());
     }
 
-    [Theory]
-    [InlineData("day")]
-    [InlineData("week")]
-    [InlineData("month")]
-    public void Query_CacheKey_IncludesGroupByVerbatim(string groupBy)
-    {
-        var query = new GetSalesChartDataQuery(
-            new DateTime(2026, 06, 01, 0, 0, 0, DateTimeKind.Utc),
-            new DateTime(2026, 06, 30, 0, 0, 0, DateTimeKind.Utc),
-            groupBy);
-
-        Assert.Equal($"analytics:sales-chart:20260601:20260630:{groupBy}", query.CacheKey);
-    }
-
-    [Fact]
-    public void Query_Expiry_IsFifteenMinutes()
-    {
-        var query = new GetSalesChartDataQuery(
-            new DateTime(2026, 06, 01, 0, 0, 0, DateTimeKind.Utc),
-            new DateTime(2026, 06, 30, 0, 0, 0, DateTimeKind.Utc));
-
-        Assert.Equal(TimeSpan.FromMinutes(15), query.Expiry);
-    }
 }

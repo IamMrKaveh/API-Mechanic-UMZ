@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Shipping.Features.Commands.SetDefaultShipping;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
@@ -11,11 +10,11 @@ namespace Tests.Application.Shipping.Features.Commands.SetDefaultShipping;
 
 public class SetDefaultShippingHandlerTests
 {
-    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly SetDefaultShippingHandler _sut;
+    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly SetDefaultShippingHandler _sut;
 
     public SetDefaultShippingHandlerTests()
     {
-        _sut = new SetDefaultShippingHandler(_shippingRepository, _cacheService);
+        _sut = new SetDefaultShippingHandler(_shippingRepository);
     }
 
     [Fact]
@@ -30,7 +29,6 @@ public class SetDefaultShippingHandlerTests
         result.ShouldFailWith(ErrorCode.NotFound);
         await _shippingRepository.DidNotReceiveWithAnyArgs().GetDefaultAsync(default);
         _shippingRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -51,7 +49,6 @@ public class SetDefaultShippingHandlerTests
         shipping.IsDefault.ShouldBeTrue();
         _shippingRepository.Received(1).Update(shipping);
         _shippingRepository.Received(1).Update(Arg.Any<DomainShipping>());
-        await _cacheService.Received(1).RemoveByPrefixAsync("shippings:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

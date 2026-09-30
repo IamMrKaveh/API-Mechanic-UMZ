@@ -40,23 +40,4 @@ public class GetRevenueReportHandlerTests
             from, to, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public void Query_CacheKey_IncludesFormattedDates()
-    {
-        var query = new GetRevenueReportQuery(
-            new DateTime(2026, 07, 01, 0, 0, 0, DateTimeKind.Utc),
-            new DateTime(2026, 07, 31, 0, 0, 0, DateTimeKind.Utc));
-
-        Assert.Equal("analytics:revenue:20260701:20260731", query.CacheKey);
-    }
-
-    [Fact]
-    public void Query_Expiry_IsTenMinutes()
-    {
-        var query = new GetRevenueReportQuery(
-            new DateTime(2026, 07, 01, 0, 0, 0, DateTimeKind.Utc),
-            new DateTime(2026, 07, 31, 0, 0, 0, DateTimeKind.Utc));
-
-        Assert.Equal(TimeSpan.FromMinutes(10), query.Expiry);
-    }
 }

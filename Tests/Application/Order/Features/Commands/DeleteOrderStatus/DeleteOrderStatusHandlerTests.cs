@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Order.Features.Commands.DeleteOrderStatus;
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
@@ -10,11 +9,11 @@ namespace Tests.Application.Order.Features.Commands.DeleteOrderStatus;
 
 public class DeleteOrderStatusHandlerTests
 {
-    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteOrderStatusHandler _sut;
+    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly DeleteOrderStatusHandler _sut;
 
     public DeleteOrderStatusHandlerTests()
     {
-        _sut = new DeleteOrderStatusHandler(_repository, _cacheService);
+        _sut = new DeleteOrderStatusHandler(_repository);
     }
 
     [Fact]
@@ -39,7 +38,6 @@ public class DeleteOrderStatusHandlerTests
 
         result.ShouldFailWith(ErrorCode.Forbidden);
         _repository.DidNotReceive().Remove(Arg.Any<OrderStatus>());
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -56,7 +54,7 @@ public class DeleteOrderStatusHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenDeletable_RemovesAndInvalidatesCache()
+    public async Task Handle_WhenDeletable_Removes()
     {
         var status = OrderStatus.Create("paid", "Paid");
         _repository.GetByIdAsync(Arg.Any<OrderStatusId>(), Arg.Any<CancellationToken>()).Returns(status);
@@ -66,6 +64,5 @@ public class DeleteOrderStatusHandlerTests
 
         result.ShouldBeSuccess();
         _repository.Received(1).Remove(status);
-        await _cacheService.Received(1).RemoveByPrefixAsync("order-status:", Arg.Any<CancellationToken>());
     }
 }

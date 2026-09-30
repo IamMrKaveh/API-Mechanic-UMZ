@@ -33,15 +33,4 @@ public class GetInventoryReportHandlerTests
         await _analytics.Received(1).GetInventoryReportAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public void Query_CacheKey_IsFixedInventoryReportKey()
-    {
-        Assert.Equal(ExpectedCacheKey, new GetInventoryReportQuery().CacheKey);
-    }
-
-    [Fact]
-    public void Query_Expiry_IsFiveMinutes()
-    {
-        Assert.Equal(TimeSpan.FromMinutes(5), new GetInventoryReportQuery().Expiry);
-    }
 }

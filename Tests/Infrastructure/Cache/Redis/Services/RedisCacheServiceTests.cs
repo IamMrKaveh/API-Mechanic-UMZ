@@ -132,45 +132,6 @@ public class RedisCacheServiceTests
     }
 
     [Fact]
-    public async Task RemoveByPrefixAsync_DeletesAllMatchingKeys()
-    {
-        var server = Substitute.For<IServer>();
-        server.KeysAsync(Arg.Any<int>(), Arg.Any<RedisValue>(), Arg.Any<int>(), Arg.Any<long>(), Arg.Any<int>(), Arg.Any<CommandFlags>())
-            .Returns(_ => AsyncKeys("shop:product:1", "shop:product:2"));
-        _redis.GetEndPoints().Returns([new DnsEndPoint("localhost", 6379)]);
-        _redis.GetServer(Arg.Any<EndPoint>(), Arg.Any<object?>()).Returns(server);
-        _db.KeyDeleteAsync(Arg.Any<RedisKey[]>(), Arg.Any<CommandFlags>()).Returns(2L);
-
-        await BuildSut().RemoveByPrefixAsync("product:");
-
-        await _db.Received(1).KeyDeleteAsync(
-            Arg.Is<RedisKey[]>(keys => keys.Length == 2),
-            Arg.Any<CommandFlags>());
-    }
-
-    [Fact]
-    public async Task RemoveByPrefixAsync_WhenNoKeysMatch_DoesNotDelete()
-    {
-        var server = Substitute.For<IServer>();
-        server.KeysAsync(Arg.Any<int>(), Arg.Any<RedisValue>(), Arg.Any<int>(), Arg.Any<long>(), Arg.Any<int>(), Arg.Any<CommandFlags>())
-            .Returns(_ => AsyncKeys());
-        _redis.GetEndPoints().Returns([new DnsEndPoint("localhost", 6379)]);
-        _redis.GetServer(Arg.Any<EndPoint>(), Arg.Any<object?>()).Returns(server);
-
-        await BuildSut().RemoveByPrefixAsync("nothing:");
-
-        await _db.DidNotReceiveWithAnyArgs().KeyDeleteAsync(default(RedisKey[])!, default);
-    }
-
-    [Fact]
-    public async Task RemoveByPrefixAsync_WhenRedisThrows_DoesNotPropagate()
-    {
-        _redis.GetEndPoints().Throws(new RedisConnectionException(ConnectionFailureType.UnableToConnect, "down"));
-
-        await BuildSut().RemoveByPrefixAsync("product:");
-    }
-
-    [Fact]
     public async Task ExistsAsync_WhenKeyExists_ReturnsTrue()
     {
         _db.KeyExistsAsync(Arg.Any<RedisKey>(), Arg.Any<CommandFlags>()).Returns(true);

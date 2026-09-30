@@ -6,8 +6,7 @@ namespace Application.Shipping.Features.Commands.UpdateShipping;
 
 public class UpdateShippingHandler(
     IShippingRepository shippingRepository,
-    IMapper mapper,
-    ICacheService cacheService)
+    IMapper mapper)
     : ICommandHandler<UpdateShippingCommand, ShippingDto>
 {
     public async Task<ServiceResult<ShippingDto>> Handle(UpdateShippingCommand request, CancellationToken ct)
@@ -31,7 +30,6 @@ public class UpdateShippingHandler(
             request.MaxDeliveryDays);
 
         shippingRepository.Update(shipping);
-        await cacheService.RemoveByPrefixAsync("shippings:", ct);
 
         return ServiceResult<ShippingDto>.Success(mapper.Map<ShippingDto>(shipping));
     }

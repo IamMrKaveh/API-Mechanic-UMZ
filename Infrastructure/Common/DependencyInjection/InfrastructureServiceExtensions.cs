@@ -23,6 +23,7 @@ using Infrastructure.Auth.Services;
 using Infrastructure.BackgroundJobs;
 using Infrastructure.BackgroundJobs.Options;
 using Infrastructure.BackgroundJobs.Services;
+using Infrastructure.Cache;
 using Infrastructure.Cache.Health;
 using Infrastructure.Cache.Redis.Lock;
 using Infrastructure.Cache.Redis.Services;
@@ -109,12 +110,14 @@ public static class InfrastructureServiceExtensions
         var cacheOptions = configuration.GetSection(CacheOptions.SectionName).Get<CacheOptions>()
             ?? new CacheOptions();
 
+        var redisConnectionString = configuration.GetConnectionString("Redis")
+            ?? configuration["Cache:RedisConnectionString"]
+            ?? "localhost:6379";
+
+        services.AddMediatRResponseCache(configuration, cacheOptions, redisConnectionString);
+
         if (cacheOptions.UseRedis)
         {
-            var redisConnectionString = configuration.GetConnectionString("Redis")
-                ?? configuration["Cache:RedisConnectionString"]
-                ?? "localhost:6379";
-
             services.AddSingleton<IConnectionMultiplexer>(_ =>
                 ConnectionMultiplexer.Connect(redisConnectionString));
 
@@ -152,7 +155,6 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IIdempotencyService, CacheIdempotencyService>();
         }
 
-        services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
     }
 
     private static void AddCacheEncryption(this IServiceCollection services, IConfiguration configuration)
@@ -204,6 +206,8 @@ public static class InfrastructureServiceExtensions
             options.AddInterceptors(
                 sp.GetRequiredService<AuditableEntityInterceptor>(),
                 sp.GetRequiredService<DomainEventInterceptor>());
+
+            options.UseResponseCacheAutoEvict(sp);
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();

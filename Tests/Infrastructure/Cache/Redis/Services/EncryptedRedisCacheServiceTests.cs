@@ -194,16 +194,6 @@ public class EncryptedRedisCacheServiceTests
     }
 
     [Fact]
-    public async Task RemoveByPrefixAsync_DelegatesToInnerCache()
-    {
-        var sut = CreateEnabledSut();
-
-        await sut.RemoveByPrefixAsync("prefix:");
-
-        await _inner.Received(1).RemoveByPrefixAsync("prefix:", Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
     public async Task ExistsAsync_DelegatesToInnerCacheResult()
     {
         var sut = CreateEnabledSut();

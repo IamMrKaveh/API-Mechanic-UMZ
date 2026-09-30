@@ -1,12 +1,10 @@
-using Application.Attribute.Constants;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
 
 namespace Application.Attribute.Features.Commands.DeleteAttributeType;
 
 public class DeleteAttributeTypeHandler(
-    IAttributeRepository repository,
-    ICacheService cacheService)
+    IAttributeRepository repository)
     : ICommandHandler<DeleteAttributeTypeCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -20,7 +18,6 @@ public class DeleteAttributeTypeHandler(
         var attributeType = attributeTypeResult.Value;
 
         await repository.DeleteAttributeTypeAsync(attributeType.Id, null, ct);
-        await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult.Success();
     }

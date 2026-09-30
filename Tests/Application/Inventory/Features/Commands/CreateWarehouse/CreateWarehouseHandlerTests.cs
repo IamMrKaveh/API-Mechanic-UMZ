@@ -1,5 +1,4 @@
-﻿using Application.Cache.Contracts;
-using Application.Inventory.Features.Commands.CreateWarehouse;
+﻿using Application.Inventory.Features.Commands.CreateWarehouse;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
 using SharedKernel.Results;
@@ -13,11 +12,11 @@ namespace Tests.Application.Inventory.Features.Commands.CreateWarehouse;
 
 public class CreateWarehouseHandlerTests : HandlerTestBase
 {
-    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly CreateWarehouseHandler _sut;
+    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly CreateWarehouseHandler _sut;
 
     public CreateWarehouseHandlerTests()
     {
-        _sut = new CreateWarehouseHandler(_warehouseRepository, _cacheService, DateTimeProvider);
+        _sut = new CreateWarehouseHandler(_warehouseRepository, DateTimeProvider);
     }
 
     [Fact]
@@ -33,7 +32,6 @@ public class CreateWarehouseHandlerTests : HandlerTestBase
 
         result.ShouldFailWith(ErrorCode.Conflict);
         await _warehouseRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -51,7 +49,6 @@ public class CreateWarehouseHandlerTests : HandlerTestBase
         await _warehouseRepository.Received(1).AddAsync(
             Arg.Is<Wh>(w => w!.Code == WarehouseCode.Create("WH-02") && w.Name == "Second" && !w.IsDefault),
             Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveByPrefixAsync("warehouses:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

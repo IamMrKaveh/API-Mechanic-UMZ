@@ -6,8 +6,7 @@ using Domain.Order.Interfaces;
 namespace Application.Order.Features.Commands.CreateOrderStatus;
 
 public class CreateOrderStatusHandler(
-    IOrderStatusRepository orderStatusRepository,
-    ICacheService cacheService)
+    IOrderStatusRepository orderStatusRepository)
     : ICommandHandler<CreateOrderStatusCommand, OrderStatusDto>
 {
     public async Task<ServiceResult<OrderStatusDto>> Handle(
@@ -29,7 +28,6 @@ public class CreateOrderStatusHandler(
 
         await orderStatusRepository.AddAsync(status, ct);
 
-        await cacheService.RemoveByPrefixAsync("order-status:", ct);
 
         var dto = new OrderStatusDto
         {

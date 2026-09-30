@@ -1,5 +1,4 @@
 using Application.Audit.Contracts;
-using Application.Cache.Contracts;
 using Application.Common.Interfaces;
 using Application.Shipping.Features.Commands.RestoreShipping;
 using Domain.Shipping.Interfaces;
@@ -14,12 +13,12 @@ namespace Tests.Application.Shipping.Features.Commands.RestoreShipping;
 
 public class RestoreShippingHandlerTests : HandlerTestBase
 {
-    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly RestoreShippingHandler _sut;
+    private readonly IShippingRepository _shippingRepository = Substitute.For<IShippingRepository>(); private readonly RestoreShippingHandler _sut;
 
     public RestoreShippingHandlerTests()
     {
         CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
-        _sut = new RestoreShippingHandler(_shippingRepository, CurrentUserService, AuditService, _cacheService);
+        _sut = new RestoreShippingHandler(_shippingRepository, CurrentUserService, AuditService);
     }
 
     [Fact]
@@ -34,7 +33,6 @@ public class RestoreShippingHandlerTests : HandlerTestBase
         result.ShouldFailWith(ErrorCode.NotFound);
         _shippingRepository.DidNotReceiveWithAnyArgs().Update(default!);
         await AuditService.DidNotReceiveWithAnyArgs().LogAdminEventAsync(default!, default!, default!);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -52,7 +50,6 @@ public class RestoreShippingHandlerTests : HandlerTestBase
         result.ShouldBeSuccess();
         shipping.IsActive.ShouldBeTrue();
         _shippingRepository.Received(1).Update(shipping);
-        await _cacheService.Received(1).RemoveByPrefixAsync("shippings:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

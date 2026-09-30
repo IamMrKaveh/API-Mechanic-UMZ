@@ -5,8 +5,7 @@ using Domain.Order.ValueObjects;
 namespace Application.Order.Features.Commands.DeleteOrderStatus;
 
 public class DeleteOrderStatusHandler(
-    IOrderStatusRepository orderStatusRepository,
-    ICacheService cacheService)
+    IOrderStatusRepository orderStatusRepository)
     : ICommandHandler<DeleteOrderStatusCommand>
 {
     public async Task<ServiceResult> Handle(DeleteOrderStatusCommand request, CancellationToken ct)
@@ -26,7 +25,6 @@ public class DeleteOrderStatusHandler(
         status.MarkAsDeleted();
         orderStatusRepository.Remove(status);
 
-        await cacheService.RemoveByPrefixAsync("order-status:", ct);
 
         return ServiceResult.Success();
     }

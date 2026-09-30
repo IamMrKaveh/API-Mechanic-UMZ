@@ -1,13 +1,14 @@
-using Application.Analytics.Constants;
 using Application.Analytics.Features.Shared;
+using NexGen.MediatR.Extensions.Caching.Attributes;
 
 namespace Application.Analytics.Features.Queries.GetRevenueReport;
 
+[RequestOutputCache(
+    tags:
+    [
+        CacheTags.Manual.Analytics
+    ],
+    expirationInSeconds: 600)]
 public sealed record GetRevenueReportQuery(
     DateTime FromDate,
-    DateTime ToDate) : IQuery<RevenueReportDto>, ICacheableQuery
-{
-    public string CacheKey => AnalyticsCacheKeys.RevenueReport(FromDate, ToDate);
-
-    public TimeSpan? Expiry => TimeSpan.FromMinutes(10);
-}
+    DateTime ToDate) : IQuery<RevenueReportDto>;

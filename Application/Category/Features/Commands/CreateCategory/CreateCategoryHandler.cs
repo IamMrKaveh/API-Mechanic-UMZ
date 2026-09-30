@@ -8,7 +8,6 @@ namespace Application.Category.Features.Commands.CreateCategory;
 
 public sealed class CreateCategoryHandler(
     ICategoryRepository categoryRepository,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateCategoryCommand, CategoryDto>
 {
@@ -33,7 +32,6 @@ public sealed class CreateCategoryHandler(
             ct);
 
         await categoryRepository.AddAsync(category, ct);
-        await cacheService.RemoveByPrefixAsync("categories:", ct);
 
         var dto = category.Adapt<CategoryDto>();
         return ServiceResult<CategoryDto>.Success(dto);

@@ -12,7 +12,6 @@ public class RemoveStockHandler(
     IVariantRepository variantRepository,
     IInventoryRepository inventoryRepository,
     IAuditService auditService,
-    ICacheService cacheService,
     ICurrentUserService currentUserService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<RemoveStockCommand>
@@ -44,8 +43,6 @@ public class RemoveStockHandler(
             $"Removed {stock} units from variant {request.VariantId}.",
             userId);
 
-        await cacheService.RemoveAsync($"product:{variant.ProductId.Value}", ct);
-        await cacheService.RemoveAsync($"variant:{request.VariantId}", ct);
 
         return ServiceResult.Success();
     }

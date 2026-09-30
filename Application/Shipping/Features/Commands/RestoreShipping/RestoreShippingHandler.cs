@@ -7,8 +7,7 @@ namespace Application.Shipping.Features.Commands.RestoreShipping;
 public class RestoreShippingHandler(
     IShippingRepository shippingMethodRepository,
     ICurrentUserService currentUser,
-    IAuditService auditService,
-    ICacheService cacheService)
+    IAuditService auditService)
     : ICommandHandler<RestoreShippingCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -31,7 +30,6 @@ public class RestoreShippingHandler(
             adminId,
             $"Restored shipping method ID: {request.Id}");
 
-        await cacheService.RemoveByPrefixAsync("shippings:", ct);
 
         return ServiceResult.Success();
     }

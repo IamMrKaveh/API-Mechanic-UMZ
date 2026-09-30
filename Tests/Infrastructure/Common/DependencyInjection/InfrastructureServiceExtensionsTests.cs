@@ -31,6 +31,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
+using SharedKernel.Results;
 
 namespace Tests.Infrastructure.Common.DependencyInjection;
 
@@ -82,7 +83,22 @@ public class InfrastructureServiceExtensionsTests
         ShouldContain(services, typeof(IDistributedLock), typeof(NoOpDistributedLock), ServiceLifetime.Singleton);
         ShouldContain(services, typeof(IRateLimitService), typeof(InMemoryRateLimitService), ServiceLifetime.Scoped);
         ShouldContain(services, typeof(IIdempotencyService), typeof(CacheIdempotencyService), ServiceLifetime.Scoped);
-        ShouldContain(services, typeof(ICacheInvalidationService), typeof(CacheInvalidationService), ServiceLifetime.Scoped);
+    }
+
+    [Fact]
+    public void AddInfrastructure_RegistersMediatROutputCache_AndDefaultJsonHandlesServiceResult()
+    {
+        var services = new ServiceCollection();
+        services.AddInfrastructure(BuildConfig(ValidConfig()));
+
+        services.ShouldContain(s => s.ServiceType == typeof(NexGen.MediatR.Extensions.Caching.Contracts.IRequestOutputCacheInvalidator));
+
+        // The Redis provider serializes with Newtonsoft default settings.
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(ServiceResult<string>.Success("ok"));
+        var restored = Newtonsoft.Json.JsonConvert.DeserializeObject<ServiceResult<string>>(json);
+
+        restored!.IsSuccess.ShouldBeTrue();
+        restored.Value.ShouldBe("ok");
     }
 
     [Fact]

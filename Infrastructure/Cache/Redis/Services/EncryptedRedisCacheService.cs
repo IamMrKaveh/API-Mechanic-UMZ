@@ -82,8 +82,6 @@ public sealed class EncryptedRedisCacheService : ICacheService
     public Task RemoveAsync(string key, CancellationToken ct = default)
         => _inner.RemoveAsync(key, ct);
 
-    public Task RemoveByPrefixAsync(string prefix, CancellationToken ct = default)
-        => _inner.RemoveByPrefixAsync(prefix, ct);
 
     public Task<bool> ExistsAsync(string key, CancellationToken ct = default)
         => _inner.ExistsAsync(key, ct);

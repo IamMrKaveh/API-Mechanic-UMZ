@@ -24,7 +24,7 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		
+
 		<PackageReference Include="Npgsql" Version="9.0.0" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
 		<PackageReference Include="Dapper" Version="2.1.66" />
@@ -32,10 +32,13 @@
 		<!-- Caching -->
 		<PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.17" />
 		<PackageReference Include="StackExchange.Redis" Version="2.10.14" />
+		<PackageReference Include="NexGen.MediatR.Extensions.Caching.Redis" Version="2.4.0" />
+		<PackageReference Include="NexGen.MediatR.Extensions.Caching.EntityFramework" Version="2.4.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 
 		<!-- Background Jobs -->
 		<PackageReference Include="Quartz" Version="3.13.0" />
-		
+
 		<!-- Search -->
 		<PackageReference Include="Elastic.Clients.Elasticsearch" Version="9.3.4" />
 		<PackageReference Include="Elastic.Transport" Version="0.15.1" />

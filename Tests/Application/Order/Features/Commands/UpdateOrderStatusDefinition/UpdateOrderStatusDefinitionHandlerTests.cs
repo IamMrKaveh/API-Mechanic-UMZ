@@ -1,5 +1,4 @@
 using Application.Audit.Contracts;
-using Application.Cache.Contracts;
 using Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 using Domain.Order.Entities;
 using Domain.Order.Interfaces;
@@ -11,11 +10,11 @@ namespace Tests.Application.Order.Features.Commands.UpdateOrderStatusDefinition;
 
 public class UpdateOrderStatusDefinitionHandlerTests : HandlerTestBase
 {
-    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly UpdateOrderStatusDefinitionHandler _sut;
+    private readonly IOrderStatusRepository _repository = Substitute.For<IOrderStatusRepository>(); private readonly UpdateOrderStatusDefinitionHandler _sut;
 
     public UpdateOrderStatusDefinitionHandlerTests()
     {
-        _sut = new UpdateOrderStatusDefinitionHandler(_repository, AuditService, _cacheService);
+        _sut = new UpdateOrderStatusDefinitionHandler(_repository, AuditService);
     }
 
     [Fact]
@@ -45,7 +44,7 @@ public class UpdateOrderStatusDefinitionHandlerTests : HandlerTestBase
     }
 
     [Fact]
-    public async Task Handle_WhenValid_UpdatesStatusPersistsAndInvalidatesCache()
+    public async Task Handle_WhenValid_UpdatesStatusPersists()
     {
         var status = OrderStatus.Create("paid", "Paid");
         _repository.GetByIdAsync(Arg.Any<OrderStatusId>(), Arg.Any<CancellationToken>()).Returns(status);
@@ -62,6 +61,5 @@ public class UpdateOrderStatusDefinitionHandlerTests : HandlerTestBase
         status.AllowCancel.ShouldBeTrue();
         status.AllowEdit.ShouldBeTrue();
         _repository.Received(1).Update(status, Arg.Any<byte[]?>());
-        await _cacheService.Received(1).RemoveByPrefixAsync("order-status:", Arg.Any<CancellationToken>());
     }
 }

@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Inventory.Features.Commands.DeleteWarehouse;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
@@ -11,11 +10,11 @@ namespace Tests.Application.Inventory.Features.Commands.DeleteWarehouse;
 
 public class DeleteWarehouseHandlerTests
 {
-    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeleteWarehouseHandler _sut;
+    private readonly IWarehouseRepository _warehouseRepository = Substitute.For<IWarehouseRepository>(); private readonly DeleteWarehouseHandler _sut;
 
     public DeleteWarehouseHandlerTests()
     {
-        _sut = new DeleteWarehouseHandler(_warehouseRepository, _cacheService);
+        _sut = new DeleteWarehouseHandler(_warehouseRepository);
     }
 
     [Fact]
@@ -31,7 +30,6 @@ public class DeleteWarehouseHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _warehouseRepository.DidNotReceiveWithAnyArgs().Remove(default!);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -64,6 +62,5 @@ public class DeleteWarehouseHandlerTests
 
         result.ShouldBeSuccess();
         _warehouseRepository.Received(1).Remove(warehouse);
-        await _cacheService.Received(1).RemoveByPrefixAsync("warehouses:", Arg.Any<CancellationToken>());
     }
 }

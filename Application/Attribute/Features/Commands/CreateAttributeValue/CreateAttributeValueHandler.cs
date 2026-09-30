@@ -1,4 +1,3 @@
-using Application.Attribute.Constants;
 using Application.Attribute.Features.Shared;
 using Domain.Attribute.Interfaces;
 using Domain.Attribute.ValueObjects;
@@ -9,7 +8,6 @@ namespace Application.Attribute.Features.Commands.CreateAttributeValue;
 public class CreateAttributeValueHandler(
     IAttributeRepository repository,
     IMapper mapper,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<CreateAttributeValueCommand, AttributeValueDto>
 {
@@ -34,7 +32,6 @@ public class CreateAttributeValueHandler(
             request.SortOrder);
 
         await repository.UpdateAttributeTypeAsync(type, ct);
-        await cacheService.RemoveAsync(AttributeCacheKeys.AllTypes, ct);
 
         return ServiceResult<AttributeValueDto>.Success(mapper.Map<AttributeValueDto>(attributeValue));
     }

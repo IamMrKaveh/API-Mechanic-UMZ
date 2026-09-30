@@ -57,7 +57,7 @@ public class ApplicationServiceCollectionTests
 
         services.ShouldContain(s => s.ServiceType == typeof(IPipelineBehavior<,>));
         var behaviors = services.Where(s => s.ServiceType == typeof(IPipelineBehavior<,>)).ToList();
-        behaviors.Count.ShouldBeGreaterThanOrEqualTo(9);
+        behaviors.Count.ShouldBeGreaterThanOrEqualTo(8);
     }
 
     [Fact]

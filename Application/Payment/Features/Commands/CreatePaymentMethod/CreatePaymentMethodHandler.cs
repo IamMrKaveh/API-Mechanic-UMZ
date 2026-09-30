@@ -7,8 +7,7 @@ namespace Application.Payment.Features.Commands.CreatePaymentMethod;
 
 public sealed class CreatePaymentMethodHandler(
     IPaymentMethodRepository repository,
-    IMapper mapper,
-    ICacheService cacheService)
+    IMapper mapper)
     : ICommandHandler<CreatePaymentMethodCommand, PaymentMethodDto>
 {
     public async Task<ServiceResult<PaymentMethodDto>> Handle(
@@ -36,7 +35,6 @@ public sealed class CreatePaymentMethodHandler(
                 request.SortOrder);
 
             await repository.AddAsync(method, ct);
-            await cacheService.RemoveByPrefixAsync("payment-methods:", ct);
 
             return ServiceResult<PaymentMethodDto>.Success(mapper.Map<PaymentMethodDto>(method));
         }

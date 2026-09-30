@@ -1,10 +1,12 @@
 ﻿using Application.Inventory.Features.Shared;
+using NexGen.MediatR.Extensions.Caching.Attributes;
 
 namespace Application.Inventory.Features.Queries.GetAllWarehouses;
 
-public record GetAllWarehousesQuery : IQuery<IReadOnlyList<WarehouseDto>>, ICacheableQuery
-{
-    public string CacheKey => "warehouses:all";
-
-    public TimeSpan? Expiry => TimeSpan.FromHours(1);
-}
+[RequestOutputCache(
+    tags:
+    [
+        CacheTags.Warehouse
+    ],
+    expirationInSeconds: 3600)]
+public record GetAllWarehousesQuery : IQuery<IReadOnlyList<WarehouseDto>>;

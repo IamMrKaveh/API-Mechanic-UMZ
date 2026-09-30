@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Common.Interfaces;
 using Application.Payment.Features.Commands.DeletePaymentMethod;
 using Domain.Payment.Interfaces;
@@ -12,11 +11,11 @@ namespace Tests.Application.Payment.Features.Commands.DeletePaymentMethod;
 
 public class DeletePaymentMethodHandlerTests : HandlerTestBase
 {
-    private readonly IPaymentMethodRepository _repository = Substitute.For<IPaymentMethodRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly DeletePaymentMethodHandler _sut;
+    private readonly IPaymentMethodRepository _repository = Substitute.For<IPaymentMethodRepository>(); private readonly DeletePaymentMethodHandler _sut;
 
     public DeletePaymentMethodHandlerTests()
     {
-        _sut = new DeletePaymentMethodHandler(_repository, CurrentUserService, _cacheService);
+        _sut = new DeletePaymentMethodHandler(_repository, CurrentUserService);
     }
 
     [Fact]
@@ -30,7 +29,6 @@ public class DeletePaymentMethodHandlerTests : HandlerTestBase
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _repository.DidNotReceive().Update(Arg.Any<PaymentMethods>());
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveByPrefixAsync(default!, default);
     }
 
     [Fact]
@@ -48,7 +46,6 @@ public class DeletePaymentMethodHandlerTests : HandlerTestBase
         method.IsDeleted.ShouldBeTrue();
         method.DeletedBy.ShouldBeNull();
         _repository.Received(1).Update(method);
-        await _cacheService.Received(1).RemoveByPrefixAsync("payment-methods:", Arg.Any<CancellationToken>());
     }
 
     [Fact]

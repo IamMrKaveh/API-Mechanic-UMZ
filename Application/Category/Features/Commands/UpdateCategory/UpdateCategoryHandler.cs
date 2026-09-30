@@ -8,7 +8,6 @@ namespace Application.Category.Features.Commands.UpdateCategory;
 
 public class UpdateCategoryHandler(
     ICategoryRepository categoryRepository,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<UpdateCategoryCommand, CategoryDto>
 {
@@ -37,7 +36,6 @@ public class UpdateCategoryHandler(
             category.Deactivate(dateTimeProvider.UtcNow);
 
         categoryRepository.Update(category, rowVersion);
-        await cacheService.RemoveByPrefixAsync("categories:", ct);
 
         var dto = category.Adapt<CategoryDto>();
         return ServiceResult<CategoryDto>.Success(dto);

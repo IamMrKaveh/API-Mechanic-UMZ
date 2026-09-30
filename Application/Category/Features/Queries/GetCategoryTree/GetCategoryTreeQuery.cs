@@ -1,10 +1,14 @@
 using Application.Category.Features.Shared;
+using NexGen.MediatR.Extensions.Caching.Attributes;
 
 namespace Application.Category.Features.Queries.GetCategoryTree;
 
-public record GetCategoryTreeQuery : IQuery<IReadOnlyList<CategoryTreeDto>>, ICacheableQuery
-{
-    public string CacheKey => "categories:tree";
-
-    public TimeSpan? Expiry => TimeSpan.FromHours(1);
-}
+[RequestOutputCache(
+    tags:
+    [
+        CacheTags.Category,
+        CacheTags.Media,
+        CacheTags.Product
+    ],
+    expirationInSeconds: 3600)]
+public record GetCategoryTreeQuery : IQuery<IReadOnlyList<CategoryTreeDto>>;

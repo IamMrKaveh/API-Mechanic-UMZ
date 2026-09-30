@@ -11,7 +11,6 @@ public sealed class UpdateBrandHandler(
     IBrandUniquenessChecker brandUniquenessChecker,
     IUnitOfWork unitOfWork,
     IStorageService storageService,
-    ICacheService cacheService,
     IDateTimeProvider dateTimeProvider)
     : ICommandHandler<UpdateBrandCommand, BrandDetailDto>
 {
@@ -63,7 +62,6 @@ public sealed class UpdateBrandHandler(
 
         brandRepository.Update(brand, rowVersion);
         await unitOfWork.SaveChangesAsync(ct);
-        await cacheService.RemoveByPrefixAsync("brands:", ct);
 
         var dtoResult = await (brandQueryService.GetBrandDetailAsync(brand.Id, ct)).OrNotFoundAsync("برند یافت نشد.");
         if (dtoResult.IsFailure) return dtoResult.Error;

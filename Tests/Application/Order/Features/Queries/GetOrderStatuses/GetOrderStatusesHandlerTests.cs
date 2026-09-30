@@ -33,11 +33,4 @@ public class GetOrderStatusesHandlerTests
         captured.ShouldBe(onlyActive);
     }
 
-    [Fact]
-    public void CacheKey_ReflectsOnlyActiveArgument()
-    {
-        new GetOrderStatusesQuery(true).CacheKey.ShouldBe("order-status:list:onlyActive=True");
-        new GetOrderStatusesQuery(false).CacheKey.ShouldBe("order-status:list:onlyActive=False");
-        new GetOrderStatusesQuery(null).CacheKey.ShouldBe("order-status:list:onlyActive=all");
-    }
 }

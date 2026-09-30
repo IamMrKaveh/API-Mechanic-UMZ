@@ -5,8 +5,7 @@ using Domain.Variant.ValueObjects;
 namespace Application.Product.Features.Commands.ChangePrice;
 
 public sealed class ChangePriceHandler(
-    IVariantRepository variantRepository,
-    ICacheService cacheService)
+    IVariantRepository variantRepository)
     : ICommandHandler<ChangePriceCommand>
 {
     public async Task<ServiceResult> Handle(
@@ -36,8 +35,6 @@ public sealed class ChangePriceHandler(
 
         variantRepository.Update(variant);
 
-        await cacheService.RemoveAsync($"product:{request.ProductId}", ct);
-        await cacheService.RemoveAsync($"variant:{request.VariantId}", ct);
 
         return ServiceResult.Success();
     }

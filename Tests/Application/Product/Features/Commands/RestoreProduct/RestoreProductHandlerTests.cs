@@ -1,4 +1,3 @@
-using Application.Cache.Contracts;
 using Application.Product.Features.Commands.RestoreProduct;
 using Domain.Product.Interfaces;
 using Domain.Product.ValueObjects;
@@ -11,15 +10,15 @@ namespace Tests.Application.Product.Features.Commands.RestoreProduct;
 
 public class RestoreProductHandlerTests
 {
-    private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly ICacheService _cacheService = Substitute.For<ICacheService>(); private readonly RestoreProductHandler _sut;
+    private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>(); private readonly RestoreProductHandler _sut;
 
     public RestoreProductHandlerTests()
     {
-        _sut = new RestoreProductHandler(_productRepository, _cacheService);
+        _sut = new RestoreProductHandler(_productRepository);
     }
 
     [Fact]
-    public async Task Handle_WhenProductNotFound_ReturnsNotFoundAndDoesNotInvalidateCache()
+    public async Task Handle_WhenProductNotFound_ReturnsNotFound()
     {
         _productRepository
             .GetByIdAsync(Arg.Any<ProductId>(), Arg.Any<CancellationToken>())
@@ -29,11 +28,10 @@ public class RestoreProductHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _productRepository.DidNotReceiveWithAnyArgs().Update(default!);
-        await _cacheService.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
     }
 
     [Fact]
-    public async Task Handle_WhenProductExists_RestoresProductUpdatesAndInvalidatesCache()
+    public async Task Handle_WhenProductExists_RestoresProductUpdates()
     {
         var product = new ProductBuilder().Build();
 
@@ -47,7 +45,5 @@ public class RestoreProductHandlerTests
 
         result.ShouldBeSuccess();
         _productRepository.Received(1).Update(product);
-        await _cacheService.Received(1).RemoveAsync($"product:{product.Id.Value}", Arg.Any<CancellationToken>());
-        await _cacheService.Received(1).RemoveAsync($"brand:{product.BrandId}", Arg.Any<CancellationToken>());
     }
 }
