@@ -26,9 +26,7 @@ public class SessionServiceTests : HandlerTestBase
             SessionExpirationDays = 30,
         });
 
-        var dateTimeProvider = Substitute.For<IDateTimeProvider>();
-        dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new SessionService(_sessionRepository, options, UnitOfWork, dateTimeProvider);
+        _sut = new SessionService(_sessionRepository, options, UnitOfWork, DateTimeProvider);
     }
 
     [Fact]

@@ -17,7 +17,7 @@ public class AdminRevokeSessionHandlerTests : HandlerTestBase
 
     public AdminRevokeSessionHandlerTests()
     {
-        DateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
+        SetUtcNow(2026, 8, 29, 10);
         _sut = new AdminRevokeSessionHandler(_sessionRepository, DateTimeProvider);
     }
 
@@ -76,3 +76,4 @@ public class AdminRevokeSessionHandlerTests : HandlerTestBase
         _sessionRepository.Received(1).Update(session);
     }
 }
+

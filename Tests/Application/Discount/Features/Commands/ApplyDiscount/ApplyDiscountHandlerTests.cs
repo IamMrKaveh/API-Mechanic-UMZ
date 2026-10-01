@@ -18,7 +18,7 @@ public class ApplyDiscountHandlerTests : HandlerTestBase
     public ApplyDiscountHandlerTests()
     {
         _sut = new ApplyDiscountHandler(_repository, UnitOfWork, AuditService, CurrentUserService, DateTimeProvider);
-        DateTimeProvider.UtcNow.Returns(_now);
+        SetUtcNow(_now);
         CurrentUserService.UserId.Returns((Guid?)_userGuid);
         UnitOfWork
             .ExecuteStrategyAsync(
@@ -118,3 +118,4 @@ public class ApplyDiscountHandlerTests : HandlerTestBase
             cts.Token);
     }
 }
+

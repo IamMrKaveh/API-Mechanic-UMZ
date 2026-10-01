@@ -26,7 +26,6 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
     private readonly ISqlConnectionFactory _sqlConnectionFactory = Substitute.For<ISqlConnectionFactory>();
     private readonly ISearchService _searchService = Substitute.For<ISearchService>();
     private readonly IElasticBulkService _bulkService = Substitute.For<IElasticBulkService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private ElasticsearchDatabaseSyncService _sut = null!;
 
     protected override Task OnInitializeAsync()
@@ -34,7 +33,7 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
         _sqlConnectionFactory.CreateConnectionAsync()
             .Returns(_ => (IDbConnection)new NpgsqlConnection(Fixture.ConnectionString));
         _sut = new ElasticsearchDatabaseSyncService(
-            _sqlConnectionFactory, _searchService, _bulkService, _auditService);
+            _sqlConnectionFactory, _searchService, _bulkService, AuditService);
         return Task.CompletedTask;
     }
 
@@ -116,8 +115,9 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
         await ShouldThrowUndefinedTableAsync(() =>
             _sut.SyncAsync(CancellationToken.None));
 
-        await _auditService.DidNotReceive().LogInformationAsync(
+        await AuditService.DidNotReceive().LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("Sync Completed")),
             Arg.Any<CancellationToken>());
     }
 }
+

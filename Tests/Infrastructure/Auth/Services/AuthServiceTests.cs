@@ -16,15 +16,13 @@ using Users = Domain.User.Aggregates.User;
 
 namespace Tests.Infrastructure.Auth.Services;
 
-public class AuthServiceTests
+public class AuthServiceTests : HandlerTestBase
 {
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly ISessionRepository _sessionRepository = Substitute.For<ISessionRepository>(); private readonly ISessionService _sessionService = Substitute.For<ISessionService>(); private readonly IJwtTokenGenerator _jwtTokenGenerator = Substitute.For<IJwtTokenGenerator>(); private readonly AuthService _sut;
 
     public AuthServiceTests()
     {
-        var dateTimeProvider = Substitute.For<IDateTimeProvider>();
-        dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _sut = new AuthService(_userRepository, _sessionRepository, _sessionService, _jwtTokenGenerator, dateTimeProvider);
+        _sut = new AuthService(_userRepository, _sessionRepository, _sessionService, _jwtTokenGenerator, DateTimeProvider);
     }
 
     [Fact]

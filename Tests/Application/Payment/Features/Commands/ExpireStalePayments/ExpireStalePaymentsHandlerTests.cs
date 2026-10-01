@@ -20,7 +20,7 @@ public class ExpireStalePaymentsHandlerTests : HandlerTestBase
     public async Task Handle_WhenNoExpiredTransactions_ReturnsZeroAndDoesNotUpdate()
     {
         var now = DateTime.UtcNow;
-        DateTimeProvider.UtcNow.Returns(now);
+        SetUtcNow(now);
         _paymentRepository
             .GetPendingExpiredTransactionsAsync(now, Arg.Any<CancellationToken>())
             .Returns(Array.Empty<PaymentTransactions>());
@@ -44,7 +44,7 @@ public class ExpireStalePaymentsHandlerTests : HandlerTestBase
         tx1.IsPending().ShouldBeTrue();
         tx2.IsPending().ShouldBeTrue();
 
-        DateTimeProvider.UtcNow.Returns(now);
+        SetUtcNow(now);
         _paymentRepository
             .GetPendingExpiredTransactionsAsync(now, Arg.Any<CancellationToken>())
             .Returns(new[] { tx1, tx2 });
@@ -67,7 +67,7 @@ public class ExpireStalePaymentsHandlerTests : HandlerTestBase
 
         var tx = new PaymentTransactionBuilder().WithNow(future).WithExpiryMinutes(20).Build();
 
-        DateTimeProvider.UtcNow.Returns(now);
+        SetUtcNow(now);
         _paymentRepository
             .GetPendingExpiredTransactionsAsync(now, Arg.Any<CancellationToken>())
             .Returns(new[] { tx });
@@ -80,3 +80,4 @@ public class ExpireStalePaymentsHandlerTests : HandlerTestBase
         _paymentRepository.DidNotReceive().Update(Arg.Any<PaymentTransactions>());
     }
 }
+

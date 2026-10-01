@@ -2,22 +2,21 @@ using Infrastructure.Payment.Services;
 
 namespace Tests.Infrastructure.Payment.Services;
 
-public class PaymentCallbackNonceServiceTests
+public class PaymentCallbackNonceServiceTests : HandlerTestBase
 {
     private sealed class TestContext
     { public IServiceProvider ServiceProvider { get; init; } = null!; public ICacheService CacheService { get; init; } = null!; public IAuditService AuditService { get; init; } = null!; public PaymentCallbackNonceService Sut { get; init; } = null!; }
 
-    private static TestContext BuildContext()
+    private TestContext BuildContext()
     {
         var serviceProvider = Substitute.For<IServiceProvider>();
         var cacheService = Substitute.For<ICacheService>();
-        var auditService = Substitute.For<IAuditService>();
-        var sut = new PaymentCallbackNonceService(serviceProvider, cacheService, auditService);
+        var sut = new PaymentCallbackNonceService(serviceProvider, cacheService, AuditService);
         return new TestContext
         {
             ServiceProvider = serviceProvider,
             CacheService = cacheService,
-            AuditService = auditService,
+            AuditService = this.AuditService,
             Sut = sut
         };
     }

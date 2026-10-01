@@ -17,7 +17,7 @@ public class CreateTicketHandlerTests : HandlerTestBase
     public CreateTicketHandlerTests()
     {
         CurrentUserService.UserId.Returns((Guid?)_userGuid);
-        DateTimeProvider.UtcNow.Returns(_now);
+        SetUtcNow(_now);
         _mapper.Map<TicketDto>(Arg.Any<Ticket>())
             .Returns(ci => new TicketDto
             {
@@ -134,3 +134,4 @@ public class CreateTicketHandlerTests : HandlerTestBase
         added.Messages.Single().SenderType.ShouldBe(TicketMessageSenderType.Customer);
     }
 }
+

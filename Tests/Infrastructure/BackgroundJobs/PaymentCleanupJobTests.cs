@@ -6,7 +6,7 @@ using SharedKernel.Abstractions.Interfaces;
 
 namespace Tests.Infrastructure.BackgroundJobs;
 
-public class PaymentCleanupJobTests
+public class PaymentCleanupJobTests : HandlerTestBase
 {
     private sealed class TestContext
     {
@@ -20,7 +20,7 @@ public class PaymentCleanupJobTests
 
     private static readonly DateTime FixedNow = new(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc);
 
-    private static TestContext BuildContext(bool lockAcquired = true)
+    private TestContext BuildContext(bool lockAcquired = true)
     {
         var handle = Substitute.For<ILockHandle>();
         handle.IsAcquired.Returns(lockAcquired);
@@ -30,9 +30,7 @@ public class PaymentCleanupJobTests
             .Returns(handle);
 
         var mediator = Substitute.For<IMediator>();
-        var auditService = Substitute.For<IAuditService>();
-        var dateTimeProvider = Substitute.For<IDateTimeProvider>();
-        dateTimeProvider.UtcNow.Returns(FixedNow);
+        DateTimeProvider.UtcNow.Returns(FixedNow);
 
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         var scope = Substitute.For<IServiceScope>();
@@ -40,15 +38,15 @@ public class PaymentCleanupJobTests
         scopeFactory.CreateScope().Returns(scope);
         scope.ServiceProvider.Returns(provider);
         provider.GetService(typeof(IMediator)).Returns(mediator);
-        provider.GetService(typeof(IAuditService)).Returns(auditService);
+        provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
         return new TestContext
         {
             ScopeFactory = scopeFactory,
             DistributedLock = distributedLock,
             Mediator = mediator,
-            AuditService = auditService,
-            DateTimeProvider = dateTimeProvider,
+            AuditService = this.AuditService,
+            DateTimeProvider = this.DateTimeProvider,
             Cts = new CancellationTokenSource()
         };
     }

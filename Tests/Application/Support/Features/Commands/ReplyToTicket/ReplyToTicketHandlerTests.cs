@@ -19,7 +19,7 @@ public class ReplyToTicketHandlerTests : HandlerTestBase
     public ReplyToTicketHandlerTests()
     {
         CurrentUserService.UserId.Returns((Guid?)_userGuid);
-        DateTimeProvider.UtcNow.Returns(_now);
+        SetUtcNow(_now);
         _sut = new ReplyToTicketHandler(_ticketRepository, CurrentUserService, DateTimeProvider);
     }
 
@@ -129,3 +129,4 @@ public class ReplyToTicketHandlerTests : HandlerTestBase
         _ticketRepository.DidNotReceive().Update(Arg.Any<Ticket>());
     }
 }
+

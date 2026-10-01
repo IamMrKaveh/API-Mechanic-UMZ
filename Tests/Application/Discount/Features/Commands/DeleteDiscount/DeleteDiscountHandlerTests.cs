@@ -14,7 +14,7 @@ public class DeleteDiscountHandlerTests : HandlerTestBase
     public DeleteDiscountHandlerTests()
     {
         _sut = new DeleteDiscountHandler(_repository, DateTimeProvider);
-        DateTimeProvider.UtcNow.Returns(_now);
+        SetUtcNow(_now);
     }
 
     [Fact]
@@ -55,3 +55,4 @@ public class DeleteDiscountHandlerTests : HandlerTestBase
         captured!.Value.ShouldBe(discount.Id.Value);
     }
 }
+

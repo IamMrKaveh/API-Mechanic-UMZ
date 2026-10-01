@@ -33,7 +33,7 @@ public class VerifyOtpHandlerTests : HandlerTestBase
 
     public VerifyOtpHandlerTests()
     {
-        DateTimeProvider.UtcNow.Returns(_now);
+        SetUtcNow(_now);
 
         var jwtOptions = Options.Create(new JwtOptions
         {
@@ -474,3 +474,4 @@ public class VerifyOtpHandlerTests : HandlerTestBase
             Arg.Any<CancellationToken>());
     }
 }
+

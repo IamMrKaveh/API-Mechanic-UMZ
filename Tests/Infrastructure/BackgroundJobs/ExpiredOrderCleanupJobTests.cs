@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests.Infrastructure.BackgroundJobs;
 
-public class ExpiredOrderCleanupJobTests
+public class ExpiredOrderCleanupJobTests : HandlerTestBase
 {
     private sealed class TestContext
     {
@@ -18,7 +18,7 @@ public class ExpiredOrderCleanupJobTests
         public CancellationTokenSource Cts { get; init; } = null!;
     }
 
-    private static TestContext BuildContext(bool lockAcquired = true)
+    private TestContext BuildContext(bool lockAcquired = true)
     {
         var handle = Substitute.For<ILockHandle>();
         handle.IsAcquired.Returns(lockAcquired);
@@ -28,8 +28,6 @@ public class ExpiredOrderCleanupJobTests
             .Returns(handle);
 
         var orderRepository = Substitute.For<IOrderRepository>();
-        var unitOfWork = Substitute.For<IUnitOfWork>();
-        var auditService = Substitute.For<IAuditService>();
 
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         var scope = Substitute.For<IServiceScope>();
@@ -37,16 +35,16 @@ public class ExpiredOrderCleanupJobTests
         scopeFactory.CreateScope().Returns(scope);
         scope.ServiceProvider.Returns(provider);
         provider.GetService(typeof(IOrderRepository)).Returns(orderRepository);
-        provider.GetService(typeof(IUnitOfWork)).Returns(unitOfWork);
-        provider.GetService(typeof(IAuditService)).Returns(auditService);
+        provider.GetService(typeof(IUnitOfWork)).Returns(UnitOfWork);
+        provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
         return new TestContext
         {
             ScopeFactory = scopeFactory,
             DistributedLock = distributedLock,
             OrderRepository = orderRepository,
-            UnitOfWork = unitOfWork,
-            AuditService = auditService,
+            UnitOfWork = this.UnitOfWork,
+            AuditService = this.AuditService,
             Cts = new CancellationTokenSource()
         };
     }

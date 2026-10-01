@@ -20,7 +20,7 @@ public class SendOtpHandlerTests : HandlerTestBase
     public SendOtpHandlerTests()
     {
         _initialAdminOptions.PhoneNumbers.Returns(new List<string>());
-        DateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
+        SetUtcNow(2026, 8, 29, 10);
         _otpService
             .SendOtpAsync(Arg.Any<PhoneNumber>(), Arg.Any<OtpCode>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<bool>.Success(true));
@@ -174,3 +174,4 @@ public class SendOtpHandlerTests : HandlerTestBase
         await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }
 }
+

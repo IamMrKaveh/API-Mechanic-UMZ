@@ -13,7 +13,6 @@ public class ElasticsearchInitialSyncServiceTests(PostgresContainerFixture fixtu
 {
     private readonly ISqlConnectionFactory _sqlConnectionFactory = Substitute.For<ISqlConnectionFactory>();
     private readonly IElasticBulkService _bulkService = Substitute.For<IElasticBulkService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
     private ElasticsearchInitialSyncService _sut = null!;
 
     protected override Task OnInitializeAsync()
@@ -21,7 +20,7 @@ public class ElasticsearchInitialSyncServiceTests(PostgresContainerFixture fixtu
         _sqlConnectionFactory.CreateConnectionAsync()
             .Returns(_ => (IDbConnection)new NpgsqlConnection(Fixture.ConnectionString));
         _sut = new ElasticsearchInitialSyncService(
-            _sqlConnectionFactory, _bulkService, _auditService);
+            _sqlConnectionFactory, _bulkService, AuditService);
         return Task.CompletedTask;
     }
 
@@ -30,18 +29,18 @@ public class ElasticsearchInitialSyncServiceTests(PostgresContainerFixture fixtu
     {
         _sqlConnectionFactory.CreateConnectionAsync()
             .Returns(Task.FromException<IDbConnection>(new InvalidOperationException("no database")));
-        _auditService.ClearReceivedCalls();
+        AuditService.ClearReceivedCalls();
 
         await Should.ThrowAsync<InvalidOperationException>(() =>
             _sut.SyncAllDataAsync(CancellationToken.None));
 
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("Starting initial sync")),
             Arg.Any<CancellationToken>());
         await _bulkService.DidNotReceiveWithAnyArgs().BulkIndexCategoriesAsync(default!, default);
         await _bulkService.DidNotReceiveWithAnyArgs().BulkIndexBrandsAsync(default!, default);
         await _bulkService.DidNotReceiveWithAnyArgs().BulkIndexProductsAsync(default!, default);
-        await _auditService.DidNotReceive().LogInformationAsync(
+        await AuditService.DidNotReceive().LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("Initial sync completed")),
             Arg.Any<CancellationToken>());
     }
@@ -55,11 +54,12 @@ public class ElasticsearchInitialSyncServiceTests(PostgresContainerFixture fixtu
         await Should.ThrowAsync<Npgsql.PostgresException>(() =>
             _sut.SyncAllDataAsync(CancellationToken.None));
 
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("Starting initial sync")),
             Arg.Any<CancellationToken>());
-        await _auditService.DidNotReceive().LogInformationAsync(
+        await AuditService.DidNotReceive().LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("Initial sync completed")),
             Arg.Any<CancellationToken>());
     }
 }
+

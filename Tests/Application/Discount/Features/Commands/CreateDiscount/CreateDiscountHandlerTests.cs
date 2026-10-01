@@ -16,7 +16,7 @@ public class CreateDiscountHandlerTests : HandlerTestBase
     public CreateDiscountHandlerTests()
     {
         _sut = new CreateDiscountHandler(_repository, _mapper, DateTimeProvider);
-        DateTimeProvider.UtcNow.Returns(_now);
+        SetUtcNow(_now);
         _mapper.Map<DiscountDto>(Arg.Any<DiscountCode>())
             .Returns(ci =>
             {
@@ -109,3 +109,4 @@ public class CreateDiscountHandlerTests : HandlerTestBase
         result.Value.DiscountType.ShouldBe(DiscountType.FreeShipping.ToString());
     }
 }
+

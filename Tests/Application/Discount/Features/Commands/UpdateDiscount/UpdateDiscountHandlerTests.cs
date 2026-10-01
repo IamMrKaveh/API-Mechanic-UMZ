@@ -17,7 +17,7 @@ public class UpdateDiscountHandlerTests : HandlerTestBase
     public UpdateDiscountHandlerTests()
     {
         _sut = new UpdateDiscountHandler(_repository, _mapper, DateTimeProvider);
-        DateTimeProvider.UtcNow.Returns(_now);
+        SetUtcNow(_now);
         _mapper.Map<DiscountDto>(Arg.Any<DiscountCode>())
             .Returns(ci =>
             {
@@ -103,3 +103,4 @@ public class UpdateDiscountHandlerTests : HandlerTestBase
                 CancellationToken.None));
     }
 }
+
