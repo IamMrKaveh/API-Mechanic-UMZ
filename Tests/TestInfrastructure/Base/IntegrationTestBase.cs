@@ -9,6 +9,8 @@ namespace Tests.TestInfrastructure.Base;
 public abstract class IntegrationTestBase(PostgresContainerFixture fixture) : IAsyncLifetime
 {
     protected PostgresContainerFixture Fixture { get; } = fixture;
+    protected IDateTimeProvider DateTimeProvider { get; } = Substitute.For<IDateTimeProvider>();
+    protected IAuditService AuditService { get; } = Substitute.For<IAuditService>();
     protected DBContext Context { get; private set; } = null!;
 
     public virtual async Task InitializeAsync()

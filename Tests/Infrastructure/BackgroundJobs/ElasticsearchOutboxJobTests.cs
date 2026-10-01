@@ -16,7 +16,7 @@ public class ElasticsearchOutboxJobTests : HandlerTestBase
     public async Task ExecuteAsync_OnStart_LogsStartupWithConfiguredValues()
     {
         var job = new ElasticsearchOutboxJob(
-            _scopeFactory, AuditService, _distributedLock, _configuration, Substitute.For<IDateTimeProvider>());
+            _scopeFactory, AuditService, _distributedLock, _configuration, DateTimeProvider);
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();

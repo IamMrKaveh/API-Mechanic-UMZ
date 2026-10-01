@@ -7,7 +7,7 @@ using SharedKernel.Abstractions.Interfaces;
 
 namespace Tests.Infrastructure.BackgroundJobs;
 
-public class WalletTopUpCleanupJobTests
+public class WalletTopUpCleanupJobTests : HandlerTestBase
 {
     private sealed class TestContext
     {
@@ -22,7 +22,7 @@ public class WalletTopUpCleanupJobTests
 
     private static readonly DateTime FixedNow = new(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc);
 
-    private static TestContext BuildContext(bool lockAcquired = true)
+    private TestContext BuildContext(bool lockAcquired = true)
     {
         var handle = Substitute.For<ILockHandle>();
         handle.IsAcquired.Returns(lockAcquired);
@@ -32,9 +32,7 @@ public class WalletTopUpCleanupJobTests
             .Returns(handle);
 
         var repository = Substitute.For<IWalletTopUpRepository>();
-        var unitOfWork = Substitute.For<IUnitOfWork>();
-        var dateTimeProvider = Substitute.For<IDateTimeProvider>();
-        dateTimeProvider.UtcNow.Returns(FixedNow);
+        DateTimeProvider.UtcNow.Returns(FixedNow);
 
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         var scope = Substitute.For<IServiceScope>();
@@ -42,16 +40,16 @@ public class WalletTopUpCleanupJobTests
         scopeFactory.CreateScope().Returns(scope);
         scope.ServiceProvider.Returns(provider);
         provider.GetService(typeof(IWalletTopUpRepository)).Returns(repository);
-        provider.GetService(typeof(IUnitOfWork)).Returns(unitOfWork);
+        provider.GetService(typeof(IUnitOfWork)).Returns(UnitOfWork);
 
         return new TestContext
         {
             ScopeFactory = scopeFactory,
             DistributedLock = distributedLock,
             Repository = repository,
-            UnitOfWork = unitOfWork,
+            UnitOfWork = this.UnitOfWork,
             Logger = Substitute.For<ILogger<WalletTopUpCleanupJob>>(),
-            DateTimeProvider = dateTimeProvider,
+            DateTimeProvider = this.DateTimeProvider,
             Cts = new CancellationTokenSource()
         };
     }

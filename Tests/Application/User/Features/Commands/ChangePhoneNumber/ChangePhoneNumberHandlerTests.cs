@@ -21,7 +21,7 @@ public class ChangePhoneNumberHandlerTests : HandlerTestBase
     {
         _sut = new ChangePhoneNumberHandler(_userRepository, _otpRepository, CurrentUserService, AuditService, DateTimeProvider);
         CurrentUserService.UserId.Returns((Guid?)_userGuid);
-        DateTimeProvider.UtcNow.Returns(_ => DateTime.UtcNow);
+        UseLiveUtcNow();
     }
 
     [Fact]
@@ -125,3 +125,4 @@ public class ChangePhoneNumberHandlerTests : HandlerTestBase
             Arg.Any<CancellationToken>());
     }
 }
+

@@ -17,7 +17,7 @@ public class LogoutHandlerTests : HandlerTestBase
 
     public LogoutHandlerTests()
     {
-        DateTimeProvider.UtcNow.Returns(new DateTime(2026, 8, 29, 10, 0, 0, DateTimeKind.Utc));
+        SetUtcNow(2026, 8, 29, 10);
         _sut = new LogoutHandler(_sessionRepository, CurrentUserService, DateTimeProvider);
     }
 
@@ -99,3 +99,4 @@ public class LogoutHandlerTests : HandlerTestBase
         _sessionRepository.Received(1).Update(session);
     }
 }
+

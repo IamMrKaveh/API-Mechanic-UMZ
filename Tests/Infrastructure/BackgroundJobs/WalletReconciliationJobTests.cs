@@ -13,7 +13,6 @@ namespace Tests.Infrastructure.BackgroundJobs;
 public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
 
     private WalletReconciliationJob BuildJob()
     {
@@ -30,7 +29,7 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
         scope.ServiceProvider.Returns(provider);
         provider.GetService(typeof(DBContext)).Returns(Context);
         provider.GetService(typeof(IDistributedLock)).Returns(_distributedLock);
-        provider.GetService(typeof(IAuditService)).Returns(_auditService);
+        provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
         return new WalletReconciliationJob(scopeFactory, _distributedLock);
     }
@@ -73,7 +72,7 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
         }
         await job.StopAsync(CancellationToken.None);
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletReconciliationDiscrepancy",
             Arg.Is<string>(s => s!.Contains("150000")),
             Arg.Any<CancellationToken>());
@@ -94,7 +93,7 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
         }
         await job.StopAsync(CancellationToken.None);
 
-        await _auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
     [Fact]
@@ -140,3 +139,4 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
             Arg.Any<CancellationToken>());
     }
 }
+

@@ -16,9 +16,7 @@ namespace Tests.Infrastructure.BackgroundJobs;
 public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly IInventoryService _inventoryService = Substitute.For<IInventoryService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
 
     private static readonly DateTime FixedNow = new(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc);
 
@@ -29,7 +27,7 @@ public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture
         _distributedLock
             .AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(handle);
-        _dateTimeProvider.UtcNow.Returns(FixedNow);
+        DateTimeProvider.UtcNow.Returns(FixedNow);
 
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         var scope = Substitute.For<IServiceScope>();
@@ -39,13 +37,13 @@ public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture
         provider.GetService(typeof(DBContext)).Returns(Context);
         provider.GetService(typeof(IDistributedLock)).Returns(_distributedLock);
         provider.GetService(typeof(IInventoryService)).Returns(_inventoryService);
-        provider.GetService(typeof(IAuditService)).Returns(_auditService);
+        provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
         return new InventoryReservationExpiryJob(
             scopeFactory,
             _distributedLock,
             Microsoft.Extensions.Options.Options.Create(new ReservationExpiryOptions { ExpiryMinutes = expiryMinutes }),
-            _dateTimeProvider);
+            DateTimeProvider);
     }
 
     private async Task<VariantId> SeedExpiredReservationAsync(
@@ -99,7 +97,7 @@ public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture
         }
         await job.StopAsync(CancellationToken.None);
 
-        await _auditService.Received(1).LogInformationAsync(
+        await AuditService.Received(1).LogInformationAsync(
             "Inventory Reservation Expiry Service started.",
             Arg.Any<CancellationToken>());
     }
@@ -120,7 +118,7 @@ public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture
         await job.StopAsync(CancellationToken.None);
 
         await _inventoryService.DidNotReceiveWithAnyArgs().RollbackReservationsAsync(default!, default);
-        await _auditService.Received(1).LogErrorAsync(
+        await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Error processing expired inventory reservations")),
             Arg.Any<CancellationToken>());
     }
@@ -164,3 +162,4 @@ public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture
             Arg.Any<CancellationToken>());
     }
 }
+

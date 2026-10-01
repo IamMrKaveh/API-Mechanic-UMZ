@@ -2,12 +2,12 @@ using Infrastructure.Search;
 
 namespace Tests.Infrastructure.Search;
 
-public class ElasticsearchCircuitBreakerTests
+public class ElasticsearchCircuitBreakerTests : HandlerTestBase
 {
     [Fact]
     public void IsAllowed_WhenNoFailuresRecorded_ReturnsTrue()
     {
-        var auditService = Substitute.For<IAuditService>(); var configuration = BuildConfiguration(failureThreshold: 3, breakDurationSeconds: 60); var sut = new ElasticsearchCircuitBreaker(auditService, configuration);
+        var configuration = BuildConfiguration(failureThreshold: 3, breakDurationSeconds: 60); var sut = new ElasticsearchCircuitBreaker(AuditService, configuration);
 
         var allowed = sut.IsAllowed();
 
@@ -17,29 +17,29 @@ public class ElasticsearchCircuitBreakerTests
     [Fact]
     public void RecordFailure_BelowThreshold_KeepsCircuitClosedAndIsAllowedRemainsTrue()
     {
-        var auditService = Substitute.For<IAuditService>();
+
         var configuration = BuildConfiguration(failureThreshold: 3, breakDurationSeconds: 60);
-        var sut = new ElasticsearchCircuitBreaker(auditService, configuration);
+        var sut = new ElasticsearchCircuitBreaker(AuditService, configuration);
 
         sut.RecordFailure();
         sut.RecordFailure();
 
         sut.IsAllowed().ShouldBeTrue();
-        auditService.DidNotReceive().LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        AuditService.DidNotReceive().LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public void RecordFailure_ReachingThreshold_OpensCircuitAndLogsErrorViaAuditService()
     {
-        var auditService = Substitute.For<IAuditService>();
+
         var configuration = BuildConfiguration(failureThreshold: 2, breakDurationSeconds: 3600);
-        var sut = new ElasticsearchCircuitBreaker(auditService, configuration);
+        var sut = new ElasticsearchCircuitBreaker(AuditService, configuration);
 
         sut.RecordFailure();
         sut.RecordFailure();
 
         sut.IsAllowed().ShouldBeFalse();
-        auditService.Received(1).LogErrorAsync(
+        AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Circuit breaker opened for Elasticsearch")),
             Arg.Any<CancellationToken>());
     }
@@ -47,15 +47,15 @@ public class ElasticsearchCircuitBreakerTests
     [Fact]
     public void RecordFailure_AfterCircuitAlreadyOpen_DoesNotLogAdditionalOpenError()
     {
-        var auditService = Substitute.For<IAuditService>();
+
         var configuration = BuildConfiguration(failureThreshold: 1, breakDurationSeconds: 3600);
-        var sut = new ElasticsearchCircuitBreaker(auditService, configuration);
+        var sut = new ElasticsearchCircuitBreaker(AuditService, configuration);
 
         sut.RecordFailure();
         sut.RecordFailure();
         sut.RecordFailure();
 
-        auditService.Received(1).LogErrorAsync(
+        AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Circuit breaker opened for Elasticsearch")),
             Arg.Any<CancellationToken>());
     }
@@ -63,15 +63,15 @@ public class ElasticsearchCircuitBreakerTests
     [Fact]
     public void IsAllowed_WhenOpenAndBreakDurationNotElapsed_ReturnsFalse()
     {
-        var auditService = Substitute.For<IAuditService>();
+
         var configuration = BuildConfiguration(failureThreshold: 1, breakDurationSeconds: 3600);
-        var sut = new ElasticsearchCircuitBreaker(auditService, configuration);
+        var sut = new ElasticsearchCircuitBreaker(AuditService, configuration);
         sut.RecordFailure();
 
         var allowed = sut.IsAllowed();
 
         allowed.ShouldBeFalse();
-        auditService.DidNotReceive().LogWarningAsync(
+        AuditService.DidNotReceive().LogWarningAsync(
             Arg.Is<string>(s => s!.Contains("half-open")),
             Arg.Any<CancellationToken>());
     }
@@ -79,15 +79,15 @@ public class ElasticsearchCircuitBreakerTests
     [Fact]
     public void IsAllowed_WhenOpenAndBreakDurationElapsed_TransitionsToHalfOpenAndReturnsTrueAndLogsWarning()
     {
-        var auditService = Substitute.For<IAuditService>();
+
         var configuration = BuildConfiguration(failureThreshold: 1, breakDurationSeconds: 0);
-        var sut = new ElasticsearchCircuitBreaker(auditService, configuration);
+        var sut = new ElasticsearchCircuitBreaker(AuditService, configuration);
         sut.RecordFailure();
 
         var allowed = sut.IsAllowed();
 
         allowed.ShouldBeTrue();
-        auditService.Received(1).LogWarningAsync(
+        AuditService.Received(1).LogWarningAsync(
             Arg.Is<string>(s => s!.Contains("Circuit breaker half-open for Elasticsearch")),
             Arg.Any<CancellationToken>());
     }
@@ -95,16 +95,16 @@ public class ElasticsearchCircuitBreakerTests
     [Fact]
     public void RecordSuccess_AfterFailuresBelowThreshold_ResetsFailureCountSoThresholdIsNotReachedByNewFailure()
     {
-        var auditService = Substitute.For<IAuditService>();
+
         var configuration = BuildConfiguration(failureThreshold: 2, breakDurationSeconds: 3600);
-        var sut = new ElasticsearchCircuitBreaker(auditService, configuration);
+        var sut = new ElasticsearchCircuitBreaker(AuditService, configuration);
         sut.RecordFailure();
         sut.RecordSuccess();
 
         sut.RecordFailure();
 
         sut.IsAllowed().ShouldBeTrue();
-        auditService.DidNotReceive().LogErrorAsync(
+        AuditService.DidNotReceive().LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Circuit breaker opened for Elasticsearch")),
             Arg.Any<CancellationToken>());
     }
@@ -112,9 +112,9 @@ public class ElasticsearchCircuitBreakerTests
     [Fact]
     public void RecordSuccess_AfterCircuitOpened_ReclosesCircuitSoIsAllowedReturnsTrue()
     {
-        var auditService = Substitute.For<IAuditService>();
+
         var configuration = BuildConfiguration(failureThreshold: 1, breakDurationSeconds: 3600);
-        var sut = new ElasticsearchCircuitBreaker(auditService, configuration);
+        var sut = new ElasticsearchCircuitBreaker(AuditService, configuration);
         sut.RecordFailure();
         sut.IsAllowed().ShouldBeFalse();
 
@@ -126,15 +126,15 @@ public class ElasticsearchCircuitBreakerTests
     [Fact]
     public void RecordSuccess_WhenCircuitAlreadyClosed_KeepsIsAllowedTrueAndDoesNotEmitAuditLogs()
     {
-        var auditService = Substitute.For<IAuditService>();
+
         var configuration = BuildConfiguration(failureThreshold: 3, breakDurationSeconds: 60);
-        var sut = new ElasticsearchCircuitBreaker(auditService, configuration);
+        var sut = new ElasticsearchCircuitBreaker(AuditService, configuration);
 
         sut.RecordSuccess();
 
         sut.IsAllowed().ShouldBeTrue();
-        auditService.DidNotReceive().LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-        auditService.DidNotReceive().LogWarningAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        AuditService.DidNotReceive().LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        AuditService.DidNotReceive().LogWarningAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     private static IConfiguration BuildConfiguration(int failureThreshold, int breakDurationSeconds)
@@ -154,3 +154,4 @@ public class ElasticsearchCircuitBreakerTests
         return configuration;
     }
 }
+

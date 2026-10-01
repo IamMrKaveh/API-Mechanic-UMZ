@@ -13,9 +13,7 @@ namespace Tests.Infrastructure.BackgroundJobs;
 public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly IStorageService _storageService = Substitute.For<IStorageService>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
 
     private OrphanedFileCleanupJob BuildJob()
     {
@@ -33,9 +31,9 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
         provider.GetService(typeof(DBContext)).Returns(Context);
         provider.GetService(typeof(IDistributedLock)).Returns(_distributedLock);
         provider.GetService(typeof(IStorageService)).Returns(_storageService);
-        provider.GetService(typeof(IAuditService)).Returns(_auditService);
+        provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
-        return new OrphanedFileCleanupJob(scopeFactory, _distributedLock, _dateTimeProvider);
+        return new OrphanedFileCleanupJob(scopeFactory, _distributedLock, DateTimeProvider);
     }
 
     private async Task<global::Domain.Media.Aggregates.Media> SeedDeletedMediaAsync(
@@ -58,7 +56,7 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
     [Fact]
     public async Task ExecuteAsync_WithOldDeletedMedia_DeletesFileAndRemovesRow()
     {
-        _dateTimeProvider.UtcNow.Returns(new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
+        DateTimeProvider.UtcNow.Returns(new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
         var media = await SeedDeletedMediaAsync(new DateTime(2026, 5, 30, 12, 0, 0, DateTimeKind.Utc));
         var job = BuildJob();
 
@@ -88,7 +86,7 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
     [Fact]
     public async Task ExecuteAsync_WithRecentlyDeletedMedia_KeepsRow()
     {
-        _dateTimeProvider.UtcNow.Returns(new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
+        DateTimeProvider.UtcNow.Returns(new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
         var media = await SeedDeletedMediaAsync(new DateTime(2026, 6, 1, 10, 0, 0, DateTimeKind.Utc));
         var job = BuildJob();
 
@@ -111,7 +109,7 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
     [Fact]
     public async Task ExecuteAsync_WhenStorageThrows_LogsErrorAndKeepsRow()
     {
-        _dateTimeProvider.UtcNow.Returns(new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
+        DateTimeProvider.UtcNow.Returns(new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
         var media = await SeedDeletedMediaAsync(new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc));
         _storageService
             .DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -136,7 +134,7 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
     [Fact]
     public async Task ExecuteAsync_AcquiresLockWithExpectedKeyAndExpiry()
     {
-        _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
+        DateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
         var job = BuildJob();
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
@@ -154,3 +152,4 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
             Arg.Any<CancellationToken>());
     }
 }
+

@@ -18,10 +18,8 @@ namespace Tests.Infrastructure.BackgroundJobs;
 public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly IPaymentGatewayFactory _gatewayFactory = Substitute.For<IPaymentGatewayFactory>();
     private readonly IPaymentGateway _gateway = Substitute.For<IPaymentGateway>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
 
     private static readonly DateTime FixedNow = new(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc);
 
@@ -32,7 +30,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
         _distributedLock
             .AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(handle);
-        _dateTimeProvider.UtcNow.Returns(FixedNow);
+        DateTimeProvider.UtcNow.Returns(FixedNow);
         _gatewayFactory.GetGateway(Arg.Any<string>()).Returns(_gateway);
 
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
@@ -48,9 +46,9 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
                 Context,
                 Substitute.For<ILogger<UnitOfWork>>(),
                 Substitute.For<IHostEnvironment>()));
-        provider.GetService(typeof(IAuditService)).Returns(_auditService);
+        provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
-        return new PaymentReconciliationJob(scopeFactory, _distributedLock, _dateTimeProvider);
+        return new PaymentReconciliationJob(scopeFactory, _distributedLock, DateTimeProvider);
     }
 
     private async Task<PaymentTransaction> SeedOldPendingTransactionAsync(CancellationToken ct = default)
@@ -113,7 +111,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
         _gateway.VerifyAsync(Arg.Any<string>(), Arg.Any<Money>(), Arg.Any<CancellationToken>())
             .Returns(new PaymentVerificationResult(Guid.NewGuid(), true, 555666L, null, 0m));
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        _auditService
+        AuditService
             .LogInformationAsync(Arg.Is<string>(s => s!.Contains("Complete")), Arg.Any<CancellationToken>())
             .Returns(call =>
             {
@@ -139,7 +137,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
         var persisted = await verify.PaymentTransactions.FirstAsync(t => t.Id == transaction.Id);
         persisted.IsSuccessful().ShouldBeTrue();
         persisted.RefId.ShouldBe(555666L);
-        await _auditService.Received(1).LogWarningAsync(
+        await AuditService.Received(1).LogWarningAsync(
             Arg.Is<string>(s => s!.Contains("was PAID but showed Pending")),
             Arg.Any<CancellationToken>());
     }
@@ -151,7 +149,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
         _gateway.VerifyAsync(Arg.Any<string>(), Arg.Any<Money>(), Arg.Any<CancellationToken>())
             .Throws(new ExternalServiceException("Zarinpal", "timeout"));
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        _auditService
+        AuditService
             .LogInformationAsync(Arg.Is<string>(s => s!.Contains("Complete")), Arg.Any<CancellationToken>())
             .Returns(call =>
             {
@@ -172,7 +170,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
         await using var verify = Fixture.CreateContext();
         var persisted = await verify.PaymentTransactions.FirstAsync(t => t.Id == transaction.Id);
         persisted.Status.Value.ShouldBe("Failed");
-        await _auditService.DidNotReceiveWithAnyArgs().LogWarningAsync(default!, default);
+        await AuditService.DidNotReceiveWithAnyArgs().LogWarningAsync(default!, default);
     }
 
     [Fact]
@@ -212,3 +210,4 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
             Arg.Any<CancellationToken>());
     }
 }
+

@@ -6,7 +6,7 @@ using SharedKernel.Abstractions.Interfaces;
 
 namespace Tests.Infrastructure.BackgroundJobs;
 
-public class ExpiredSessionCleanupJobTests
+public class ExpiredSessionCleanupJobTests : HandlerTestBase
 {
     private sealed class TestContext
     {
@@ -18,7 +18,7 @@ public class ExpiredSessionCleanupJobTests
         public CancellationTokenSource Cts { get; init; } = null!;
     }
 
-    private static TestContext BuildContext(bool lockAcquired = true)
+    private TestContext BuildContext(bool lockAcquired = true)
     {
         var handle = Substitute.For<ILockHandle>();
         handle.IsAcquired.Returns(lockAcquired);
@@ -28,8 +28,6 @@ public class ExpiredSessionCleanupJobTests
             .Returns(handle);
 
         var sessionRepository = Substitute.For<ISessionRepository>();
-        var unitOfWork = Substitute.For<IUnitOfWork>();
-        var auditService = Substitute.For<IAuditService>();
 
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         var scope = Substitute.For<IServiceScope>();
@@ -37,16 +35,16 @@ public class ExpiredSessionCleanupJobTests
         scopeFactory.CreateScope().Returns(scope);
         scope.ServiceProvider.Returns(provider);
         provider.GetService(typeof(ISessionRepository)).Returns(sessionRepository);
-        provider.GetService(typeof(IUnitOfWork)).Returns(unitOfWork);
-        provider.GetService(typeof(IAuditService)).Returns(auditService);
+        provider.GetService(typeof(IUnitOfWork)).Returns(UnitOfWork);
+        provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
         return new TestContext
         {
             ScopeFactory = scopeFactory,
             DistributedLock = distributedLock,
             SessionRepository = sessionRepository,
-            UnitOfWork = unitOfWork,
-            AuditService = auditService,
+            UnitOfWork = this.UnitOfWork,
+            AuditService = this.AuditService,
             Cts = new CancellationTokenSource()
         };
     }
@@ -66,7 +64,7 @@ public class ExpiredSessionCleanupJobTests
     public async Task ExecuteAsync_WhenLockNotAcquired_DoesNothing()
     {
         var ctx = BuildContext(lockAcquired: false);
-        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, Substitute.For<IDateTimeProvider>());
+        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, DateTimeProvider);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         await RunWithTimeoutAsync(job, timeout.Token);
@@ -83,7 +81,7 @@ public class ExpiredSessionCleanupJobTests
         ctx.SessionRepository
             .GetExpiredActiveSessionsAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns([session]);
-        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, Substitute.For<IDateTimeProvider>());
+        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, DateTimeProvider);
 
         ctx.UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
@@ -118,7 +116,7 @@ public class ExpiredSessionCleanupJobTests
             .GetExpiredActiveSessionsAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns([]);
 
-        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, Substitute.For<IDateTimeProvider>());
+        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, DateTimeProvider);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         await RunWithTimeoutAsync(job, timeout.Token);
 
@@ -135,7 +133,7 @@ public class ExpiredSessionCleanupJobTests
         ctx.SessionRepository
             .GetExpiredActiveSessionsAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns([]);
-        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, Substitute.For<IDateTimeProvider>());
+        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, DateTimeProvider);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         await RunWithTimeoutAsync(job, timeout.Token);
@@ -155,7 +153,7 @@ public class ExpiredSessionCleanupJobTests
             .GetExpiredActiveSessionsAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<IReadOnlyList<global::Domain.Security.Aggregates.UserSession>>(
                 new InvalidOperationException("db down")));
-        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, Substitute.For<IDateTimeProvider>());
+        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, DateTimeProvider);
 
         try { await job.StartAsync(ctx.Cts.Token); }
         catch (OperationCanceledException) { }

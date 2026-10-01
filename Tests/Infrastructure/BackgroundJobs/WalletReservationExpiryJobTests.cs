@@ -16,8 +16,6 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
 
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
     private readonly IMediator _mediator = Substitute.For<IMediator>();
-    private readonly IAuditService _auditService = Substitute.For<IAuditService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
 
     private WalletReservationExpiryJob BuildJob()
     {
@@ -27,7 +25,7 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
             .AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(handle);
 
-        _dateTimeProvider.UtcNow.Returns(FixedNow);
+        DateTimeProvider.UtcNow.Returns(FixedNow);
 
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         var scope = Substitute.For<IServiceScope>();
@@ -37,9 +35,9 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
         provider.GetService(typeof(DBContext)).Returns(Context);
         provider.GetService(typeof(IDistributedLock)).Returns(_distributedLock);
         provider.GetService(typeof(IMediator)).Returns(_mediator);
-        provider.GetService(typeof(IAuditService)).Returns(_auditService);
+        provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
-        return new WalletReservationExpiryJob(scopeFactory, _distributedLock, _dateTimeProvider);
+        return new WalletReservationExpiryJob(scopeFactory, _distributedLock, DateTimeProvider);
     }
 
     private async Task<(Guid UserId, Guid ReservationId)> SeedReservationAsync(
@@ -136,7 +134,7 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
 
         await RunJobOnceAsync(BuildJob());
 
-        await _auditService.Received(1).LogSystemEventAsync(
+        await AuditService.Received(1).LogSystemEventAsync(
             "WalletReservationExpiryItemError",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -153,3 +151,4 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
             Arg.Any<CancellationToken>());
     }
 }
+

@@ -18,7 +18,7 @@ public class RefreshTokenHandlerTests : HandlerTestBase
 
     public RefreshTokenHandlerTests()
     {
-        DateTimeProvider.UtcNow.Returns(_now);
+        SetUtcNow(_now);
 
         var jwtOptions = Options.Create(new JwtOptions
         {
@@ -155,3 +155,4 @@ public class RefreshTokenHandlerTests : HandlerTestBase
         result.Value.AccessTokenExpiresAt.ShouldBe(_now.AddMinutes(60));
     }
 }
+
