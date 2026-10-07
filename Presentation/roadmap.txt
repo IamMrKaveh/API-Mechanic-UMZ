@@ -3,51 +3,6 @@
 مجموع: 399 فایل (بعد از حذف Command/Query/DTO/Interface های بدون منطق قابل تست)
 
 Presentation Layer (152)
-Analytic (3)
- Presentation/Analytic/Endpoints/AdminAnalyticsController.cs
- Presentation/Analytic/Mapping/AnalyticMappingConfig.cs
- Presentation/Analytic/Requests/AnalyticRequests.cs
-Attribute (2)
- Presentation/Attribute/Endpoints/AdminAttributesController.cs
- Presentation/Attribute/Requests/AttributeRequests.cs
-Audit (3)
- Presentation/Audit/Endpoints/AdminAuditLogsController.cs
- Presentation/Audit/Mapping/AuditMappingConfig.cs
- Presentation/Audit/Requests/AuditRequests.cs
-Auth (3)
- Presentation/Auth/Endpoints/AuthController.cs
- Presentation/Auth/Requests/AuthRequests.cs
- Presentation/Auth/Services/HttpGoogleAuthenticationService.cs
-Base (1)
- Presentation/Base/Endpoints/v1/BaseApiController.cs
-Brand (4)
- Presentation/Brand/Endpoints/AdminBrandController.cs
- Presentation/Brand/Endpoints/BrandController.cs
- Presentation/Brand/Mapping/BrandMappingConfig.cs
- Presentation/Brand/Requests/BrandRequests.cs
-Cart (2)
- Presentation/Cart/Endpoints/CartsController.cs
- Presentation/Cart/Requests/CartRequests.cs
-Category (3)
- Presentation/Category/Endpoints/AdminCategoryController.cs
- Presentation/Category/Endpoints/CategoryController.cs
- Presentation/Category/Requests/CategoryRequests.cs
-Discount (4)
- Presentation/Discount/Endpoints/AdminDiscountsController.cs
- Presentation/Discount/Endpoints/DiscountsController.cs
- Presentation/Discount/Mapping/DiscountMappingConfig.cs
- Presentation/Discount/Requests/DiscountRequests.cs
-Inventory (5)
- Presentation/Inventory/Endpoints/AdminInventoryController.cs
- Presentation/Inventory/Endpoints/AdminWarehouseController.cs
- Presentation/Inventory/Endpoints/InventoryController.cs
- Presentation/Inventory/Requests/InventoryRequests.cs
- Presentation/Inventory/Requests/WarehouseRequests.cs
-Localization (1)
- Presentation/Localization/WalletErrorTranslator.cs
-Location (2)
- Presentation/Location/Endpoints/LocationController.cs
- Presentation/Location/Requests/LocationRequests.cs
 Media (4)
  Presentation/Media/Endpoints/AdminMediaController.cs
  Presentation/Media/Endpoints/MediaController.cs
