@@ -1,12 +1,15 @@
 using Application.Auth.Contracts;
+using Application.Auth.Features.Commands.GoogleLogin;
 using Application.Auth.Features.Commands.Logout;
 using Application.Auth.Features.Commands.LogoutAll;
 using Application.Auth.Features.Commands.RefreshToken;
+using Application.Auth.Features.Commands.SendOtp;
 using Application.Auth.Features.Commands.VerifyOtp;
 using Application.Auth.Features.Shared;
 using Application.User.Features.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Presentation.Auth.Endpoints;
@@ -24,6 +27,7 @@ public class AuthControllerTests
     private const string CookieName = "refresh_token";
 
     private readonly IMediator _mediator = Substitute.For<IMediator>();
+    private readonly IGoogleAuthenticationService _googleAuthService = Substitute.For<IGoogleAuthenticationService>();
     private readonly AuthController _controller;
 
     public AuthControllerTests()
@@ -41,7 +45,7 @@ public class AuthControllerTests
         _controller = new AuthController(
             _mediator,
             Substitute.For<IMapper>(),
-            Substitute.For<IGoogleAuthenticationService>(),
+            _googleAuthService,
             new AuthCookieService(cookieOptions));
 
         var services = new ServiceCollection();
@@ -216,6 +220,128 @@ public class AuthControllerTests
                 .Any(attribute => attribute is ValidateAntiForgeryTokenAttribute)
                 .ShouldBeTrue();
         }
+    }
+
+    [Fact]
+    public void GoogleLogin_ReturnsChallengeResult()
+    {
+        // Arrange
+        var urlHelper = Substitute.For<IUrlHelper>();
+        urlHelper.Action(Arg.Any<UrlActionContext>()).Returns("/api/v1/auth/google/callback");
+        _controller.Url = urlHelper;
+
+        // Act
+        var result = _controller.GoogleLogin();
+
+        // Assert
+        result.ShouldBeOfType<ChallengeResult>();
+    }
+
+    [Fact]
+    public async Task GoogleCallback_WhenProfileIsNull_ReturnsBadRequest()
+    {
+        // Arrange
+        _googleAuthService.AuthenticateAsync(Arg.Any<CancellationToken>()).Returns((GoogleProfile?)null);
+
+        // Act
+        var result = await _controller.GoogleCallback(CancellationToken.None);
+
+        // Assert
+        var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
+        badRequest.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
+        await _mediator.DidNotReceiveWithAnyArgs().Send(Arg.Any<GoogleLoginCommand>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GoogleCallback_WithValidProfile_SendsCommand_AndReturnsOkWithCookie()
+    {
+        // Arrange
+        _googleAuthService.AuthenticateAsync(Arg.Any<CancellationToken>())
+            .Returns(new GoogleProfile("user@example.com", "First", "Last", "google-key-1"));
+        _mediator
+            .Send(Arg.Any<GoogleLoginCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(ServiceResult<TokenResultDto>.Success(new TokenResultDto("new-access", "new-refresh"))));
+
+        // Act
+        var result = await _controller.GoogleCallback(CancellationToken.None);
+
+        // Assert
+        var ok = result.ShouldBeOfType<OkObjectResult>();
+        ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
+        var body = ok.Value.ShouldBeOfType<ApiResponse>();
+        body.Success.ShouldBeTrue();
+        await _mediator.Received(1).Send(
+            Arg.Is<GoogleLoginCommand>(c => c.Email == "user@example.com" && c.ProviderKey == "google-key-1"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RequestOtp_WithValidRequest_SendsCommand_AndReturns201()
+    {
+        // Arrange
+        var request = new SendOtpRequest("09123456789");
+        _mediator
+            .Send(Arg.Any<SendOtpCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(ServiceResult.Success()));
+
+        // Act
+        var result = await _controller.RequestOtp(request, CancellationToken.None);
+
+        // Assert
+        var created = result.ShouldBeOfType<ObjectResult>();
+        created.StatusCode.ShouldBe(StatusCodes.Status201Created);
+        await _mediator.Received(1).Send(
+            Arg.Is<SendOtpCommand>(c => c.PhoneNumber == "09123456789"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RequestOtp_WhenFailure_MapsToErrorStatus()
+    {
+        // Arrange
+        var request = new SendOtpRequest("09123456789");
+        _mediator
+            .Send(Arg.Any<SendOtpCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(ServiceResult.Failure("خطا")));
+
+        // Act
+        var result = await _controller.RequestOtp(request, CancellationToken.None);
+
+        // Assert
+        var failure = result.ShouldBeOfType<ObjectResult>();
+        failure.StatusCode.ShouldBe(StatusCodes.Status500InternalServerError);
+        var body = failure.Value.ShouldBeOfType<ApiResponse>();
+        body.Success.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void AuthController_HasRouteAttribute()
+    {
+        var routeAttr = typeof(AuthController).GetCustomAttributes(typeof(RouteAttribute), false)
+            .OfType<RouteAttribute>()
+            .SingleOrDefault();
+
+        routeAttr.ShouldNotBeNull();
+        routeAttr!.Template.ShouldBe("api/v{version:apiVersion}/auth");
+    }
+
+    [Theory]
+    [InlineData(nameof(AuthController.GoogleLogin), "google")]
+    [InlineData(nameof(AuthController.GoogleCallback), "google/callback")]
+    [InlineData(nameof(AuthController.RequestOtp), "otp")]
+    [InlineData(nameof(AuthController.VerifyOtp), "otp/verify")]
+    [InlineData(nameof(AuthController.RefreshToken), "token/refresh")]
+    [InlineData(nameof(AuthController.Logout), "session")]
+    [InlineData(nameof(AuthController.LogoutAll), "sessions")]
+    public void Actions_HaveExpectedHttpTemplate(string methodName, string expectedTemplate)
+    {
+        var method = typeof(AuthController).GetMethod(methodName);
+        method.ShouldNotBeNull();
+        var template = method!.GetCustomAttributes(false)
+            .OfType<HttpMethodAttribute>()
+            .SingleOrDefault()
+            ?.Template;
+        template.ShouldBe(expectedTemplate);
     }
 
     private void SetRequestCookie(string value)
