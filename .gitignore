@@ -70,3 +70,4 @@ nunit-*.xml
 **/logs/
 extract.txt
 extract.py
+/skills
