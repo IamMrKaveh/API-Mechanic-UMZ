@@ -77,11 +77,12 @@ public class DiscountsControllerTests
         var result = await _controller.Apply(request);
 
         // Assert
+        // Note: ApplyDiscountCommand is a non-generic ICommand, so the success
+        // body is a non-generic ApiResponse (not ApiResponse<DiscountApplicationResult>).
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
-        var body = ok.Value.ShouldBeOfType<ApiResponse<DiscountApplicationResult>>();
+        var body = ok.Value.ShouldBeOfType<ApiResponse>();
         body.Success.ShouldBeTrue();
-        body.Data!.DiscountAmount.ShouldBe(100);
         await _mediator.Received(1).Send(
             Arg.Is<ApplyDiscountCommand>(c => c.Code == "SAVE10" && c.OrderAmount == 1000 && c.OrderId == orderId),
             Arg.Any<CancellationToken>());

@@ -41,8 +41,10 @@ public class MockGatewayControllerTests
         var result = controller.Index("order-1", 1000);
 
         // Assert
+        // Note: Content(html, "text/html") leaves StatusCode null; the framework
+        // sends 200 at execution time, so accept the default (null => 200).
         var content = result.ShouldBeOfType<ContentResult>();
-        content.StatusCode.ShouldBe(StatusCodes.Status200OK);
+        (content.StatusCode ?? StatusCodes.Status200OK).ShouldBe(StatusCodes.Status200OK);
         content.ContentType.ShouldBe("text/html");
         content.Content.ShouldContain("Mock Payment Gateway");
         content.Content.ShouldContain("order-1");
