@@ -149,7 +149,9 @@ public class BaseApiControllerTests
             ServiceResult.Success(), StatusCodes.Status204NoContent);
 
         // Assert
-        var obj = result.ShouldBeOfType<ObjectResult>();
+        // Note: success mapping produces OkObjectResult (derived from ObjectResult)
+        // with the overridden status code.
+        var obj = result.ShouldBeAssignableTo<ObjectResult>();
         obj.StatusCode.ShouldBe(StatusCodes.Status204NoContent);
     }
 

@@ -177,7 +177,9 @@ public class CartControllerTests
         var result = await _controller.ClearCart(CancellationToken.None);
 
         // Assert
-        var obj = result.ShouldBeOfType<ObjectResult>();
+        // Note: ToActionResult with a status override keeps the OkObjectResult
+        // runtime type (derived from ObjectResult) and only changes StatusCode.
+        var obj = result.ShouldBeAssignableTo<ObjectResult>();
         obj.StatusCode.ShouldBe(StatusCodes.Status204NoContent);
         await _mediator.Received(1).Send(Arg.Any<ClearCartCommand>(), Arg.Any<CancellationToken>());
     }
