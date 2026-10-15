@@ -1,3 +1,4 @@
+using System.Globalization;
 using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 using Domain.Order.ValueObjects;
@@ -59,7 +60,7 @@ public sealed class ZarinPalPaymentGateway(
 
         var code = result?.Errors?.Code ?? -1;
         await auditService.LogErrorAsync($"[ZarinPal] Request failed code={code}", ct);
-        throw new ExternalServiceException(GatewayName, ZarinPalErrorMapper.GetMessage(code), code.ToString());
+        throw new ExternalServiceException(GatewayName, ZarinPalErrorMapper.GetMessage(code), code.ToString(CultureInfo.InvariantCulture));
     }
 
     public async Task<PaymentVerificationResult> VerifyAsync(
@@ -92,7 +93,7 @@ public sealed class ZarinPalPaymentGateway(
         }
 
         var code = result?.Errors?.Code ?? -1;
-        throw new ExternalServiceException(GatewayName, ZarinPalErrorMapper.GetMessage(code), code.ToString());
+        throw new ExternalServiceException(GatewayName, ZarinPalErrorMapper.GetMessage(code), code.ToString(CultureInfo.InvariantCulture));
     }
 
     private static long ToRial(Money amount)

@@ -46,9 +46,9 @@ public class MockGatewayControllerTests
         var content = result.ShouldBeOfType<ContentResult>();
         (content.StatusCode ?? StatusCodes.Status200OK).ShouldBe(StatusCodes.Status200OK);
         content.ContentType.ShouldBe("text/html");
-        content.Content.ShouldContain("Mock Payment Gateway");
-        content.Content.ShouldContain("order-1");
-        content.Content.ShouldContain("1000");
+        content.Content!.ShouldContain("Mock Payment Gateway");
+        content.Content!.ShouldContain("order-1");
+        content.Content!.ShouldContain("1000");
     }
 
     [Fact]

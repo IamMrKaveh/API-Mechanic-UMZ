@@ -42,7 +42,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
         _server.Requests.Count.ShouldBe(1);
         _server.Requests[0].Method.ShouldBe("HEAD");
         await AuditService.Received(1).LogInformationAsync(
-            Arg.Is<string>(s => s.Contains("already exists")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("already exists")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
         create.Body.ShouldContain("persian_advanced");
         create.Body.ShouldContain("persian_autocomplete");
         await AuditService.Received(1).LogInformationAsync(
-            Arg.Is<string>(s => s.Contains("Successfully created index products_v1")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("Successfully created index products_v1")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
 
         result.ShouldBeFalse();
         await AuditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("Failed to create index products_v1")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("Failed to create index products_v1")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
         result.ShouldBeTrue();
         _server.Requests[0].Path.ShouldContain("categories_v1");
         await AuditService.Received(1).LogInformationAsync(
-            Arg.Is<string>(s => s.Contains("categories_v1")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("categories_v1")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
 
         result.ShouldBeFalse();
         await AuditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("categories_v1")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("categories_v1")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
         result.ShouldBeTrue();
         _server.Requests[0].Path.ShouldContain("brands_v1");
         await AuditService.Received(1).LogInformationAsync(
-            Arg.Is<string>(s => s.Contains("brands_v1")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("brands_v1")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
 
         result.ShouldBeFalse();
         await AuditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("brands_v1")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("brands_v1")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
         result.ShouldBeTrue();
         _server.Requests[0].Method.ShouldBe("DELETE");
         await AuditService.Received(1).LogInformationAsync(
-            Arg.Is<string>(s => s.Contains("Successfully deleted index products_v1")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("Successfully deleted index products_v1")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
 
         result.ShouldBeFalse();
         await AuditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("Failed to delete index")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("Failed to delete index")), Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -209,7 +209,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
         _server.Requests[0].Body.ShouldContain("products_v1");
         _server.Requests[0].Body.ShouldContain("products_v2");
         await AuditService.Received(1).LogInformationAsync(
-            Arg.Is<string>(s => s.Contains("Reindex from products_v1 to products_v2 succeeded")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("Reindex from products_v1 to products_v2 succeeded")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public class ElasticIndexManagerTests : HandlerTestBase, IAsyncLifetime{
 
         result.ShouldBeFalse();
         await AuditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("Reindex failed")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("Reindex failed")), Arg.Any<CancellationToken>());
     }
 
     [Fact]

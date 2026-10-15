@@ -131,7 +131,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
 
         await _gateway.Received(1).VerifyAsync(
             transaction.Authority.Value,
-            Arg.Is<Money>(m => m.Amount == 200_000m),
+            Arg.Is<Money>(m => m!.Amount == 200_000m),
             Arg.Any<CancellationToken>());
         await using var verify = Fixture.CreateContext();
         var persisted = await verify.PaymentTransactions.FirstAsync(t => t.Id == transaction.Id);

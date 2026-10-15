@@ -1,4 +1,5 @@
-﻿using Application.Payment.Features.Shared;
+﻿using System.Globalization;
+using Application.Payment.Features.Shared;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
 using SharedKernel.Abstractions.Interfaces;
@@ -83,7 +84,7 @@ public sealed class CompleteWalletTopUpHandler(
                         reason, topUp.Amount.Amount));
             }
 
-            var refId = verifyValue.RefId?.ToString() ?? request.Authority;
+            var refId = verifyValue.RefId?.ToString(CultureInfo.InvariantCulture) ?? request.Authority;
             topUp.MarkSucceeded(refId, now);
 
             var wallet = await walletRepository.GetByUserIdForUpdateAsync(topUp.UserId, ct);

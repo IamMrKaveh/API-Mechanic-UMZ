@@ -1,3 +1,4 @@
+using System.Globalization;
 using Domain.Review.Interfaces;
 using Domain.Review.ValueObjects;
 
@@ -29,7 +30,7 @@ public sealed class ReplyToReviewHandler(
         auditContextEnricher.Set("previouslyHadReply", previouslyHadReply.ToString());
         auditContextEnricher.Set("reviewId", review.Id.Value.ToString());
         auditContextEnricher.Set("productId", review.ProductId.Value.ToString());
-        auditContextEnricher.Set("replyLength", request.Reply.Length.ToString());
+        auditContextEnricher.Set("replyLength", request.Reply.Length.ToString(CultureInfo.InvariantCulture));
 
         return ServiceResult.Success();
     }

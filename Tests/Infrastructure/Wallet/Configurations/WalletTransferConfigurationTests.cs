@@ -221,11 +221,11 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
     public void Model_Transfer_FromUserIdAndToUserIdAreMappedToDeclaredColumns()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletTransfer));
-        var storeObject = StoreObjectIdentifier.Table(entityType!.GetTableName()!, entityType.GetSchema());
+        var storeObject = StoreObjectIdentifier.Table(entityType!.GetTableName()!, entityType!.GetSchema());
 
-        entityType.FindProperty(nameof(WalletTransfer.FromUserId))!
+        entityType!.FindProperty(nameof(WalletTransfer.FromUserId))!
             .GetColumnName(storeObject).ShouldBe("FromUserId");
-        entityType.FindProperty(nameof(WalletTransfer.ToUserId))!
+        entityType!.FindProperty(nameof(WalletTransfer.ToUserId))!
             .GetColumnName(storeObject).ShouldBe("ToUserId");
     }
 

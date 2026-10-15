@@ -112,7 +112,7 @@ public class PaymentSucceededNotificationEventHandlerTests
         await _notificationService.Received(1).CreateNotificationAsync(
             Arg.Any<UserId>(),
             Arg.Any<string>(),
-            Arg.Is<string>(m => m!.Contains(refId.ToString())),
+            Arg.Is<string>(m => m!.Contains(refId.ToString(CultureInfo.InvariantCulture))),
             Arg.Any<string>(),
             Arg.Any<string?>(),
             Arg.Any<Guid?>(),

@@ -54,7 +54,7 @@ public class PaymentSucceededWalletCreditEventHandlerTests : HandlerTestBase
         await _mediator.Received(1).Send(
             Arg.Is<CreditWalletCommand>(c =>
                 c!.ReferenceId == evt.PaymentTransactionId.Value.ToString() &&
-                c.IdempotencyKey == $"payment-topup-{evt.PaymentTransactionId}"),
+                c!.IdempotencyKey == $"payment-topup-{evt.PaymentTransactionId}"),
             Arg.Any<CancellationToken>());
     }
 

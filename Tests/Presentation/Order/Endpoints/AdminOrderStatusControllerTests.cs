@@ -57,7 +57,7 @@ public class AdminOrderStatusControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetOrderStatusesQuery>(q => q.OnlyActive == true),
+            Arg.Is<GetOrderStatusesQuery>(q => q!.OnlyActive == true),
             Arg.Any<CancellationToken>());
     }
 
@@ -68,7 +68,7 @@ public class AdminOrderStatusControllerTests
         var id = Guid.NewGuid();
         var expected = new OrderStatusDto { Id = id, Name = "Pending" };
 
-        _mediator.Send(Arg.Is<GetOrderStatusQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetOrderStatusQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<OrderStatusDto>.Success(expected));
 
         // Act
@@ -98,7 +98,7 @@ public class AdminOrderStatusControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CreateOrderStatusCommand>(c => c.Name == "pending" && c.SortOrder == 1),
+            Arg.Is<CreateOrderStatusCommand>(c => c!.Name == "pending" && c!.SortOrder == 1),
             Arg.Any<CancellationToken>());
     }
 
@@ -119,7 +119,7 @@ public class AdminOrderStatusControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateOrderStatusDefinitionCommand>(c => c.Id == id && c.RowVersion == "rv-1" && c.SortOrder == 2),
+            Arg.Is<UpdateOrderStatusDefinitionCommand>(c => c!.Id == id && c!.RowVersion == "rv-1" && c!.SortOrder == 2),
             Arg.Any<CancellationToken>());
     }
 
@@ -140,7 +140,7 @@ public class AdminOrderStatusControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateOrderStatusDefinitionCommand>(c => c.Id == id && c.RowVersion == null),
+            Arg.Is<UpdateOrderStatusDefinitionCommand>(c => c!.Id == id && c!.RowVersion == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -160,7 +160,7 @@ public class AdminOrderStatusControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteOrderStatusCommand>(c => c.Id == id),
+            Arg.Is<DeleteOrderStatusCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -180,7 +180,7 @@ public class AdminOrderStatusControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ActivateOrderStatusCommand>(c => c.Id == id),
+            Arg.Is<ActivateOrderStatusCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -200,7 +200,7 @@ public class AdminOrderStatusControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeactivateOrderStatusCommand>(c => c.Id == id),
+            Arg.Is<DeactivateOrderStatusCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -220,7 +220,7 @@ public class AdminOrderStatusControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<SetDefaultOrderStatusCommand>(c => c.Id == id),
+            Arg.Is<SetDefaultOrderStatusCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 

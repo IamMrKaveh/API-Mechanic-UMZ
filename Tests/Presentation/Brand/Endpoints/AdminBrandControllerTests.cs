@@ -74,7 +74,7 @@ public class AdminBrandControllerTests
         var id = Guid.NewGuid();
         var expected = new BrandDetailDto { Id = id, Name = "Brand1" };
 
-        _mediator.Send(Arg.Is<GetBrandDetailQuery>(q => q.BrandId == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetBrandDetailQuery>(q => q!.BrandId == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<BrandDetailDto?>.Success(expected));
 
         // Act
@@ -108,7 +108,7 @@ public class AdminBrandControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateBrandCommand>(c => c.BrandId == id && c.Name == "Updated"),
+            Arg.Is<UpdateBrandCommand>(c => c!.BrandId == id && c!.Name == "Updated"),
             Arg.Any<CancellationToken>());
     }
 
@@ -128,7 +128,7 @@ public class AdminBrandControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteBrandCommand>(c => c.BrandId == id),
+            Arg.Is<DeleteBrandCommand>(c => c!.BrandId == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -150,7 +150,7 @@ public class AdminBrandControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<MoveBrandCommand>(c => c.BrandId == request.BrandId && c.TargetCategoryId == request.TargetCategoryId),
+            Arg.Is<MoveBrandCommand>(c => c!.BrandId == request.BrandId && c!.TargetCategoryId == request.TargetCategoryId),
             Arg.Any<CancellationToken>());
     }
 

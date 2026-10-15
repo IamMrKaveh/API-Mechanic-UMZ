@@ -29,8 +29,8 @@ public class UserLockedOutEventHandlerTests : HandlerTestBase
             "User Locked out",
             Arg.Is<string>(s =>
                 s!.Contains(userId.Value.ToString())
-                && s.Contains('5')
-                && s.Contains(lockoutEnd.ToString())),
+                && s!.Contains('5')
+                && s!.Contains(lockoutEnd.ToString(CultureInfo.CurrentCulture))),
             Arg.Any<CancellationToken>());
     }
 
@@ -49,7 +49,7 @@ public class UserLockedOutEventHandlerTests : HandlerTestBase
 
         await AuditService.Received(1).LogSystemEventAsync(
             Arg.Any<string>(),
-            Arg.Is<string>(s => s!.Contains(failedAttempts.ToString())),
+            Arg.Is<string>(s => s!.Contains(failedAttempts.ToString(CultureInfo.CurrentCulture))),
             Arg.Any<CancellationToken>());
     }
 

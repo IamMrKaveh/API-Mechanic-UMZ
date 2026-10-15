@@ -25,7 +25,7 @@ public class GetInventoryTransactionsHandlerTests
 
         _queryService
             .GetTransactionsPagedAsync(
-                Arg.Is<VariantId?>(v => v != null && v.Value == variantId),
+                Arg.Is<VariantId?>(v => v != null && v!.Value == variantId),
                 Arg.Any<string?>(),
                 Arg.Any<DateTime?>(),
                 Arg.Any<DateTime?>(),

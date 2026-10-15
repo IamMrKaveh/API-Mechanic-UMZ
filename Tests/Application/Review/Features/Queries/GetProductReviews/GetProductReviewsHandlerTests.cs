@@ -81,7 +81,7 @@ public class GetProductReviewsHandlerTests : HandlerTestBase
                 "Newest",
                 null,
                 false,
-                Arg.Is<UserId?>(u => u != null && u.Value == userGuid),
+                Arg.Is<UserId?>(u => u != null && u!.Value == userGuid),
                 Arg.Any<CancellationToken>());
     }
 

@@ -84,7 +84,7 @@ public class UserPasswordChangedEventHandlerTests : HandlerTestBase
 
         await AuditService.Received(1).LogSystemEventAsync(
             "PasswordChangedSessionRevocationFailed",
-            Arg.Is<string>(s => s!.Contains(userId.Value.ToString()) && s.Contains(exception.Message)),
+            Arg.Is<string>(s => s!.Contains(userId.Value.ToString()) && s!.Contains(exception.Message)),
             Arg.Any<CancellationToken>());
         await AuditService.DidNotReceive().LogSecurityEventAsync(
             Arg.Any<string>(),

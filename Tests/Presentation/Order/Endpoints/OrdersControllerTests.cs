@@ -63,7 +63,7 @@ public class OrdersControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<PaginatedResult<OrderListItemDto>>>();
         body.Success.ShouldBeTrue();
         await _mediator.Received(1).Send(
-            Arg.Is<GetUserOrdersQuery>(q => q.Status == "Pending" && q.Page == 1 && q.PageSize == 10),
+            Arg.Is<GetUserOrdersQuery>(q => q!.Status == "Pending" && q!.Page == 1 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 
@@ -74,7 +74,7 @@ public class OrdersControllerTests
         var id = Guid.NewGuid();
         var expected = new OrderDto { Id = id, OrderNumber = "ORD-1" };
 
-        _mediator.Send(Arg.Is<GetOrderDetailsQuery>(q => q.OrderId == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetOrderDetailsQuery>(q => q!.OrderId == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<OrderDto>.Success(expected));
 
         // Act
@@ -110,10 +110,10 @@ public class OrdersControllerTests
         body.Data!.OrderNumber.ShouldBe("ORD-1");
         await _mediator.Received(1).Send(
             Arg.Is<CheckoutFromCartCommand>(c =>
-                c.CartId == cartId &&
-                c.ShippingId == shippingId &&
-                c.AddressId == addressId &&
-                c.DiscountCode == "SAVE10"),
+                c!.CartId == cartId &&
+                c!.ShippingId == shippingId &&
+                c!.AddressId == addressId &&
+                c!.DiscountCode == "SAVE10"),
             Arg.Any<CancellationToken>());
     }
 
@@ -134,7 +134,7 @@ public class OrdersControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CancelOrderCommand>(c => c.OrderId == id && c.Reason == "changed mind" && c.RowVersion == "rv-1"),
+            Arg.Is<CancelOrderCommand>(c => c!.OrderId == id && c!.Reason == "changed mind" && c!.RowVersion == "rv-1"),
             Arg.Any<CancellationToken>());
     }
 
@@ -154,7 +154,7 @@ public class OrdersControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ConfirmDeliveryCommand>(c => c.OrderId == id && c.RowVersion == null),
+            Arg.Is<ConfirmDeliveryCommand>(c => c!.OrderId == id && c!.RowVersion == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -175,7 +175,7 @@ public class OrdersControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RequestReturnCommand>(c => c.OrderId == id && c.Reason == "defective"),
+            Arg.Is<RequestReturnCommand>(c => c!.OrderId == id && c!.Reason == "defective"),
             Arg.Any<CancellationToken>());
     }
 

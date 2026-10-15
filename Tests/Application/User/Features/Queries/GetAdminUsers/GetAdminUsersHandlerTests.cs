@@ -43,14 +43,14 @@ public class GetAdminUsersHandlerTests
         await _userQueryService.Received(1).GetAdminUsersPagedAsync(
             Arg.Is<AdminUserFilterParams>(f =>
                 f!.Search == "ali" &&
-                f.Role == "admin" &&
-                f.IsActive == true &&
-                f.IsAdmin == true &&
-                f.MinTotalSpent == 100m &&
-                f.CreatedAfter == createdAfter &&
-                f.IncludeDeleted == true &&
-                f.Page == 2 &&
-                f.PageSize == 15),
+                f!.Role == "admin" &&
+                f!.IsActive == true &&
+                f!.IsAdmin == true &&
+                f!.MinTotalSpent == 100m &&
+                f!.CreatedAfter == createdAfter &&
+                f!.IncludeDeleted == true &&
+                f!.Page == 2 &&
+                f!.PageSize == 15),
             Arg.Any<CancellationToken>());
     }
 
@@ -68,14 +68,14 @@ public class GetAdminUsersHandlerTests
         await _userQueryService.Received(1).GetAdminUsersPagedAsync(
             Arg.Is<AdminUserFilterParams>(f =>
                 f!.Search == null &&
-                f.Role == null &&
-                f.IsActive == null &&
-                f.IsAdmin == null &&
-                f.MinTotalSpent == null &&
-                f.CreatedAfter == null &&
-                f.IncludeDeleted == false &&
-                f.Page == 1 &&
-                f.PageSize == 20),
+                f!.Role == null &&
+                f!.IsActive == null &&
+                f!.IsAdmin == null &&
+                f!.MinTotalSpent == null &&
+                f!.CreatedAfter == null &&
+                f!.IncludeDeleted == false &&
+                f!.Page == 1 &&
+                f!.PageSize == 20),
             Arg.Any<CancellationToken>());
     }
 }

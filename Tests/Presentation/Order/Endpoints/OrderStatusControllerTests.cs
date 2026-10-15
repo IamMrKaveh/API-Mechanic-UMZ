@@ -51,7 +51,7 @@ public class OrderStatusControllerTests
         body.Success.ShouldBeTrue();
         body.Data!.Count.ShouldBe(1);
         await _mediator.Received(1).Send(
-            Arg.Is<GetOrderStatusesQuery>(q => q.OnlyActive == true),
+            Arg.Is<GetOrderStatusesQuery>(q => q!.OnlyActive == true),
             Arg.Any<CancellationToken>());
     }
 
@@ -62,7 +62,7 @@ public class OrderStatusControllerTests
         var id = Guid.NewGuid();
         var expected = new OrderStatusDto { Id = id, Name = "Pending" };
 
-        _mediator.Send(Arg.Is<GetOrderStatusQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetOrderStatusQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<OrderStatusDto>.Success(expected));
 
         // Act

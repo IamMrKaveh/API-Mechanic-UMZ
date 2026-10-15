@@ -64,7 +64,7 @@ public class UnusualAmountRuleTests
         result.IsTriggered.ShouldBeTrue();
         result.Severity.ShouldBe(FraudAlertSeverity.High);
         result.Description.ShouldNotBeNullOrWhiteSpace();
-        result.Metadata.ShouldContain("\"multiplier\":10");
+        result.Metadata!.ShouldContain("\"multiplier\":10");
     }
 
     [Fact]
@@ -97,6 +97,6 @@ public class UnusualAmountRuleTests
         var result = await _sut.EvaluateAsync(context);
 
         result.IsTriggered.ShouldBeTrue();
-        result.Metadata.ShouldContain("\"amount\":3000000");
+        result.Metadata!.ShouldContain("\"amount\":3000000");
     }
 }

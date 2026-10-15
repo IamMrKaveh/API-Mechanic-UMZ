@@ -1,4 +1,5 @@
 ﻿using Application.Payment.Contracts;
+using System.Globalization;
 using Application.Payment.Features.Shared;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
@@ -70,7 +71,7 @@ public sealed class ZarinPalSandboxGateway(
         }
 
         await auditService.LogErrorAsync($"[ZarinPalSandbox] Initiate failed code={code}", ct);
-        throw new ExternalServiceException(GatewayName, MapErrorCode(code), code.ToString());
+        throw new ExternalServiceException(GatewayName, MapErrorCode(code), code.ToString(CultureInfo.InvariantCulture));
     }
 
     public async Task<PaymentVerificationResult> VerifyAsync(
@@ -104,7 +105,7 @@ public sealed class ZarinPalSandboxGateway(
             return new PaymentVerificationResult(null, true, parsed!.Data!.RefId, parsed.Data.CardPan, parsed.Data.Fee);
         }
 
-        throw new ExternalServiceException(GatewayName, MapErrorCode(code), code.ToString());
+        throw new ExternalServiceException(GatewayName, MapErrorCode(code), code.ToString(CultureInfo.InvariantCulture));
     }
 
     private HttpClient CreateClient()

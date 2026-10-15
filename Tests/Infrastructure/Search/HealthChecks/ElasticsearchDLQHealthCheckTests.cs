@@ -93,7 +93,7 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
         var result = await sut.CheckHealthAsync(new HealthCheckContext());
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
-        result.Description.ShouldContain("Too many permanently failed operations");
+        result.Description!.ShouldContain("Too many permanently failed operations");
         result.Data["failed_count"].ShouldBe(101);
     }
 
@@ -121,7 +121,7 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
         var result = await sut.CheckHealthAsync(new HealthCheckContext());
 
         result.Status.ShouldBe(HealthStatus.Degraded);
-        result.Description.ShouldContain("High number of pending operations");
+        result.Description!.ShouldContain("High number of pending operations");
         result.Data["pending_count"].ShouldBe(1001);
     }
 
@@ -177,6 +177,6 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
         await auditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("DLQ health check failed")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("DLQ health check failed")), Arg.Any<CancellationToken>());
     }
 }

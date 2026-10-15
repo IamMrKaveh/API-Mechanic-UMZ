@@ -87,7 +87,7 @@ public class AuthControllerTests
         await _controller.RefreshToken(CancellationToken.None);
 
         await _mediator.Received(1).Send(
-            Arg.Is<RefreshTokenCommand>(command => command.RefreshToken == "old-refresh"),
+            Arg.Is<RefreshTokenCommand>(command => command!.RefreshToken == "old-refresh"),
             Arg.Any<CancellationToken>());
     }
 
@@ -151,7 +151,7 @@ public class AuthControllerTests
 
         result.ShouldBeOfType<OkObjectResult>();
         await _mediator.Received(1).Send(
-            Arg.Is<LogoutCommand>(command => command.RefreshToken == "old-refresh"),
+            Arg.Is<LogoutCommand>(command => command!.RefreshToken == "old-refresh"),
             Arg.Any<CancellationToken>());
     }
 
@@ -166,7 +166,7 @@ public class AuthControllerTests
 
         result.ShouldBeOfType<OkObjectResult>();
         await _mediator.Received(1).Send(
-            Arg.Is<LogoutCommand>(command => command.RefreshToken == null),
+            Arg.Is<LogoutCommand>(command => command!.RefreshToken == null),
             Arg.Any<CancellationToken>());
         var setCookie = _controller.Response.Headers.SetCookie.ToString();
         setCookie.ShouldContain($"{CookieName}=");
@@ -271,7 +271,7 @@ public class AuthControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse>();
         body.Success.ShouldBeTrue();
         await _mediator.Received(1).Send(
-            Arg.Is<GoogleLoginCommand>(c => c.Email == "user@example.com" && c.ProviderKey == "google-key-1"),
+            Arg.Is<GoogleLoginCommand>(c => c!.Email == "user@example.com" && c!.ProviderKey == "google-key-1"),
             Arg.Any<CancellationToken>());
     }
 
@@ -291,7 +291,7 @@ public class AuthControllerTests
         var created = result.ShouldBeOfType<ObjectResult>();
         created.StatusCode.ShouldBe(StatusCodes.Status201Created);
         await _mediator.Received(1).Send(
-            Arg.Is<SendOtpCommand>(c => c.PhoneNumber == "09123456789"),
+            Arg.Is<SendOtpCommand>(c => c!.PhoneNumber == "09123456789"),
             Arg.Any<CancellationToken>());
     }
 

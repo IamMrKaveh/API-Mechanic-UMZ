@@ -229,7 +229,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
     {
         var entityType = Context.Model.FindEntityType(typeof(VariantAttribute));
         entityType.ShouldNotBeNull();
-        entityType!.GetQueryFilter().ShouldNotBeNull();
+        entityType!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
     }
 }
 

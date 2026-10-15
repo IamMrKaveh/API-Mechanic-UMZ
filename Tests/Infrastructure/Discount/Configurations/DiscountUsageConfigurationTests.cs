@@ -182,6 +182,6 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
         entityType.ShouldNotBeNull();
 
-        entityType!.GetQueryFilter().ShouldNotBeNull();
+        entityType!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
     }
 }

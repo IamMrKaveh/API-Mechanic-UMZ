@@ -199,8 +199,8 @@ public class DBContextTests
             .FindExtension<CoreOptionsExtension>();
 
         coreOptions.ShouldNotBeNull();
-        coreOptions!.Interceptors.ShouldContain(auditable);
-        coreOptions.Interceptors.ShouldContain(domainEvents);
+        coreOptions!.Interceptors!.ShouldContain(auditable);
+        coreOptions.Interceptors!.ShouldContain(domainEvents);
     }
 
     [Fact]

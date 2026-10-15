@@ -39,7 +39,7 @@ public sealed class SendWalletFreezeNotificationHandlerTests : HandlerTestBase
             evt.OwnerId,
             "مسدود شدن کیف پول",
             Arg.Is<string>(m => m!.Contains("suspicious activity")
-                             && m.Contains("پشتیبانی")),
+                             && m!.Contains("پشتیبانی")),
             "WalletFrozen",
             "/wallet",
             evt.WalletId.Value,
@@ -83,7 +83,7 @@ public sealed class SendWalletFreezeNotificationHandlerTests : HandlerTestBase
         await AuditService.Received(1).LogSystemEventAsync(
             "WalletFreezeNotificationFailed",
             Arg.Is<string>(s => s!.Contains(evt.OwnerId.Value.ToString())
-                             && s.Contains("gateway timeout")),
+                             && s!.Contains("gateway timeout")),
             Arg.Any<CancellationToken>());
     }
 

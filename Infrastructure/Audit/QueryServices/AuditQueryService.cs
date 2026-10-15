@@ -1,3 +1,4 @@
+using System.Globalization;
 using Application.Audit.Features.Shared;
 using Domain.Audit.Entities;
 using Domain.Audit.ValueObjects;
@@ -169,7 +170,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
                 l.IpAddress,
                 l.EntityType,
                 l.EntityId,
-                CreatedAt = l.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                CreatedAt = l.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
             })
             .ToListAsync(ct);
 
@@ -178,7 +179,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
 
         foreach (var log in logs)
         {
-            sb.AppendLine($"{log.Id},{log.UserId},{Escape(log.EventType)},{Escape(log.Action)},{log.IpAddress},{log.EntityType},{log.EntityId},{log.CreatedAt}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"{log.Id},{log.UserId},{Escape(log.EventType)},{Escape(log.Action)},{log.IpAddress},{log.EntityType},{log.EntityId},{log.CreatedAt}");
         }
 
         return Encoding.UTF8.GetBytes(sb.ToString());
@@ -237,7 +238,7 @@ public sealed class AuditQueryService(DBContext context) : IAuditQueryService
         var byHour = await query
             .GroupBy(l => l.CreatedAt.Hour)
             .Select(g => new { g.Key, Count = g.LongCount() })
-            .ToDictionaryAsync(g => g.Key.ToString(), g => g.Count, ct);
+            .ToDictionaryAsync(g => g.Key.ToString(CultureInfo.InvariantCulture), g => g.Count, ct);
 
         return new AuditStatisticsDto
         {

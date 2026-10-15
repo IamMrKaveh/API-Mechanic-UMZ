@@ -68,7 +68,7 @@ public class AdminReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetReviewsByStatusQuery>(q => q.Status == "Pending" && q.Page == 1 && q.PageSize == 10),
+            Arg.Is<GetReviewsByStatusQuery>(q => q!.Status == "Pending" && q!.Page == 1 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 
@@ -97,7 +97,7 @@ public class AdminReviewsControllerTests
         var reviewId = Guid.NewGuid();
         var expected = new ProductReviewDto { Id = reviewId, Rating = 4 };
 
-        _mediator.Send(Arg.Is<GetReviewByIdQuery>(q => q.ReviewId == reviewId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetReviewByIdQuery>(q => q!.ReviewId == reviewId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<ProductReviewDto>.Success(expected));
 
         // Act
@@ -124,7 +124,7 @@ public class AdminReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ApproveReviewCommand>(c => c.ReviewId == reviewId),
+            Arg.Is<ApproveReviewCommand>(c => c!.ReviewId == reviewId),
             Arg.Any<CancellationToken>());
     }
 
@@ -147,7 +147,7 @@ public class AdminReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RejectReviewCommand>(c => c.ReviewId == reviewId && c.Reason == "spam"),
+            Arg.Is<RejectReviewCommand>(c => c!.ReviewId == reviewId && c!.Reason == "spam"),
             Arg.Any<CancellationToken>());
     }
 
@@ -168,7 +168,7 @@ public class AdminReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateReviewStatusCommand>(c => c.ReviewId == reviewId && c.Status == "Approved"),
+            Arg.Is<UpdateReviewStatusCommand>(c => c!.ReviewId == reviewId && c!.Status == "Approved"),
             Arg.Any<CancellationToken>());
     }
 
@@ -188,7 +188,7 @@ public class AdminReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteReviewCommand>(c => c.ReviewId == reviewId && c.Reason == "spam"),
+            Arg.Is<DeleteReviewCommand>(c => c!.ReviewId == reviewId && c!.Reason == "spam"),
             Arg.Any<CancellationToken>());
     }
 
@@ -208,7 +208,7 @@ public class AdminReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RestoreReviewCommand>(c => c.ReviewId == reviewId),
+            Arg.Is<RestoreReviewCommand>(c => c!.ReviewId == reviewId),
             Arg.Any<CancellationToken>());
     }
 
@@ -229,7 +229,7 @@ public class AdminReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ReplyToReviewCommand>(c => c.ReviewId == reviewId && c.Reply == "thanks"),
+            Arg.Is<ReplyToReviewCommand>(c => c!.ReviewId == reviewId && c!.Reply == "thanks"),
             Arg.Any<CancellationToken>());
     }
 
@@ -250,7 +250,7 @@ public class AdminReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateAdminReplyCommand>(c => c.ReviewId == reviewId && c.Reply == "updated"),
+            Arg.Is<UpdateAdminReplyCommand>(c => c!.ReviewId == reviewId && c!.Reply == "updated"),
             Arg.Any<CancellationToken>());
     }
 
@@ -270,7 +270,7 @@ public class AdminReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RemoveAdminReplyCommand>(c => c.ReviewId == reviewId),
+            Arg.Is<RemoveAdminReplyCommand>(c => c!.ReviewId == reviewId),
             Arg.Any<CancellationToken>());
     }
 

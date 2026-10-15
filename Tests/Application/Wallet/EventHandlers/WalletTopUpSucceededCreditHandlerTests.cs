@@ -45,8 +45,8 @@ public sealed class WalletTopUpSucceededCreditHandlerTests : HandlerTestBase
 
         await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("Wallet credited from top-up")
-                             && s.Contains("500000")
-                             && s.Contains("GW-OK-1")),
+                             && s!.Contains("500000")
+                             && s!.Contains("GW-OK-1")),
             Arg.Any<CancellationToken>());
         await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
@@ -64,7 +64,7 @@ public sealed class WalletTopUpSucceededCreditHandlerTests : HandlerTestBase
 
         await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("WalletTopUp credit application failed")
-                             && s.Contains("GW-FAIL-1")),
+                             && s!.Contains("GW-FAIL-1")),
             Arg.Any<CancellationToken>());
         await AuditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
     }
@@ -84,14 +84,14 @@ public sealed class WalletTopUpSucceededCreditHandlerTests : HandlerTestBase
         await _mediator.Received(1).Send(
             Arg.Is<CreditWalletCommand>(c =>
                 c!.UserId == userGuid
-                && c.Amount == 250_000m
-                && c.TransactionType == WalletTransactionType.Credit
-                && c.ReferenceType == WalletReferenceType.TopUp
-                && c.ReferenceId == topUpGuid.ToString()
-                && c.IdempotencyKey == $"topup-credit:{topUpGuid}"
-                && c.CorrelationId == "GW-XYZ"
-                && c.Description != null
-                && c.Description.Contains("GW-XYZ")),
+                && c!.Amount == 250_000m
+                && c!.TransactionType == WalletTransactionType.Credit
+                && c!.ReferenceType == WalletReferenceType.TopUp
+                && c!.ReferenceId == topUpGuid.ToString()
+                && c!.IdempotencyKey == $"topup-credit:{topUpGuid}"
+                && c!.CorrelationId == "GW-XYZ"
+                && c!.Description != null
+                && c!.Description.Contains("GW-XYZ")),
             Arg.Any<CancellationToken>());
     }
 

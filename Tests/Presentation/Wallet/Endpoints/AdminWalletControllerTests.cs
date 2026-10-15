@@ -77,7 +77,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetWalletsOverviewQuery>(q => q.Search == "ali"),
+            Arg.Is<GetWalletsOverviewQuery>(q => q!.Search == "ali"),
             Arg.Any<CancellationToken>());
     }
 
@@ -107,7 +107,7 @@ public class AdminWalletControllerTests
         var userId = Guid.NewGuid();
         var expected = new WalletDto { Id = Guid.NewGuid(), UserId = userId, AvailableBalance = 5000 };
 
-        _mediator.Send(Arg.Is<GetWalletBalanceQuery>(q => q.userId == userId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetWalletBalanceQuery>(q => q!.userId == userId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<WalletDto>.Success(expected));
 
         // Act
@@ -142,7 +142,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetWalletLedgerQuery>(q => q.UserId == userId && q.IncludeInactiveUsers),
+            Arg.Is<GetWalletLedgerQuery>(q => q!.UserId == userId && q!.IncludeInactiveUsers),
             Arg.Any<CancellationToken>());
     }
 
@@ -164,7 +164,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ExportWalletLedgerQuery>(q => q.UserId == userId && q.Format == "csv" && q.MaxRows == 100),
+            Arg.Is<ExportWalletLedgerQuery>(q => q!.UserId == userId && q!.Format == "csv" && q!.MaxRows == 100),
             Arg.Any<CancellationToken>());
     }
 
@@ -185,7 +185,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CreditWalletCommand>(c => c.UserId == userId && c.Amount == 50000 && c.IdempotencyKey == "key-1"),
+            Arg.Is<CreditWalletCommand>(c => c!.UserId == userId && c!.Amount == 50000 && c!.IdempotencyKey == "key-1"),
             Arg.Any<CancellationToken>());
         _controller.Response.Headers.ContainsKey("X-Idempotency-Key-Effective").ShouldBeTrue();
     }
@@ -237,7 +237,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DebitWalletCommand>(c => c.UserId == userId && c.Amount == 10000 && c.IdempotencyKey == "key-2"),
+            Arg.Is<DebitWalletCommand>(c => c!.UserId == userId && c!.Amount == 10000 && c!.IdempotencyKey == "key-2"),
             Arg.Any<CancellationToken>());
     }
 
@@ -261,7 +261,7 @@ public class AdminWalletControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<Guid>>();
         body.Data.ShouldBe(expectedId);
         await _mediator.Received(1).Send(
-            Arg.Is<RequestWalletDebitCommand>(c => c.UserId == userId && c.Amount == 20000 && c.IdempotencyKey == "key-3"),
+            Arg.Is<RequestWalletDebitCommand>(c => c!.UserId == userId && c!.Amount == 20000 && c!.IdempotencyKey == "key-3"),
             Arg.Any<CancellationToken>());
     }
 
@@ -306,7 +306,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetAdminDebitRequestsQuery>(q => q.Status == "Pending"),
+            Arg.Is<GetAdminDebitRequestsQuery>(q => q!.Status == "Pending"),
             Arg.Any<CancellationToken>());
     }
 
@@ -333,7 +333,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetWalletTransfersQuery>(q => q.Status == "Completed"),
+            Arg.Is<GetWalletTransfersQuery>(q => q!.Status == "Completed"),
             Arg.Any<CancellationToken>());
     }
 
@@ -343,7 +343,7 @@ public class AdminWalletControllerTests
         // Arrange
         var id = Guid.NewGuid();
 
-        _mediator.Send(Arg.Is<GetWalletTransferByIdQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetWalletTransferByIdQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<WalletTransferDto>.NotFound());
 
         // Act
@@ -371,7 +371,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<FreezeWalletCommand>(c => c.UserId == userId && c.Reason == "suspicious"),
+            Arg.Is<FreezeWalletCommand>(c => c!.UserId == userId && c!.Reason == "suspicious"),
             Arg.Any<CancellationToken>());
     }
 
@@ -391,7 +391,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UnfreezeWalletCommand>(c => c.UserId == userId),
+            Arg.Is<UnfreezeWalletCommand>(c => c!.UserId == userId),
             Arg.Any<CancellationToken>());
     }
 
@@ -418,7 +418,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetFraudAlertsQuery>(q => q.Status == FraudAlertStatus.Open && q.Severity == FraudAlertSeverity.High),
+            Arg.Is<GetFraudAlertsQuery>(q => q!.Status == FraudAlertStatus.Open && q!.Severity == FraudAlertSeverity.High),
             Arg.Any<CancellationToken>());
     }
 
@@ -445,7 +445,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetFraudAlertsQuery>(q => q.Status == null && q.Severity == null),
+            Arg.Is<GetFraudAlertsQuery>(q => q!.Status == null && q!.Severity == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -472,7 +472,7 @@ public class AdminWalletControllerTests
         // Arrange
         var id = Guid.NewGuid();
 
-        _mediator.Send(Arg.Is<GetFraudAlertByIdQuery>(q => q.AlertId == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetFraudAlertByIdQuery>(q => q!.AlertId == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<WalletFraudAlertDto>.NotFound());
 
         // Act
@@ -500,7 +500,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<MarkFraudAlertReviewedCommand>(c => c.AlertId == id && c.Note == "checked"),
+            Arg.Is<MarkFraudAlertReviewedCommand>(c => c!.AlertId == id && c!.Note == "checked"),
             Arg.Any<CancellationToken>());
     }
 
@@ -521,7 +521,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DismissFraudAlertCommand>(c => c.AlertId == id && c.Note == "false positive"),
+            Arg.Is<DismissFraudAlertCommand>(c => c!.AlertId == id && c!.Note == "false positive"),
             Arg.Any<CancellationToken>());
     }
 
@@ -542,7 +542,7 @@ public class AdminWalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ForceFreezeFromFraudAlertCommand>(c => c.AlertId == id && c.AdditionalNote == "urgent"),
+            Arg.Is<ForceFreezeFromFraudAlertCommand>(c => c!.AlertId == id && c!.AdditionalNote == "urgent"),
             Arg.Any<CancellationToken>());
     }
 

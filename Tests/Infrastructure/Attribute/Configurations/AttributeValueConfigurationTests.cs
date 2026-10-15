@@ -210,6 +210,6 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         var entityType = _context.Model.FindEntityType(typeof(AttributeValue));
         entityType.ShouldNotBeNull();
 
-        entityType!.GetQueryFilter().ShouldNotBeNull();
+        entityType!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
     }
 }

@@ -49,7 +49,7 @@ public class ShippingNameTests
         var name = new string('x', ShippingName.MaxLength + 1);
 
         Should.Throw<DomainException>(() => ShippingName.Create(name))
-            .Message.ShouldContain(ShippingName.MaxLength.ToString());
+            .Message.ShouldContain(ShippingName.MaxLength.ToString(CultureInfo.InvariantCulture));
     }
 
     [Fact]

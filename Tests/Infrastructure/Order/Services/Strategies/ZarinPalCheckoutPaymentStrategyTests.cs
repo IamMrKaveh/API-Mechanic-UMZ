@@ -120,10 +120,10 @@ public class ZarinPalCheckoutPaymentStrategyTests : HandlerTestBase
             "10.0.0.5", null, Guid.NewGuid(), CancellationToken.None);
 
         await _paymentService.Received(1).InitiatePaymentAsync(
-            Arg.Is<OrderId>(id => id == order.Id),
-            Arg.Is<Money>(m => m.Amount == 150_000m),
-            Arg.Is<IpAddress>(ip => ip.Value == "10.0.0.5"),
-            Arg.Is<UserId>(u => u == userId),
+            Arg.Is<OrderId>(id => id! == order.Id),
+            Arg.Is<Money>(m => m!.Amount == 150_000m),
+            Arg.Is<IpAddress>(ip => ip!.Value == "10.0.0.5"),
+            Arg.Is<UserId>(u => u! == userId),
             PaymentMethodCode.Zarinpal,
             Arg.Any<CancellationToken>());
     }
@@ -144,7 +144,7 @@ public class ZarinPalCheckoutPaymentStrategyTests : HandlerTestBase
 
         await _paymentService.Received(1).InitiatePaymentAsync(
             Arg.Any<OrderId>(), Arg.Any<Money>(),
-            Arg.Is<IpAddress>(ip => ip.Value == "0.0.0.0"),
+            Arg.Is<IpAddress>(ip => ip!.Value == "0.0.0.0"),
             Arg.Any<UserId>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
 

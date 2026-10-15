@@ -62,8 +62,8 @@ public sealed class SendWalletDebitNotificationHandlerTests : HandlerTestBase
             evt.OwnerId,
             "کسر از کیف پول توسط پشتیبانی",
             Arg.Is<string>(m => m!.Contains("80,000")
-                             && m.Contains("IRT")
-                             && m.Contains("20,000")),
+                             && m!.Contains("IRT")
+                             && m!.Contains("20,000")),
             "WalletDebit",
             "/wallet",
             evt.WalletId.Value,
@@ -88,7 +88,7 @@ public sealed class SendWalletDebitNotificationHandlerTests : HandlerTestBase
         await AuditService.Received(1).LogSystemEventAsync(
             "WalletDebitNotificationFailed",
             Arg.Is<string>(s => s!.Contains(evt.OwnerId.Value.ToString())
-                             && s.Contains("push failed")),
+                             && s!.Contains("push failed")),
             Arg.Any<CancellationToken>());
     }
 

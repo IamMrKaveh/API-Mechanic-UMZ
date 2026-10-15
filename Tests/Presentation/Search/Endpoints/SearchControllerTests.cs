@@ -81,7 +81,7 @@ public class SearchControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<GlobalSearchResultDto>>();
         body.Data!.Query.ShouldBe("phone");
         await _mediator.Received(1).Send(
-            Arg.Is<GlobalSearchQuery>(q => q.Q == "phone"),
+            Arg.Is<GlobalSearchQuery>(q => q!.Q == "phone"),
             Arg.Any<CancellationToken>());
     }
 

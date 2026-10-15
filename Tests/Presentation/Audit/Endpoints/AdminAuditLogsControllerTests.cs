@@ -93,7 +93,7 @@ public class AdminAuditLogsControllerTests
         var id = Guid.NewGuid();
         var expected = new AuditLogDetailDto { Id = id, EventType = "Login", Action = "UserLogin" };
 
-        _mediator.Send(Arg.Is<GetAuditLogByIdQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetAuditLogByIdQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AuditLogDetailDto>.Success(expected));
 
         // Act
@@ -115,7 +115,7 @@ public class AdminAuditLogsControllerTests
         var id = Guid.NewGuid();
         var expected = new AuditIntegrityResultDto { Id = id, IsValid = true };
 
-        _mediator.Send(Arg.Is<VerifyAuditIntegrityQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<VerifyAuditIntegrityQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AuditIntegrityResultDto>.Success(expected));
 
         // Act
@@ -160,7 +160,7 @@ public class AdminAuditLogsControllerTests
         var expected = new ExportAuditLogsResult([], "audit.csv", "text/csv");
 
         _mediator.Send(
-                Arg.Is<ExportAuditLogsQuery>(q => q.Format == "csv" && q.MaxRows == 100),
+                Arg.Is<ExportAuditLogsQuery>(q => q!.Format == "csv" && q!.MaxRows == 100),
                 Arg.Any<CancellationToken>())
             .Returns(ServiceResult<ExportAuditLogsResult>.Success(expected));
 
@@ -183,7 +183,7 @@ public class AdminAuditLogsControllerTests
         var expected = new ExportAuditLogsResult([], "audit.json", "application/json");
 
         _mediator.Send(
-                Arg.Is<ExportAuditLogsQuery>(q => q.Format == "json" && q.MaxRows == 50),
+                Arg.Is<ExportAuditLogsQuery>(q => q!.Format == "json" && q!.MaxRows == 50),
                 Arg.Any<CancellationToken>())
             .Returns(ServiceResult<ExportAuditLogsResult>.Success(expected));
 

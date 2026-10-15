@@ -42,12 +42,12 @@ public class OrderCancelledWalletReleaseEventHandlerTests : HandlerTestBase
         await _mediator.Received(1).Send(
             Arg.Is<CreditWalletCommand>(c =>
                 c != null &&
-                c.UserId == userId.Value &&
-                c.Amount == 250_000m &&
-                c.TransactionType == WalletTransactionType.Refund &&
-                c.ReferenceType == WalletReferenceType.Order &&
-                c.ReferenceId == orderId.Value.ToString() &&
-                c.IdempotencyKey == $"refund-order-{orderId.Value}"),
+                c!.UserId == userId.Value &&
+                c!.Amount == 250_000m &&
+                c!.TransactionType == WalletTransactionType.Refund &&
+                c!.ReferenceType == WalletReferenceType.Order &&
+                c!.ReferenceId == orderId.Value.ToString() &&
+                c!.IdempotencyKey == $"refund-order-{orderId.Value}"),
             Arg.Any<CancellationToken>());
         await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
@@ -66,7 +66,7 @@ public class OrderCancelledWalletReleaseEventHandlerTests : HandlerTestBase
 
         await _mediator.Received(1).Send(
             Arg.Is<ReleaseWalletReservationCommand>(c =>
-                c != null && c.UserId == userId.Value && c.WalletReservationId == orderId.Value),
+                c != null && c!.UserId == userId.Value && c!.WalletReservationId == orderId.Value),
             Arg.Any<CancellationToken>());
         await _mediator.DidNotReceiveWithAnyArgs().Send(Arg.Any<CreditWalletCommand>(), Arg.Any<CancellationToken>());
     }
@@ -87,7 +87,7 @@ public class OrderCancelledWalletReleaseEventHandlerTests : HandlerTestBase
 
         await AuditService.Received(1).LogSystemEventAsync(
             "WalletRefundFailed",
-            Arg.Is<string>(s => s != null && s.Contains(orderId.Value.ToString())),
+            Arg.Is<string>(s => s != null && s!.Contains(orderId.Value.ToString())),
             Arg.Any<CancellationToken>());
     }
 
@@ -103,7 +103,7 @@ public class OrderCancelledWalletReleaseEventHandlerTests : HandlerTestBase
 
         await AuditService.Received(1).LogSystemEventAsync(
             "WalletOrderCancelledHandlerError",
-            Arg.Is<string>(s => s != null && s.Contains("db down")),
+            Arg.Is<string>(s => s != null && s!.Contains("db down")),
             Arg.Any<CancellationToken>());
     }
 }

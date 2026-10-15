@@ -122,7 +122,7 @@ public sealed class GetPendingWithdrawalsHandlerTests
 
         result.ShouldBeSuccess();
         await _queryService.Received(1).GetByStatusAsync(
-            Arg.Is<WalletWithdrawalStatus?>(s => s.HasValue),
+            Arg.Is<WalletWithdrawalStatus?>(s => s!.HasValue),
             1, 20, null, null, Arg.Any<CancellationToken>());
     }
 

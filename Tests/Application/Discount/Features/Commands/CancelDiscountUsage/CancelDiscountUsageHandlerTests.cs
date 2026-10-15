@@ -68,7 +68,7 @@ public class CancelDiscountUsageHandlerTests : HandlerTestBase
             null,
             "DiscountCode",
             discount.Id.Value.ToString(),
-            Arg.Is<string>(s => s != null && s.Contains(orderGuid.ToString())),
+            Arg.Is<string>(s => s != null && s!.Contains(orderGuid.ToString())),
             null,
             Arg.Any<CancellationToken>());
     }

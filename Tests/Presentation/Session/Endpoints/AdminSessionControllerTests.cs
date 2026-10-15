@@ -59,7 +59,7 @@ public class AdminSessionControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<PaginatedResult<UserSessionDto>>>();
         body.Data!.Items.ShouldHaveSingleItem();
         await _mediator.Received(1).Send(
-            Arg.Is<GetUserSessionsQuery>(q => q.TargetUserId == userId),
+            Arg.Is<GetUserSessionsQuery>(q => q!.TargetUserId == userId),
             Arg.Any<CancellationToken>());
     }
 
@@ -80,7 +80,7 @@ public class AdminSessionControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<AdminRevokeSessionCommand>(c => c.TargetUserId == userId && c.SessionId == sessionId),
+            Arg.Is<AdminRevokeSessionCommand>(c => c!.TargetUserId == userId && c!.SessionId == sessionId),
             Arg.Any<CancellationToken>());
     }
 
@@ -100,7 +100,7 @@ public class AdminSessionControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<LogoutAllCommand>(c => c.TargetUserId == userId),
+            Arg.Is<LogoutAllCommand>(c => c!.TargetUserId == userId),
             Arg.Any<CancellationToken>());
     }
 

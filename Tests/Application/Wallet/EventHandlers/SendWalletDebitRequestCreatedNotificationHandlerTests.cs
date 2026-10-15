@@ -45,9 +45,9 @@ public sealed class SendWalletDebitRequestCreatedNotificationHandlerTests : Hand
             evt.OwnerId,
             "درخواست کسر از کیف پول",
             Arg.Is<string>(m => m!.Contains("250,000")
-                             && m.Contains("IRT")
-                             && m.Contains("تایید")
-                             && m.Contains("رد")),
+                             && m!.Contains("IRT")
+                             && m!.Contains("تایید")
+                             && m!.Contains("رد")),
             "WalletDebitRequest",
             "/wallet",
             evt.WalletId.Value,
@@ -72,7 +72,7 @@ public sealed class SendWalletDebitRequestCreatedNotificationHandlerTests : Hand
         await AuditService.Received(1).LogSystemEventAsync(
             "WalletDebitRequestCreatedNotificationFailed",
             Arg.Is<string>(s => s!.Contains(evt.OwnerId.Value.ToString())
-                             && s.Contains("channel closed")),
+                             && s!.Contains("channel closed")),
             Arg.Any<CancellationToken>());
     }
 

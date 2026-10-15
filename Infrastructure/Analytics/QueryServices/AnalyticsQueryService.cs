@@ -1,3 +1,4 @@
+using System.Globalization;
 using Application.Analytics.Contracts;
 using Application.Analytics.Features.Shared;
 
@@ -222,7 +223,7 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
             .Select(g => new SalesChartDataPointDto
             {
                 Date = g.Key,
-                Label = g.Key.ToString("yyyy-MM-dd"),
+                Label = g.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 OrderCount = g.Count(),
                 Revenue = g.Sum(x => x.Revenue),
                 ItemsSold = g.Sum(x => x.ItemCount)

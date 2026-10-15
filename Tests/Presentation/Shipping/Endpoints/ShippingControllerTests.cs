@@ -49,7 +49,7 @@ public class ShippingControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<IReadOnlyList<ShippingListItemDto>>>();
         body.Data!.Count.ShouldBe(1);
         await _mediator.Received(1).Send(
-            Arg.Is<GetShippingsQuery>(q => q.IncludeInactive == false),
+            Arg.Is<GetShippingsQuery>(q => q!.IncludeInactive == false),
             Arg.Any<CancellationToken>());
     }
 

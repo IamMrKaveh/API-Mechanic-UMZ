@@ -421,18 +421,18 @@ public sealed class AdminWalletController(IMediator mediator) : BaseApiControlle
         AdminWalletAdjustmentType adjustmentType)
     {
         var sb = new StringBuilder();
-        sb.Append($"[ADMIN-{operation}|{adjustmentType}] | Reason={reason}");
+        sb.Append(CultureInfo.InvariantCulture, $"[ADMIN-{operation}|{adjustmentType}] | Reason={reason}");
         if (!string.IsNullOrWhiteSpace(extraNote))
-            sb.Append($" | Note={extraNote}");
+            sb.Append(CultureInfo.InvariantCulture, $" | Note={extraNote}");
         return sb.ToString();
     }
 
     private static string BuildAuditDescription(string operation, string reason, string? extraNote)
     {
         var sb = new StringBuilder();
-        sb.Append($"[ADMIN-{operation}] | Reason={reason}");
+        sb.Append(CultureInfo.InvariantCulture, $"[ADMIN-{operation}] | Reason={reason}");
         if (!string.IsNullOrWhiteSpace(extraNote))
-            sb.Append($" | Note={extraNote}");
+            sb.Append(CultureInfo.InvariantCulture, $" | Note={extraNote}");
         return sb.ToString();
     }
 }

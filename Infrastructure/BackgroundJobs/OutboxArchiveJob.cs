@@ -63,8 +63,7 @@ public sealed class OutboxArchiveJob(
                 logger.LogInformation(
                     "OutboxArchiveJob archived {Count} messages older than {Days} days.",
                     totalArchived,
-                    RetentionDays,
-                    ct);
+                    RetentionDays);
         });
     }
 }

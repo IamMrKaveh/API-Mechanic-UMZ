@@ -50,7 +50,7 @@ public class PaymentMethodsControllerTests
         body.Success.ShouldBeTrue();
         body.Data!.Count.ShouldBe(1);
         await _mediator.Received(1).Send(
-            Arg.Is<GetActivePaymentMethodsQuery>(q => q.OrderAmount == 50000),
+            Arg.Is<GetActivePaymentMethodsQuery>(q => q!.OrderAmount == 50000),
             Arg.Any<CancellationToken>());
     }
 
@@ -70,7 +70,7 @@ public class PaymentMethodsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetActivePaymentMethodsQuery>(q => q.OrderAmount == 0m),
+            Arg.Is<GetActivePaymentMethodsQuery>(q => q!.OrderAmount == 0m),
             Arg.Any<CancellationToken>());
     }
 

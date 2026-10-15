@@ -73,7 +73,7 @@ public class AdminAttributesControllerTests
         var attributeId = Guid.NewGuid();
         var expectedDto = new AttributeTypeDto { Id = attributeId, Name = "size", DisplayName = "Size" };
 
-        _mediator.Send(Arg.Is<GetAttributeTypeByIdQuery>(q => q.Id == attributeId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetAttributeTypeByIdQuery>(q => q!.Id == attributeId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AttributeTypeDto>.Success(expectedDto));
 
         var result = await _controller.GetAttributeType(attributeId, CancellationToken.None);
@@ -94,9 +94,9 @@ public class AdminAttributesControllerTests
         var expectedDto = new AttributeTypeDto { Id = Guid.NewGuid(), Name = "color", DisplayName = "Color", SortOrder = 1 };
 
         _mediator.Send(Arg.Is<CreateAttributeTypeCommand>(c =>
-            c.Name == request.Name &&
-            c.DisplayName == request.DisplayName &&
-            c.SortOrder == request.SortOrder), Arg.Any<CancellationToken>())
+            c!.Name == request.Name &&
+            c!.DisplayName == request.DisplayName &&
+            c!.SortOrder == request.SortOrder), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AttributeTypeDto>.Success(expectedDto));
 
         var result = await _controller.CreateAttributeType(request, CancellationToken.None);
@@ -118,11 +118,11 @@ public class AdminAttributesControllerTests
         var expectedDto = new AttributeValueDto { Id = Guid.NewGuid(), Value = "red", DisplayValue = "Red", HexCode = "#FF0000", SortOrder = 1 };
 
         _mediator.Send(Arg.Is<CreateAttributeValueCommand>(c =>
-            c.TypeId == typeId &&
-            c.Value == request.Value &&
-            c.DisplayValue == request.DisplayValue &&
-            c.HexCode == request.HexCode &&
-            c.SortOrder == request.SortOrder), Arg.Any<CancellationToken>())
+            c!.TypeId == typeId &&
+            c!.Value == request.Value &&
+            c!.DisplayValue == request.DisplayValue &&
+            c!.HexCode == request.HexCode &&
+            c!.SortOrder == request.SortOrder), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AttributeValueDto>.Success(expectedDto));
 
         var result = await _controller.CreateAttributeValue(typeId, request, CancellationToken.None);
@@ -143,11 +143,11 @@ public class AdminAttributesControllerTests
         var command = new UpdateAttributeTypeCommand(attributeId, "color", "Color", 2, true);
 
         _mediator.Send(Arg.Is<UpdateAttributeTypeCommand>(c =>
-            c.Id == attributeId &&
-            c.Name == request.Name &&
-            c.DisplayName == request.DisplayName &&
-            c.SortOrder == request.SortOrder &&
-            c.IsActive == request.IsActive), Arg.Any<CancellationToken>())
+            c!.Id == attributeId &&
+            c!.Name == request.Name &&
+            c!.DisplayName == request.DisplayName &&
+            c!.SortOrder == request.SortOrder &&
+            c!.IsActive == request.IsActive), Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
         var result = await _controller.UpdateAttributeType(attributeId, request, CancellationToken.None);
@@ -166,12 +166,12 @@ public class AdminAttributesControllerTests
         var command = new UpdateAttributeValueCommand(valueId, "blue", "Blue", "#0000FF", 2, true);
 
         _mediator.Send(Arg.Is<UpdateAttributeValueCommand>(c =>
-            c.Id == valueId &&
-            c.Value == request.Value &&
-            c.DisplayValue == request.DisplayValue &&
-            c.HexCode == request.HexCode &&
-            c.SortOrder == request.SortOrder &&
-            c.IsActive == request.IsActive), Arg.Any<CancellationToken>())
+            c!.Id == valueId &&
+            c!.Value == request.Value &&
+            c!.DisplayValue == request.DisplayValue &&
+            c!.HexCode == request.HexCode &&
+            c!.SortOrder == request.SortOrder &&
+            c!.IsActive == request.IsActive), Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
         var result = await _controller.UpdateAttributeValue(valueId, request, CancellationToken.None);
@@ -187,7 +187,7 @@ public class AdminAttributesControllerTests
     {
         var attributeId = Guid.NewGuid();
 
-        _mediator.Send(Arg.Is<DeleteAttributeTypeCommand>(c => c.Id == attributeId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<DeleteAttributeTypeCommand>(c => c!.Id == attributeId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
         var result = await _controller.DeleteAttributeType(attributeId, CancellationToken.None);
@@ -203,7 +203,7 @@ public class AdminAttributesControllerTests
     {
         var valueId = Guid.NewGuid();
 
-        _mediator.Send(Arg.Is<DeleteAttributeValueCommand>(c => c.Id == valueId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<DeleteAttributeValueCommand>(c => c!.Id == valueId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
         var result = await _controller.DeleteAttributeValue(valueId, CancellationToken.None);

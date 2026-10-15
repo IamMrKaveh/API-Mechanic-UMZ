@@ -37,12 +37,12 @@ public class PaymentRefundedWalletEventHandlerTests : HandlerTestBase
         await _mediator.Received(1).Send(
             Arg.Is<CreditWalletCommand>(c =>
                 c != null &&
-                c.UserId == userId.Value &&
-                c.Amount == 75_000m &&
-                c.TransactionType == WalletTransactionType.Refund &&
-                c.ReferenceType == WalletReferenceType.Payment &&
-                c.ReferenceId == transactionId.Value.ToString() &&
-                c.IdempotencyKey == $"refund-payment-{transactionId.Value}"),
+                c!.UserId == userId.Value &&
+                c!.Amount == 75_000m &&
+                c!.TransactionType == WalletTransactionType.Refund &&
+                c!.ReferenceType == WalletReferenceType.Payment &&
+                c!.ReferenceId == transactionId.Value.ToString() &&
+                c!.IdempotencyKey == $"refund-payment-{transactionId.Value}"),
             Arg.Any<CancellationToken>());
         await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
@@ -76,7 +76,7 @@ public class PaymentRefundedWalletEventHandlerTests : HandlerTestBase
 
         await AuditService.Received(1).LogSystemEventAsync(
             "WalletPaymentRefundedHandlerError",
-            Arg.Is<string>(s => s != null && s.Contains(transactionId.Value.ToString())),
+            Arg.Is<string>(s => s != null && s!.Contains(transactionId.Value.ToString())),
             Arg.Any<CancellationToken>());
     }
 }

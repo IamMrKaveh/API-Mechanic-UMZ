@@ -58,9 +58,9 @@ public class ForwardedHeadersExtensionsTests
         var options = services.BuildServiceProvider()
             .GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 
-        options.KnownNetworks.Count.ShouldBe(1);
-        options.KnownNetworks.First().Prefix.ToString().ShouldBe("10.0.0.0");
-        options.KnownNetworks.First().PrefixLength.ShouldBe(8);
+        options.KnownIPNetworks.Count.ShouldBe(1);
+        options.KnownIPNetworks.First().BaseAddress.ToString().ShouldBe("10.0.0.0");
+        options.KnownIPNetworks.First().PrefixLength.ShouldBe(8);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class ForwardedHeadersExtensionsTests
             .GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 
         options.KnownProxies.Count.ShouldBe(0);
-        options.KnownNetworks.Count.ShouldBe(0);
+        options.KnownIPNetworks.Count.ShouldBe(0);
     }
 
     [Fact]

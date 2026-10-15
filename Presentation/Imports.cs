@@ -24,7 +24,7 @@ global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Caching.Memory;
 global using Microsoft.Extensions.Options;
 global using Microsoft.IdentityModel.Tokens;
-global using Microsoft.OpenApi.Models;
+global using Microsoft.OpenApi;
 global using Presentation.Base.Endpoints.v1;
 global using Presentation.Base.Responses;
 global using Presentation.Common.Extensions;

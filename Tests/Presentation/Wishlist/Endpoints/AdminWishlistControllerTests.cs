@@ -56,7 +56,7 @@ public class AdminWishlistControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<PaginatedResult<WishlistItemDto>>>();
         body.Data!.Items.ShouldHaveSingleItem();
         await _mediator.Received(1).Send(
-            Arg.Is<GetWishlistByIdQuery>(q => q.TargetUserId == userId && q.Page == 1 && q.PageSize == 10),
+            Arg.Is<GetWishlistByIdQuery>(q => q!.TargetUserId == userId && q!.Page == 1 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 

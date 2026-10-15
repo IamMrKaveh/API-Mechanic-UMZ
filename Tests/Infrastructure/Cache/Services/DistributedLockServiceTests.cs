@@ -42,10 +42,10 @@ public class DistributedLockServiceTests : HandlerTestBase
         await _sut.AcquireAsync("order:123", expiry);
 
         await _db.Received(1).StringSetAsync(
-            Arg.Is<RedisKey>(k => k.ToString() == "lock:order:123"),
-            Arg.Is<RedisValue>(v => v.HasValue && v.ToString().Length == 32),
-            Arg.Is<TimeSpan?>(e => e == expiry),
-            Arg.Is<When>(w => w == When.NotExists));
+            Arg.Is<RedisKey>(k => k!.ToString() == "lock:order:123"),
+            Arg.Is<RedisValue>(v => v!.HasValue && v!.ToString().Length == 32),
+            Arg.Is<TimeSpan?>(e => e! == expiry),
+            Arg.Is<When>(w => w! == When.NotExists));
     }
 
     [Fact]
@@ -89,8 +89,8 @@ public class DistributedLockServiceTests : HandlerTestBase
 
         await _db.Received(1).ScriptEvaluateAsync(
             Arg.Is<string>(s => s!.Contains("redis.call('del'")),
-            Arg.Is<RedisKey[]>(keys => keys.Length == 1 && keys[0].ToString() == "lock:order:9"),
-            Arg.Is<RedisValue[]>(values => values.Length == 1 && values[0].ToString().Length == 32),
+            Arg.Is<RedisKey[]>(keys => keys!.Length == 1 && keys![0].ToString() == "lock:order:9"),
+            Arg.Is<RedisValue[]>(values => values!.Length == 1 && values![0].ToString().Length == 32),
             Arg.Any<CommandFlags>());
         handle.IsAcquired.ShouldBeFalse();
     }

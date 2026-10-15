@@ -86,7 +86,7 @@ public class DomainExceptionTranslationMiddlewareTests
 
         using var doc = JsonDocument.Parse(ReadBody(context));
         doc.RootElement.GetProperty("args").GetProperty("minimum").GetInt32().ShouldBe(5000);
-        doc.RootElement.GetProperty("message").GetString().ShouldContain("تومان");
+        doc.RootElement.GetProperty("message").GetString()!.ShouldContain("تومان");
     }
 
     [Fact]

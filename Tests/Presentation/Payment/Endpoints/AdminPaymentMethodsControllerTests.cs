@@ -59,7 +59,7 @@ public class AdminPaymentMethodsControllerTests
         body.Success.ShouldBeTrue();
         body.Data!.Count.ShouldBe(1);
         await _mediator.Received(1).Send(
-            Arg.Is<GetPaymentMethodsQuery>(q => q.IncludeInactive && !q.IncludeDeleted),
+            Arg.Is<GetPaymentMethodsQuery>(q => q!.IncludeInactive && !q!.IncludeDeleted),
             Arg.Any<CancellationToken>());
     }
 
@@ -70,7 +70,7 @@ public class AdminPaymentMethodsControllerTests
         var id = Guid.NewGuid();
         var expected = new PaymentMethodDto { Id = id, Name = "ZarinPal", Code = "zarinpal" };
 
-        _mediator.Send(Arg.Is<GetPaymentMethodQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetPaymentMethodQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaymentMethodDto>.Success(expected));
 
         // Act
@@ -125,7 +125,7 @@ public class AdminPaymentMethodsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdatePaymentMethodCommand>(c => c.Id == id && c.Name == "ZarinPal" && c.SortOrder == 2),
+            Arg.Is<UpdatePaymentMethodCommand>(c => c!.Id == id && c!.Name == "ZarinPal" && c!.SortOrder == 2),
             Arg.Any<CancellationToken>());
     }
 
@@ -145,7 +145,7 @@ public class AdminPaymentMethodsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ActivatePaymentMethodCommand>(c => c.Id == id),
+            Arg.Is<ActivatePaymentMethodCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -165,7 +165,7 @@ public class AdminPaymentMethodsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeactivatePaymentMethodCommand>(c => c.Id == id),
+            Arg.Is<DeactivatePaymentMethodCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -185,7 +185,7 @@ public class AdminPaymentMethodsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeletePaymentMethodCommand>(c => c.Id == id),
+            Arg.Is<DeletePaymentMethodCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 

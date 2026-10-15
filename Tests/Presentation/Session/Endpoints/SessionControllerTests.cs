@@ -96,7 +96,7 @@ public class SessionControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RevokeSessionCommand>(c => c.SessionId == sessionId),
+            Arg.Is<RevokeSessionCommand>(c => c!.SessionId == sessionId),
             Arg.Any<CancellationToken>());
     }
 

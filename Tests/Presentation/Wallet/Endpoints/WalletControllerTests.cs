@@ -99,7 +99,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetWalletLedgerQuery>(q => q.UserId == null && q.Page == 1 && !q.IncludeInactiveUsers),
+            Arg.Is<GetWalletLedgerQuery>(q => q!.UserId == null && q!.Page == 1 && !q!.IncludeInactiveUsers),
             Arg.Any<CancellationToken>());
     }
 
@@ -127,7 +127,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<InitiateWalletTopUpCommand>(c => c.Amount == 100000 && c.Gateway == "zarinpal"),
+            Arg.Is<InitiateWalletTopUpCommand>(c => c!.Amount == 100000 && c!.Gateway == "zarinpal"),
             Arg.Any<CancellationToken>());
     }
 
@@ -150,7 +150,7 @@ public class WalletControllerTests
         redirect.Url.ShouldContain("authority=AUTH1");
         redirect.Url.ShouldContain("refId=REF1");
         await _mediator.Received(1).Send(
-            Arg.Is<CompleteWalletTopUpCommand>(c => c.Authority == "AUTH1" && c.Status == "OK"),
+            Arg.Is<CompleteWalletTopUpCommand>(c => c!.Authority == "AUTH1" && c!.Status == "OK"),
             Arg.Any<CancellationToken>());
     }
 
@@ -187,7 +187,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CompleteWalletTopUpCommand>(c => c.Authority == string.Empty && c.Status == "NOK"),
+            Arg.Is<CompleteWalletTopUpCommand>(c => c!.Authority == string.Empty && c!.Status == "NOK"),
             Arg.Any<CancellationToken>());
     }
 
@@ -241,7 +241,7 @@ public class WalletControllerTests
         // Arrange
         var id = Guid.NewGuid();
 
-        _mediator.Send(Arg.Is<GetWithdrawalByIdQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetWithdrawalByIdQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<WalletWithdrawalRequestDto>.NotFound());
 
         // Act
@@ -268,7 +268,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CancelWithdrawalCommand>(c => c.WithdrawalId == id),
+            Arg.Is<CancelWithdrawalCommand>(c => c!.WithdrawalId == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -289,7 +289,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RejectWithdrawalCommand>(c => c.WithdrawalId == id && c.Reason == "not owner"),
+            Arg.Is<RejectWithdrawalCommand>(c => c!.WithdrawalId == id && c!.Reason == "not owner"),
             Arg.Any<CancellationToken>());
     }
 
@@ -328,7 +328,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<PreviewWalletTransferQuery>(q => q.RecipientPhoneNumber == "09123456789" && q.Amount == 50000),
+            Arg.Is<PreviewWalletTransferQuery>(q => q!.RecipientPhoneNumber == "09123456789" && q!.Amount == 50000),
             Arg.Any<CancellationToken>());
     }
 
@@ -368,7 +368,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ConfirmWalletTransferCommand>(c => c.TransferId == transferId && c.OtpCode == "123456"),
+            Arg.Is<ConfirmWalletTransferCommand>(c => c!.TransferId == transferId && c!.OtpCode == "123456"),
             Arg.Any<CancellationToken>());
     }
 
@@ -388,7 +388,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CancelWalletTransferCommand>(c => c.TransferId == id),
+            Arg.Is<CancelWalletTransferCommand>(c => c!.TransferId == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -408,7 +408,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetMyWalletDebitRequestsQuery>(q => q.Status == null),
+            Arg.Is<GetMyWalletDebitRequestsQuery>(q => q!.Status == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -428,7 +428,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetMyWalletDebitRequestsQuery>(q => q.Status == WalletDebitRequestStatus.Pending),
+            Arg.Is<GetMyWalletDebitRequestsQuery>(q => q!.Status == WalletDebitRequestStatus.Pending),
             Arg.Any<CancellationToken>());
     }
 
@@ -448,7 +448,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ApproveWalletDebitCommand>(c => c.RequestId == requestId),
+            Arg.Is<ApproveWalletDebitCommand>(c => c!.RequestId == requestId),
             Arg.Any<CancellationToken>());
     }
 
@@ -469,7 +469,7 @@ public class WalletControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RejectWalletDebitCommand>(c => c.RequestId == requestId && c.RejectionReason == "insufficient docs"),
+            Arg.Is<RejectWalletDebitCommand>(c => c!.RequestId == requestId && c!.RejectionReason == "insufficient docs"),
             Arg.Any<CancellationToken>());
     }
 

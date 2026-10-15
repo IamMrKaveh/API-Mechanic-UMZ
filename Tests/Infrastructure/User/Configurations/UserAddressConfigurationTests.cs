@@ -217,6 +217,6 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
     {
         var entityType = Context.Model.FindEntityType(typeof(UserAddress));
         entityType.ShouldNotBeNull();
-        entityType!.GetQueryFilter().ShouldNotBeNull();
+        entityType!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
     }
 }

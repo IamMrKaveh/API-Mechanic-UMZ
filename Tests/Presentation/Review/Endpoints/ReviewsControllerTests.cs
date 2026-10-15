@@ -68,7 +68,7 @@ public class ReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetProductReviewsQuery>(q => q.ProductId == productId && q.SortBy == "Newest"),
+            Arg.Is<GetProductReviewsQuery>(q => q!.ProductId == productId && q!.SortBy == "Newest"),
             Arg.Any<CancellationToken>());
     }
 
@@ -79,7 +79,7 @@ public class ReviewsControllerTests
         var productId = Guid.NewGuid();
         var expected = new ReviewSummaryDto { ProductId = productId, AverageRating = 4.5, TotalReviews = 10 };
 
-        _mediator.Send(Arg.Is<GetProductReviewSummaryQuery>(q => q.ProductId == productId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetProductReviewSummaryQuery>(q => q!.ProductId == productId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<ReviewSummaryDto>.Success(expected));
 
         // Act
@@ -110,7 +110,7 @@ public class ReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CanReviewProductQuery>(q => q.ProductId == productId && q.OrderId == orderId),
+            Arg.Is<CanReviewProductQuery>(q => q!.ProductId == productId && q!.OrderId == orderId),
             Arg.Any<CancellationToken>());
     }
 
@@ -144,7 +144,7 @@ public class ReviewsControllerTests
         var reviewId = Guid.NewGuid();
         var expected = new ProductReviewDto { Id = reviewId, Rating = 4 };
 
-        _mediator.Send(Arg.Is<GetReviewByIdQuery>(q => q.ReviewId == reviewId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetReviewByIdQuery>(q => q!.ReviewId == reviewId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<ProductReviewDto>.Success(expected));
 
         // Act
@@ -174,7 +174,7 @@ public class ReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateOwnReviewCommand>(c => c.ReviewId == reviewId && c.Rating == 4),
+            Arg.Is<UpdateOwnReviewCommand>(c => c!.ReviewId == reviewId && c!.Rating == 4),
             Arg.Any<CancellationToken>());
     }
 
@@ -194,7 +194,7 @@ public class ReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteOwnReviewCommand>(c => c.ReviewId == reviewId),
+            Arg.Is<DeleteOwnReviewCommand>(c => c!.ReviewId == reviewId),
             Arg.Any<CancellationToken>());
     }
 
@@ -220,7 +220,7 @@ public class ReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetUserReviewsQuery>(q => q.Page == 1 && q.PageSize == 10),
+            Arg.Is<GetUserReviewsQuery>(q => q!.Page == 1 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 
@@ -240,7 +240,7 @@ public class ReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<LikeReviewCommand>(c => c.ReviewId == reviewId),
+            Arg.Is<LikeReviewCommand>(c => c!.ReviewId == reviewId),
             Arg.Any<CancellationToken>());
     }
 
@@ -260,7 +260,7 @@ public class ReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DislikeReviewCommand>(c => c.ReviewId == reviewId),
+            Arg.Is<DislikeReviewCommand>(c => c!.ReviewId == reviewId),
             Arg.Any<CancellationToken>());
     }
 
@@ -280,7 +280,7 @@ public class ReviewsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RemoveReviewVoteCommand>(c => c.ReviewId == reviewId),
+            Arg.Is<RemoveReviewVoteCommand>(c => c!.ReviewId == reviewId),
             Arg.Any<CancellationToken>());
     }
 

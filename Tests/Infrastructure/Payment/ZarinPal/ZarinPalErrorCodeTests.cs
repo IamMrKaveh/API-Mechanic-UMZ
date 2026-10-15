@@ -32,7 +32,7 @@ public class ZarinPalErrorCodeTests
         var type = ErrorCodeType();
 
         Enum.IsDefined(type, name).ShouldBeTrue();
-        Convert.ToInt32(Enum.Parse(type, name)).ShouldBe(expectedValue);
+        Convert.ToInt32(Enum.Parse(type, name), CultureInfo.InvariantCulture).ShouldBe(expectedValue);
     }
 
     [Fact]

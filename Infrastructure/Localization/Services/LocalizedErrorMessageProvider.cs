@@ -23,7 +23,9 @@ public sealed class LocalizedErrorMessageProvider : ILocalizedErrorMessageProvid
 
         try
         {
+#pragma warning disable CA1305 // CurrentUICulture is intentional: error messages are user-facing localized text, not machine output.
             return string.Format(CultureInfo.CurrentUICulture, template, arguments);
+#pragma warning restore CA1305
         }
         catch (FormatException)
         {

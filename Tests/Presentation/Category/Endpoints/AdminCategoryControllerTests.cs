@@ -71,7 +71,7 @@ public class AdminCategoryControllerTests
         var id = Guid.NewGuid();
         var expected = new CategoryWithBrandsDto { Id = id, Name = "Cat1" };
 
-        _mediator.Send(Arg.Is<GetCategoryWithBrandsQuery>(q => q.CategoryId == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetCategoryWithBrandsQuery>(q => q!.CategoryId == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<CategoryWithBrandsDto?>.Success(expected));
 
         // Act
@@ -99,7 +99,7 @@ public class AdminCategoryControllerTests
         var created = result.ShouldBeOfType<ObjectResult>();
         created.StatusCode.ShouldBe(StatusCodes.Status201Created);
         await _mediator.Received(1).Send(
-            Arg.Is<CreateCategoryCommand>(c => c.CategoryName == "Cat1" && c.Slug == "cat-1" && c.SortOrder == 1),
+            Arg.Is<CreateCategoryCommand>(c => c!.CategoryName == "Cat1" && c!.Slug == "cat-1" && c!.SortOrder == 1),
             Arg.Any<CancellationToken>());
     }
 
@@ -121,7 +121,7 @@ public class AdminCategoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateCategoryCommand>(c => c.Id == id && c.Name == "Cat1" && c.IsActive && c.RowVersion == "rv"),
+            Arg.Is<UpdateCategoryCommand>(c => c!.Id == id && c!.Name == "Cat1" && c!.IsActive && c!.RowVersion == "rv"),
             Arg.Any<CancellationToken>());
     }
 
@@ -141,7 +141,7 @@ public class AdminCategoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteCategoryCommand>(c => c.CategoryId == id),
+            Arg.Is<DeleteCategoryCommand>(c => c!.CategoryId == id),
             Arg.Any<CancellationToken>());
     }
 

@@ -132,7 +132,7 @@ public class CancelOrderHandlerTests : HandlerTestBase
         var result = await _sut.Handle(new CancelOrderCommand(order.Id.Value, "reason", encoded), CancellationToken.None);
 
         result.ShouldBeSuccess();
-        _orderRepository.Received(1).Update(order, Arg.Is<byte[]?>(rv => rv != null && rv.SequenceEqual(expected)));
+        _orderRepository.Received(1).Update(order, Arg.Is<byte[]?>(rv => rv != null && rv!.SequenceEqual(expected)));
     }
 
     [Fact]

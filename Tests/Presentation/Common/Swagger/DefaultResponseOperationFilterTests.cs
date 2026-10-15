@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Presentation.Base.Responses;
 using Presentation.Common.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -36,9 +36,9 @@ public class DefaultResponseOperationFilterTests
     {
         var generator = Substitute.For<ISchemaGenerator>();
         generator.GenerateSchema(Arg.Any<Type>(), Arg.Any<SchemaRepository>())
-            .Returns(new OpenApiSchema { Type = "object" });
+            .Returns(new OpenApiSchema { Type = JsonSchemaType.Object });
         return new OperationFilterContext(
-            new ApiDescription(), generator, new SchemaRepository(), method);
+            new ApiDescription(), generator, new SchemaRepository(), new OpenApiDocument(), method);
     }
 
     private static MethodInfo Method<T>(string name) =>
@@ -52,10 +52,10 @@ public class DefaultResponseOperationFilterTests
         new DefaultResponseOperationFilter().Apply(operation, BuildContext(Method<AnonymousController>("Get")));
 
         operation.Responses.Keys.ShouldBe(["400", "422", "500"], ignoreOrder: true);
-        operation.Responses["400"].Description.ShouldBe("Bad Request");
-        operation.Responses["422"].Description.ShouldBe("Unprocessable Entity");
-        operation.Responses["500"].Description.ShouldBe("Internal Server Error");
-        operation.Responses["400"].Content.ShouldContainKey("application/json");
+        operation.Responses!["400"].Description.ShouldBe("Bad Request");
+        operation.Responses!["422"].Description.ShouldBe("Unprocessable Entity");
+        operation.Responses!["500"].Description.ShouldBe("Internal Server Error");
+        operation.Responses!["400"].Content!.ShouldContainKey("application/json");
     }
 
     [Fact]
@@ -67,8 +67,8 @@ public class DefaultResponseOperationFilterTests
 
         operation.Responses.Keys.ShouldContain("401");
         operation.Responses.Keys.ShouldContain("403");
-        operation.Responses["401"].Description.ShouldBe("Unauthorized");
-        operation.Responses["403"].Description.ShouldBe("Forbidden");
+        operation.Responses!["401"].Description.ShouldBe("Unauthorized");
+        operation.Responses!["403"].Description.ShouldBe("Forbidden");
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class DefaultResponseOperationFilterTests
         new DefaultResponseOperationFilter().Apply(
             operation, BuildContext(Method<AnonymousController>("Get")));
 
-        operation.Responses["400"].Description.ShouldBe("Custom validation");
+        operation.Responses!["400"].Description.ShouldBe("Custom validation");
         operation.Responses.Keys.ShouldBe(["400", "422", "500"], ignoreOrder: true);
     }
 
@@ -120,8 +120,8 @@ public class DefaultResponseOperationFilterTests
 
         new DefaultResponseOperationFilter().Apply(operation, context);
 
-        var schema = operation.Responses["500"].Content["application/json"].Schema;
+        var schema = operation.Responses!["500"].Content!["application/json"].Schema;
         schema.ShouldNotBeNull();
-        schema.Type.ShouldBe("object");
+        schema.Type.ShouldBe(JsonSchemaType.Object);
     }
 }

@@ -119,7 +119,7 @@ public class CartControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<AddItemToCartCommand>(c => c.VariantId == variantId && c.Quantity == 2),
+            Arg.Is<AddItemToCartCommand>(c => c!.VariantId == variantId && c!.Quantity == 2),
             Arg.Any<CancellationToken>());
     }
 
@@ -141,7 +141,7 @@ public class CartControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateCartItemQuantityCommand>(c => c.VariantId == variantId && c.Quantity == 5),
+            Arg.Is<UpdateCartItemQuantityCommand>(c => c!.VariantId == variantId && c!.Quantity == 5),
             Arg.Any<CancellationToken>());
     }
 
@@ -162,7 +162,7 @@ public class CartControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RemoveItemFromCartCommand>(c => c.VariantId == variantId),
+            Arg.Is<RemoveItemFromCartCommand>(c => c!.VariantId == variantId),
             Arg.Any<CancellationToken>());
     }
 

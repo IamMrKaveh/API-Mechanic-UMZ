@@ -58,7 +58,7 @@ public class AdminVariantControllerTests
         var body = created.Value.ShouldBeOfType<ApiResponse<ProductVariantViewDto>>();
         body.Success.ShouldBeTrue();
         await _mediator.Received(1).Send(
-            Arg.Is<AddVariantCommand>(c => c.ProductId == productId && c.Sku == "SKU1" && c.SellingPrice == 100),
+            Arg.Is<AddVariantCommand>(c => c!.ProductId == productId && c!.Sku == "SKU1" && c!.SellingPrice == 100),
             Arg.Any<CancellationToken>());
     }
 
@@ -106,7 +106,7 @@ public class AdminVariantControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<AddStockCommand>(c => c.VariantId == variantId && c.Quantity == 5),
+            Arg.Is<AddStockCommand>(c => c!.VariantId == variantId && c!.Quantity == 5),
             Arg.Any<CancellationToken>());
     }
 
@@ -128,7 +128,7 @@ public class AdminVariantControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateVariantCommand>(c => c.ProductId == productId && c.VariantId == variantId && c.Sku == "SKU1"),
+            Arg.Is<UpdateVariantCommand>(c => c!.ProductId == productId && c!.VariantId == variantId && c!.Sku == "SKU1"),
             Arg.Any<CancellationToken>());
     }
 
@@ -149,7 +149,7 @@ public class AdminVariantControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RemoveVariantCommand>(c => c.ProductId == productId && c.VariantId == variantId),
+            Arg.Is<RemoveVariantCommand>(c => c!.ProductId == productId && c!.VariantId == variantId),
             Arg.Any<CancellationToken>());
     }
 
@@ -170,7 +170,7 @@ public class AdminVariantControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RemoveStockCommand>(c => c.VariantId == variantId && c.Quantity == 2),
+            Arg.Is<RemoveStockCommand>(c => c!.VariantId == variantId && c!.Quantity == 2),
             Arg.Any<CancellationToken>());
     }
 

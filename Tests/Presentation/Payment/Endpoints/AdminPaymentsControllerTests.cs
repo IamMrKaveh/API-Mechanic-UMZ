@@ -81,7 +81,7 @@ public class AdminPaymentsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<AtomicRefundPaymentCommand>(c => c.OrderId == id && c.Reason == "duplicate charge"),
+            Arg.Is<AtomicRefundPaymentCommand>(c => c!.OrderId == id && c!.Reason == "duplicate charge"),
             Arg.Any<CancellationToken>());
     }
 

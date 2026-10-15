@@ -56,6 +56,6 @@ public class ReplyToReviewHandlerTests
         _auditContextEnricher.Received(1).Set("previouslyHadReply", "False");
         _auditContextEnricher.Received(1).Set("reviewId", review.Id.Value.ToString());
         _auditContextEnricher.Received(1).Set("productId", review.ProductId.Value.ToString());
-        _auditContextEnricher.Received(1).Set("replyLength", reply.Length.ToString());
+        _auditContextEnricher.Received(1).Set("replyLength", reply.Length.ToString(CultureInfo.InvariantCulture));
     }
 }

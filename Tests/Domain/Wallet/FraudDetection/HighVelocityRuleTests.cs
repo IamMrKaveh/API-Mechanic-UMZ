@@ -51,7 +51,7 @@ public class HighVelocityRuleTests
         result.IsTriggered.ShouldBeTrue();
         result.Severity.ShouldBe(FraudAlertSeverity.High);
         result.Description.ShouldNotBeNullOrWhiteSpace();
-        result.Metadata.ShouldContain("\"threshold\":10");
+        result.Metadata!.ShouldContain("\"threshold\":10");
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class HighVelocityRuleTests
         var result = await _sut.EvaluateAsync(context);
 
         result.IsTriggered.ShouldBeTrue();
-        result.Metadata.ShouldContain("\"count\":25");
+        result.Metadata!.ShouldContain("\"count\":25");
     }
 
     [Fact]

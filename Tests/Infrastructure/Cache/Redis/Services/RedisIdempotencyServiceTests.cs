@@ -102,8 +102,8 @@ public class RedisIdempotencyServiceTests
         await sut.MarkAsProcessedAsync(key, "{\"orderId\":1}");
 
         await _db.Received(1).StringSetAsync(
-            Arg.Is<RedisKey>(k => k.ToString() == ExpectedKey("shop", key)),
-            Arg.Is<RedisValue>(v => v.ToString().Contains("orderId")),
+            Arg.Is<RedisKey>(k => k!.ToString() == ExpectedKey("shop", key)),
+            Arg.Is<RedisValue>(v => v!.ToString().Contains("orderId")),
             Arg.Is<TimeSpan?>(e => e == TimeSpan.FromHours(24)),
             Arg.Is<When>(w => w == When.NotExists));
     }

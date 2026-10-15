@@ -43,7 +43,7 @@ public class SendOtpHandlerTests : HandlerTestBase
 
         result.ShouldBeSuccess();
         await _userRepository.Received(1).AddAsync(
-            Arg.Is<Users>(u => u!.PhoneNumber != null && u.PhoneNumber.Value == "09123456789" && u.IsAdmin == false),
+            Arg.Is<Users>(u => u!.PhoneNumber != null && u!.PhoneNumber.Value == "09123456789" && u!.IsAdmin == false),
             Arg.Any<CancellationToken>());
     }
 
@@ -146,7 +146,7 @@ public class SendOtpHandlerTests : HandlerTestBase
 
         result.ShouldBeSuccess();
         await _otpService.Received(1).SendOtpAsync(
-            Arg.Is<PhoneNumber>(p => p.Value == "09123456789"),
+            Arg.Is<PhoneNumber>(p => p!.Value == "09123456789"),
             Arg.Any<OtpCode>(),
             OtpPurpose.Login,
             Arg.Any<CancellationToken>());

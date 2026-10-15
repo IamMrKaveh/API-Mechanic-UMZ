@@ -100,7 +100,7 @@ public class ResilientRateLimitServiceTests : IDisposable
         await _sut.ResetAsync("user:reset");
 
         await _redisDatabase.Received(1).KeyDeleteAsync(
-            Arg.Is<RedisKey>(k => k.ToString() == "ratelimit:user:reset"),
+            Arg.Is<RedisKey>(k => k!.ToString() == "ratelimit:user:reset"),
             Arg.Any<CommandFlags>());
     }
 

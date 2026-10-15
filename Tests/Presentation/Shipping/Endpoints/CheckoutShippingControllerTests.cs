@@ -51,7 +51,7 @@ public class CheckoutShippingControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetAvailableShippingsQuery>(q => q.OrderAmount == 100000),
+            Arg.Is<GetAvailableShippingsQuery>(q => q!.OrderAmount == 100000),
             Arg.Any<CancellationToken>());
     }
 
@@ -71,7 +71,7 @@ public class CheckoutShippingControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetAvailableShippingsQuery>(q => q.OrderAmount == 0m),
+            Arg.Is<GetAvailableShippingsQuery>(q => q!.OrderAmount == 0m),
             Arg.Any<CancellationToken>());
     }
 
@@ -92,7 +92,7 @@ public class CheckoutShippingControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CalculateShippingCostQuery>(q => q.ShippingId == shippingId && q.OrderAmount == 100000),
+            Arg.Is<CalculateShippingCostQuery>(q => q!.ShippingId == shippingId && q!.OrderAmount == 100000),
             Arg.Any<CancellationToken>());
     }
 
@@ -114,7 +114,7 @@ public class CheckoutShippingControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetAvailableShippingsForVariantsQuery>(q => q.VariantIds.Contains(variantId)),
+            Arg.Is<GetAvailableShippingsForVariantsQuery>(q => q!.VariantIds.Contains(variantId)),
             Arg.Any<CancellationToken>());
     }
 

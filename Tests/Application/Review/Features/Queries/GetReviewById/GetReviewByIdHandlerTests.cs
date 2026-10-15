@@ -84,7 +84,7 @@ public class GetReviewByIdHandlerTests : HandlerTestBase
         await _reviewQueryService.Received(1)
             .GetByIdAsync(
                 Arg.Any<ReviewId>(),
-                Arg.Is<UserId?>(u => u != null && u.Value == userGuid),
+                Arg.Is<UserId?>(u => u != null && u!.Value == userGuid),
                 Arg.Any<CancellationToken>());
     }
 }

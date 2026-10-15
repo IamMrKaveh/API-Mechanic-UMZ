@@ -53,7 +53,7 @@ public class AuditServiceTests : HandlerTestBase
 
         _maskingService.DidNotReceiveWithAnyArgs().MaskSensitiveData(default!);
         await _auditRepository.Received(1).AddAuditLogAsync(
-            Arg.Is<AuditLog>(l => l.Details == null), Arg.Any<CancellationToken>());
+            Arg.Is<AuditLog>(l => l!.Details == null), Arg.Any<CancellationToken>());
     }
 
     [Fact]

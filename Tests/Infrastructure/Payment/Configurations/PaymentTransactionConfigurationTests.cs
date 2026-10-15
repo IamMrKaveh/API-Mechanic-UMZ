@@ -164,7 +164,6 @@ public sealed class PaymentTransactionConfigurationTests : IDisposable
     [Fact]
     public void Configure_QueryFilter_IsConfigured()
     {
-        var queryFilter = EntityType().GetQueryFilter();
-        queryFilter.ShouldNotBeNull();
+        EntityType().GetDeclaredQueryFilters().ShouldNotBeEmpty();
     }
 }

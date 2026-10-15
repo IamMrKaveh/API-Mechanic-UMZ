@@ -53,8 +53,8 @@ public class UpdateAdminReplyHandlerTests
         result.ShouldBeSuccess();
         review.AdminReply.ShouldBe(newReply);
         _reviewRepository.Received(1).Update(review);
-        _auditContextEnricher.Received(1).Set("previousReplyLength", initialReply.Length.ToString());
-        _auditContextEnricher.Received(1).Set("newReplyLength", newReply.Length.ToString());
+        _auditContextEnricher.Received(1).Set("previousReplyLength", initialReply.Length.ToString(CultureInfo.InvariantCulture));
+        _auditContextEnricher.Received(1).Set("newReplyLength", newReply.Length.ToString(CultureInfo.InvariantCulture));
         _auditContextEnricher.Received(1).Set("reviewId", review.Id.Value.ToString());
         _auditContextEnricher.Received(1).Set("productId", review.ProductId.Value.ToString());
     }

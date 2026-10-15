@@ -77,7 +77,7 @@ public sealed class RedisIdempotencyService : IIdempotencyService
             var value = await _db.StringGetAsync(BuildKey(idempotencyKey));
             if (!value.HasValue) return null;
 
-            var envelope = JsonSerializer.Deserialize<IdempotencyEnvelope>(value!, SerializerOptions);
+            var envelope = JsonSerializer.Deserialize<IdempotencyEnvelope>((string)value!, SerializerOptions);
             return envelope?.Result;
         }
         catch (Exception ex)
