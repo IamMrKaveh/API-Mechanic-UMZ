@@ -23,8 +23,7 @@ public sealed class UpdateProductStatsOnReviewContentUpdatedHandler(
             logger.LogWarning(
                 "Cannot recalculate stats. Product {ProductId} not found for updated review {ReviewId}.",
                 evt.ProductId.Value,
-                evt.ReviewId.Value,
-                ct);
+                evt.ReviewId.Value);
             return;
         }
 

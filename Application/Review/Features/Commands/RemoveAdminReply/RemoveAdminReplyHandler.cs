@@ -1,3 +1,4 @@
+using System.Globalization;
 using Domain.Review.Interfaces;
 using Domain.Review.ValueObjects;
 
@@ -23,7 +24,7 @@ public sealed class RemoveAdminReplyHandler(
         reviewRepository.Update(review);
 
         auditContextEnricher.Set("previouslyHadReply", previouslyHadReply.ToString());
-        auditContextEnricher.Set("previousReplyLength", previousReplyLength.ToString());
+        auditContextEnricher.Set("previousReplyLength", previousReplyLength.ToString(CultureInfo.InvariantCulture));
         auditContextEnricher.Set("reviewId", review.Id.Value.ToString());
         auditContextEnricher.Set("productId", review.ProductId.Value.ToString());
 

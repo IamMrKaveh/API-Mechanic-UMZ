@@ -30,8 +30,8 @@ public class VariantRequestsTests
         request.Stock.ShouldBe(10);
         request.IsUnlimited.ShouldBeTrue();
         request.ShippingMultiplier.ShouldBe(1.5m);
-        request.AttributeValueIds.ShouldContain(attributeId);
-        request.EnabledShippingIds.ShouldContain(shippingId);
+        request.AttributeValueIds!.ShouldContain(attributeId);
+        request.EnabledShippingIds!.ShouldContain(shippingId);
     }
 
     [Fact]

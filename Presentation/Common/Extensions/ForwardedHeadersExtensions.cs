@@ -20,7 +20,7 @@ public static class ForwardedHeadersExtensions
                 ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 
             options.KnownProxies.Clear();
-            options.KnownNetworks.Clear();
+            options.KnownIPNetworks.Clear();
 
             foreach (var proxy in proxySettings.TrustedProxies)
             {
@@ -35,7 +35,7 @@ public static class ForwardedHeadersExtensions
                     IPAddress.TryParse(parts[0], out var prefix) &&
                     int.TryParse(parts[1], out var length))
                 {
-                    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(prefix, length));
+                    options.KnownIPNetworks.Add(new System.Net.IPNetwork(prefix, length));
                 }
             }
         });

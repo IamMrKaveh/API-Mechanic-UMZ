@@ -66,16 +66,16 @@ public class GetProductCatalogHandlerTests
         await _productQueryService.Received(1).GetProductCatalogAsync(
             Arg.Is<ProductCatalogSearchParams>(p =>
                 p!.Page == 2 &&
-                p.PageSize == 25 &&
-                p.Search == "phone" &&
-                p.CategoryId == categoryId &&
-                p.BrandId == brandId &&
-                p.MinPrice == 100_000m &&
-                p.MaxPrice == 900_000m &&
-                p.InStockOnly == true &&
-                p.SortBy == "price-asc" &&
-                p.IsFeatured == true &&
-                p.HasDiscount == false),
+                p!.PageSize == 25 &&
+                p!.Search == "phone" &&
+                p!.CategoryId == categoryId &&
+                p!.BrandId == brandId &&
+                p!.MinPrice == 100_000m &&
+                p!.MaxPrice == 900_000m &&
+                p!.InStockOnly == true &&
+                p!.SortBy == "price-asc" &&
+                p!.IsFeatured == true &&
+                p!.HasDiscount == false),
             Arg.Any<CancellationToken>());
     }
 }

@@ -65,7 +65,7 @@ public class BrandControllerTests
         var id = Guid.NewGuid();
         var expected = new BrandDetailDto { Id = id, Name = "Brand1" };
 
-        _mediator.Send(Arg.Is<GetBrandQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetBrandQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<BrandDetailDto>.Success(expected));
 
         // Act

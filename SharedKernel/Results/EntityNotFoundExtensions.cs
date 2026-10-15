@@ -32,6 +32,18 @@ public static class EntityNotFoundExtensions
             : ServiceResult<T>.Success(entity);
 
     /// <summary>
+    /// Nullability-aware variant of <see cref="ToResultOrNotFound{T}(T?, string)"/> for handlers
+    /// whose <c>IQuery{TResponse}</c> contract declares a nullable response type
+    /// (<c>ServiceResult{T?}</c>). The produced result is runtime-identical to the non-nullable
+    /// variant; only the nullability annotation flows so no CS8619 is emitted at the call site.
+    /// </summary>
+    public static ServiceResult<T?> ToResultOrNullableNotFound<T>(this T? entity, string message)
+        where T : class
+        => entity is null
+            ? ServiceResult<T?>.NotFound(message)
+            : ServiceResult<T?>.Success(entity);
+
+    /// <summary>
     /// Converts a possibly-null fetched value into a <see cref="ServiceResult{T}"/>,
     /// treating the value as missing when it is null or when <paramref name="isMissing"/> returns true
     /// (e.g. soft-deleted or inactive entities: <c>e => e.IsDeleted</c>).

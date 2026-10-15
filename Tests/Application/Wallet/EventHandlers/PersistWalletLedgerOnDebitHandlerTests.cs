@@ -112,8 +112,8 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests : HandlerTestBase
 
         await AuditService.Received(1).LogInformationAsync(
             Arg.Is<string>(s => s!.Contains("WalletLedger debit already persisted")
-                             && s.Contains(evt.WalletId.Value.ToString())
-                             && s.Contains("race-key")),
+                             && s!.Contains(evt.WalletId.Value.ToString())
+                             && s!.Contains("race-key")),
             Arg.Any<CancellationToken>());
         await AuditService.DidNotReceiveWithAnyArgs().LogErrorAsync(default!, default);
     }
@@ -159,8 +159,8 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests : HandlerTestBase
         ex.ShouldBe(unrelated);
         await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Failed to persist wallet debit ledger")
-                             && s.Contains(evt.WalletId.Value.ToString())
-                             && s.Contains("some-key")),
+                             && s!.Contains(evt.WalletId.Value.ToString())
+                             && s!.Contains("some-key")),
             Arg.Any<CancellationToken>());
         await AuditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
     }
@@ -183,7 +183,7 @@ public sealed class PersistWalletLedgerOnDebitHandlerTests : HandlerTestBase
         ex.Message.ShouldBe("boom");
         await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s => s!.Contains("Failed to persist wallet debit ledger")
-                             && s.Contains("boom")),
+                             && s!.Contains("boom")),
             Arg.Any<CancellationToken>());
     }
 

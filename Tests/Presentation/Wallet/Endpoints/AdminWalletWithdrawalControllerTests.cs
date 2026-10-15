@@ -60,7 +60,7 @@ public class AdminWalletWithdrawalControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetPendingWithdrawalsQuery>(q => q.Page == 1 && q.PageSize == 20),
+            Arg.Is<GetPendingWithdrawalsQuery>(q => q!.Page == 1 && q!.PageSize == 20),
             Arg.Any<CancellationToken>());
     }
 
@@ -70,7 +70,7 @@ public class AdminWalletWithdrawalControllerTests
         // Arrange
         var id = Guid.NewGuid();
 
-        _mediator.Send(Arg.Is<GetWithdrawalByIdQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetWithdrawalByIdQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<WalletWithdrawalRequestDto>.NotFound());
 
         // Act
@@ -97,7 +97,7 @@ public class AdminWalletWithdrawalControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ApproveWithdrawalCommand>(c => c.WithdrawalId == id),
+            Arg.Is<ApproveWithdrawalCommand>(c => c!.WithdrawalId == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -118,7 +118,7 @@ public class AdminWalletWithdrawalControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RejectWithdrawalCommand>(c => c.WithdrawalId == id && c.Reason == "invalid iban"),
+            Arg.Is<RejectWithdrawalCommand>(c => c!.WithdrawalId == id && c!.Reason == "invalid iban"),
             Arg.Any<CancellationToken>());
     }
 
@@ -139,7 +139,7 @@ public class AdminWalletWithdrawalControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<MarkWithdrawalPaidCommand>(c => c.WithdrawalId == id && c.BankReferenceNumber == "REF123"),
+            Arg.Is<MarkWithdrawalPaidCommand>(c => c!.WithdrawalId == id && c!.BankReferenceNumber == "REF123"),
             Arg.Any<CancellationToken>());
     }
 

@@ -22,8 +22,7 @@ public sealed class UpdateProductStatsOnReviewApprovedHandler(
             logger.LogWarning(
                 "Cannot recalculate stats. Product {ProductId} not found for approved review {ReviewId}.",
                 evt.ProductId.Value,
-                evt.ReviewId.Value,
-                ct);
+                evt.ReviewId.Value);
             return;
         }
 

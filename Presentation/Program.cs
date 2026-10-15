@@ -1,3 +1,4 @@
+using System.Globalization;
 using Application.Common.DependencyInjection;
 using Infrastructure.Common.DependencyInjection;
 using Presentation.Common.Logging;
@@ -11,7 +12,7 @@ Directory.CreateDirectory(logsErrorDirectory);
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Warning()
-    .WriteTo.Console(outputTemplate: "[{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture, outputTemplate: "[{Level:u3}] {Message:lj}{NewLine}{Exception}")
     .CreateBootstrapLogger();
 
 try
@@ -45,6 +46,7 @@ try
                 IsIgnoredPath(path.ToString()))
 
             .WriteTo.Console(
+                formatProvider: CultureInfo.InvariantCulture,
                 outputTemplate: "[{Level:u3}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",
                 restrictedToMinimumLevel: LogEventLevel.Warning)
 

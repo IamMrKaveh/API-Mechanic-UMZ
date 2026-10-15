@@ -141,7 +141,7 @@ public class UpdateBrandHandlerTests : HandlerTestBase
 
         _brandRepository.Received(1).Update(
             brand,
-            Arg.Is<byte[]>(rv => rv != null && rv.SequenceEqual(expected)));
+            Arg.Is<byte[]>(rv => rv != null && rv!.SequenceEqual(expected)));
     }
 
     [Fact]

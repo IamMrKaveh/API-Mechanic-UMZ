@@ -59,7 +59,7 @@ public class CategoryControllerTests
         body.Success.ShouldBeTrue();
         body.Data!.Items.ShouldHaveSingleItem();
         await _mediator.Received(1).Send(
-            Arg.Is<GetPublicCategoriesQuery>(q => q.Search == "Cat" && q.Page == 1 && q.PageSize == 10),
+            Arg.Is<GetPublicCategoriesQuery>(q => q!.Search == "Cat" && q!.Page == 1 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 
@@ -91,7 +91,7 @@ public class CategoryControllerTests
         var id = Guid.NewGuid();
         var expected = new CategoryDetailDto { Id = id, Name = "Cat1" };
 
-        _mediator.Send(Arg.Is<GetCategoryQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetCategoryQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<CategoryDetailDto>.Success(expected));
 
         // Act
@@ -127,7 +127,7 @@ public class CategoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetCategoryProductsQuery>(q => q.CategoryId == id && q.Page == 1 && q.PageSize == 10),
+            Arg.Is<GetCategoryProductsQuery>(q => q!.CategoryId == id && q!.Page == 1 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 

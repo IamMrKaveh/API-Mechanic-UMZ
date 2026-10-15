@@ -154,8 +154,8 @@ public class ZarinPalPaymentGatewayTests : HandlerTestBase
 
         ex.ServiceName.ShouldBe("Zarinpal");
         ex.Message.ShouldBe(expectedMessage);
-        ex.ErrorCode.ShouldBe(code.ToString());
-        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains($"code={code}")), Arg.Any<CancellationToken>());
+        ex.ErrorCode.ShouldBe(code.ToString(CultureInfo.InvariantCulture));
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s!.Contains($"code={code}")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public class ZarinPalPaymentGatewayTests : HandlerTestBase
 
         ex.ServiceName.ShouldBe("Zarinpal");
         ex.InnerException.ShouldBeOfType<HttpRequestException>();
-        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Initiate exception")), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s!.Contains("Initiate exception")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -285,7 +285,7 @@ public class ZarinPalPaymentGatewayTests : HandlerTestBase
         var ex = await Should.ThrowAsync<ExternalServiceException>(() => sut.VerifyAsync("AUTH1", Money.Create(1000m, "IRR")));
 
         ex.InnerException.ShouldBeOfType<HttpRequestException>();
-        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Verify exception")), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s!.Contains("Verify exception")), Arg.Any<CancellationToken>());
     }
 
     [Fact]

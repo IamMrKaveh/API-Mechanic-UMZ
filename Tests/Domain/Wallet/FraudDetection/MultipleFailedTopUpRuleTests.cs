@@ -41,8 +41,8 @@ public class MultipleFailedTopUpRuleTests
 
         result.IsTriggered.ShouldBeTrue();
         result.Severity.ShouldBe(FraudAlertSeverity.Medium);
-        result.Metadata.ShouldContain("\"failedCount\":5");
-        result.Metadata.ShouldContain("\"threshold\":5");
+        result.Metadata!.ShouldContain("\"failedCount\":5");
+        result.Metadata!.ShouldContain("\"threshold\":5");
     }
 
     [Fact]

@@ -6,7 +6,7 @@ public sealed class NullableSchemaFilter : ISchemaFilter
 {
     private static readonly NullabilityInfoContext NullabilityContext = new();
 
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
         if (schema?.Properties is null || schema.Properties.Count == 0)
             return;
@@ -28,8 +28,10 @@ public sealed class NullableSchemaFilter : ISchemaFilter
             if (!nullableProperties.Contains(schemaKey))
                 continue;
 
-            schema.Properties[schemaKey].Nullable = true;
-            schema.Required.Remove(schemaKey);
+            if (schema.Properties[schemaKey] is OpenApiSchema propertySchema)
+                propertySchema.Type = propertySchema.Type.GetValueOrDefault() | JsonSchemaType.Null;
+
+            schema.Required?.Remove(schemaKey);
         }
     }
 

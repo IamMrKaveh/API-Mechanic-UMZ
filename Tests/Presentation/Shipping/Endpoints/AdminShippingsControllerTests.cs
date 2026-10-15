@@ -57,7 +57,7 @@ public class AdminShippingsControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<IReadOnlyList<ShippingListItemDto>>>();
         body.Data!.Count.ShouldBe(1);
         await _mediator.Received(1).Send(
-            Arg.Is<GetShippingsQuery>(q => q.IncludeInactive == true),
+            Arg.Is<GetShippingsQuery>(q => q!.IncludeInactive == true),
             Arg.Any<CancellationToken>());
     }
 
@@ -68,7 +68,7 @@ public class AdminShippingsControllerTests
         var id = Guid.NewGuid();
         var expected = new ShippingDto { Id = id, Name = "Post" };
 
-        _mediator.Send(Arg.Is<GetShippingQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetShippingQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<ShippingDto>.Success(expected));
 
         // Act
@@ -119,7 +119,7 @@ public class AdminShippingsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RestoreShippingCommand>(c => c.Id == id),
+            Arg.Is<RestoreShippingCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -143,7 +143,7 @@ public class AdminShippingsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateShippingCommand>(c => c.Id == id && c.BaseCost == 60000),
+            Arg.Is<UpdateShippingCommand>(c => c!.Id == id && c!.BaseCost == 60000),
             Arg.Any<CancellationToken>());
     }
 
@@ -163,7 +163,7 @@ public class AdminShippingsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteShippingCommand>(c => c.Id == id),
+            Arg.Is<DeleteShippingCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 

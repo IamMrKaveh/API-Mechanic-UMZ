@@ -109,10 +109,10 @@ public sealed class FakeElasticsearchServer : IAsyncDisposable
             var (respBody, status) = Router(method, path);
             var respBytes = Encoding.UTF8.GetBytes(respBody);
             var header = new StringBuilder()
-                .Append($"HTTP/1.1 {status} {(status == 200 ? "OK" : "Error")}\r\n")
+                .Append(CultureInfo.InvariantCulture, $"HTTP/1.1 {status} {(status == 200 ? "OK" : "Error")}\r\n")
                 .Append("Content-Type: application/json\r\n")
                 .Append("X-Elastic-Product: Elasticsearch\r\n")
-                .Append($"Content-Length: {respBytes.Length}\r\n")
+                .Append(CultureInfo.InvariantCulture, $"Content-Length: {respBytes.Length}\r\n")
                 .Append("Connection: close\r\n\r\n")
                 .ToString();
             var headerBytes = Encoding.ASCII.GetBytes(header);

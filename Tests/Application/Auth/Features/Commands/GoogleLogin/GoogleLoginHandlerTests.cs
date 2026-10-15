@@ -56,11 +56,11 @@ public class GoogleLoginHandlerTests : HandlerTestBase
         await _userRepository.Received(1).AddAsync(
             Arg.Is<Users>(u =>
                 u!.Email == Email.Create("newuser@example.com") &&
-                u.FullName.FirstName == "Ali" &&
-                u.FullName.LastName == "Rezaei" &&
-                u.PasswordHash == string.Empty &&
-                u.PhoneNumber == null &&
-                u.IsActive),
+                u!.FullName.FirstName == "Ali" &&
+                u!.FullName.LastName == "Rezaei" &&
+                u!.PasswordHash == string.Empty &&
+                u!.PhoneNumber == null &&
+                u!.IsActive),
             Arg.Any<CancellationToken>());
     }
 

@@ -60,7 +60,7 @@ public class AdminTicketsControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<PaginatedResult<TicketDto>>>();
         body.Data!.Items.ShouldHaveSingleItem();
         await _mediator.Received(1).Send(
-            Arg.Is<GetAdminTicketsQuery>(q => q.Status == "Open" && q.Priority == "High"),
+            Arg.Is<GetAdminTicketsQuery>(q => q!.Status == "Open" && q!.Priority == "High"),
             Arg.Any<CancellationToken>());
     }
 
@@ -81,7 +81,7 @@ public class AdminTicketsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetTicketDetailsQuery>(q => q.TicketId == id && q.IsAdmin),
+            Arg.Is<GetTicketDetailsQuery>(q => q!.TicketId == id && q!.IsAdmin),
             Arg.Any<CancellationToken>());
     }
 
@@ -102,7 +102,7 @@ public class AdminTicketsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ReplyToTicketCommand>(c => c.TicketId == id && c.Content == "We are on it"),
+            Arg.Is<ReplyToTicketCommand>(c => c!.TicketId == id && c!.Content == "We are on it"),
             Arg.Any<CancellationToken>());
     }
 
@@ -122,7 +122,7 @@ public class AdminTicketsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CloseTicketCommand>(c => c.TicketId == id),
+            Arg.Is<CloseTicketCommand>(c => c!.TicketId == id),
             Arg.Any<CancellationToken>());
     }
 

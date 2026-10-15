@@ -47,8 +47,8 @@ public class RapidTopUpWithdrawRuleTests
         result.IsTriggered.ShouldBeTrue();
         result.Severity.ShouldBe(FraudAlertSeverity.Critical);
         result.RuleName.ShouldBe(RapidTopUpWithdrawRule.Name);
-        result.Metadata.ShouldContain("\"topUps\":2");
-        result.Metadata.ShouldContain("\"withdrawals\":1");
+        result.Metadata!.ShouldContain("\"topUps\":2");
+        result.Metadata!.ShouldContain("\"withdrawals\":1");
     }
 
     [Fact]

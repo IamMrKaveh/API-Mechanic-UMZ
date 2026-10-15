@@ -213,6 +213,6 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
     {
         var entityType = Context.Model.FindEntityType(typeof(Wishlists));
         entityType.ShouldNotBeNull();
-        entityType!.GetQueryFilter().ShouldNotBeNull();
+        entityType!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
     }
 }

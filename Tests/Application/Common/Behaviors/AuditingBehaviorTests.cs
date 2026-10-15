@@ -92,7 +92,7 @@ public class AuditingBehaviorTests : HandlerTestBase
             Arg.Any<UserId?>(),
             Arg.Any<string?>(),
             Arg.Any<string?>(),
-            Arg.Is<string>(s => s!.Contains("failed") && s.Contains("bad input")),
+            Arg.Is<string>(s => s!.Contains("failed") && s!.Contains("bad input")),
             Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
     }
@@ -117,7 +117,7 @@ public class AuditingBehaviorTests : HandlerTestBase
             Arg.Any<UserId?>(),
             Arg.Any<string?>(),
             Arg.Any<string?>(),
-            Arg.Is<string>(s => s!.Contains("InvalidOperationException") && s.Contains("boom")),
+            Arg.Is<string>(s => s!.Contains("InvalidOperationException") && s!.Contains("boom")),
             Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
     }

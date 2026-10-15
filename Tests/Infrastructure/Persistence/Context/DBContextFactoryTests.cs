@@ -117,7 +117,7 @@ public class DBContextFactoryTests
 
             using var context = sut.CreateDbContext([]);
             context.ShouldNotBeNull();
-            context.Database.ProviderName.ShouldContain("Npgsql");
+            context.Database.ProviderName!.ShouldContain("Npgsql");
             context.Database.GetConnectionString().ShouldBe(connectionString);
             return null;
         });

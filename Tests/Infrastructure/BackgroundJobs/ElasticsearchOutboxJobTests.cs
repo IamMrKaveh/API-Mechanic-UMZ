@@ -18,9 +18,8 @@ public class ElasticsearchOutboxJobTests : HandlerTestBase
         var job = new ElasticsearchOutboxJob(
             _scopeFactory, AuditService, _distributedLock, _configuration, DateTimeProvider);
 
-        using var cts = new CancellationTokenSource();
-        cts.Cancel();
-        try { await job.StartAsync(cts.Token); }        catch (OperationCanceledException) { }
+        // .NET 10: StartAsync with an already-cancelled token never starts ExecuteAsync, so pass a live token.
+        try { await job.StartAsync(CancellationToken.None); }        catch (OperationCanceledException) { }
         if (job.ExecuteTask is not null)
         {
             try { await job.ExecuteTask.WaitAsync(TimeSpan.FromSeconds(10)); }

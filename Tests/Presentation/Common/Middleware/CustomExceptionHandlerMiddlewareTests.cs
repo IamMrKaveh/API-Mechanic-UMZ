@@ -204,7 +204,7 @@ public class CustomExceptionHandlerMiddlewareTests : HandlerTestBase
         doc.RootElement.GetProperty("traceId").GetString().ShouldBe(context.TraceIdentifier);
         doc.RootElement.GetProperty("instance").GetString().ShouldBe("/api/orders");
         await AuditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains(nameof(InvalidOperationException))),
+            Arg.Is<string>(s => s!.Contains(nameof(InvalidOperationException))),
             Arg.Any<CancellationToken>());
     }
 

@@ -1,4 +1,5 @@
 ﻿using Domain.Audit.Entities;
+using System.Globalization;
 using Domain.Audit.Interfaces;
 using System.IO.Compression;
 
@@ -28,8 +29,8 @@ public sealed class FileSystemAuditArchiveStorage(
 
         var directory = Path.Combine(
             _archiveRoot,
-            timestamp.Year.ToString("D4"),
-            timestamp.ToString("yyyy-MM-dd"));
+            timestamp.Year.ToString("D4", CultureInfo.InvariantCulture),
+            timestamp.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
         Directory.CreateDirectory(directory);
 

@@ -30,8 +30,8 @@ public class RedisLockHandleTests : HandlerTestBase
 
         await _db.Received(1).ScriptEvaluateAsync(
             Arg.Is<string>(s => s!.Contains("redis.call('del'")),
-            Arg.Is<RedisKey[]>(keys => keys.Length == 1 && keys[0].ToString() == "lock:order:7"),
-            Arg.Is<RedisValue[]>(values => values.Length == 1 && values[0].ToString() == "tok-7"),
+            Arg.Is<RedisKey[]>(keys => keys!.Length == 1 && keys![0].ToString() == "lock:order:7"),
+            Arg.Is<RedisValue[]>(values => values!.Length == 1 && values![0].ToString() == "tok-7"),
             Arg.Any<CommandFlags>());
         await AuditService.Received(1).LogDebugAsync(
             Arg.Is<string>(s => s!.Contains("lock:order:7")),

@@ -53,7 +53,7 @@ public class RemoveAdminReplyHandlerTests
         review.RepliedAt.ShouldBeNull();
         _reviewRepository.Received(1).Update(review);
         _auditContextEnricher.Received(1).Set("previouslyHadReply", "True");
-        _auditContextEnricher.Received(1).Set("previousReplyLength", existingReply.Length.ToString());
+        _auditContextEnricher.Received(1).Set("previousReplyLength", existingReply.Length.ToString(CultureInfo.InvariantCulture));
         _auditContextEnricher.Received(1).Set("reviewId", review.Id.Value.ToString());
         _auditContextEnricher.Received(1).Set("productId", review.ProductId.Value.ToString());
     }

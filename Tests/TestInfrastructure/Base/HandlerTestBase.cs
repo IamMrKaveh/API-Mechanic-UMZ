@@ -95,7 +95,7 @@ public abstract class HandlerTestBase
             .Returns(async ci =>
             {
                 var operation = ci.Arg<Func<CancellationToken, Task<T>>>();
-                return await operation(ci.Arg<CancellationToken>());
+                return await operation!(ci.Arg<CancellationToken>());
             });
     }
 

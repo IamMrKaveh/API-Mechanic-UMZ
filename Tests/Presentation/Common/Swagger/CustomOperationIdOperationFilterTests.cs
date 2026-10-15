@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Presentation.Common.Swagger;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -33,7 +33,7 @@ public class CustomOperationIdOperationFilterTests
         };
         var generator = Substitute.For<ISchemaGenerator>();
         return new OperationFilterContext(
-            apiDescription, generator, new SchemaRepository(), method);
+            apiDescription, generator, new SchemaRepository(), new OpenApiDocument(), method);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class CustomOperationIdOperationFilterTests
         var apiDescription = new ApiDescription { ActionDescriptor = new ActionDescriptor() };
         var method = typeof(FakeController).GetMethod(nameof(FakeController.Plain))!;
         var context = new OperationFilterContext(
-            apiDescription, Substitute.For<ISchemaGenerator>(), new SchemaRepository(), method);
+            apiDescription, Substitute.For<ISchemaGenerator>(), new SchemaRepository(), new OpenApiDocument(), method);
 
         new CustomOperationIdOperationFilter().Apply(operation, context);
 

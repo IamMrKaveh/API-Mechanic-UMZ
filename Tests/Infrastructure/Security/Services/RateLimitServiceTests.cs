@@ -111,7 +111,7 @@ public class RateLimitServiceTests
         await _sut.ResetAsync("user:42");
 
         await _db.Received(1).KeyDeleteAsync(
-            Arg.Is<RedisKey>(k => k.ToString() == "ratelimit:user:42"),
+            Arg.Is<RedisKey>(k => k!.ToString() == "ratelimit:user:42"),
             Arg.Any<CommandFlags>());
     }
 }

@@ -81,10 +81,10 @@ public class PersistWalletLedgerOnCreditHandlerTests : HandlerTestBase
         await _ledgerRepository.Received(1).AddAsync(
             Arg.Is<WalletLedgerEntry>(e =>
                 e!.WalletId == evt.WalletId &&
-                e.OwnerId == evt.OwnerId &&
-                e.Amount == evt.Amount &&
-                e.BalanceAfter == evt.NewBalance &&
-                e.IdempotencyKey == evt.IdempotencyKey),
+                e!.OwnerId == evt.OwnerId &&
+                e!.Amount == evt.Amount &&
+                e!.BalanceAfter == evt.NewBalance &&
+                e!.IdempotencyKey == evt.IdempotencyKey),
             Arg.Any<CancellationToken>());
         await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }

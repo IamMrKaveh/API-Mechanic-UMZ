@@ -15,10 +15,10 @@ public static class MiddlewareExtensions
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
-                var provider = app.Services
-                    .GetRequiredService<Asp.Versioning.ApiExplorer.IApiVersionDescriptionProvider>();
-
-                foreach (var description in provider.ApiVersionDescriptions)
+                // Describe versions from the application itself (AV0027): the DI provider only
+                // knows endpoints that existed when services were built, while this runs after
+                // all controllers and minimal APIs have been mapped.
+                foreach (var description in app.DescribeApiVersions())
                 {
                     options.SwaggerEndpoint(
                         $"/swagger/{description.GroupName}/swagger.json",

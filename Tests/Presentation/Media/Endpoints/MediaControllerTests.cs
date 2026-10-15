@@ -52,7 +52,7 @@ public class MediaControllerTests
         body.Success.ShouldBeTrue();
         body.Data!.Count.ShouldBe(1);
         await _mediator.Received(1).Send(
-            Arg.Is<GetEntityMediaQuery>(q => q.EntityType == "Product" && q.EntityId == entityId),
+            Arg.Is<GetEntityMediaQuery>(q => q!.EntityType == "Product" && q!.EntityId == entityId),
             Arg.Any<CancellationToken>());
     }
 
@@ -63,7 +63,7 @@ public class MediaControllerTests
         var id = Guid.NewGuid();
         var expected = new MediaDto { Id = id, FileName = "a.jpg" };
 
-        _mediator.Send(Arg.Is<GetMediaByIdQuery>(q => q.MediaId == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetMediaByIdQuery>(q => q!.MediaId == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<MediaDto>.Success(expected));
 
         // Act

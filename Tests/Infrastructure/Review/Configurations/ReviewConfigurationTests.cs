@@ -311,7 +311,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         index.Properties.Select(p => p.Name).ShouldBe(
             [nameof(Reviews.UserId), nameof(Reviews.ProductId), nameof(Reviews.OrderId)],
             ignoreOrder: true);
-        index.GetFilter().ShouldContain("IsDeleted");
+        index.GetFilter()!.ShouldContain("IsDeleted");
     }
 
     [Fact]

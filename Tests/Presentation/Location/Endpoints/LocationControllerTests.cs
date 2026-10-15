@@ -65,7 +65,7 @@ public class LocationControllerTests
         // Arrange
         IEnumerable<CityDto> expected = [new CityDto(1, "Tehran", "Tehran", 1)];
 
-        _mediator.Send(Arg.Is<GetCitiesQuery>(q => q.StateId == 1), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetCitiesQuery>(q => q!.StateId == 1), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<IEnumerable<CityDto>>.Success(expected));
 
         // Act

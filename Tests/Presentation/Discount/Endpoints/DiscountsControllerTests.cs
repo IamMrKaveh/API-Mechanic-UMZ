@@ -58,7 +58,7 @@ public class DiscountsControllerTests
         body.Success.ShouldBeTrue();
         body.Data!.IsValid.ShouldBeTrue();
         await _mediator.Received(1).Send(
-            Arg.Is<ValidateDiscountQuery>(q => q.Code == "SAVE10" && q.OrderAmount == 1000 && q.Currency == "IRT"),
+            Arg.Is<ValidateDiscountQuery>(q => q!.Code == "SAVE10" && q!.OrderAmount == 1000 && q!.Currency == "IRT"),
             Arg.Any<CancellationToken>());
     }
 
@@ -84,7 +84,7 @@ public class DiscountsControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse>();
         body.Success.ShouldBeTrue();
         await _mediator.Received(1).Send(
-            Arg.Is<ApplyDiscountCommand>(c => c.Code == "SAVE10" && c.OrderAmount == 1000 && c.OrderId == orderId),
+            Arg.Is<ApplyDiscountCommand>(c => c!.Code == "SAVE10" && c!.OrderAmount == 1000 && c!.OrderId == orderId),
             Arg.Any<CancellationToken>());
     }
 

@@ -61,7 +61,7 @@ public class TicketsControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<PaginatedResult<TicketListItemDto>>>();
         body.Data!.Items.ShouldHaveSingleItem();
         await _mediator.Received(1).Send(
-            Arg.Is<GetTicketsQuery>(q => q.Status == "Open" && q.Page == 1 && q.PageSize == 10),
+            Arg.Is<GetTicketsQuery>(q => q!.Status == "Open" && q!.Page == 1 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 
@@ -82,7 +82,7 @@ public class TicketsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetTicketDetailsQuery>(q => q.TicketId == id && !q.IsAdmin),
+            Arg.Is<GetTicketDetailsQuery>(q => q!.TicketId == id && !q!.IsAdmin),
             Arg.Any<CancellationToken>());
     }
 
@@ -104,10 +104,10 @@ public class TicketsControllerTests
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
             Arg.Is<CreateTicketCommand>(c =>
-                c.Subject == "Subject" &&
-                c.Category == "Order" &&
-                c.Priority == "High" &&
-                c.Message == "Message"),
+                c!.Subject == "Subject" &&
+                c!.Category == "Order" &&
+                c!.Priority == "High" &&
+                c!.Message == "Message"),
             Arg.Any<CancellationToken>());
     }
 
@@ -128,7 +128,7 @@ public class TicketsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ReplyToTicketCommand>(c => c.TicketId == id && c.Content == "Extra info"),
+            Arg.Is<ReplyToTicketCommand>(c => c!.TicketId == id && c!.Content == "Extra info"),
             Arg.Any<CancellationToken>());
     }
 
@@ -148,7 +148,7 @@ public class TicketsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CloseTicketCommand>(c => c.TicketId == id),
+            Arg.Is<CloseTicketCommand>(c => c!.TicketId == id),
             Arg.Any<CancellationToken>());
     }
 

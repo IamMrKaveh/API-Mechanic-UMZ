@@ -61,7 +61,7 @@ public class WishlistControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<PaginatedResult<WishlistItemDto>>>();
         body.Data!.Items.ShouldHaveSingleItem();
         await _mediator.Received(1).Send(
-            Arg.Is<GetWishlistByIdQuery>(q => q.TargetUserId == null && q.Page == 1 && q.PageSize == 10),
+            Arg.Is<GetWishlistByIdQuery>(q => q!.TargetUserId == null && q!.Page == 1 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 
@@ -71,7 +71,7 @@ public class WishlistControllerTests
         // Arrange
         var productId = Guid.NewGuid();
 
-        _mediator.Send(Arg.Is<CheckWishlistStatusQuery>(q => q.ProductId == productId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<CheckWishlistStatusQuery>(q => q!.ProductId == productId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<bool>.Success(true));
 
         // Act
@@ -103,7 +103,7 @@ public class WishlistControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<bool>>();
         body.Data.ShouldBeTrue();
         await _mediator.Received(1).Send(
-            Arg.Is<ToggleWishlistCommand>(c => c.ProductId == productId),
+            Arg.Is<ToggleWishlistCommand>(c => c!.ProductId == productId),
             Arg.Any<CancellationToken>());
     }
 
@@ -122,7 +122,7 @@ public class WishlistControllerTests
         // Assert
         result.ShouldBeOfType<NoContentResult>();
         await _mediator.Received(1).Send(
-            Arg.Is<RemoveFromWishlistCommand>(c => c.ProductId == productId),
+            Arg.Is<RemoveFromWishlistCommand>(c => c!.ProductId == productId),
             Arg.Any<CancellationToken>());
     }
 

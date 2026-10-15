@@ -85,10 +85,10 @@ public class CheckoutPaymentProcessorServiceTests
         await _sut.ProcessAsync(orderResult, null, "10.0.0.5", null, userId, CancellationToken.None);
 
         await _paymentService.Received(1).InitiatePaymentAsync(
-            Arg.Is<global::Domain.Order.ValueObjects.OrderId>(id => id.Value == orderResult.OrderId),
-            Arg.Is<Money>(m => m.Amount == 150_000m),
-            Arg.Is<IpAddress>(ip => ip.Value == "10.0.0.5"),
-            Arg.Is<global::Domain.User.ValueObjects.UserId>(u => u.Value == userId),
+            Arg.Is<global::Domain.Order.ValueObjects.OrderId>(id => id!.Value == orderResult.OrderId),
+            Arg.Is<Money>(m => m!.Amount == 150_000m),
+            Arg.Is<IpAddress>(ip => ip!.Value == "10.0.0.5"),
+            Arg.Is<global::Domain.User.ValueObjects.UserId>(u => u!.Value == userId),
             Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
     }

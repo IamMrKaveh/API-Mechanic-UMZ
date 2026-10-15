@@ -136,7 +136,7 @@ public class UpdateCategoryHandlerTests : HandlerTestBase, IClassFixture<Mapster
 
         _repository.Received(1).Update(
             Arg.Is<Categories>(c => c!.Id == category.Id),
-            Arg.Is<byte[]>(rv => rv != null && rv.SequenceEqual(expected)));
+            Arg.Is<byte[]>(rv => rv != null && rv!.SequenceEqual(expected)));
     }
 
     [Fact]

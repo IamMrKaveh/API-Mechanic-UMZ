@@ -207,7 +207,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         var index = owned.GetIndexes().SingleOrDefault(i => i.Properties.Count == 1 && i.Properties[0].Name == "Value");
         index.ShouldNotBeNull();
         index!.IsUnique.ShouldBeTrue();
-        index.GetFilter().ShouldContain("PhoneNumber");
+        index.GetFilter()!.ShouldContain("PhoneNumber");
     }
 
     [Fact]
@@ -233,6 +233,6 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
     {
         var entityType = Context.Model.FindEntityType(typeof(Users));
         entityType.ShouldNotBeNull();
-        entityType!.GetQueryFilter().ShouldNotBeNull();
+        entityType!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
     }
 }

@@ -150,7 +150,7 @@ public class OutputCacheContractTests
             if (type == typeof(TimeOnly)) return new TimeOnly(3, 4, 5);
             if (type == typeof(TimeSpan)) return TimeSpan.FromMinutes(5);
             if (type.IsEnum) return Enum.GetValues(type).GetValue(Enum.GetValues(type).Length > 1 ? 1 : 0);
-            if (type.IsPrimitive || type == typeof(decimal)) return Convert.ChangeType(3, type);
+            if (type.IsPrimitive || type == typeof(decimal)) return Convert.ChangeType(3, type, CultureInfo.InvariantCulture);
             if (depth > 6) return null;
 
             if (type.IsArray)

@@ -88,11 +88,11 @@ public class CategoryUniquenessCheckerAdapterTests
 
         await _repository.Received(1).ExistsByNameAsync(
             Arg.Any<CategoryName>(),
-            Arg.Is<CategoryId?>(x => x != null && x.Value == excludeId.Value),
+            Arg.Is<CategoryId?>(x => x != null && x!.Value == excludeId.Value),
             Arg.Any<CancellationToken>());
         await _repository.Received(1).ExistsBySlugAsync(
             Arg.Any<CategorySlug>(),
-            Arg.Is<CategoryId?>(x => x != null && x.Value == excludeId.Value),
+            Arg.Is<CategoryId?>(x => x != null && x!.Value == excludeId.Value),
             Arg.Any<CancellationToken>());
     }
 }

@@ -69,7 +69,7 @@ public class AdminProductsControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<PaginatedResult<ProductListItemDto>>>();
         body.Data!.Items.ShouldHaveSingleItem();
         await _mediator.Received(1).Send(
-            Arg.Is<GetAdminProductsQuery>(q => q.CategoryId == categoryId && q.Page == 1 && q.PageSize == 10),
+            Arg.Is<GetAdminProductsQuery>(q => q!.CategoryId == categoryId && q!.Page == 1 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 
@@ -80,7 +80,7 @@ public class AdminProductsControllerTests
         var id = Guid.NewGuid();
         var expected = new AdminProductDetailDto { Id = id, Name = "P1" };
 
-        _mediator.Send(Arg.Is<GetAdminProductQuery>(q => q.ProductId == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetAdminProductQuery>(q => q!.ProductId == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminProductDetailDto?>.Success(expected));
 
         // Act
@@ -98,7 +98,7 @@ public class AdminProductsControllerTests
         var id = Guid.NewGuid();
         var expected = new AdminProductDetailDto { Id = id, Name = "P1" };
 
-        _mediator.Send(Arg.Is<GetAdminProductDetailQuery>(q => q.ProductId == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetAdminProductDetailQuery>(q => q!.ProductId == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminProductDetailDto?>.Success(expected));
 
         // Act
@@ -128,7 +128,7 @@ public class AdminProductsControllerTests
         var created = result.ShouldBeOfType<ObjectResult>();
         created.StatusCode.ShouldBe(StatusCodes.Status201Created);
         await _mediator.Received(1).Send(
-            Arg.Is<CreateProductCommand>(c => c.CategoryId == categoryId && c.BrandId == brandId && c.Name == "P1"),
+            Arg.Is<CreateProductCommand>(c => c!.CategoryId == categoryId && c!.BrandId == brandId && c!.Name == "P1"),
             Arg.Any<CancellationToken>());
     }
 
@@ -152,7 +152,7 @@ public class AdminProductsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateProductCommand>(c => c.Id == id && c.Name == "P1" && c.RowVersion == "rv"),
+            Arg.Is<UpdateProductCommand>(c => c!.Id == id && c!.Name == "P1" && c!.RowVersion == "rv"),
             Arg.Any<CancellationToken>());
     }
 
@@ -173,7 +173,7 @@ public class AdminProductsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<BulkUpdatePricesCommand>(c => c.Updates.Count == 1),
+            Arg.Is<BulkUpdatePricesCommand>(c => c!.Updates.Count == 1),
             Arg.Any<CancellationToken>());
     }
 
@@ -195,7 +195,7 @@ public class AdminProductsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateProductDetailsCommand>(c => c.ProductId == id && c.Name == "P1" && c.BrandId == brandId),
+            Arg.Is<UpdateProductDetailsCommand>(c => c!.ProductId == id && c!.Name == "P1" && c!.BrandId == brandId),
             Arg.Any<CancellationToken>());
     }
 
@@ -215,7 +215,7 @@ public class AdminProductsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteProductCommand>(c => c.ProductId == id),
+            Arg.Is<DeleteProductCommand>(c => c!.ProductId == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -235,7 +235,7 @@ public class AdminProductsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ActivateProductCommand>(c => c.ProductId == id),
+            Arg.Is<ActivateProductCommand>(c => c!.ProductId == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -255,7 +255,7 @@ public class AdminProductsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeactivateProductCommand>(c => c.ProductId == id),
+            Arg.Is<DeactivateProductCommand>(c => c!.ProductId == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -275,7 +275,7 @@ public class AdminProductsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RestoreProductCommand>(c => c.ProductId == id),
+            Arg.Is<RestoreProductCommand>(c => c!.ProductId == id),
             Arg.Any<CancellationToken>());
     }
 

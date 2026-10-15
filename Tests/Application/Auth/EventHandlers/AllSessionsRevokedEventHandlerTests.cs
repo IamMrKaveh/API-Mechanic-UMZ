@@ -28,8 +28,8 @@ public class AllSessionsRevokedEventHandlerTests : HandlerTestBase
         await AuditService.Received(1).LogSystemEventAsync(
             "All Session Revoked",
             Arg.Is<string>(s => s!.Contains(userId.Value.ToString())
-                && s.Contains('5')
-                && s.Contains(SessionRevocationReason.UserRequested.ToString())),
+                && s!.Contains('5')
+                && s!.Contains(SessionRevocationReason.UserRequested.ToString())),
             Arg.Any<CancellationToken>());
     }
 
@@ -51,7 +51,7 @@ public class AllSessionsRevokedEventHandlerTests : HandlerTestBase
 
         await AuditService.Received(1).LogSystemEventAsync(
             Arg.Any<string>(),
-            Arg.Is<string>(s => s!.Contains(reason.ToString()) && s.Contains(count.ToString())),
+            Arg.Is<string>(s => s!.Contains(reason.ToString()) && s!.Contains(count.ToString(CultureInfo.InvariantCulture))),
             Arg.Any<CancellationToken>());
     }
 

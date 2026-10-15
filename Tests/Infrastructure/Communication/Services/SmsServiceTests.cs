@@ -109,9 +109,9 @@ public class SmsServiceTests : HandlerTestBase
         await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
-                s.Contains("500") &&
-                s.Contains("09*******67") &&
-                !s.Contains("09121234567")),
+                s!.Contains("500") &&
+                s!.Contains("09*******67") &&
+                !s!.Contains("09121234567")),
             Arg.Any<CancellationToken>());
     }
 
@@ -129,8 +129,8 @@ public class SmsServiceTests : HandlerTestBase
         await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
-                s.Contains("Invalid Kavenegar response") &&
-                s.Contains("09*******67")),
+                s!.Contains("Invalid Kavenegar response") &&
+                s!.Contains("09*******67")),
             Arg.Any<CancellationToken>());
     }
 
@@ -150,9 +150,9 @@ public class SmsServiceTests : HandlerTestBase
         await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
-                s.Contains("Kavenegar API error 418") &&
-                s.Contains("invalid receptor") &&
-                s.Contains("09*******67")),
+                s!.Contains("Kavenegar API error 418") &&
+                s!.Contains("invalid receptor") &&
+                s!.Contains("09*******67")),
             Arg.Any<CancellationToken>());
     }
 
@@ -170,8 +170,8 @@ public class SmsServiceTests : HandlerTestBase
         await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
-                s.Contains("Failed to send OTP") &&
-                s.Contains("09*******67")),
+                s!.Contains("Failed to send OTP") &&
+                s!.Contains("09*******67")),
             Arg.Any<CancellationToken>());
     }
 
@@ -189,10 +189,10 @@ public class SmsServiceTests : HandlerTestBase
         await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
-                s.Contains("Failed to send OTP") &&
-                s.Contains("HttpRequestException") &&
-                s.Contains("network down") &&
-                s.Contains("09*******67")),
+                s!.Contains("Failed to send OTP") &&
+                s!.Contains("HttpRequestException") &&
+                s!.Contains("network down") &&
+                s!.Contains("09*******67")),
             Arg.Any<CancellationToken>());
     }
 
@@ -212,8 +212,8 @@ public class SmsServiceTests : HandlerTestBase
         await AuditService.Received(1).LogErrorAsync(
             Arg.Is<string>(s =>
                 s!.Contains("[SMS]") &&
-                s.Contains("Failed to send OTP") &&
-                s.Contains("09*******67")),
+                s!.Contains("Failed to send OTP") &&
+                s!.Contains("09*******67")),
             Arg.Any<CancellationToken>());
     }
 }

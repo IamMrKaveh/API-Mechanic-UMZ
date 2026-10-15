@@ -14,6 +14,6 @@ public class GetUserByIdHandler(
         var userId = UserId.From(request.Id);
 
         var dto = await userQueryService.GetUserProfileAsync(userId, ct);
-        return dto.ToResultOrNotFound("User not found");
+        return dto.ToResultOrNullableNotFound("User not found");
     }
 }

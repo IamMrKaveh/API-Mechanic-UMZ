@@ -113,8 +113,8 @@ public class FraudAlertCriticalFreezeHandlerTests : HandlerTestBase
         await _mediator.Received(1).Send(
             Arg.Is<FreezeWalletCommand>(c =>
                 c!.UserId == evt.UserId.Value &&
-                c.Reason.Contains(evt.RuleName) &&
-                c.Reason.Contains(evt.Description)),
+                c!.Reason.Contains(evt.RuleName) &&
+                c!.Reason.Contains(evt.Description)),
             Arg.Any<CancellationToken>());
     }
 }

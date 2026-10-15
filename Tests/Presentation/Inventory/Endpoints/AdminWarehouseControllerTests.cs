@@ -68,7 +68,7 @@ public class AdminWarehouseControllerTests
         var id = Guid.NewGuid();
         var expected = new WarehouseDto(id, "WH-1", "Main", "Tehran", null, null, 1, true, true, DateTime.UtcNow);
 
-        _mediator.Send(Arg.Is<GetWarehouseByIdQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetWarehouseByIdQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<WarehouseDto>.Success(expected));
 
         // Act
@@ -97,7 +97,7 @@ public class AdminWarehouseControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CreateWarehouseCommand>(c => c.Code == "WH-1" && c.Name == "Main" && c.City == "Tehran" && c.IsDefault),
+            Arg.Is<CreateWarehouseCommand>(c => c!.Code == "WH-1" && c!.Name == "Main" && c!.City == "Tehran" && c!.IsDefault),
             Arg.Any<CancellationToken>());
     }
 
@@ -118,7 +118,7 @@ public class AdminWarehouseControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateWarehouseCommand>(c => c.Id == id && c.Name == "Main" && c.Priority == 2),
+            Arg.Is<UpdateWarehouseCommand>(c => c!.Id == id && c!.Name == "Main" && c!.Priority == 2),
             Arg.Any<CancellationToken>());
     }
 
@@ -138,7 +138,7 @@ public class AdminWarehouseControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteWarehouseCommand>(c => c.Id == id),
+            Arg.Is<DeleteWarehouseCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -158,7 +158,7 @@ public class AdminWarehouseControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<SetDefaultWarehouseCommand>(c => c.Id == id),
+            Arg.Is<SetDefaultWarehouseCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -179,7 +179,7 @@ public class AdminWarehouseControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ToggleWarehouseActiveCommand>(c => c.Id == id && !c.IsActive),
+            Arg.Is<ToggleWarehouseActiveCommand>(c => c!.Id == id && !c!.IsActive),
             Arg.Any<CancellationToken>());
     }
 

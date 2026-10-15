@@ -1,6 +1,6 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Presentation.Common.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -9,17 +9,18 @@ namespace Tests.Presentation.Common.Swagger;
 public class RemoveVersionParameterOperationFilterTests
 {
     private static (OpenApiOperation Operation, OperationFilterContext Context) Build(
-        params OpenApiParameter[] parameters)
+        params IOpenApiParameter[] parameters)
     {
         var operation = new OpenApiOperation
         {
-            Parameters = new List<OpenApiParameter>(parameters)
+            Parameters = new List<IOpenApiParameter>(parameters)
         };
         var generator = Substitute.For<ISchemaGenerator>();
         var context = new OperationFilterContext(
             new ApiDescription(),
             generator,
             new SchemaRepository(),
+            new OpenApiDocument(),
             typeof(RemoveVersionParameterOperationFilterTests).GetMethod(
                 nameof(Build), BindingFlags.Static | BindingFlags.NonPublic)!);
         return (operation, context);
@@ -34,7 +35,7 @@ public class RemoveVersionParameterOperationFilterTests
 
         new RemoveVersionParameterOperationFilter().Apply(operation, context);
 
-        operation.Parameters.Count.ShouldBe(1);
+        operation.Parameters!.Count.ShouldBe(1);
         operation.Parameters[0].Name.ShouldBe("id");
     }
 
@@ -46,7 +47,7 @@ public class RemoveVersionParameterOperationFilterTests
 
         new RemoveVersionParameterOperationFilter().Apply(operation, context);
 
-        operation.Parameters.Count.ShouldBe(1);
+        operation.Parameters!.Count.ShouldBe(1);
     }
 
     [Fact]
@@ -57,7 +58,7 @@ public class RemoveVersionParameterOperationFilterTests
 
         new RemoveVersionParameterOperationFilter().Apply(operation, context);
 
-        operation.Parameters.Count.ShouldBe(1);
+        operation.Parameters!.Count.ShouldBe(1);
         operation.Parameters[0].Name.ShouldBe("id");
     }
 
@@ -67,6 +68,6 @@ public class RemoveVersionParameterOperationFilterTests
         var (operation, context) = Build();
 
         Should.NotThrow(() => new RemoveVersionParameterOperationFilter().Apply(operation, context));
-        operation.Parameters.Count.ShouldBe(0);
+        operation.Parameters!.Count.ShouldBe(0);
     }
 }

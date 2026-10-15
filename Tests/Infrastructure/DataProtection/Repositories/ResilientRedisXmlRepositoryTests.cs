@@ -80,7 +80,7 @@ public class ResilientRedisXmlRepositoryTests
         _redis.IsConnected.Returns(true);
         var expectedPattern = $"{KeyPrefix}:*";
         _server
-            .Keys(pattern: Arg.Is<RedisValue>(p => p.ToString() == expectedPattern))
+            .Keys(pattern: Arg.Is<RedisValue>(p => p!.ToString() == expectedPattern))
             .Returns(new RedisKey[] { $"{KeyPrefix}:only" });
         _database.StringGet(Arg.Any<RedisKey[]>()).Returns(
             new RedisValue[] { new XElement("only").ToString() });
@@ -191,9 +191,9 @@ public class ResilientRedisXmlRepositoryTests
         sut.StoreElement(element, friendlyName);
 
         _database.Received(1).StringSet(
-            Arg.Is<RedisKey>(k => k.ToString() == expectedKey),
-            Arg.Is<RedisValue>(v => v.ToString() == expectedValue),
-            Arg.Is<TimeSpan?>(t => t.HasValue && t.Value == Expiration),
+            Arg.Is<RedisKey>(k => k!.ToString() == expectedKey),
+            Arg.Is<RedisValue>(v => v!.ToString() == expectedValue),
+            Arg.Is<TimeSpan?>(t => t!.HasValue && t!.Value == Expiration),
             Arg.Any<When>(),
             Arg.Any<CommandFlags>());
     }

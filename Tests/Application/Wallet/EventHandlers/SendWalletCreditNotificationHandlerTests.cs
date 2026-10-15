@@ -62,8 +62,8 @@ public sealed class SendWalletCreditNotificationHandlerTests : HandlerTestBase
             evt.OwnerId,
             "شارژ کیف پول توسط پشتیبانی",
             Arg.Is<string>(m => m!.Contains("120,000")
-                             && m.Contains("IRT")
-                             && m.Contains("300,000")),
+                             && m!.Contains("IRT")
+                             && m!.Contains("300,000")),
             "WalletCredit",
             "/wallet",
             evt.WalletId.Value,
@@ -88,7 +88,7 @@ public sealed class SendWalletCreditNotificationHandlerTests : HandlerTestBase
         await AuditService.Received(1).LogSystemEventAsync(
             "WalletCreditNotificationFailed",
             Arg.Is<string>(s => s!.Contains(evt.OwnerId.Value.ToString())
-                             && s.Contains("smtp down")),
+                             && s!.Contains("smtp down")),
             Arg.Any<CancellationToken>());
     }
 

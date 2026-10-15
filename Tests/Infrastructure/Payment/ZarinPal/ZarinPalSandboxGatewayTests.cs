@@ -338,8 +338,8 @@ public class ZarinPalSandboxGatewayTests : HandlerTestBase
 
         ex.ServiceName.ShouldBe("ZarinpalSandbox");
         ex.Message.ShouldBe(expectedMessage);
-        ex.ErrorCode.ShouldBe(code.ToString());
-        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains($"code={code}")), Arg.Any<CancellationToken>());
+        ex.ErrorCode.ShouldBe(code.ToString(CultureInfo.InvariantCulture));
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s!.Contains($"code={code}")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -388,7 +388,7 @@ public class ZarinPalSandboxGatewayTests : HandlerTestBase
 
         ex.Message.ShouldBe("ارتباط با درگاه پرداخت سندباکس برقرار نشد.");
         ex.InnerException.ShouldBeOfType<HttpRequestException>();
-        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Initiate exception")), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s!.Contains("Initiate exception")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -470,7 +470,7 @@ public class ZarinPalSandboxGatewayTests : HandlerTestBase
 
         ex.Message.ShouldBe("ارتباط با درگاه پرداخت سندباکس برقرار نشد.");
         ex.InnerException.ShouldBeOfType<HttpRequestException>();
-        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s.Contains("Verify exception")), Arg.Any<CancellationToken>());
+        await AuditService.Received(1).LogErrorAsync(Arg.Is<string>(s => s!.Contains("Verify exception")), Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -69,8 +69,7 @@ public sealed class ResilientRateLimitService : IRateLimitService
             _logger.LogWarning(
                 ex,
                 "Failed to reset Redis rate-limit key {Key}.",
-                key,
-                ct);
+                key);
         }
     }
 

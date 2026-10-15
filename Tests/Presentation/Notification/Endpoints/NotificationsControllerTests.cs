@@ -62,7 +62,7 @@ public class NotificationsControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<PaginatedResult<NotificationDto>>>();
         body.Success.ShouldBeTrue();
         await _mediator.Received(1).Send(
-            Arg.Is<GetNotificationsQuery>(q => q.UnreadOnly && q.Page == 2 && q.PageSize == 10),
+            Arg.Is<GetNotificationsQuery>(q => q!.UnreadOnly && q!.Page == 2 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 
@@ -100,7 +100,7 @@ public class NotificationsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<MarkNotificationReadCommand>(c => c.NotificationId == id),
+            Arg.Is<MarkNotificationReadCommand>(c => c!.NotificationId == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -136,7 +136,7 @@ public class NotificationsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteNotificationCommand>(c => c.NotificationId == id),
+            Arg.Is<DeleteNotificationCommand>(c => c!.NotificationId == id),
             Arg.Any<CancellationToken>());
     }
 

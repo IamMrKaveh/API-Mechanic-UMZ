@@ -117,13 +117,13 @@ public class GetReviewsByStatusHandlerTests
             .GetReviewsByStatusAsync(
                 Arg.Is<AdminReviewFilter>(f =>
                     f!.Status == "Approved" &&
-                    f.Page == 2 &&
-                    f.PageSize == 25 &&
-                    f.SearchText == "keyword" &&
-                    f.MinRating == 4 &&
-                    f.ProductId == productId &&
-                    f.DateFrom == from &&
-                    f.DateTo == to),
+                    f!.Page == 2 &&
+                    f!.PageSize == 25 &&
+                    f!.SearchText == "keyword" &&
+                    f!.MinRating == 4 &&
+                    f!.ProductId == productId &&
+                    f!.DateFrom == from &&
+                    f!.DateTo == to),
                 Arg.Any<CancellationToken>());
     }
 }

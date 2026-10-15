@@ -160,12 +160,12 @@ public class NoTimestampCompactJsonFormatterTests
         var evt = BuildEvent(LogEventLevel.Error, "failed", ex);
 
         using var doc = JsonDocument.Parse(Format(evt));
-        doc.RootElement.GetProperty("exceptionType").GetString().ShouldContain(nameof(ArgumentException));
+        doc.RootElement.GetProperty("exceptionType").GetString()!.ShouldContain(nameof(ArgumentException));
         doc.RootElement.GetProperty("exceptionMessage").GetString().ShouldBe("outer boom");
-        doc.RootElement.GetProperty("innerExceptionType").GetString().ShouldContain(nameof(InvalidOperationException));
+        doc.RootElement.GetProperty("innerExceptionType").GetString()!.ShouldContain(nameof(InvalidOperationException));
         doc.RootElement.GetProperty("innerExceptionMessage").GetString().ShouldBe("inner boom");
         doc.RootElement.GetProperty("exceptionData").GetProperty("Key1").GetString().ShouldBe("Value1");
-        doc.RootElement.GetProperty("exception").GetString().ShouldContain("outer boom");
+        doc.RootElement.GetProperty("exception").GetString()!.ShouldContain("outer boom");
     }
 
     [Fact]

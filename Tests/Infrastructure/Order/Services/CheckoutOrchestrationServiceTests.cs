@@ -100,7 +100,7 @@ public class CheckoutOrchestrationServiceTests : HandlerTestBase
                 Arg.Any<global::Domain.User.ValueObjects.UserId>(), Arg.Any<Money>(),
                 Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(call => ServiceResult<CheckoutResultDto>.Success(
-                (CheckoutResultDto)call.Arg<CheckoutResultDto>() with { PaymentAuthority = "AUTH-1" }));
+                (CheckoutResultDto)call.Arg<CheckoutResultDto>()! with { PaymentAuthority = "AUTH-1" }));
     }
 
     private static global::Domain.Cart.Aggregates.Cart NewCheckoutableCart(Guid userId)
@@ -305,11 +305,11 @@ public class CheckoutOrchestrationServiceTests : HandlerTestBase
         await _shippingValidator.Received(1).ValidateAndCalculateCostAsync(
             command.ShippingId,
             100_000m,
-            Arg.Is<IReadOnlyCollection<OrderItemSnapshot>>(items => items.Count == 1),
+            Arg.Is<IReadOnlyCollection<OrderItemSnapshot>>(items => items!.Count == 1),
             Arg.Any<CancellationToken>());
         await _discountApplicator.Received(1).ApplyAsync(
             command.DiscountCode,
-            Arg.Is<Money>(m => m.Amount == 100_000m),
+            Arg.Is<Money>(m => m!.Amount == 100_000m),
             command.UserId,
             Arg.Any<CancellationToken>());
     }

@@ -67,7 +67,7 @@ public class AdminDiscountsControllerTests
         body.Success.ShouldBeTrue();
         body.Data!.Items.ShouldHaveSingleItem();
         await _mediator.Received(1).Send(
-            Arg.Is<GetDiscountsQuery>(q => !q.IncludeExpired && !q.IncludeDeleted && q.Page == 1 && q.PageSize == 20),
+            Arg.Is<GetDiscountsQuery>(q => !q!.IncludeExpired && !q!.IncludeDeleted && q!.Page == 1 && q!.PageSize == 20),
             Arg.Any<CancellationToken>());
     }
 
@@ -78,7 +78,7 @@ public class AdminDiscountsControllerTests
         var id = Guid.NewGuid();
         var expected = new DiscountCodeDetailDto { Id = id, Code = "SAVE10" };
 
-        _mediator.Send(Arg.Is<GetDiscountByIdQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetDiscountByIdQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<DiscountCodeDetailDto?>.Success(expected));
 
         // Act
@@ -96,7 +96,7 @@ public class AdminDiscountsControllerTests
         var id = Guid.NewGuid();
         var expected = new DiscountUsageReportDto { DiscountCodeId = id, Code = "SAVE10", TotalUsages = 5 };
 
-        _mediator.Send(Arg.Is<GetDiscountUsageReportQuery>(q => q.DiscountCodeId == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetDiscountUsageReportQuery>(q => q!.DiscountCodeId == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<DiscountUsageReportDto?>.Success(expected));
 
         // Act
@@ -116,7 +116,7 @@ public class AdminDiscountsControllerTests
         // Arrange
         var expected = new DiscountInfoDto { Code = "SAVE10", IsRedeemable = true };
 
-        _mediator.Send(Arg.Is<GetDiscountInfoQuery>(q => q.Code == "SAVE10"), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetDiscountInfoQuery>(q => q!.Code == "SAVE10"), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<DiscountInfoDto>.Success(expected));
 
         // Act
@@ -173,7 +173,7 @@ public class AdminDiscountsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateDiscountCommand>(c => c.Id == id && c.Value == 15 && c.IsActive),
+            Arg.Is<UpdateDiscountCommand>(c => c!.Id == id && c!.Value == 15 && c!.IsActive),
             Arg.Any<CancellationToken>());
     }
 
@@ -193,7 +193,7 @@ public class AdminDiscountsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteDiscountCommand>(c => c.Id == id),
+            Arg.Is<DeleteDiscountCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -215,7 +215,7 @@ public class AdminDiscountsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CancelDiscountUsageCommand>(c => c.DiscountCodeId == id && c.OrderId == orderId),
+            Arg.Is<CancelDiscountUsageCommand>(c => c!.DiscountCodeId == id && c!.OrderId == orderId),
             Arg.Any<CancellationToken>());
     }
 

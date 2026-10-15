@@ -69,7 +69,7 @@ public class AdminInventoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetInventoryTransactionsQuery>(q => q.VariantId == variantId && q.TransactionType == "StockIn"),
+            Arg.Is<GetInventoryTransactionsQuery>(q => q!.VariantId == variantId && q!.TransactionType == "StockIn"),
             Arg.Any<CancellationToken>());
     }
 
@@ -96,7 +96,7 @@ public class AdminInventoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetStockLedgerByVariantQuery>(q => q.VariantId == variantId),
+            Arg.Is<GetStockLedgerByVariantQuery>(q => q!.VariantId == variantId),
             Arg.Any<CancellationToken>());
     }
 
@@ -107,7 +107,7 @@ public class AdminInventoryControllerTests
         var variantId = Guid.NewGuid();
         IEnumerable<WarehouseStockDto> expected = [new WarehouseStockDto { VariantId = variantId, Quantity = 10 }];
 
-        _mediator.Send(Arg.Is<GetWarehouseStockQuery>(q => q.VariantId == variantId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetWarehouseStockQuery>(q => q!.VariantId == variantId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<IEnumerable<WarehouseStockDto>>.Success(expected));
 
         // Act
@@ -135,7 +135,7 @@ public class AdminInventoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ReverseInventoryCommand>(c => c.VariantId == variantId && c.IdempotencyKey == "key-1"),
+            Arg.Is<ReverseInventoryCommand>(c => c!.VariantId == variantId && c!.IdempotencyKey == "key-1"),
             Arg.Any<CancellationToken>());
     }
 
@@ -155,7 +155,7 @@ public class AdminInventoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetLowStockProductsQuery>(q => q.Threshold == 5),
+            Arg.Is<GetLowStockProductsQuery>(q => q!.Threshold == 5),
             Arg.Any<CancellationToken>());
     }
 
@@ -194,7 +194,7 @@ public class AdminInventoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<AdjustStockCommand>(c => c.VariantId == variantId && c.QuantityChange == 5),
+            Arg.Is<AdjustStockCommand>(c => c!.VariantId == variantId && c!.QuantityChange == 5),
             Arg.Any<CancellationToken>());
     }
 
@@ -215,7 +215,7 @@ public class AdminInventoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<BulkAdjustStockCommand>(c => c.Items.Count == 1 && c.Items[0].VariantId == variantId),
+            Arg.Is<BulkAdjustStockCommand>(c => c!.Items.Count == 1 && c!.Items[0].VariantId == variantId),
             Arg.Any<CancellationToken>());
     }
 
@@ -235,7 +235,7 @@ public class AdminInventoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ReconcileStockCommand>(c => c.VariantId == variantId),
+            Arg.Is<ReconcileStockCommand>(c => c!.VariantId == variantId),
             Arg.Any<CancellationToken>());
     }
 
@@ -256,7 +256,7 @@ public class AdminInventoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RecordDamageCommand>(c => c.VariantId == variantId && c.Quantity == 2),
+            Arg.Is<RecordDamageCommand>(c => c!.VariantId == variantId && c!.Quantity == 2),
             Arg.Any<CancellationToken>());
     }
 
@@ -286,7 +286,7 @@ public class AdminInventoryControllerTests
         var variantId = Guid.NewGuid();
         var expected = new InventoryStatusDto { VariantId = variantId, StockQuantity = 10 };
 
-        _mediator.Send(Arg.Is<GetInventoryStatusQuery>(q => q.VariantId == variantId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetInventoryStatusQuery>(q => q!.VariantId == variantId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<InventoryStatusDto>.Success(expected));
 
         // Act
@@ -314,7 +314,7 @@ public class AdminInventoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<BulkStockInCommand>(c => c.Items.Count == 1 && c.Items[0].VariantId == variantId),
+            Arg.Is<BulkStockInCommand>(c => c!.Items.Count == 1 && c!.Items[0].VariantId == variantId),
             Arg.Any<CancellationToken>());
     }
 
@@ -334,7 +334,7 @@ public class AdminInventoryControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ApproveReturnCommand>(c => c.OrderId == orderId),
+            Arg.Is<ApproveReturnCommand>(c => c!.OrderId == orderId),
             Arg.Any<CancellationToken>());
     }
 
@@ -346,7 +346,7 @@ public class AdminInventoryControllerTests
         IReadOnlyList<InventoryStatusDto> expected =
             [new InventoryStatusDto { VariantId = Guid.NewGuid(), StockQuantity = 7 }];
 
-        _mediator.Send(Arg.Is<GetProductInventoryStatusesQuery>(q => q.ProductId == productId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetProductInventoryStatusesQuery>(q => q!.ProductId == productId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<IReadOnlyList<InventoryStatusDto>>.Success(expected));
 
         // Act

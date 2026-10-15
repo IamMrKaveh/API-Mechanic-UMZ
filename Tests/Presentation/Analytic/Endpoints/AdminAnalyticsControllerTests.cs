@@ -81,7 +81,7 @@ public class AdminAnalyticsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetDashboardStatisticsQuery>(q => q.FromDate == null && q.ToDate == null),
+            Arg.Is<GetDashboardStatisticsQuery>(q => q!.FromDate == null && q!.ToDate == null),
             Arg.Any<CancellationToken>());
     }
 

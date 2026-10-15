@@ -75,7 +75,7 @@ public class ElasticsearchHealthCheckTests : HandlerTestBase, IAsyncLifetime{
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
         await AuditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("Elasticsearch health check failed")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("Elasticsearch health check failed")), Arg.Any<CancellationToken>());
     }
 
     [Fact]

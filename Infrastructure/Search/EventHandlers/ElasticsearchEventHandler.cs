@@ -1,4 +1,5 @@
-﻿using Application.Search.Events;
+﻿using System.Globalization;
+using Application.Search.Events;
 using Application.Search.Features.Shared;
 
 namespace Infrastructure.Search.EventHandlers;
@@ -7,7 +8,7 @@ public sealed class ElasticsearchEventHandler(DBContext context, IAuditService a
 {
     public async Task HandleProductChangedAsync(ProductChangedEvent domainEvent, CancellationToken ct = default)
     {
-        var document = new ProductSearchDocument { ProductId = Guid.Parse(domainEvent.EntityId.ToString()), Name = domainEvent.Document?.Name ?? string.Empty };
+        var document = new ProductSearchDocument { ProductId = Guid.Parse(domainEvent.EntityId.ToString(CultureInfo.InvariantCulture)), Name = domainEvent.Document?.Name ?? string.Empty };
 
         var message = ElasticsearchOutboxMessage.Create(
             "Product",
@@ -28,7 +29,7 @@ public sealed class ElasticsearchEventHandler(DBContext context, IAuditService a
     {
         var document = new CategorySearchDocument
         {
-            CategoryId = Guid.Parse(domainEvent.EntityId.ToString()),
+            CategoryId = Guid.Parse(domainEvent.EntityId.ToString(CultureInfo.InvariantCulture)),
             Name = domainEvent.Document?.Name ?? string.Empty
         };
 
@@ -46,7 +47,7 @@ public sealed class ElasticsearchEventHandler(DBContext context, IAuditService a
     {
         var document = new BrandSearchDocument
         {
-            BrandId = Guid.Parse(domainEvent.EntityId.ToString()),
+            BrandId = Guid.Parse(domainEvent.EntityId.ToString(CultureInfo.InvariantCulture)),
             Name = domainEvent.Document?.Name ?? string.Empty
         };
 

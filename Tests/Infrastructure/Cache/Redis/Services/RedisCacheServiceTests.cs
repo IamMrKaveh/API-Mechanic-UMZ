@@ -35,7 +35,7 @@ public class RedisCacheServiceTests
         result!.Name.ShouldBe("Brake Pad");
         result.Quantity.ShouldBe(2);
         await _db.Received(1).StringGetAsync(
-            Arg.Is<RedisKey>(k => k.ToString() == "shop:product:1"),
+            Arg.Is<RedisKey>(k => k!.ToString() == "shop:product:1"),
             Arg.Any<CommandFlags>());
     }
 
@@ -80,9 +80,9 @@ public class RedisCacheServiceTests
         await sut.SetAsync("product:1", new SampleDto("Brake Pad", 2));
 
         await _db.Received(1).StringSetAsync(
-            Arg.Is<RedisKey>(k => k.ToString() == "shop:product:1"),
-            Arg.Is<RedisValue>(v => v.ToString().Contains("Brake Pad")),
-            Arg.Is<StackExchange.Redis.Expiration>(e => e.Equals((StackExchange.Redis.Expiration)TimeSpan.FromMinutes(30))),
+            Arg.Is<RedisKey>(k => k!.ToString() == "shop:product:1"),
+            Arg.Is<RedisValue>(v => v!.ToString().Contains("Brake Pad")),
+            Arg.Is<StackExchange.Redis.Expiration>(e => e!.Equals((StackExchange.Redis.Expiration)TimeSpan.FromMinutes(30))),
             Arg.Any<StackExchange.Redis.ValueCondition>(),
             Arg.Any<CommandFlags>());
     }
@@ -97,7 +97,7 @@ public class RedisCacheServiceTests
         await _db.Received(1).StringSetAsync(
             Arg.Any<RedisKey>(),
             Arg.Any<RedisValue>(),
-            Arg.Is<StackExchange.Redis.Expiration>(e => e.Equals((StackExchange.Redis.Expiration)TimeSpan.FromMinutes(5))),
+            Arg.Is<StackExchange.Redis.Expiration>(e => e!.Equals((StackExchange.Redis.Expiration)TimeSpan.FromMinutes(5))),
             Arg.Any<StackExchange.Redis.ValueCondition>(),
             Arg.Any<CommandFlags>());
     }
@@ -118,7 +118,7 @@ public class RedisCacheServiceTests
         await BuildSut().RemoveAsync("product:1");
 
         await _db.Received(1).KeyDeleteAsync(
-            Arg.Is<RedisKey>(k => k.ToString() == "shop:product:1"),
+            Arg.Is<RedisKey>(k => k!.ToString() == "shop:product:1"),
             Arg.Any<CommandFlags>());
     }
 
@@ -140,7 +140,7 @@ public class RedisCacheServiceTests
 
         result.ShouldBeTrue();
         await _db.Received(1).KeyExistsAsync(
-            Arg.Is<RedisKey>(k => k.ToString() == "shop:k"),
+            Arg.Is<RedisKey>(k => k!.ToString() == "shop:k"),
             Arg.Any<CommandFlags>());
     }
 

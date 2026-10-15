@@ -26,7 +26,7 @@ public class ElasticsearchIndexerTests : HandlerTestBase, IAsyncLifetime{
 
         result.ShouldBeFalse();
         await AuditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("Unknown entity type 'Spaceship'")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("Unknown entity type 'Spaceship'")), Arg.Any<CancellationToken>());
         _server.Requests.ShouldBeEmpty();
     }
 
@@ -116,7 +116,7 @@ public class ElasticsearchIndexerTests : HandlerTestBase, IAsyncLifetime{
 
         result.ShouldBeFalse();
         await AuditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains($"Product:{entityId}")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains($"Product:{entityId}")), Arg.Any<CancellationToken>());
     }
 
     [Fact]

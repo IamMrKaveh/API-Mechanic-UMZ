@@ -1,4 +1,4 @@
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Presentation.Common.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -22,18 +22,18 @@ public class NullableSchemaFilterTests
     }
 
     private static SchemaFilterContext BuildContext(Type type) =>
-        new(type, Substitute.For<ISchemaGenerator>(), new SchemaRepository());
+        new(type, Substitute.For<ISchemaGenerator>(), new SchemaRepository(), type, null);
 
     private static OpenApiSchema BuildSchema(params string[] required) =>
         new()
         {
-            Properties = new Dictionary<string, OpenApiSchema>
+            Properties = new Dictionary<string, IOpenApiSchema>
             {
-                ["name"] = new(),
-                ["nickname"] = new(),
-                ["age"] = new(),
-                ["score"] = new(),
-                ["tags"] = new()
+                ["name"] = new OpenApiSchema(),
+                ["nickname"] = new OpenApiSchema(),
+                ["age"] = new OpenApiSchema(),
+                ["score"] = new OpenApiSchema(),
+                ["tags"] = new OpenApiSchema()
             },
             Required = new SortedSet<string>(required, StringComparer.OrdinalIgnoreCase)
         };
@@ -45,12 +45,12 @@ public class NullableSchemaFilterTests
 
         new NullableSchemaFilter().Apply(schema, BuildContext(typeof(SampleDto)));
 
-        schema.Properties["nickname"].Nullable.ShouldBeTrue();
-        schema.Properties["score"].Nullable.ShouldBeTrue();
-        schema.Properties["tags"].Nullable.ShouldBeTrue();
-        schema.Required.ShouldNotContain("nickname");
-        schema.Required.ShouldNotContain("score");
-        schema.Required.ShouldNotContain("tags");
+        schema.Properties!["nickname"].Type.ShouldBe(JsonSchemaType.Null);
+        schema.Properties!["score"].Type.ShouldBe(JsonSchemaType.Null);
+        schema.Properties!["tags"].Type.ShouldBe(JsonSchemaType.Null);
+        schema.Required!.ShouldNotContain("nickname");
+        schema.Required!.ShouldNotContain("score");
+        schema.Required!.ShouldNotContain("tags");
     }
 
     [Fact]
@@ -60,10 +60,10 @@ public class NullableSchemaFilterTests
 
         new NullableSchemaFilter().Apply(schema, BuildContext(typeof(SampleDto)));
 
-        schema.Properties["name"].Nullable.ShouldBeFalse();
-        schema.Properties["age"].Nullable.ShouldBeFalse();
-        schema.Required.ShouldContain("name");
-        schema.Required.ShouldContain("age");
+        schema.Properties!["name"].Type.ShouldNotBe(JsonSchemaType.Null);
+        schema.Properties!["age"].Type.ShouldNotBe(JsonSchemaType.Null);
+        schema.Required!.ShouldContain("name");
+        schema.Required!.ShouldContain("age");
     }
 
     [Fact]
@@ -71,18 +71,18 @@ public class NullableSchemaFilterTests
     {
         var schema = new OpenApiSchema
         {
-            Properties = new Dictionary<string, OpenApiSchema>
+            Properties = new Dictionary<string, IOpenApiSchema>
             {
-                ["name"] = new(),
-                ["age"] = new()
+                ["name"] = new OpenApiSchema(),
+                ["age"] = new OpenApiSchema()
             },
             Required = new SortedSet<string>(["name", "age"], StringComparer.OrdinalIgnoreCase)
         };
 
         new NullableSchemaFilter().Apply(schema, BuildContext(typeof(AllRequiredDto)));
 
-        schema.Properties["name"].Nullable.ShouldBeFalse();
-        schema.Required.ShouldBe(["name", "age"], ignoreOrder: true);
+        schema.Properties!["name"].Type.ShouldNotBe(JsonSchemaType.Null);
+        schema.Required!.ShouldBe(["name", "age"], ignoreOrder: true);
     }
 
     [Fact]

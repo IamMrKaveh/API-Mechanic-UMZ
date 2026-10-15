@@ -40,7 +40,7 @@ public class InventoryControllerTests
         var variantId = Guid.NewGuid();
         var expected = new VariantAvailabilityDto { VariantId = variantId, IsAvailable = true, AvailableQuantity = 10 };
 
-        _mediator.Send(Arg.Is<GetVariantAvailabilityQuery>(q => q.VariantId == variantId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetVariantAvailabilityQuery>(q => q!.VariantId == variantId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<VariantAvailabilityDto>.Success(expected));
 
         // Act
@@ -76,7 +76,7 @@ public class InventoryControllerTests
         body.Success.ShouldBeTrue();
         body.Data!.Count.ShouldBe(1);
         await _mediator.Received(1).Send(
-            Arg.Is<GetBatchVariantAvailabilityQuery>(q => q.VariantIds.Contains(variantId)),
+            Arg.Is<GetBatchVariantAvailabilityQuery>(q => q!.VariantIds.Contains(variantId)),
             Arg.Any<CancellationToken>());
     }
 

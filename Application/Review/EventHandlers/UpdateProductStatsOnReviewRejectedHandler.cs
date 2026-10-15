@@ -23,8 +23,7 @@ public sealed class UpdateProductStatsOnReviewRejectedHandler(
             logger.LogWarning(
                 "Cannot recalculate stats. Product {ProductId} not found for rejected review {ReviewId}.",
                 evt.ProductId.Value,
-                evt.ReviewId.Value,
-                ct);
+                evt.ReviewId.Value);
             return;
         }
 

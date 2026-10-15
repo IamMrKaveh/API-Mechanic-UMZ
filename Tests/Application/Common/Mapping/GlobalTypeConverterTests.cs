@@ -160,7 +160,7 @@ public class GlobalTypeConverterTests
         Money? nullMoney = null;
         Money? money = Money.Create(123m, "IRT");
 
-        _mapper.Map<decimal?>((object?)nullMoney).ShouldBeNull();
+        _mapper.Map<decimal?>((object?)nullMoney!).ShouldBeNull();
         _mapper.Map<decimal?>(money).ShouldBe(123m);
     }
 

@@ -72,7 +72,7 @@ public class S3FileStorageServiceTests : HandlerTestBase
 
         await AuditService.Received(1).LogSecurityEventAsync(
             "MaliciousUploadDetected",
-            Arg.Is<string>(s => s!.Contains("spoofed.png") && s.Contains("magic-byte")),
+            Arg.Is<string>(s => s!.Contains("spoofed.png") && s!.Contains("magic-byte")),
             Arg.Any<IpAddress>(),
             Arg.Any<UserId?>(),
             Arg.Any<CancellationToken>());
@@ -106,7 +106,7 @@ public class S3FileStorageServiceTests : HandlerTestBase
             "MaliciousUploadDetected",
             Arg.Is<string>(s =>
                 s!.Contains("malware.png") &&
-                s.Contains("EICAR-Test-Signature")),
+                s!.Contains("EICAR-Test-Signature")),
             Arg.Any<IpAddress>(),
             Arg.Any<UserId?>(),
             Arg.Any<CancellationToken>());
@@ -150,13 +150,13 @@ public class S3FileStorageServiceTests : HandlerTestBase
         await _s3.Received(1).PutObjectAsync(
             Arg.Is<PutObjectRequest>(r =>
                 r!.BucketName == "mechanic-test" &&
-                r.Key == key &&
-                r.ContentType == "image/png" &&
-                r.CannedACL == S3CannedACL.PublicRead &&
-                r.AutoCloseStream == false &&
-                r.UseChunkEncoding == false &&
-                r.DisablePayloadSigning == true &&
-                r.DisableDefaultChecksumValidation == true),
+                r!.Key == key &&
+                r!.ContentType == "image/png" &&
+                r!.CannedACL == S3CannedACL.PublicRead &&
+                r!.AutoCloseStream == false &&
+                r!.UseChunkEncoding == false &&
+                r!.DisablePayloadSigning == true &&
+                r!.DisableDefaultChecksumValidation == true),
             Arg.Any<CancellationToken>());
     }
 
@@ -172,7 +172,7 @@ public class S3FileStorageServiceTests : HandlerTestBase
         await _s3.Received(1).PutObjectAsync(
             Arg.Is<PutObjectRequest>(r =>
                 r!.Key == key &&
-                r.CannedACL == S3CannedACL.Private),
+                r!.CannedACL == S3CannedACL.Private),
             Arg.Any<CancellationToken>());
     }
 
@@ -355,10 +355,10 @@ public class S3FileStorageServiceTests : HandlerTestBase
         url.ShouldBe("https://signed.example.com/x");
         _s3.Received(1).GetPreSignedURL(Arg.Is<GetPreSignedUrlRequest>(r =>
             r!.BucketName == "mechanic-test" &&
-            r.Key == "folder/file.png" &&
-            r.Verb == HttpVerb.GET &&
-            r.Expires >= before.AddMinutes(15).AddSeconds(-5) &&
-            r.Expires <= DateTime.UtcNow.AddMinutes(15).AddSeconds(5)));
+            r!.Key == "folder/file.png" &&
+            r!.Verb == HttpVerb.GET &&
+            r!.Expires >= before.AddMinutes(15).AddSeconds(-5) &&
+            r!.Expires <= DateTime.UtcNow.AddMinutes(15).AddSeconds(5)));
     }
 
     [Fact]
@@ -374,9 +374,9 @@ public class S3FileStorageServiceTests : HandlerTestBase
         url.ShouldBe("https://signed.example.com/y");
         _s3.Received(1).GetPreSignedURL(Arg.Is<GetPreSignedUrlRequest>(r =>
             r!.BucketName == "mechanic-test" &&
-            r.Key == "folder/file.png" &&
-            r.Verb == HttpVerb.GET &&
-            r.Expires >= before.Add(expiry).AddSeconds(-5) &&
-            r.Expires <= DateTime.UtcNow.Add(expiry).AddSeconds(5)));
+            r!.Key == "folder/file.png" &&
+            r!.Verb == HttpVerb.GET &&
+            r!.Expires >= before.Add(expiry).AddSeconds(-5) &&
+            r!.Expires <= DateTime.UtcNow.Add(expiry).AddSeconds(5)));
     }
 }

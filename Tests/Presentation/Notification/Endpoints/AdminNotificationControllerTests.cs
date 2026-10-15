@@ -60,7 +60,7 @@ public class AdminNotificationControllerTests
         body.Success.ShouldBeTrue();
         body.Data!.Items.ShouldHaveSingleItem();
         await _mediator.Received(1).Send(
-            Arg.Is<GetAllNotificationsQuery>(q => q.Page == 1 && q.PageSize == 20),
+            Arg.Is<GetAllNotificationsQuery>(q => q!.Page == 1 && q!.PageSize == 20),
             Arg.Any<CancellationToken>());
     }
 
@@ -81,11 +81,11 @@ public class AdminNotificationControllerTests
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
             Arg.Is<AdminSendNotificationCommand>(c =>
-                c.Title == "T" &&
-                c.Message == "M" &&
-                c.Type == "Info" &&
-                c.SendToAll &&
-                c.UserId == null),
+                c!.Title == "T" &&
+                c!.Message == "M" &&
+                c!.Type == "Info" &&
+                c!.SendToAll &&
+                c!.UserId == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -106,7 +106,7 @@ public class AdminNotificationControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<AdminSendNotificationCommand>(c => !c.SendToAll && c.UserId == userId && c.ActionUrl == "/orders"),
+            Arg.Is<AdminSendNotificationCommand>(c => !c!.SendToAll && c!.UserId == userId && c!.ActionUrl == "/orders"),
             Arg.Any<CancellationToken>());
     }
 
@@ -126,7 +126,7 @@ public class AdminNotificationControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<AdminDeleteNotificationCommand>(c => c.NotificationId == id),
+            Arg.Is<AdminDeleteNotificationCommand>(c => c!.NotificationId == id),
             Arg.Any<CancellationToken>());
     }
 

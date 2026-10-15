@@ -179,7 +179,7 @@ public class CreateBrandHandlerTests : HandlerTestBase
         result.ShouldBeSuccess();
         await _storageService.Received(1).UploadAsync(
             stream,
-            Arg.Is<string>(f => f!.StartsWith("brands/") && f.EndsWith(extension)),
+            Arg.Is<string>(f => f!.StartsWith("brands/") && f!.EndsWith(extension)),
             contentType,
             "brands",
             Arg.Any<CancellationToken>());

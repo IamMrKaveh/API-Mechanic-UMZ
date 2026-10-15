@@ -74,13 +74,15 @@ public class ProfileControllerTests
             .Returns(ServiceResult<PaginatedResult<ProductReviewDto>>.Success(paged));
 
         // Act
+#pragma warning disable CS0618 // Test intentionally covers the deprecated route until it is removed.
         var result = await _controller.GetMyReviews();
+#pragma warning restore CS0618
 
         // Assert
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetUserReviewsQuery>(q => q.Page == 1 && q.PageSize == 10),
+            Arg.Is<GetUserReviewsQuery>(q => q!.Page == 1 && q!.PageSize == 10),
             Arg.Any<CancellationToken>());
     }
 
@@ -101,7 +103,7 @@ public class ProfileControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateProfileCommand>(c => c.FirstName == "Ali" && c.LastName == "Rezaei"),
+            Arg.Is<UpdateProfileCommand>(c => c!.FirstName == "Ali" && c!.LastName == "Rezaei"),
             Arg.Any<CancellationToken>());
     }
 
@@ -137,7 +139,7 @@ public class ProfileControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ChangePasswordCommand>(c => c.CurrentPassword == "old" && c.NewPassword == "new"),
+            Arg.Is<ChangePasswordCommand>(c => c!.CurrentPassword == "old" && c!.NewPassword == "new"),
             Arg.Any<CancellationToken>());
     }
 
@@ -157,7 +159,7 @@ public class ProfileControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ChangePhoneNumberCommand>(c => c.NewPhoneNumber == "09987654321" && c.OtpCode == "123456"),
+            Arg.Is<ChangePhoneNumberCommand>(c => c!.NewPhoneNumber == "09987654321" && c!.OtpCode == "123456"),
             Arg.Any<CancellationToken>());
     }
 

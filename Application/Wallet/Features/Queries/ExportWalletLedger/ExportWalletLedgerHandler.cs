@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Application.Wallet.Features.Shared;
@@ -56,7 +57,7 @@ public sealed class ExportWalletLedgerHandler(
             sb.Append(Escape(e.ReferenceType)).Append(',');
             sb.Append(e.ReferenceId).Append(',');
             sb.Append(Escape(e.Description)).Append(',');
-            sb.Append(e.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")).Append(',');
+            sb.Append(e.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)).Append(',');
             sb.Append(e.IsAdminAdjustment ? "true" : "false");
             sb.AppendLine();
         }

@@ -44,7 +44,7 @@ public class OrderItemsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteOrderItemCommand>(c => c.Id == id),
+            Arg.Is<DeleteOrderItemCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 

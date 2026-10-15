@@ -102,10 +102,10 @@ public class AdminMediaControllerTests
         body.Data!.FileName.ShouldBe("a.jpg");
         await _mediator.Received(1).Send(
             Arg.Is<UploadMediaCommand>(c =>
-                c.FileName == "a.jpg" &&
-                c.EntityType == "Product" &&
-                c.EntityId == entityId &&
-                c.IsPrimary),
+                c!.FileName == "a.jpg" &&
+                c!.EntityType == "Product" &&
+                c!.EntityId == entityId &&
+                c!.IsPrimary),
             Arg.Any<CancellationToken>());
     }
 
@@ -144,7 +144,7 @@ public class AdminMediaControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteMediaCommand>(c => c.MediaId == mediaId),
+            Arg.Is<DeleteMediaCommand>(c => c!.MediaId == mediaId),
             Arg.Any<CancellationToken>());
     }
 
@@ -165,7 +165,7 @@ public class AdminMediaControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<SetPrimaryMediaCommand>(c => c.MediaId == mediaId),
+            Arg.Is<SetPrimaryMediaCommand>(c => c!.MediaId == mediaId),
             Arg.Any<CancellationToken>());
     }
 
@@ -188,9 +188,9 @@ public class AdminMediaControllerTests
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
             Arg.Is<ReorderMediaCommand>(c =>
-                c.EntityType == "Product" &&
-                c.EntityId == entityId &&
-                c.OrderedIds.SequenceEqual(orderedIds)),
+                c!.EntityType == "Product" &&
+                c!.EntityId == entityId &&
+                c!.OrderedIds.SequenceEqual(orderedIds)),
             Arg.Any<CancellationToken>());
     }
 

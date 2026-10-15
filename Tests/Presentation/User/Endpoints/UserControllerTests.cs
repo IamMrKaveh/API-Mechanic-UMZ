@@ -40,7 +40,7 @@ public class UserControllerTests
         var id = Guid.NewGuid();
         var expected = new UserProfileDto { Id = id, PhoneNumber = "09123456789" };
 
-        _mediator.Send(Arg.Is<GetUserByIdQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetUserByIdQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<UserProfileDto?>.Success(expected));
 
         // Act
@@ -70,7 +70,7 @@ public class UserControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateUserCommand>(c => c.Id == id && c.FirstName == "Ali"),
+            Arg.Is<UpdateUserCommand>(c => c!.Id == id && c!.FirstName == "Ali"),
             Arg.Any<CancellationToken>());
     }
 

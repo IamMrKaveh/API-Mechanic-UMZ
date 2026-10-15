@@ -24,9 +24,9 @@ public class ElasticsearchIndexHealthCheckTests : HandlerTestBase, IAsyncLifetim
         var result = await CreateSut().CheckHealthAsync(new HealthCheckContext());
 
         result.Status.ShouldBe(HealthStatus.Healthy);
-        result.Description.ShouldContain("products_v1");
-        result.Description.ShouldContain("categories_v1");
-        result.Description.ShouldContain("brands_v1");
+        result.Description!.ShouldContain("products_v1");
+        result.Description!.ShouldContain("categories_v1");
+        result.Description!.ShouldContain("brands_v1");
     }
 
     [Fact]
@@ -37,8 +37,8 @@ public class ElasticsearchIndexHealthCheckTests : HandlerTestBase, IAsyncLifetim
         var result = await CreateSut().CheckHealthAsync(new HealthCheckContext());
 
         result.Status.ShouldBe(HealthStatus.Degraded);
-        result.Description.ShouldContain("brands_v1");
-        result.Description.ShouldContain("Missing required indices");
+        result.Description!.ShouldContain("brands_v1");
+        result.Description!.ShouldContain("Missing required indices");
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class ElasticsearchIndexHealthCheckTests : HandlerTestBase, IAsyncLifetim
         var result = await CreateSut().CheckHealthAsync(new HealthCheckContext());
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
-        result.Description.ShouldContain("All required indices are missing");
+        result.Description!.ShouldContain("All required indices are missing");
     }
 
     [Fact]
@@ -65,9 +65,9 @@ public class ElasticsearchIndexHealthCheckTests : HandlerTestBase, IAsyncLifetim
         var result = await throwing.CheckHealthAsync(new HealthCheckContext());
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
-        result.Description.ShouldContain("connectivity failures");
+        result.Description!.ShouldContain("connectivity failures");
         await AuditService.Received(3).LogErrorAsync(
-            Arg.Is<string>(s => s.Contains("index existence check failed")), Arg.Any<CancellationToken>());
+            Arg.Is<string>(s => s!.Contains("index existence check failed")), Arg.Any<CancellationToken>());
     }
 
     [Fact]

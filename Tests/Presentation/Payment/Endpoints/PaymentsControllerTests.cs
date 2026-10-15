@@ -56,7 +56,7 @@ public class PaymentsControllerTests
         body.Success.ShouldBeTrue();
         body.Data!.IsVerified.ShouldBeTrue();
         await _mediator.Received(1).Send(
-            Arg.Is<VerifyPaymentCommand>(c => c.Authority == "AUTH123" && c.Status == "OK"),
+            Arg.Is<VerifyPaymentCommand>(c => c!.Authority == "AUTH123" && c!.Status == "OK"),
             Arg.Any<CancellationToken>());
     }
 
@@ -66,7 +66,7 @@ public class PaymentsControllerTests
         // Arrange
         var expected = new PaymentTransactionDto { Id = Guid.NewGuid(), Authority = "AUTH123", Status = "Paid" };
 
-        _mediator.Send(Arg.Is<GetPaymentByAuthorityQuery>(q => q.Authority == "AUTH123"), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetPaymentByAuthorityQuery>(q => q!.Authority == "AUTH123"), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaymentTransactionDto?>.Success(expected));
 
         // Act
@@ -87,7 +87,7 @@ public class PaymentsControllerTests
         IEnumerable<PaymentTransactionDto> expected =
             [new PaymentTransactionDto { Id = Guid.NewGuid(), OrderId = orderId }];
 
-        _mediator.Send(Arg.Is<GetPaymentsByOrderQuery>(q => q.OrderId == orderId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetPaymentsByOrderQuery>(q => q!.OrderId == orderId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<IEnumerable<PaymentTransactionDto>>.Success(expected));
 
         // Act
@@ -106,7 +106,7 @@ public class PaymentsControllerTests
         // Arrange
         var expected = new PaymentStatusDto { Authority = "AUTH123", Status = "Paid", IsSuccess = true };
 
-        _mediator.Send(Arg.Is<GetPaymentStatusQuery>(q => q.Authority == "AUTH123"), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetPaymentStatusQuery>(q => q!.Authority == "AUTH123"), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaymentStatusDto?>.Success(expected));
 
         // Act
@@ -139,7 +139,7 @@ public class PaymentsControllerTests
         var body = created.Value.ShouldBeOfType<ApiResponse<PaymentInitiationResult>>();
         body.Data!.Authority.ShouldBe("AUTH123");
         await _mediator.Received(1).Send(
-            Arg.Is<InitiatePaymentCommand>(c => c.OrderId == orderId && c.GatewayName == "ZarinPal"),
+            Arg.Is<InitiatePaymentCommand>(c => c!.OrderId == orderId && c!.GatewayName == "ZarinPal"),
             Arg.Any<CancellationToken>());
     }
 
@@ -159,7 +159,7 @@ public class PaymentsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ProcessWebhookCommand>(c => c.Authority == "AUTH123" && c.Status == "OK" && c.Nonce == "nonce-1"),
+            Arg.Is<ProcessWebhookCommand>(c => c!.Authority == "AUTH123" && c!.Status == "OK" && c!.Nonce == "nonce-1"),
             Arg.Any<CancellationToken>());
     }
 

@@ -36,7 +36,7 @@ public class BulkUpdatePricesHandlerTests : HandlerTestBase
         _variantRepository.Received(1).Update(variant);
         await AuditService.Received(1).LogSystemEventAsync(
             "BulkPriceUpdate",
-            Arg.Is<string>(s => s != null && s.Contains(variant.Id.Value.ToString())),
+            Arg.Is<string>(s => s != null && s!.Contains(variant.Id.Value.ToString())),
             Arg.Any<CancellationToken>());
     }
 
@@ -90,7 +90,7 @@ public class BulkUpdatePricesHandlerTests : HandlerTestBase
         _variantRepository.DidNotReceiveWithAnyArgs().Update(default!);
         await AuditService.Received(1).LogSystemEventAsync(
             "BulkPriceUpdate",
-            Arg.Is<string>(s => s != null && s.Contains("خطاها")),
+            Arg.Is<string>(s => s != null && s!.Contains("خطاها")),
             Arg.Any<CancellationToken>());
     }
 

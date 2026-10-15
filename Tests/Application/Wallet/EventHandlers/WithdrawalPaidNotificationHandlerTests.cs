@@ -42,7 +42,7 @@ public sealed class WithdrawalPaidNotificationHandlerTests
             evt.UserId,
             "برداشت شما پرداخت شد",
             Arg.Is<string>(m => m!.Contains("1,500,000")
-                             && m.Contains("BANK-REF-42")),
+                             && m!.Contains("BANK-REF-42")),
             "WithdrawalPaid",
             "/dashboard/wallet/withdrawals",
             evt.WithdrawalId.Value,

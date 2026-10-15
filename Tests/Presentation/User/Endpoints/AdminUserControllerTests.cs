@@ -63,7 +63,7 @@ public class AdminUserControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetUsersQuery>(q => !q.IncludeDeleted && q.Page == 1 && q.PageSize == 20),
+            Arg.Is<GetUsersQuery>(q => !q!.IncludeDeleted && q!.Page == 1 && q!.PageSize == 20),
             Arg.Any<CancellationToken>());
     }
 
@@ -89,7 +89,7 @@ public class AdminUserControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetAdminUsersQuery>(q => q.Search == "ali" && q.IsAdmin == true),
+            Arg.Is<GetAdminUsersQuery>(q => q!.Search == "ali" && q!.IsAdmin == true),
             Arg.Any<CancellationToken>());
     }
 
@@ -100,7 +100,7 @@ public class AdminUserControllerTests
         var id = Guid.NewGuid();
         var expected = new UserProfileDto { Id = id, PhoneNumber = "09123456789" };
 
-        _mediator.Send(Arg.Is<GetUserByIdQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetUserByIdQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<UserProfileDto?>.Success(expected));
 
         // Act
@@ -128,7 +128,7 @@ public class AdminUserControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<CreateUserCommand>(c => c.PhoneNumber == "09123456789" && c.IsAdmin),
+            Arg.Is<CreateUserCommand>(c => c!.PhoneNumber == "09123456789" && c!.IsAdmin),
             Arg.Any<CancellationToken>());
     }
 
@@ -148,7 +148,7 @@ public class AdminUserControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<RestoreUserCommand>(c => c.Id == id),
+            Arg.Is<RestoreUserCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -169,7 +169,7 @@ public class AdminUserControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateUserCommand>(c => c.Id == id && c.FirstName == "Ali"),
+            Arg.Is<UpdateUserCommand>(c => c!.Id == id && c!.FirstName == "Ali"),
             Arg.Any<CancellationToken>());
     }
 
@@ -189,7 +189,7 @@ public class AdminUserControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteUserCommand>(c => c.Id == id),
+            Arg.Is<DeleteUserCommand>(c => c!.Id == id),
             Arg.Any<CancellationToken>());
     }
 
@@ -210,7 +210,7 @@ public class AdminUserControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ChangeUserStatusCommand>(c => c.UserId == id && !c.IsActive),
+            Arg.Is<ChangeUserStatusCommand>(c => c!.UserId == id && !c!.IsActive),
             Arg.Any<CancellationToken>());
     }
 
@@ -231,7 +231,7 @@ public class AdminUserControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<ChangeUserRoleCommand>(c => c.UserId == id && c.IsAdmin),
+            Arg.Is<ChangeUserRoleCommand>(c => c!.UserId == id && c!.IsAdmin),
             Arg.Any<CancellationToken>());
     }
 

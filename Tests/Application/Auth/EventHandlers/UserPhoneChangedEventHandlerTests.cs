@@ -32,8 +32,8 @@ public class UserPhoneChangedEventHandlerTests : HandlerTestBase
             "User phone changed",
             Arg.Is<string>(s =>
                 s!.Contains(userId.Value.ToString())
-                && s.Contains(oldPhone)
-                && s.Contains(newPhone)),
+                && s!.Contains(oldPhone)
+                && s!.Contains(newPhone)),
             Arg.Any<CancellationToken>());
     }
 
@@ -73,7 +73,7 @@ public class UserPhoneChangedEventHandlerTests : HandlerTestBase
 
         await AuditService.Received(1).LogSystemEventAsync(
             "User phone changed",
-            Arg.Is<string>(s => s!.Contains(oldPhone) && s.Contains(newPhone)),
+            Arg.Is<string>(s => s!.Contains(oldPhone) && s!.Contains(newPhone)),
             Arg.Any<CancellationToken>());
     }
 }

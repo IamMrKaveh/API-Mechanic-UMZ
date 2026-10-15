@@ -82,11 +82,11 @@ public class ApplyDiscountHandlerTests : HandlerTestBase
         _repository.Received(1).Update(discount);
         await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         await AuditService.Received(1).LogOrderEventAsync(
-            Arg.Is<OrderId>(o => o != null && o.Value == orderId),
+            Arg.Is<OrderId>(o => o != null && o!.Value == orderId),
             "DiscountApplied",
             Arg.Any<IpAddress>(),
-            Arg.Is<UserId>(u => u != null && u.Value == _userGuid),
-            Arg.Is<string>(s => s != null && s.Contains("SAVE10")),
+            Arg.Is<UserId>(u => u != null && u!.Value == _userGuid),
+            Arg.Is<string>(s => s != null && s!.Contains("SAVE10")),
             Arg.Any<CancellationToken>());
     }
 
@@ -101,7 +101,7 @@ public class ApplyDiscountHandlerTests : HandlerTestBase
         result.IsSuccess.ShouldBeFalse();
         await AuditService.Received(1).LogSystemEventAsync(
             "ApplyDiscountError",
-            Arg.Is<string>(s => s != null && s.Contains("db down")),
+            Arg.Is<string>(s => s != null && s!.Contains("db down")),
             Arg.Any<CancellationToken>());
     }
 

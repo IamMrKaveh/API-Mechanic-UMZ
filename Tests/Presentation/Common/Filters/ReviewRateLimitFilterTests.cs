@@ -72,11 +72,11 @@ public class ReviewRateLimitFilterTests : HandlerTestBase
     }
 
     [Theory]
-    [InlineData(ReviewRateLimitPolicy.CreateReview, 7, "review_create_user_", 7)]
-    [InlineData(ReviewRateLimitPolicy.AdminAction, 11, "review_admin_user_", 11)]
-    [InlineData(ReviewRateLimitPolicy.Vote, 13, "review_vote_user_", 13)]
+    [InlineData(ReviewRateLimitPolicy.CreateReview, "review_create_user_", 7)]
+    [InlineData(ReviewRateLimitPolicy.AdminAction, "review_admin_user_", 11)]
+    [InlineData(ReviewRateLimitPolicy.Vote, "review_vote_user_", 13)]
     public async Task OnActionExecutionAsync_AuthenticatedUser_UsesUserSegmentAndConfiguredLimit(
-        ReviewRateLimitPolicy policy, int limit, string keyPrefix, int expectedMax)
+        ReviewRateLimitPolicy policy, string keyPrefix, int expectedMax)
     {
         var userId = Guid.NewGuid();
         CurrentUserService.IsAuthenticated.Returns(true);

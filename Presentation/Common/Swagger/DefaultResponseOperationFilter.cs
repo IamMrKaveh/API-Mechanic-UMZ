@@ -32,6 +32,8 @@ public sealed class DefaultResponseOperationFilter : IOperationFilter
         string description,
         Type type)
     {
+        operation.Responses ??= new OpenApiResponses();
+
         if (operation.Responses.ContainsKey(statusCode))
             return;
 

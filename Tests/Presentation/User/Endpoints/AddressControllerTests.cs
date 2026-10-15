@@ -73,10 +73,10 @@ public class AddressControllerTests
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
             Arg.Is<CreateUserAddressCommand>(c =>
-                c.Title == "Home" &&
-                c.ReceiverName == "Ali" &&
-                c.PostalCode == "12345" &&
-                c.IsDefault),
+                c!.Title == "Home" &&
+                c!.ReceiverName == "Ali" &&
+                c!.PostalCode == "12345" &&
+                c!.IsDefault),
             Arg.Any<CancellationToken>());
     }
 
@@ -97,7 +97,7 @@ public class AddressControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<UpdateUserAddressCommand>(c => c.AddressId == id && c.Title == "Work"),
+            Arg.Is<UpdateUserAddressCommand>(c => c!.AddressId == id && c!.Title == "Work"),
             Arg.Any<CancellationToken>());
     }
 
@@ -117,7 +117,7 @@ public class AddressControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<DeleteUserAddressCommand>(c => c.AddressId == id),
+            Arg.Is<DeleteUserAddressCommand>(c => c!.AddressId == id),
             Arg.Any<CancellationToken>());
     }
 

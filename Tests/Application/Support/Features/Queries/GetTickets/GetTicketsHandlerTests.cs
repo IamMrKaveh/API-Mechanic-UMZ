@@ -39,7 +39,7 @@ public class GetTicketsHandlerTests : HandlerTestBase
 
         result.ShouldBeSuccess();
         await _ticketQueryService.Received(1).GetTicketsPagedAsync(
-            Arg.Is<UserId?>(id => id != null && id.Value == _userGuid),
+            Arg.Is<UserId?>(id => id != null && id!.Value == _userGuid),
             null,
             null,
             1,

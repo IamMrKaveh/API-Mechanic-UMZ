@@ -121,7 +121,7 @@ public class ChangePhoneNumberHandlerTests : HandlerTestBase
             "PhoneNumberChanged",
             Arg.Any<string>(),
             Arg.Any<IpAddress>(),
-            Arg.Is<UserId>(u => u != null && u.Value == _userGuid),
+            Arg.Is<UserId>(u => u != null && u!.Value == _userGuid),
             Arg.Any<CancellationToken>());
     }
 }

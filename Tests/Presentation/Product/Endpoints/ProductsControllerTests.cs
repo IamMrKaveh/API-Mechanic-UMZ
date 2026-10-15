@@ -72,7 +72,7 @@ public class ProductsControllerTests
         var id = Guid.NewGuid();
         var expected = new ProductDetailDto { Id = id, Name = "Phone" };
 
-        _mediator.Send(Arg.Is<GetProductQuery>(q => q.Id == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetProductQuery>(q => q!.Id == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<ProductDetailDto>.Success(expected));
 
         // Act
@@ -109,7 +109,7 @@ public class ProductsControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<PaginatedResult<ProductCatalogItemDto>>>();
         body.Data!.Items.ShouldHaveSingleItem();
         await _mediator.Received(1).Send(
-            Arg.Is<GetProductCatalogQuery>(q => q.Page == 1 && q.PageSize == 10 && q.HasDiscount == null),
+            Arg.Is<GetProductCatalogQuery>(q => q!.Page == 1 && q!.PageSize == 10 && q!.HasDiscount == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -135,7 +135,7 @@ public class ProductsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetProductCatalogQuery>(q => q.HasDiscount == true && q.PageSize == 12),
+            Arg.Is<GetProductCatalogQuery>(q => q!.HasDiscount == true && q!.PageSize == 12),
             Arg.Any<CancellationToken>());
     }
 
@@ -146,7 +146,7 @@ public class ProductsControllerTests
         var id = Guid.NewGuid();
         var expected = new PublicProductDetailDto { Id = id, Name = "Phone" };
 
-        _mediator.Send(Arg.Is<GetProductDetailsQuery>(q => q.ProductId == id), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetProductDetailsQuery>(q => q!.ProductId == id), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PublicProductDetailDto?>.Success(expected));
 
         // Act

@@ -40,7 +40,7 @@ public class AdminVariantShippingControllerTests
         var variantId = Guid.NewGuid();
         var expected = new VariantShippingInfoDto { VariantId = variantId, ShippingMultiplier = 1.5m };
 
-        _mediator.Send(Arg.Is<GetVariantShippingQuery>(q => q.VariantId == variantId), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Is<GetVariantShippingQuery>(q => q!.VariantId == variantId), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<VariantShippingInfoDto>.Success(expected));
 
         // Act
@@ -72,9 +72,9 @@ public class AdminVariantShippingControllerTests
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
             Arg.Is<UpdateVariantShippingCommand>(c =>
-                c.VariantId == variantId &&
-                c.ShippingMultiplier == 1.5m &&
-                c.WeightGrams == 500),
+                c!.VariantId == variantId &&
+                c!.ShippingMultiplier == 1.5m &&
+                c!.WeightGrams == 500),
             Arg.Any<CancellationToken>());
     }
 
