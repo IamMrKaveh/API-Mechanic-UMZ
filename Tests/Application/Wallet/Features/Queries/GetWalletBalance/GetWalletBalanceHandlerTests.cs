@@ -1,4 +1,4 @@
-using Application.Wallet.Features.Queries.GetWalletBalance;
+﻿using Application.Wallet.Features.Queries.GetWalletBalance;
 using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
@@ -15,6 +15,7 @@ public class GetWalletBalanceHandlerTests : HandlerTestBase
     public GetWalletBalanceHandlerTests()
     {
 
+        CurrentUserService.IsAdmin.Returns(true);
         _sut = new GetWalletBalanceHandler(_walletRepository, UnitOfWork, DateTimeProvider, CurrentUserService);
     }
 

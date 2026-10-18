@@ -1,4 +1,4 @@
-using Application.Brand.Features.Shared;
+﻿using Application.Brand.Features.Shared;
 using Domain.Brand.Interfaces;
 using Domain.Brand.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
@@ -37,8 +37,7 @@ public sealed class UpdateBrandHandler(
             if (!AllowedContentTypes.Contains(request.LogoContentType, StringComparer.OrdinalIgnoreCase))
                 return ServiceResult<BrandDetailDto>.Validation("فرمت فایل مجاز نیست. فقط JPEG، PNG و WebP پشتیبانی می‌شوند.");
 
-            var extension = Path.GetExtension(request.LogoFileName);
-            var fileName = $"brands/{Guid.NewGuid()}{extension}";
+            var fileName = $"brands/{Guid.NewGuid()}{ExtensionFor(request.LogoContentType)}";
             logoPath = await storageService.UploadAsync(request.LogoStream!, fileName, request.LogoContentType!, "brands", ct);
         }
 
@@ -77,4 +76,12 @@ public sealed class UpdateBrandHandler(
         if (string.Equals(request.LogoFileName, EmptyLogoPlaceholder, StringComparison.Ordinal)) return false;
         return true;
     }
+
+    private static string ExtensionFor(string? contentType) => contentType?.ToLowerInvariant() switch
+    {
+        "image/jpeg" => ".jpg",
+        "image/png" => ".png",
+        "image/webp" => ".webp",
+        _ => ".bin"
+    };
 }

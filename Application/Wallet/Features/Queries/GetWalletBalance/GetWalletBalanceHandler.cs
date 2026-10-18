@@ -1,4 +1,4 @@
-using Application.Wallet.Features.Shared;
+﻿using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using SharedKernel.Abstractions.Interfaces;
@@ -16,7 +16,11 @@ public sealed class GetWalletBalanceHandler(
         GetWalletBalanceQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.userId ?? currentUserService.UserId!.Value);
+        var resolvedUserId = WalletUserResolver.Resolve(currentUserService, request.userId);
+        if (resolvedUserId is null || resolvedUserId == Guid.Empty)
+            return ServiceResult<WalletDto>.Unauthorized("کاربر احراز هویت نشده است.");
+
+        var userId = UserId.From(resolvedUserId.Value);
 
         var wallet = await walletRepository.GetByUserIdAsync(userId, ct);
 

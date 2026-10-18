@@ -1,9 +1,12 @@
 ﻿using Application.Wallet.Contracts;
+using Application.Common.Interfaces;
 using Application.Wallet.Features.Shared;
 
 namespace Application.Wallet.Features.Queries.GetFraudAlerts;
 
-public sealed class GetFraudAlertsHandler(IWalletFraudAlertQueryService queryService)
+public sealed class GetFraudAlertsHandler(
+    IWalletFraudAlertQueryService queryService,
+    ICurrentUserService currentUserService)
     : IRequestHandler<GetFraudAlertsQuery, ServiceResult<PaginatedResult<WalletFraudAlertDto>>>
 {
     public async Task<ServiceResult<PaginatedResult<WalletFraudAlertDto>>> Handle(
@@ -13,7 +16,7 @@ public sealed class GetFraudAlertsHandler(IWalletFraudAlertQueryService querySer
         var result = await queryService.GetAlertsPageAsync(
             request.Status,
             request.Severity,
-            request.UserId,
+            WalletUserResolver.Resolve(currentUserService, request.UserId),
             request.Page,
             request.PageSize,
             request.FromDate,

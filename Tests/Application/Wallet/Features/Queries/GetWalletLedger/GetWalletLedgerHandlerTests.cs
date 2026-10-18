@@ -1,4 +1,4 @@
-using Application.Wallet.Contracts;
+﻿using Application.Wallet.Contracts;
 using Application.Wallet.Features.Queries.GetWalletLedger;
 using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
@@ -15,6 +15,7 @@ public class GetWalletLedgerHandlerTests : HandlerTestBase
 
     public GetWalletLedgerHandlerTests()
     {
+        CurrentUserService.IsAdmin.Returns(true);
         _sut = new GetWalletLedgerHandler(_walletQueryService, CurrentUserService);
     }
 

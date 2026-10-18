@@ -1,4 +1,4 @@
-namespace Presentation.Common.Extensions;
+﻿namespace Presentation.Common.Extensions;
 
 public static class CorsExtensions
 {
@@ -20,9 +20,17 @@ public static class CorsExtensions
         {
             options.AddPolicy(CorsPolicy, policy =>
             {
+                // Explicit allow-lists (least privilege) instead of
+                // AllowAnyHeader/AllowAnyMethod with credentials.
                 policy.WithOrigins(allowedOrigins)
-                      .AllowAnyHeader()
-                      .AllowAnyMethod()
+                      .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH")
+                      .WithHeaders(
+                          "Content-Type",
+                          "Authorization",
+                          "Accept",
+                          "Origin",
+                          "X-Requested-With",
+                          "X-XSRF-TOKEN")
                       .AllowCredentials();
             });
         });

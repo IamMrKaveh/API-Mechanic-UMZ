@@ -1,3 +1,4 @@
+﻿using Application.Common.Interfaces;
 using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Enums;
@@ -6,7 +7,8 @@ using Domain.Wallet.Interfaces;
 namespace Application.Wallet.Features.Queries.GetPendingDebitRequestsByUser;
 
 public sealed class GetPendingDebitRequestsByUserHandler(
-    IWalletDebitRequestRepository debitRequestRepository)
+    IWalletDebitRequestRepository debitRequestRepository,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetPendingDebitRequestsByUserQuery, IReadOnlyList<WalletDebitRequestDto>>
 {
     private static readonly TimeSpan ExpiringSoonThreshold = TimeSpan.FromHours(6);
@@ -15,7 +17,11 @@ public sealed class GetPendingDebitRequestsByUserHandler(
         GetPendingDebitRequestsByUserQuery request,
         CancellationToken ct)
     {
-        var ownerId = UserId.From(request.UserId);
+        var resolvedUserId = WalletUserResolver.Resolve(currentUserService, request.UserId);
+        if (resolvedUserId is null || resolvedUserId == Guid.Empty)
+            return ServiceResult<IReadOnlyList<WalletDebitRequestDto>>.Unauthorized("کاربر احراز هویت نشده است.");
+
+        var ownerId = UserId.From(resolvedUserId.Value);
         var items = await debitRequestRepository.GetPendingByOwnerAsync(ownerId, ct);
         var now = DateTime.UtcNow;
 

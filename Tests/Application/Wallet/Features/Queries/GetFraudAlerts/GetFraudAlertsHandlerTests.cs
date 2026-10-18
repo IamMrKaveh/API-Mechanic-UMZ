@@ -1,3 +1,4 @@
+﻿using Tests.TestInfrastructure.Base;
 using Application.Wallet.Contracts;
 using Application.Wallet.Features.Queries.GetFraudAlerts;
 using Application.Wallet.Features.Shared;
@@ -10,14 +11,15 @@ using Xunit;
 
 namespace Tests.Application.Wallet.Features.Queries.GetFraudAlerts;
 
-public sealed class GetFraudAlertsHandlerTests
+public sealed class GetFraudAlertsHandlerTests : HandlerTestBase
 {
     private readonly IWalletFraudAlertQueryService _queryService = Substitute.For<IWalletFraudAlertQueryService>();
     private readonly GetFraudAlertsHandler _sut;
 
     public GetFraudAlertsHandlerTests()
     {
-        _sut = new GetFraudAlertsHandler(_queryService);
+        CurrentUserService.IsAdmin.Returns(true);
+        _sut = new GetFraudAlertsHandler(_queryService, CurrentUserService);
     }
 
     private static WalletFraudAlertDto CreateDto(string severity = "Medium", string status = "Open") =>

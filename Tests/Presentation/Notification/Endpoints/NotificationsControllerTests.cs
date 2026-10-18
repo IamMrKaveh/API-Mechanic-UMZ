@@ -1,4 +1,4 @@
-using Application.Notification.Features.Commands.DeleteNotification;
+﻿using Application.Notification.Features.Commands.DeleteNotification;
 using Application.Notification.Features.Commands.MarkAllNotificationsRead;
 using Application.Notification.Features.Commands.MarkNotificationRead;
 using Application.Notification.Features.Queries.GetNotifications;
@@ -176,11 +176,12 @@ public class NotificationsControllerTests
     }
 
     [Fact]
-    public void GetUnreadCount_AllowsAnonymous()
+    public void GetUnreadCount_RequiresAuthentication()
     {
+        // SEC-16: the unread count is user data and must not be anonymous.
         var method = typeof(NotificationsController).GetMethod(nameof(NotificationsController.GetUnreadCount));
         method.ShouldNotBeNull();
-        method!.GetCustomAttributes(typeof(AllowAnonymousAttribute), false).Length.ShouldBeGreaterThan(0);
+        method!.GetCustomAttributes(typeof(AllowAnonymousAttribute), false).Length.ShouldBe(0);
     }
 
     [Theory]

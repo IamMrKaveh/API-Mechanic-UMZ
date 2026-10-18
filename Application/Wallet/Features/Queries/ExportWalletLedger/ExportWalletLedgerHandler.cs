@@ -1,20 +1,26 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Application.Common.Interfaces;
 using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 
 namespace Application.Wallet.Features.Queries.ExportWalletLedger;
 
 public sealed class ExportWalletLedgerHandler(
-    IWalletQueryService walletQueryService)
+    IWalletQueryService walletQueryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<ExportWalletLedgerQuery, ExportWalletLedgerResult>
 {
     public async Task<ServiceResult<ExportWalletLedgerResult>> Handle(
         ExportWalletLedgerQuery request,
         CancellationToken ct)
     {
-        var userId = UserId.From(request.UserId);
+        var resolvedUserId = WalletUserResolver.Resolve(currentUserService, request.UserId);
+        if (resolvedUserId is null || resolvedUserId == Guid.Empty)
+            return ServiceResult<ExportWalletLedgerResult>.Unauthorized("کاربر احراز هویت نشده است.");
+
+        var userId = UserId.From(resolvedUserId.Value);
 
         var filter = new WalletLedgerFilter
         {

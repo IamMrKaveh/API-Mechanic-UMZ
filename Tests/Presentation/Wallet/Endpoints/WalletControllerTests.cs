@@ -1,4 +1,5 @@
-﻿using Application.Wallet.Features.Commands.ApproveWalletDebit;
+﻿using Infrastructure.Security.Settings;
+using Application.Wallet.Features.Commands.ApproveWalletDebit;
 using Application.Wallet.Features.Commands.CancelWalletTransfer;
 using Application.Wallet.Features.Commands.CancelWithdrawal;
 using Application.Wallet.Features.Commands.CompleteWalletTopUp;
@@ -49,7 +50,12 @@ public class WalletControllerTests
             WalletTopUpCallbackPath = "/dashboard/wallet/topup/callback"
         });
 
-        _controller = new WalletController(_mediator, Substitute.For<IMapper>(), frontendOptions);
+        var securityOptions = Options.Create(new SecuritySettings
+        {
+            AllowedOrigins = ["https://shop.example", "http://localhost:4200"]
+        });
+
+        _controller = new WalletController(_mediator, Substitute.For<IMapper>(), frontendOptions, securityOptions);
 
         var services = new ServiceCollection();
         services.AddSingleton<IHttpResultMapper>(new HttpResultMapper());
@@ -168,6 +174,34 @@ public class WalletControllerTests
         var redirect = result.ShouldBeOfType<RedirectResult>();
         redirect.Url.ShouldContain("status=unknown");
         redirect.Url.ShouldContain("authority=");
+    }
+
+    [Fact]
+    public async Task TopUpCallback_WithNonAllowListedOrigin_RedirectsToConfiguredBaseUrl()
+    {
+        // SEC-11: an attacker-supplied Origin must not steer the redirect.
+        _controller.Request.Headers["Origin"] = "https://evil.example";
+        _mediator.Send(Arg.Any<CompleteWalletTopUpCommand>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<CompleteWalletTopUpResult>.Failure("failed"));
+
+        var result = await _controller.TopUpCallback("AUTH1", "OK", CancellationToken.None);
+
+        var redirect = result.ShouldBeOfType<RedirectResult>();
+        redirect.Url.ShouldStartWith("https://shop.example/dashboard/wallet/topup/callback");
+        redirect.Url.ShouldNotContain("evil.example");
+    }
+
+    [Fact]
+    public async Task TopUpCallback_WithAllowListedOrigin_RedirectsToThatOrigin()
+    {
+        _controller.Request.Headers["Origin"] = "https://shop.example";
+        _mediator.Send(Arg.Any<CompleteWalletTopUpCommand>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<CompleteWalletTopUpResult>.Failure("failed"));
+
+        var result = await _controller.TopUpCallback("AUTH1", "OK", CancellationToken.None);
+
+        var redirect = result.ShouldBeOfType<RedirectResult>();
+        redirect.Url.ShouldStartWith("https://shop.example/dashboard/wallet/topup/callback");
     }
 
     [Fact]
