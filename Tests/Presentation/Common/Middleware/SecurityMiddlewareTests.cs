@@ -1,4 +1,4 @@
-using Infrastructure.Security.Settings;
+﻿using Infrastructure.Security.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,14 +39,69 @@ public class SecurityMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_AdminPathWithEmptyWhitelist_CallsNext()
+    public async Task InvokeAsync_AdminPathWithEmptyWhitelist_Denies()
     {
+        // Fail-closed: a configured-but-empty whitelist must not allow all traffic.
         var called = false;
         var sut = BuildSut(_ => { called = true; return Task.CompletedTask; }, []);
+        var context = BuildContext("/api/admin/users", "1.1.1.1");
 
-        await sut.InvokeAsync(BuildContext("/api/admin/users", "1.1.1.1"));
+        await sut.InvokeAsync(context);
+
+        called.ShouldBeFalse();
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_VersionedAdminPathWithWhitelistedIp_CallsNext()
+    {
+        // Admin controllers live at api/v{version}/admin/... - the middleware
+        // must enforce the whitelist there, not just at /api/admin/...
+        var called = false;
+        var sut = BuildSut(_ => { called = true; return Task.CompletedTask; }, ["1.1.1.1"]);
+
+        await sut.InvokeAsync(BuildContext("/api/v1/admin/users", "1.1.1.1"));
 
         called.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task InvokeAsync_VersionedAdminPathWithForeignIp_Returns403()
+    {
+        var called = false;
+        var sut = BuildSut(_ => { called = true; return Task.CompletedTask; }, ["9.9.9.9"]);
+        var context = BuildContext("/api/v1/admin/users", "1.1.1.1");
+
+        await sut.InvokeAsync(context);
+
+        called.ShouldBeFalse();
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_AdminPathWithIpv4MappedIpv6Address_MatchesWhitelistEntry()
+    {
+        // Proxies hand us ::ffff:<ipv4> for IPv4 clients; normalization keeps
+        // plain-IPv4 whitelist entries working.
+        var called = false;
+        var sut = BuildSut(_ => { called = true; return Task.CompletedTask; }, ["1.1.1.1"]);
+
+        await sut.InvokeAsync(BuildContext("/api/v1/admin/users", "::ffff:1.1.1.1"));
+
+        called.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task InvokeAsync_VersionedAdminPathWithNullIp_Returns403()
+    {
+        var called = false;
+        var sut = BuildSut(_ => { called = true; return Task.CompletedTask; }, ["9.9.9.9"]);
+        var context = BuildContext("/api/v1/admin/users", null);
+
+        await sut.InvokeAsync(context);
+
+        called.ShouldBeFalse();
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
     }
 
     [Fact]

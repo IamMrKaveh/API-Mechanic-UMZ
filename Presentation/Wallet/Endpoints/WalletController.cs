@@ -1,4 +1,4 @@
-using System.Web;
+﻿using System.Web;
 using Application.Wallet.Features.Commands.ApproveWalletDebit;
 using Application.Wallet.Features.Commands.CancelWalletTransfer;
 using Application.Wallet.Features.Commands.CancelWithdrawal;
@@ -175,7 +175,9 @@ public class WalletController(
     }
 
     [HttpPost("{id:guid}/reject")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RejectWithdrawal(
         Guid id,
@@ -187,8 +189,10 @@ public class WalletController(
     }
 
     [HttpPost("{id:guid}/mark-paid")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkWithdrawalPaid(
         Guid id,

@@ -1,9 +1,8 @@
-using Application.Discount.Features.Commands.CancelDiscountUsage;
+﻿using Application.Discount.Features.Commands.CancelDiscountUsage;
 using Application.Discount.Features.Commands.CreateDiscount;
 using Application.Discount.Features.Commands.DeleteDiscount;
 using Application.Discount.Features.Commands.UpdateDiscount;
 using Application.Discount.Features.Queries.GetDiscountById;
-using Application.Discount.Features.Queries.GetDiscountInfo;
 using Application.Discount.Features.Queries.GetDiscounts;
 using Application.Discount.Features.Queries.GetDiscountUsageReport;
 using Application.Discount.Features.Shared;
@@ -108,26 +107,6 @@ public class AdminDiscountsControllerTests
         var body = ok.Value.ShouldBeOfType<ApiResponse<DiscountUsageReportDto>>();
         body.Success.ShouldBeTrue();
         body.Data!.TotalUsages.ShouldBe(5);
-    }
-
-    [Fact]
-    public async Task GetDiscountInfo_WithCode_SendsQuery_AndReturnsOk()
-    {
-        // Arrange
-        var expected = new DiscountInfoDto { Code = "SAVE10", IsRedeemable = true };
-
-        _mediator.Send(Arg.Is<GetDiscountInfoQuery>(q => q!.Code == "SAVE10"), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult<DiscountInfoDto>.Success(expected));
-
-        // Act
-        var result = await _controller.GetDiscountInfo("SAVE10");
-
-        // Assert
-        var ok = result.ShouldBeOfType<OkObjectResult>();
-        ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
-        var body = ok.Value.ShouldBeOfType<ApiResponse<DiscountInfoDto>>();
-        body.Success.ShouldBeTrue();
-        body.Data!.Code.ShouldBe("SAVE10");
     }
 
     [Fact]
@@ -262,7 +241,6 @@ public class AdminDiscountsControllerTests
     [InlineData(nameof(AdminDiscountsController.GetAll), null)]
     [InlineData(nameof(AdminDiscountsController.GetById), "{id:guid}")]
     [InlineData(nameof(AdminDiscountsController.GetUsageReport), "{id:guid}/usage-report")]
-    [InlineData(nameof(AdminDiscountsController.GetDiscountInfo), "codes/{code}")]
     [InlineData(nameof(AdminDiscountsController.Create), null)]
     [InlineData(nameof(AdminDiscountsController.Update), "{id:guid}")]
     [InlineData(nameof(AdminDiscountsController.Delete), "{id:guid}")]

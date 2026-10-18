@@ -1,16 +1,22 @@
+﻿using Application.Common.Interfaces;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
 
 namespace Application.User.Features.Commands.UpdateUser;
 
 public class UpdateUserHandler(
-    IUserRepository userRepository)
+    IUserRepository userRepository,
+    ICurrentUserService currentUserService)
     : ICommandHandler<UpdateUserCommand>
 {
     public async Task<ServiceResult> Handle(
         UpdateUserCommand request,
         CancellationToken ct)
     {
+        // Users may only update their own profile; admins may update any.
+        if (!currentUserService.IsAdmin && currentUserService.UserId != request.Id)
+            return ServiceResult.Forbidden("دسترسی ممنوع.");
+
         var userId = UserId.From(request.Id);
 
         var userResult = await (userRepository.GetByIdAsync(userId, ct)).OrNotFoundAsync("کاربر یافت نشد.");

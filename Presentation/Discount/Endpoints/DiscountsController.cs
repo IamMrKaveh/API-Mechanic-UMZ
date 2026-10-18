@@ -1,4 +1,5 @@
-using Application.Discount.Features.Commands.ApplyDiscount;
+﻿using Application.Discount.Features.Commands.ApplyDiscount;
+using Application.Discount.Features.Queries.GetDiscountInfo;
 using Application.Discount.Features.Queries.ValidateDiscount;
 using Application.Discount.Features.Shared;
 using Presentation.Discount.Requests;
@@ -10,6 +11,17 @@ namespace Presentation.Discount.Endpoints;
 [Authorize]
 public sealed class DiscountsController(IMediator mediator) : BaseApiController(mediator)
 {
+    [HttpGet("codes/{code}")]
+    [SwaggerOperation(OperationId = "Discounts_GetInfo")]
+    [ProducesResponseType(typeof(ApiResponse<DiscountInfoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetInfo(string code)
+    {
+        var query = new GetDiscountInfoQuery(code);
+        var result = await Mediator.Send(query);
+        return ToActionResult(result);
+    }
+
     [HttpPost("validation")]
     [SwaggerOperation(OperationId = "Discounts_Validate")]
     [ProducesResponseType(typeof(ApiResponse<DiscountValidationResult>), StatusCodes.Status201Created)]

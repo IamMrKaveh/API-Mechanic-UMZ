@@ -1,4 +1,4 @@
-using Application.Wallet.Features.Commands.ApproveWalletDebit;
+﻿using Application.Wallet.Features.Commands.ApproveWalletDebit;
 using Application.Wallet.Features.Commands.CancelWalletTransfer;
 using Application.Wallet.Features.Commands.CancelWithdrawal;
 using Application.Wallet.Features.Commands.CompleteWalletTopUp;
@@ -478,6 +478,24 @@ public class WalletControllerTests
     {
         typeof(WalletController).GetCustomAttributes(typeof(AuthorizeAttribute), false)
             .Length.ShouldBeGreaterThan(0);
+    }
+
+    [Theory]
+    [InlineData(nameof(WalletController.RejectWithdrawal))]
+    [InlineData(nameof(WalletController.MarkWithdrawalPaid))]
+    public void AdminWithdrawalActions_RequireAdminRole(string methodName)
+    {
+        // SEC-02: finalizing withdrawals must be admin-only even though the
+        // controller class only requires an authenticated user.
+        var method = typeof(WalletController).GetMethod(methodName);
+        method.ShouldNotBeNull();
+
+        var authorize = method!.GetCustomAttributes(false)
+            .OfType<AuthorizeAttribute>()
+            .SingleOrDefault();
+
+        authorize.ShouldNotBeNull();
+        authorize!.Roles.ShouldBe("Admin");
     }
 
     [Fact]

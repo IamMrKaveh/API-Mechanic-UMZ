@@ -1,4 +1,5 @@
-using Application.Discount.Features.Commands.ApplyDiscount;
+﻿using Application.Discount.Features.Commands.ApplyDiscount;
+using Application.Discount.Features.Queries.GetDiscountInfo;
 using Application.Discount.Features.Queries.ValidateDiscount;
 using Application.Discount.Features.Shared;
 using MediatR;
@@ -30,6 +31,26 @@ public class DiscountsControllerTests
         {
             RequestServices = services.BuildServiceProvider()
         };
+    }
+
+    [Fact]
+    public async Task GetInfo_WithCode_SendsQuery_AndReturnsOk()
+    {
+        // Arrange
+        var expected = new DiscountInfoDto { Code = "SAVE10", IsRedeemable = true };
+
+        _mediator.Send(Arg.Is<GetDiscountInfoQuery>(q => q!.Code == "SAVE10"), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<DiscountInfoDto>.Success(expected));
+
+        // Act
+        var result = await _controller.GetInfo("SAVE10");
+
+        // Assert
+        var ok = result.ShouldBeOfType<OkObjectResult>();
+        ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
+        var body = ok.Value.ShouldBeOfType<ApiResponse<DiscountInfoDto>>();
+        body.Success.ShouldBeTrue();
+        body.Data!.Code.ShouldBe("SAVE10");
     }
 
     [Fact]

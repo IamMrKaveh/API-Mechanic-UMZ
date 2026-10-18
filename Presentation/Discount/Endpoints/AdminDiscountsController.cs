@@ -1,9 +1,8 @@
-using Application.Discount.Features.Commands.CancelDiscountUsage;
+﻿using Application.Discount.Features.Commands.CancelDiscountUsage;
 using Application.Discount.Features.Commands.CreateDiscount;
 using Application.Discount.Features.Commands.DeleteDiscount;
 using Application.Discount.Features.Commands.UpdateDiscount;
 using Application.Discount.Features.Queries.GetDiscountById;
-using Application.Discount.Features.Queries.GetDiscountInfo;
 using Application.Discount.Features.Queries.GetDiscounts;
 using Application.Discount.Features.Queries.GetDiscountUsageReport;
 using Application.Discount.Features.Shared;
@@ -48,18 +47,6 @@ public sealed class AdminDiscountsController(IMediator mediator, IMapper mapper)
     public async Task<IActionResult> GetUsageReport(Guid id)
     {
         var query = new GetDiscountUsageReportQuery(id);
-        var result = await Mediator.Send(query);
-        return ToActionResult(result);
-    }
-
-    [HttpGet("codes/{code}")]
-    [AllowAnonymous]
-    [SwaggerOperation(OperationId = "AdminDiscounts_GetByCode")]
-    [ProducesResponseType(typeof(ApiResponse<DiscountInfoDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetDiscountInfo(string code)
-    {
-        var query = new GetDiscountInfoQuery(code);
         var result = await Mediator.Send(query);
         return ToActionResult(result);
     }

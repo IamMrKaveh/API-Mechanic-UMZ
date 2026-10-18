@@ -1,4 +1,4 @@
-using Domain.User.ValueObjects;
+﻿using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
@@ -21,6 +21,12 @@ public sealed class MarkWithdrawalPaidHandler(
         MarkWithdrawalPaidCommand request,
         CancellationToken ct)
     {
+        // Defense in depth: finalizing a withdrawal is an admin-only operation.
+        // The endpoint already enforces Roles="Admin"; the handler must not
+        // trust the caller when it is invoked through another path.
+        if (!currentUserService.IsAdmin)
+            return ServiceResult<Unit>.Forbidden("دسترسی ممنوع.");
+
         var withdrawalId = WalletWithdrawalRequestId.From(request.WithdrawalId);
         var adminId = UserId.From(currentUserService.UserId!.Value);
 
