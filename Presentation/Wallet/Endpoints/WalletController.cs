@@ -19,6 +19,7 @@ using Application.Wallet.Features.Queries.PreviewWalletTransfer;
 using Application.Wallet.Features.Shared;
 using Domain.Wallet.Enums;
 using Infrastructure.Common.Options;
+using Infrastructure.Security.Settings;
 using Presentation.Wallet.Requests;
 
 namespace Presentation.Wallet.Endpoints;
@@ -29,10 +30,12 @@ namespace Presentation.Wallet.Endpoints;
 public class WalletController(
     IMediator mediator,
     IMapper mapper,
-    IOptions<FrontendUrlsOptions> frontendOptions)
+    IOptions<FrontendUrlsOptions> frontendOptions,
+    IOptions<SecuritySettings> securityOptions)
     : BaseApiController(mediator, mapper)
 {
     private readonly FrontendUrlsOptions _frontendOptions = frontendOptions.Value;
+    private readonly SecuritySettings _securitySettings = securityOptions.Value;
 
     [HttpGet("balance")]
     [ProducesResponseType(typeof(ApiResponse<WalletDto>), StatusCodes.Status200OK)]
@@ -289,9 +292,16 @@ public class WalletController(
 
     private string ResolveFrontendBaseUrl()
     {
+        // Only honor the Origin header when it is an allow-listed frontend;
+        // otherwise an attacker-supplied Origin turns the payment callback
+        // into an open redirect.
         var origin = Request.Headers["Origin"].ToString();
-        if (!string.IsNullOrWhiteSpace(origin) && Uri.IsWellFormedUriString(origin, UriKind.Absolute))
+        if (!string.IsNullOrWhiteSpace(origin) &&
+            Uri.IsWellFormedUriString(origin, UriKind.Absolute) &&
+            _securitySettings.AllowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
+        {
             return origin;
+        }
 
         if (!string.IsNullOrWhiteSpace(_frontendOptions.BaseUrl))
             return _frontendOptions.BaseUrl;

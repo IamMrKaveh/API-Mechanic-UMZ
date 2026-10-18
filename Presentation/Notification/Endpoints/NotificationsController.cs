@@ -1,4 +1,4 @@
-using Application.Notification.Features.Commands.DeleteNotification;
+﻿using Application.Notification.Features.Commands.DeleteNotification;
 using Application.Notification.Features.Commands.MarkAllNotificationsRead;
 using Application.Notification.Features.Commands.MarkNotificationRead;
 using Application.Notification.Features.Queries.GetNotifications;
@@ -31,7 +31,6 @@ public class NotificationsController(
     }
 
     [HttpGet("unread-count")]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUnreadCount(CancellationToken ct)
     {

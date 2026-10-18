@@ -1,8 +1,11 @@
+﻿using Application.Common.Interfaces;
 using Application.Wallet.Features.Shared;
 
 namespace Application.Wallet.Features.Queries.GetWalletTransfers;
 
-public sealed class GetWalletTransfersHandler(IWalletTransferQueryService queryService)
+public sealed class GetWalletTransfersHandler(
+    IWalletTransferQueryService queryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetWalletTransfersQuery, PaginatedResult<WalletTransferDto>>
 {
     public async Task<ServiceResult<PaginatedResult<WalletTransferDto>>> Handle(
@@ -11,7 +14,7 @@ public sealed class GetWalletTransfersHandler(IWalletTransferQueryService queryS
     {
         var filter = new WalletTransferFilter
         {
-            UserId = request.UserId,
+            UserId = WalletUserResolver.Resolve(currentUserService, request.UserId),
             Status = request.Status,
             FromDate = request.FromDate,
             ToDate = request.ToDate

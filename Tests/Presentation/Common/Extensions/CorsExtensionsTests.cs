@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,8 +49,13 @@ public class CorsExtensionsTests
 
         policy.ShouldNotBeNull();
         policy!.Origins.ShouldBe(["https://app.example.com", "https://admin.example.com"], ignoreOrder: true);
-        policy.Headers.ShouldContain("*");
-        policy.Methods.ShouldContain("*");
+        policy.Headers.ShouldNotContain("*");
+        policy.Methods.ShouldNotContain("*");
+        policy.Headers.ShouldContain("Authorization");
+        policy.Headers.ShouldContain("X-XSRF-TOKEN");
+        policy.Methods.ShouldContain("GET");
+        policy.Methods.ShouldContain("POST");
+        policy.Methods.ShouldContain("DELETE");
         policy.SupportsCredentials.ShouldBeTrue();
     }
 

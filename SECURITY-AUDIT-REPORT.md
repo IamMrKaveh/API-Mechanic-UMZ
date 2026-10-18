@@ -29,6 +29,16 @@
 - **SEC-10 (مهم):** `ISessionRevocationChecker` + کش ۳۰ ثانیه‌ای (منفی ۱۰ ثانیه) در `OnTokenValidated` از طریق claim `sid` — نشست‌های ابطال‌شده (logout-all، تغییر رمز، ابطال ادمین) ظرف ≤۱۰ ثانیه از کار می‌افتند؛ عمر access token از ۶۰ به ۱۵ دقیقه کاهش یافت.
 - **تست‌ها:** ۲۵ تست جدید/به‌روز (nonce بی‌قید‌وشرط، هش رفرش‌توکن، pepper OTP و گاردهایش، قفل حساب، چکر ابطال با کش) + fixture تست‌های موجود.
 
+### ✅ وضعیت اجرا — فاز ۳ پیاده‌سازی شد (۲۰۲۶-۱۰-۱۸)
+- **SEC-11 (متوسط):** `ResolveFrontendBaseUrl` دیگر هدر `Origin` خام را دنبال نمی‌کند؛ فقط originهای allow-listشده (`Security:AllowedOrigins` — همان لیست CORS) پذیرفته می‌شوند، وگرنه ریدایرکت به `FrontendUrls:BaseUrl` انجام می‌شود. `SecuritySettings.AllowedOrigins` اضافه شد.
+- **SEC-12 (متوسط):** CORS از `AllowAnyHeader/AllowAnyMethod` به لیست‌های صریح رفت (متدها: GET/POST/PUT/DELETE/PATCH؛ هدرها: Content-Type، Authorization، Accept، Origin، X-Requested-With، X-XSRF-TOKEN) — originها همچنان از کانفیگ.
+- **SEC-13 (متوسط):** نام فایل آپلود کاملاً سمت سرور تولید می‌شود (GUID + پسوند از allow-list؛ نامعتبر → `.bin`) — نام کلاینت هرگز به کلید S3/URL عمومی نمی‌رسد. در برند نیز پسوند از content-type اعتبارسنجی‌شده مشتق می‌شود (jpeg/png/webp).
+- **SEC-14 (متوسط):** `WalletUserResolver` معرفی شد: غیرادمین همیشه به شناسهٔ خودش resolve می‌شود (درخواستِ او نادیده)؛ ادمین می‌تواند کاربر هدف را بدهد؛ «بدون فیلتر» (null) برای کوئری‌های تجمعی ادمین حفظ شد. در ۶ هندلر کیف پول اعمال شد.
+- **SEC-15 (متوسط):** آی‌پی تهی دیگر rate limit را دور نمی‌زند؛ در باکت مشترک `rl_ip_unknown` با سقف تشدیدشدهٔ ۳۰ در دقیقه قرار می‌گیرد. (کلیدهای global عمداً حفظ شد — امن‌تر از کلید per-endpoint.)
+- **SEC-16 (متوسط):** `[AllowAnonymous]` از `notifications/unread-count` حذف شد.
+- **تست‌ها:** ۹ تست جدید (۲ ریدایرکت origin، ۵ resolver، ۲ S3) + به‌روزرسانی تست‌های متأثر (CORS بدون wildcard، bucket ناشناس، عدم AllowAnonymous، نام سمت سرور). مسیرهای export/pending کیف پول برای هدف نامعتبر به‌جای DomainException مقدار `Unauthorized` برمی‌گردانند (دقیق‌تر).
+
+
 ---
 
 ## فهرس اولویت‌ها

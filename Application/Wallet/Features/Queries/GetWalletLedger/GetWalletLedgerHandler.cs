@@ -1,4 +1,4 @@
-using Application.Wallet.Features.Shared;
+﻿using Application.Wallet.Features.Shared;
 using Domain.User.ValueObjects;
 
 namespace Application.Wallet.Features.Queries.GetWalletLedger;
@@ -12,15 +12,13 @@ public class GetWalletLedgerHandler(
         GetWalletLedgerQuery request,
         CancellationToken ct)
     {
-        var resolvedUserId = request.UserId.HasValue && request.UserId.Value != Guid.Empty
-            ? request.UserId.Value
-            : currentUserService.UserId ?? Guid.Empty;
+        var resolvedUserId = WalletUserResolver.Resolve(currentUserService, request.UserId);
 
-        if (resolvedUserId == Guid.Empty)
+        if (resolvedUserId is null || resolvedUserId == Guid.Empty)
             return ServiceResult<PaginatedResult<WalletLedgerEntryDto>>
                 .Unauthorized("کاربر احراز هویت نشده است.");
 
-        var userId = UserId.From(resolvedUserId);
+        var userId = UserId.From(resolvedUserId.Value);
 
         var filter = new WalletLedgerFilter
         {

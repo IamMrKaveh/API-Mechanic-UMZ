@@ -1,3 +1,4 @@
+﻿using Tests.TestInfrastructure.Base;
 using Application.Wallet.Contracts;
 using Application.Wallet.Features.Queries.GetWalletTransfers;
 using Application.Wallet.Features.Shared;
@@ -6,14 +7,15 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Wallet.Features.Queries.GetWalletTransfers;
 
-public class GetWalletTransfersHandlerTests
+public class GetWalletTransfersHandlerTests : HandlerTestBase
 {
     private readonly IWalletTransferQueryService _queryService = Substitute.For<IWalletTransferQueryService>();
     private readonly GetWalletTransfersHandler _sut;
 
     public GetWalletTransfersHandlerTests()
     {
-        _sut = new GetWalletTransfersHandler(_queryService);
+        CurrentUserService.IsAdmin.Returns(true);
+        _sut = new GetWalletTransfersHandler(_queryService, CurrentUserService);
     }
 
     private static PaginatedResult<WalletTransferDto> EmptyPage(int page = 1, int size = 20)

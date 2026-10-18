@@ -1,4 +1,4 @@
-using Application.Common.Interfaces;
+﻿using Application.Common.Interfaces;
 using Application.Security.Contracts;
 
 namespace Presentation.Common.Middleware;
@@ -9,6 +9,7 @@ public class RateLimitMiddleware(
     IServiceScopeFactory scopeFactory)
 {
     private const int AnonymousMaxAttempts = 100;
+    private const int UnknownIpMaxAttempts = 30;
     private const int AuthenticatedMaxAttempts = 200;
     private const int WindowMinutes = 1;
 
@@ -18,12 +19,9 @@ public class RateLimitMiddleware(
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
-        if (string.IsNullOrEmpty(clientIp))
-        {
-            await _next(context);
-            return;
-        }
+        // A missing client IP must not bypass limiting: such callers share a
+        // strict "unknown" bucket instead of being waved through.
+        var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
         using var scope = _scopeFactory.CreateScope();
         var rateLimitService = scope.ServiceProvider.GetRequiredService<IRateLimitService>();
@@ -52,6 +50,11 @@ public class RateLimitMiddleware(
         if (currentUserService.IsAuthenticated)
             return ($"rl_user_{currentUserService.UserId!.Value}", AuthenticatedMaxAttempts);
 
-        return ($"rl_ip_{clientIp}", AnonymousMaxAttempts);
+        var (key, limit) = ($"rl_ip_{clientIp}", AnonymousMaxAttempts);
+
+        // Tighten the shared bucket for callers we cannot identify.
+        return clientIp == "unknown"
+            ? ($"rl_ip_unknown", UnknownIpMaxAttempts)
+            : (key, limit);
     }
 }

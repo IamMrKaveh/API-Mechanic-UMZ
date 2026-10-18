@@ -1,4 +1,4 @@
-using Application.Common.Interfaces;
+﻿using Application.Common.Interfaces;
 using Application.Security.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,15 +32,21 @@ public class RateLimitMiddlewareTests : HandlerTestBase
     }
 
     [Fact]
-    public async Task InvokeAsync_WhenIpMissing_CallsNextWithoutCheckingLimit()
+    public async Task InvokeAsync_WhenIpMissing_UsesSharedUnknownBucket()
     {
+        // SEC-15: a missing client IP must not bypass rate limiting.
+        string? capturedKey = null;
+        int capturedMax = 0;
+        _rateLimit.IsLimitedAsync(Arg.Do<string>(k => capturedKey = k), Arg.Do<int>(m => capturedMax = m), Arg.Do<int>(_ => { }))
+            .Returns((false, null));
         var called = false;
         var sut = BuildSut(_ => { called = true; return Task.CompletedTask; });
 
         await sut.InvokeAsync(BuildContext(null));
 
         called.ShouldBeTrue();
-        await _rateLimit.DidNotReceiveWithAnyArgs().IsLimitedAsync(default!, default, default);
+        capturedKey.ShouldBe("rl_ip_unknown");
+        capturedMax.ShouldBe(30);
     }
 
     [Fact]

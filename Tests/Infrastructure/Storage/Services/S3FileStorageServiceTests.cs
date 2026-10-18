@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Storage.Contracts;
 using Domain.User.ValueObjects;
 using Infrastructure.Storage.Options;
@@ -115,7 +115,7 @@ public class S3FileStorageServiceTests : HandlerTestBase
     }
 
     [Fact]
-    public async Task UploadAsync_HappyPathWithoutFolder_ReturnsKeyWithGuidPrefixAndOriginalFileName()
+    public async Task UploadAsync_HappyPathWithoutFolder_ReturnsKeyWithServerGeneratedFileName()
     {
         ConfigureAllowedContent();
         var sut = CreateSut();
@@ -123,7 +123,37 @@ public class S3FileStorageServiceTests : HandlerTestBase
 
         var key = await sut.UploadAsync(stream, "photo.png", "image/png");
 
-        key.ShouldMatch(@"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/photo\.png$");
+        // The client file name must never reach the storage key/public URL.
+        key.ShouldNotContain("photo");
+        key.ShouldMatch(@"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\.png$");
+    }
+
+    [Fact]
+    public async Task UploadAsync_WhenExtensionNotAllowListed_UsesBinExtension()
+    {
+        ConfigureAllowedContent();
+        var sut = CreateSut();
+        using var stream = new MemoryStream(new byte[] { 0x89, 0x50, 0x4E, 0x47 });
+
+        var key = await sut.UploadAsync(stream, "evil.php", "image/png");
+
+        key.ShouldEndWith(".bin");
+        key.ShouldNotContain("php");
+        key.ShouldNotContain("evil");
+    }
+
+    [Fact]
+    public async Task UploadAsync_WithDoubleExtension_ClientNameNeverReachesKey()
+    {
+        ConfigureAllowedContent();
+        var sut = CreateSut();
+        using var stream = new MemoryStream(new byte[] { 0x89, 0x50, 0x4E, 0x47 });
+
+        var key = await sut.UploadAsync(stream, "shell.php.png", "image/png");
+
+        key.ShouldEndWith(".png");
+        key.ShouldNotContain("php");
+        key.ShouldNotContain("shell");
     }
 
     [Fact]
@@ -135,7 +165,7 @@ public class S3FileStorageServiceTests : HandlerTestBase
 
         var key = await sut.UploadAsync(stream, "photo.png", "image/png", "/images/products/");
 
-        key.ShouldMatch(@"^images/products/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/photo\.png$");
+        key.ShouldMatch(@"^images/products/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\.png$");
     }
 
     [Fact]

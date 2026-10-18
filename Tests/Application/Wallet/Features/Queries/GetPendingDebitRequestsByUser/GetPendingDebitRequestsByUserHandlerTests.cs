@@ -1,3 +1,4 @@
+﻿using Tests.TestInfrastructure.Base;
 using Application.Wallet.Features.Queries.GetPendingDebitRequestsByUser;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Entities;
@@ -7,14 +8,15 @@ using SharedKernel.Exceptions;
 
 namespace Tests.Application.Wallet.Features.Queries.GetPendingDebitRequestsByUser;
 
-public sealed class GetPendingDebitRequestsByUserHandlerTests
+public sealed class GetPendingDebitRequestsByUserHandlerTests : HandlerTestBase
 {
     private readonly IWalletDebitRequestRepository _debitRequestRepository = Substitute.For<IWalletDebitRequestRepository>();
     private readonly GetPendingDebitRequestsByUserHandler _sut;
 
     public GetPendingDebitRequestsByUserHandlerTests()
     {
-        _sut = new GetPendingDebitRequestsByUserHandler(_debitRequestRepository);
+        CurrentUserService.IsAdmin.Returns(true);
+        _sut = new GetPendingDebitRequestsByUserHandler(_debitRequestRepository, CurrentUserService);
     }
 
     [Fact]
@@ -149,13 +151,15 @@ public sealed class GetPendingDebitRequestsByUserHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenUserIdIsEmpty_ThrowsDomainException()
+    public async Task Handle_WhenNoUserCanBeResolved_ReturnsUnauthorized()
     {
+        // SEC-14: an anonymous admin session with no target user now fails as
+        // an authorization error instead of a domain exception.
         var query = new GetPendingDebitRequestsByUserQuery(Guid.Empty);
 
-        var act = async () => await _sut.Handle(query, CancellationToken.None);
+        var result = await _sut.Handle(query, CancellationToken.None);
 
-        await act.ShouldThrowAsync<DomainException>();
+        result.ShouldFailWith(ErrorCode.Unauthorized);
     }
 
     [Fact]

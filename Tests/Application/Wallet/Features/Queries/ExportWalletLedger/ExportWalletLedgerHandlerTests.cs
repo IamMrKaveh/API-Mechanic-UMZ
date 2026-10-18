@@ -1,3 +1,4 @@
+﻿using Tests.TestInfrastructure.Base;
 using Application.Wallet.Contracts;
 using Application.Wallet.Features.Queries.ExportWalletLedger;
 using Application.Wallet.Features.Shared;
@@ -7,14 +8,15 @@ using Tests.TestInfrastructure.Assertions;
 
 namespace Tests.Application.Wallet.Features.Queries.ExportWalletLedger;
 
-public sealed class ExportWalletLedgerHandlerTests
+public sealed class ExportWalletLedgerHandlerTests : HandlerTestBase
 {
     private readonly IWalletQueryService _walletQueryService = Substitute.For<IWalletQueryService>();
     private readonly ExportWalletLedgerHandler _sut;
 
     public ExportWalletLedgerHandlerTests()
     {
-        _sut = new ExportWalletLedgerHandler(_walletQueryService);
+        CurrentUserService.IsAdmin.Returns(true);
+        _sut = new ExportWalletLedgerHandler(_walletQueryService, CurrentUserService);
     }
 
     private static WalletLedgerEntryDto CreateEntry(
@@ -297,13 +299,15 @@ public sealed class ExportWalletLedgerHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenUserIdIsEmpty_ThrowsDomainException()
+    public async Task Handle_WhenNoUserCanBeResolved_ReturnsUnauthorized()
     {
+        // SEC-14: an anonymous admin session with no target user now fails as
+        // an authorization error instead of a domain exception.
         var query = new ExportWalletLedgerQuery(Guid.Empty);
 
-        var act = async () => await _sut.Handle(query, CancellationToken.None);
+        var result = await _sut.Handle(query, CancellationToken.None);
 
-        await act.ShouldThrowAsync<DomainException>();
+        result.ShouldFailWith(ErrorCode.Unauthorized);
     }
 
     [Fact]

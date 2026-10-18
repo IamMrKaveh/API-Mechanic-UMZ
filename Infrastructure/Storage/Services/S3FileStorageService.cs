@@ -1,4 +1,4 @@
-using Amazon.S3.Model;
+﻿using Amazon.S3.Model;
 using Application.Storage.Contracts;
 using Infrastructure.Storage.Options;
 using Microsoft.FeatureManagement;
@@ -24,9 +24,12 @@ public sealed class S3FileStorageService(
         string? folder = null,
         CancellationToken ct = default)
     {
+        // The stored object name is generated server-side; the client-supplied
+        // name is never used in the key/URL (double extensions, homoglyphs).
+        var safeFileName = BuildSafeFileName(fileName);
         var key = string.IsNullOrWhiteSpace(folder)
-            ? $"{Guid.NewGuid()}/{fileName}"
-            : $"{folder.Trim('/')}/{Guid.NewGuid()}/{fileName}";
+            ? $"{Guid.NewGuid()}/{safeFileName}"
+            : $"{folder.Trim('/')}/{Guid.NewGuid()}/{safeFileName}";
 
         await using var buffer = await BufferAsync(fileStream, ct);
 
@@ -96,6 +99,23 @@ public sealed class S3FileStorageService(
             ct);
 
         return key;
+    }
+
+    private static readonly HashSet<string> AllowedExtensions =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg",
+            ".pdf", ".csv", ".txt"
+        };
+
+    private static string BuildSafeFileName(string fileName)
+    {
+        var extension = Path.GetExtension(fileName ?? string.Empty);
+        var safeExtension = AllowedExtensions.Contains(extension)
+            ? extension.ToLowerInvariant()
+            : ".bin";
+
+        return $"{Guid.NewGuid()}{safeExtension}";
     }
 
     public async Task<bool> DeleteAsync(string filePath, CancellationToken ct = default)
