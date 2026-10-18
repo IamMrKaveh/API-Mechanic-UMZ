@@ -1,4 +1,4 @@
-using Application.Auth.Features.Shared;
+﻿using Application.Auth.Features.Shared;
 using Application.User.Features.Shared;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
@@ -16,10 +16,12 @@ public class VerifyOtpHandler(
     IJwtTokenGenerator jwtTokenGenerator,
     ICurrentUserService currentUser,
     IDateTimeProvider dateTimeProvider,
-    IOptions<JwtOptions> jwtOptions)
+    IOptions<JwtOptions> jwtOptions,
+    IOptions<AuthOptions> authOptions)
     : ICommandHandler<VerifyOtpCommand, AuthResult>
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
+    private readonly AuthOptions _authOptions = authOptions.Value;
 
     public async Task<ServiceResult<AuthResult>> Handle(
         VerifyOtpCommand request,
@@ -39,6 +41,11 @@ public class VerifyOtpHandler(
         if (user is null)
             return ServiceResult<AuthResult>.Failure("کاربری با این شماره یافت نشد.");
 
+        // Locked-out accounts cannot attempt verification at all.
+        if (user.IsLockedOut)
+            return ServiceResult<AuthResult>.Forbidden(
+                "حساب کاربری به دلیل تلاش‌های ناموفق متعدد قفل شده است. لطفاً بعداً تلاش کنید.");
+
         var otp = await otpRepository.GetLatestActiveByUserIdAsync(user.Id, request.Purpose, ct);
 
         if (otp is null)
@@ -52,10 +59,18 @@ public class VerifyOtpHandler(
         catch (DomainException ex)
         {
             otpRepository.Update(otp);
+            user.RecordFailedLogin(
+                _authOptions.MaxFailedLoginAttempts,
+                TimeSpan.FromMinutes(_authOptions.LockoutDurationMinutes));
+            userRepository.Update(user);
             return ServiceResult<AuthResult>.Failure(ex.Message);
         }
 
         otpRepository.Update(otp);
+
+        // Successful verification clears the failed-attempt counter.
+        user.RecordSuccessfulLogin();
+        userRepository.Update(user);
 
         var deviceDescriptor = !string.IsNullOrWhiteSpace(request.DeviceInfo)
             ? request.DeviceInfo

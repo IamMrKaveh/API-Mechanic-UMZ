@@ -1,4 +1,4 @@
-using Application.Auth.Contracts;
+﻿using Application.Auth.Contracts;
 using Application.Auth.Features.Commands.VerifyOtp;
 using Application.Auth.Features.Shared;
 using Domain.Security.Aggregates;
@@ -44,6 +44,19 @@ public class VerifyOtpHandlerTests : HandlerTestBase
             RefreshTokenExpirationDays = 30
         });
 
+        var authOptions = Options.Create(new AuthOptions
+        {
+            OtpExpirationMinutes = 5,
+            OtpLength = 6,
+            MaxFailedOtpAttempts = 5,
+            OtpRateLimitWindowMinutes = 10,
+            MaxOtpPerWindow = 3,
+            SessionExpirationDays = 30,
+            MaxFailedLoginAttempts = 5,
+            LockoutDurationMinutes = 15,
+            OtpPepper = "test-pepper-value-with-enough-length",
+        });
+
         _sut = new VerifyOtpHandler(
             _otpRepository,
             _userRepository,
@@ -51,7 +64,8 @@ public class VerifyOtpHandlerTests : HandlerTestBase
             _jwtTokenGenerator,
             CurrentUserService,
             DateTimeProvider,
-            jwtOptions);
+            jwtOptions,
+            authOptions);
     }
 
     private static Users BuildUserWithPhone(PhoneNumber phoneNumber) =>
@@ -90,6 +104,77 @@ public class VerifyOtpHandlerTests : HandlerTestBase
         result.IsFailure.ShouldBeTrue();
         await _otpRepository.DidNotReceiveWithAnyArgs()
             .GetLatestActiveByUserIdAsync(default!, default, default);
+    }
+
+    [Fact]
+    public async Task Handle_WhenUserIsLockedOut_ReturnsForbiddenWithoutQueryingOtp()
+    {
+        var phoneNumber = PhoneNumber.Create("09123456789");
+        var user = BuildUserWithPhone(phoneNumber);
+        for (var i = 0; i < 5; i++)
+            user.RecordFailedLogin();
+
+        _userRepository
+            .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
+            .Returns(user);
+
+        var result = await _sut.Handle(
+            new VerifyOtpCommand("09123456789", ValidCode), CancellationToken.None);
+
+        result.ShouldFailWith(ErrorCode.Forbidden);
+        await _otpRepository.DidNotReceiveWithAnyArgs()
+            .GetLatestActiveByUserIdAsync(default!, default, default);
+    }
+
+    [Fact]
+    public async Task Handle_WhenCodeIsInvalid_RecordsFailedLoginAndUpdatesUser()
+    {
+        var phoneNumber = PhoneNumber.Create("09123456789");
+        var user = BuildUserWithPhone(phoneNumber);
+
+        _userRepository
+            .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
+            .Returns(user);
+        _userRepository
+            .GetByIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+            .Returns(user);
+        _otpRepository
+            .GetLatestActiveByUserIdAsync(Arg.Any<UserId>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
+            .Returns(BuildOtp(user.Id.Value, ValidCode));
+
+        var result = await _sut.Handle(
+            new VerifyOtpCommand("09123456789", "000000"), CancellationToken.None);
+
+        result.IsFailure.ShouldBeTrue();
+        _userRepository.Received(1).Update(user);
+        user.FailedLoginAttempts.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Handle_WhenValidCode_ClearsFailedLoginAttempts()
+    {
+        var phoneNumber = PhoneNumber.Create("09123456789");
+        var user = BuildUserWithPhone(phoneNumber);
+        user.RecordFailedLogin();
+        user.RecordFailedLogin();
+
+        _userRepository
+            .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
+            .Returns(user);
+        _userRepository
+            .GetByIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+            .Returns(user);
+        _otpRepository
+            .GetLatestActiveByUserIdAsync(Arg.Any<UserId>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
+            .Returns(BuildOtp(user.Id.Value, ValidCode));
+        SetupSuccessfulSession(user.Id.Value);
+
+        var result = await _sut.Handle(
+            new VerifyOtpCommand("09123456789", ValidCode), CancellationToken.None);
+
+        result.IsSuccess.ShouldBeTrue();
+        _userRepository.Received(1).Update(user);
+        user.FailedLoginAttempts.ShouldBe(0);
     }
 
     [Fact]

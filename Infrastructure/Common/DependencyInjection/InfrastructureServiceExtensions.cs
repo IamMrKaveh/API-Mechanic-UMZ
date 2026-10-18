@@ -1,4 +1,4 @@
-using Amazon.Runtime;
+﻿using Amazon.Runtime;
 using Application.Attribute.Adapters;
 using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
@@ -288,6 +288,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ISessionService, SessionService>();
+        services.AddScoped<ISessionRevocationChecker, SessionRevocationChecker>();
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
     }

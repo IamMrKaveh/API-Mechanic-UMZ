@@ -1,3 +1,4 @@
+﻿using Domain.Security.Services;
 using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
@@ -61,14 +62,14 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         loaded.ShouldNotBeNull();
         loaded!.Id.ShouldBe(session.Id);
         loaded.UserId.ShouldBe(userId);
-        loaded.RefreshToken.Value.ShouldBe(refreshToken.Value);
+        loaded.RefreshTokenHash.ShouldBe(RefreshTokenHasher.Hash(refreshToken.Value));
         loaded.DeviceInfo.Value.ShouldBe("chrome-mac");
         loaded.IpAddress.Value.ShouldBe("10.0.0.1");
         loaded.IsRevoked.ShouldBeFalse();
     }
 
     [Fact]
-    public async Task GetByRefreshTokenAsync_WhenExists_ReturnsMatchingSession()
+    public async Task GetByRefreshTokenHashAsync_WhenExists_ReturnsMatchingSession()
     {
         var refreshToken = RefreshToken.Generate();
         var session = new UserSessionBuilder()
@@ -79,16 +80,16 @@ public class SessionRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         await _context.SaveChangesAsync();
         _context.ChangeTracker.Clear();
 
-        var loaded = await _sut.GetByRefreshTokenAsync(refreshToken);
+        var loaded = await _sut.GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(refreshToken.Value));
 
         loaded.ShouldNotBeNull();
         loaded!.Id.ShouldBe(session.Id);
     }
 
     [Fact]
-    public async Task GetByRefreshTokenAsync_WhenNotExists_ReturnsNull()
+    public async Task GetByRefreshTokenHashAsync_WhenNotExists_ReturnsNull()
     {
-        var loaded = await _sut.GetByRefreshTokenAsync(RefreshToken.Generate());
+        var loaded = await _sut.GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(RefreshToken.Generate().Value));
 
         loaded.ShouldBeNull();
     }

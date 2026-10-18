@@ -1,4 +1,4 @@
-using Application.Auth.Contracts;
+﻿using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
 using Application.User.Features.Shared;
 using Domain.Security.Interfaces;
@@ -22,7 +22,8 @@ public sealed class AuthService(
         string? userAgent,
         CancellationToken ct = default)
     {
-        var existingSession = await sessionRepository.GetByRefreshTokenAsync(refreshToken, ct);
+        var existingSession = await sessionRepository.GetByRefreshTokenHashAsync(
+            Domain.Security.Services.RefreshTokenHasher.Hash(refreshToken.Value), ct);
         var now = dateTimeProvider.UtcNow;
         if (existingSession is null || !existingSession.IsActive(now))
             return ServiceResult<(string, RefreshTokenResult, UserProfileDto, bool)>.Unauthorized("جلسه نامعتبر است.");

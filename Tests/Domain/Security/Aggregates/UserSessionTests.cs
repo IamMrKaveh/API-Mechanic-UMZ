@@ -1,3 +1,4 @@
+﻿using Domain.Security.Services;
 using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Events;
@@ -35,7 +36,7 @@ public class UserSessionTests
 
         sut.Id.ShouldBe(id);
         sut.UserId.ShouldBe(userId);
-        sut.RefreshToken.ShouldBe(refreshToken);
+        sut.RefreshTokenHash.ShouldBe(RefreshTokenHasher.Hash(refreshToken.Value));
         sut.DeviceInfo.ShouldBe(deviceInfo);
         sut.IpAddress.ShouldBe(ip);
         sut.ExpiresAt.ShouldBe(expiresAt);
@@ -79,7 +80,7 @@ public class UserSessionTests
     public void Create_WithNullId_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            UserSession.Create(null!, UserId.NewId(), RefreshToken.Generate(),
+            UserSession.Create(null!, UserId.NewId(), RefreshTokenHasher.Hash(RefreshToken.Generate().Value),
                 DeviceInfo.Unknown, IpAddress.Unknown, Now.AddDays(1), Now));
     }
 
@@ -87,15 +88,18 @@ public class UserSessionTests
     public void Create_WithNullUserId_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            UserSession.Create(SessionId.NewId(), null!, RefreshToken.Generate(),
+            UserSession.Create(SessionId.NewId(), null!, RefreshTokenHasher.Hash(RefreshToken.Generate().Value),
                 DeviceInfo.Unknown, IpAddress.Unknown, Now.AddDays(1), Now));
     }
 
     [Fact]
-    public void Create_WithNullRefreshToken_ThrowsArgumentNullException()
+    public void Create_WithNullOrWhitespaceRefreshTokenHash_ThrowsArgumentException()
     {
-        Should.Throw<ArgumentNullException>(() =>
+        Should.Throw<ArgumentException>(() =>
             UserSession.Create(SessionId.NewId(), UserId.NewId(), null!,
+                DeviceInfo.Unknown, IpAddress.Unknown, Now.AddDays(1), Now));
+        Should.Throw<ArgumentException>(() =>
+            UserSession.Create(SessionId.NewId(), UserId.NewId(), "   ",
                 DeviceInfo.Unknown, IpAddress.Unknown, Now.AddDays(1), Now));
     }
 
@@ -103,7 +107,7 @@ public class UserSessionTests
     public void Create_WithNullDeviceInfo_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            UserSession.Create(SessionId.NewId(), UserId.NewId(), RefreshToken.Generate(),
+            UserSession.Create(SessionId.NewId(), UserId.NewId(), RefreshTokenHasher.Hash(RefreshToken.Generate().Value),
                 null!, IpAddress.Unknown, Now.AddDays(1), Now));
     }
 
@@ -111,7 +115,7 @@ public class UserSessionTests
     public void Create_WithNullIpAddress_ThrowsArgumentNullException()
     {
         Should.Throw<ArgumentNullException>(() =>
-            UserSession.Create(SessionId.NewId(), UserId.NewId(), RefreshToken.Generate(),
+            UserSession.Create(SessionId.NewId(), UserId.NewId(), RefreshTokenHasher.Hash(RefreshToken.Generate().Value),
                 DeviceInfo.Unknown, null!, Now.AddDays(1), Now));
     }
 
@@ -126,7 +130,7 @@ public class UserSessionTests
     public void Create_WithExpiresAtEqualToUtcNow_ThrowsDomainException()
     {
         Should.Throw<DomainException>(() =>
-            UserSession.Create(SessionId.NewId(), UserId.NewId(), RefreshToken.Generate(),
+            UserSession.Create(SessionId.NewId(), UserId.NewId(), RefreshTokenHasher.Hash(RefreshToken.Generate().Value),
                 DeviceInfo.Unknown, IpAddress.Unknown, Now, Now));
     }
 

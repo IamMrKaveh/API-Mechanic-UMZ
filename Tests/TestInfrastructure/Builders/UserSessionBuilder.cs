@@ -1,4 +1,5 @@
-using Domain.Security.Aggregates;
+﻿using Domain.Security.Aggregates;
+using Domain.Security.Services;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 using SharedKernel.ValueObjects;
@@ -65,5 +66,5 @@ public class UserSessionBuilder
     }
 
     public UserSession Build(DateTime? now = null) =>
-        UserSession.Create(_id, _userId, _refreshToken, _deviceInfo, _ipAddress, _expiresAt, now ?? DateTime.UtcNow);
+        UserSession.Create(_id, _userId, RefreshTokenHasher.Hash(_refreshToken.Value), _deviceInfo, _ipAddress, _expiresAt, now ?? DateTime.UtcNow);
 }

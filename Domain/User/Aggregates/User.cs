@@ -1,4 +1,4 @@
-using Domain.Security.Events;
+﻿using Domain.Security.Events;
 using Domain.User.Entities;
 using Domain.User.Events;
 using Domain.User.Exceptions;
@@ -216,13 +216,16 @@ public sealed class User : AggregateRoot<UserId>, IAuditable, IActivatable
     }
 
     public void RecordFailedLogin()
+        => RecordFailedLogin(MaxFailedLoginAttempts, LockoutDuration);
+
+    public void RecordFailedLogin(int maxFailedAttempts, TimeSpan lockoutDuration)
     {
         FailedLoginAttempts++;
         UpdatedAt = DateTime.UtcNow;
 
-        if (FailedLoginAttempts >= MaxFailedLoginAttempts)
+        if (maxFailedAttempts > 0 && FailedLoginAttempts >= maxFailedAttempts)
         {
-            LockoutEnd = DateTime.UtcNow.Add(LockoutDuration);
+            LockoutEnd = DateTime.UtcNow.Add(lockoutDuration);
             RaiseDomainEvent(new UserLockedOutEvent(Id, LockoutEnd.Value, FailedLoginAttempts));
         }
 

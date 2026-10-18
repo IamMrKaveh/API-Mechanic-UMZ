@@ -3,6 +3,7 @@ using Application.Auth.Features.Shared;
 using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
+using Domain.Security.Services;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -39,7 +40,7 @@ public sealed class SessionService(
         var session = UserSession.Create(
             SessionId.NewId(),
             userId,
-            token,
+            RefreshTokenHasher.Hash(token.Value),
             deviceInfo,
             ipAddress,
             expiresAt,
@@ -61,7 +62,8 @@ public sealed class SessionService(
         IpAddress ipAddress,
         CancellationToken ct = default)
     {
-        var session = await sessionRepository.GetByRefreshTokenAsync(refreshToken, ct);
+        var tokenHash = RefreshTokenHasher.Hash(refreshToken.Value);
+        var session = await sessionRepository.GetByRefreshTokenHashAsync(tokenHash, ct);
 
         var now = dateTimeProvider.UtcNow;
         if (session is null || !session.IsActive(now))
@@ -80,7 +82,7 @@ public sealed class SessionService(
         var newSession = UserSession.Create(
             SessionId.NewId(),
             session.UserId,
-            newToken,
+            RefreshTokenHasher.Hash(newToken.Value),
             deviceInfo,
             ipAddress,
             expiresAt,

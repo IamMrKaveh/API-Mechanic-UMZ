@@ -1,4 +1,4 @@
-using Application.Payment.Features.Commands.InitiatePayment;
+﻿using Application.Payment.Features.Commands.InitiatePayment;
 using Application.Payment.Features.Commands.ProcessWebhook;
 using Application.Payment.Features.Commands.VerifyPayment;
 using Application.Payment.Features.Queries.GetPaymentByAuthority;
@@ -153,7 +153,7 @@ public class PaymentsControllerTests
             .Returns(ServiceResult.Success());
 
         // Act
-        var result = await _controller.Webhook(payload, CancellationToken.None);
+        var result = await _controller.Webhook("zarinpal", payload, CancellationToken.None);
 
         // Assert
         var ok = result.ShouldBeOfType<OkObjectResult>();
@@ -161,6 +161,21 @@ public class PaymentsControllerTests
         await _mediator.Received(1).Send(
             Arg.Is<ProcessWebhookCommand>(c => c!.Authority == "AUTH123" && c!.Status == "OK" && c!.Nonce == "nonce-1"),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Webhook_WithUnknownGateway_ReturnsBadRequestWithoutSending()
+    {
+        // Arrange
+        var payload = new WebhookPayloadRequest("AUTH123", "OK", "nonce-1");
+
+        // Act
+        var result = await _controller.Webhook("evil-gateway", payload, CancellationToken.None);
+
+        // Assert
+        var bad = result.ShouldBeOfType<BadRequestObjectResult>();
+        bad.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
+        await _mediator.DidNotReceiveWithAnyArgs().Send(default!, default);
     }
 
     [Fact]

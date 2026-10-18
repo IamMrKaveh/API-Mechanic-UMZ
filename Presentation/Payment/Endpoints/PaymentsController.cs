@@ -1,4 +1,4 @@
-using Application.Payment.Features.Commands.InitiatePayment;
+﻿using Application.Payment.Features.Commands.InitiatePayment;
 using Application.Payment.Features.Commands.ProcessWebhook;
 using Application.Payment.Features.Commands.VerifyPayment;
 using Application.Payment.Features.Queries.GetPaymentByAuthority;
@@ -62,12 +62,22 @@ public class PaymentsController(IMediator mediator, IMapper mapper) : BaseApiCon
         return ToCreatedActionResult(result);
     }
 
+    private static readonly HashSet<string> KnownWebhookGateways =
+        new(StringComparer.OrdinalIgnoreCase) { "zarinpal", "zarinpalsandbox" };
+
     [HttpPost("webhooks/{gateway}")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Webhook(
+        string gateway,
         [FromBody] WebhookPayloadRequest payload,
         CancellationToken ct)
     {
+        if (!KnownWebhookGateways.Contains(gateway))
+        {
+            return BadRequest(new ApiResponse(false, "درگاه پرداخت نامعتبر است."));
+        }
+
         return await Send(new ProcessWebhookCommand(payload.Authority, payload.Status, payload.Nonce), ct);
     }
 }

@@ -1,5 +1,6 @@
-using Domain.Security.Enums;
+﻿using Domain.Security.Enums;
 using Domain.Security.Interfaces;
+using Domain.Security.Services;
 using Domain.User.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
 
@@ -20,7 +21,8 @@ public class LogoutHandler(
             return ServiceResult.Success();
 
         var refreshToken = Domain.Security.ValueObjects.RefreshToken.Create(request.RefreshToken);
-        var session = await sessionRepository.GetByRefreshTokenAsync(refreshToken, ct);
+        var session = await sessionRepository.GetByRefreshTokenHashAsync(
+            RefreshTokenHasher.Hash(refreshToken.Value), ct);
 
         if (session is null)
             return ServiceResult.Success();

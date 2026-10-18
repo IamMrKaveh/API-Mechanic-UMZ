@@ -1,6 +1,7 @@
 ﻿using Domain.Security.Enums;
 using Domain.Security.Events;
 using Domain.Security.Exceptions;
+using Domain.Security.Services;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -14,7 +15,8 @@ public sealed class UserSession : AggregateRoot<SessionId>
     { }
 
     public UserId UserId { get; private set; } = default!;
-    public RefreshToken RefreshToken { get; private set; } = default!;
+    /// <summary>SHA-256 digest of the refresh token; the raw token is never persisted.</summary>
+    public string RefreshTokenHash { get; private set; } = default!;
     public DeviceInfo DeviceInfo { get; private set; } = default!;
     public IpAddress IpAddress { get; private set; } = default!;
     public bool IsRevoked { get; private set; }
@@ -30,7 +32,7 @@ public sealed class UserSession : AggregateRoot<SessionId>
     public static UserSession Create(
         SessionId id,
         UserId userId,
-        RefreshToken refreshToken,
+        string refreshTokenHash,
         DeviceInfo deviceInfo,
         IpAddress ipAddress,
         DateTime expiresAt,
@@ -38,7 +40,7 @@ public sealed class UserSession : AggregateRoot<SessionId>
     {
         Guard.Against.Null(id, nameof(id));
         Guard.Against.Null(userId, nameof(userId));
-        Guard.Against.Null(refreshToken, nameof(refreshToken));
+        Guard.Against.NullOrWhiteSpace(refreshTokenHash, nameof(refreshTokenHash));
         Guard.Against.Null(deviceInfo, nameof(deviceInfo));
         Guard.Against.Null(ipAddress, nameof(ipAddress));
 
@@ -52,7 +54,7 @@ public sealed class UserSession : AggregateRoot<SessionId>
         {
             Id = id,
             UserId = userId,
-            RefreshToken = refreshToken,
+            RefreshTokenHash = refreshTokenHash,
             DeviceInfo = deviceInfo,
             IpAddress = ipAddress,
             IsRevoked = false,
@@ -109,6 +111,6 @@ public sealed class UserSession : AggregateRoot<SessionId>
         if (!IsActive(now))
             return false;
 
-        return RefreshToken.Matches(token);
+        return RefreshTokenHasher.Matches(RefreshTokenHash, token);
     }
 }

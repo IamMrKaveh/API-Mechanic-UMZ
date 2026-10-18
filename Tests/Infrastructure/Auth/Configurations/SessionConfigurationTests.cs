@@ -1,3 +1,4 @@
+﻿using Domain.Security.Services;
 using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
@@ -61,7 +62,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
         var reloaded = await freshContext.UserSessions.SingleAsync(s => s.Id == session.Id);
 
         reloaded.UserId.ShouldBe(userId);
-        reloaded.RefreshToken.Value.ShouldBe(refreshToken.Value);
+        reloaded.RefreshTokenHash.ShouldBe(RefreshTokenHasher.Hash(refreshToken.Value));
         reloaded.DeviceInfo.Value.ShouldBe(deviceInfo.Value);
         reloaded.IpAddress.Value.ShouldBe(ipAddress.Value);
         reloaded.ExpiresAt.ShouldBe(expiresAt, TimeSpan.FromMilliseconds(1));
@@ -221,7 +222,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
         await using var freshContext = _fixture.CreateContext();
 
         var found = await freshContext.UserSessions
-            .SingleOrDefaultAsync(s => s.RefreshToken == token);
+            .SingleOrDefaultAsync(s => s.RefreshTokenHash == RefreshTokenHasher.Hash(token.Value));
 
         found.ShouldNotBeNull();
         found!.Id.ShouldBe(session.Id);

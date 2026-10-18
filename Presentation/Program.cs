@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Application.Common.DependencyInjection;
 using Infrastructure.Common.DependencyInjection;
 using Presentation.Common.Configuration;
@@ -81,7 +81,7 @@ try
     builder.AddApplicationAuthentication();
 
     builder.Services.AddPresentation(builder.Configuration, builder.Environment);
-    builder.Services.AddApplicationServices();
+    builder.Services.AddApplicationServices(builder.Configuration);
     builder.Services.AddWalletTransferOptions(builder.Configuration);
     builder.Services.AddReviewSettings(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);
