@@ -14,6 +14,13 @@
 - **چرخش اعتبارنامه‌ها و بازنویسی تاریخچهٔ Git طبق تصمیم شما انجام نشد** (مخزن خصوصی؛ بدون نشت تأییدشده). اگر روزی مخزن عمومی یا تیم گسترش پیدا کرد: rotate + `git filter-repo` (حذف `otp.json` و `appsettings.Production.json` از تاریخچه) + gitleaks در pre-commit و CI.
 - **تأیید:** Build ۰ خطا/۰ هشدار؛ ۱۱٬۵۲۱ تست پاس (۱۱٬۵۱۳ baseline + ۸ تست جدید)؛ اجرای واقعی اپ با `.env` تأیید شد. کامیت: `fix security progress`.
 
+### ✅ وضعیت اجرا — فاز ۱ پیاده‌سازی شد (۲۰۲۶-۱۰-۱۸)
+- **SEC-02 (بحرانی):** روی `POST /wallet/{id}/reject` و `POST /wallet/{id}/mark-paid` صفت `[Authorize(Roles = "Admin")]` اضافه شد + **دفاع در عمق** در هندلرها (`MarkWithdrawalPaidHandler`/`RejectWithdrawalHandler`) با بازگرداندن `Forbidden` اگر فراخوان ادمین نباشد. مسیر درست ادمین (`AdminWalletWithdrawalController`) دست‌نخورده ماند.
+- **SEC-03 (مهم):** `GetUserByIdHandler` و `UpdateUserHandler` دیگر به شناسهٔ درخواست اعتماد نمی‌کنند: `ICurrentUserService` تزریق شد و فقط مالک پروفایل یا ادمین مجاز است (بررسی پیش از کوئری → عدم افشای وجود کاربر). الگوی `ServiceResult.Forbidden` از `CancelOrderHandler` کپی شد.
+- **SEC-04 (مهم):** اندپوینت ناشناس `GET /admin/discounts/codes/{code}` از کنترلر ادمین حذف و به‌عنوان `GET /api/v{version}/discounts/codes/{code}` به کنترلر احرازویت‌شدهٔ `DiscountsController` منتقل شد (DTO حداقلی همان `DiscountInfoDto` باقی ماند).
+- **SEC-05 (مهم):** `SecurityMiddleware` بازنویسی شد: (۱) مسیرهای versioned (`api/v{version}/admin/...`) هم تشخیص داده می‌شوند (قبلاً فقط `/api/admin` بررسی می‌شد که با هیچ مسیر واقعی مطابقت نداشت)؛ (۲) **fail-closed**: لیست سفید تنظیم‌شده ولی خالی ⇒ رد با ۴۰۳ + هشدار؛ (۳) نرمال‌سازی IPv4-mapped IPv6 (`::ffff:x.x.x.x`) برای سازگاری با پروکسی‌ها.
+- **تست‌ها:** تست‌های موجود fixture شدند (تغییر رفتار امنیتی، بدون تضعیف assertion) + تست‌های جدید: Forbidden برای غیرادمین/غیرمالک، تست صفت `Roles=Admin` روی دو اکشن، تست‌های مسیر versioned/IPv4-mapped/fail-closed میدلور، تست انتقال‌یافتهٔ endpoint تخفیف.
+
 ---
 
 ## فهرس اولویت‌ها

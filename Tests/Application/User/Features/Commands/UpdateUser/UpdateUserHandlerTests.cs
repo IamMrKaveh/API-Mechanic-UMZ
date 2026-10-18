@@ -1,3 +1,4 @@
+﻿using Application.Common.Interfaces;
 using Application.User.Features.Commands.UpdateUser;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -10,11 +11,14 @@ namespace Tests.Application.User.Features.Commands.UpdateUser;
 
 public class UpdateUserHandlerTests
 {
-    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>(); private readonly UpdateUserHandler _sut;
+    private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
+    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
+    private readonly UpdateUserHandler _sut;
 
     public UpdateUserHandlerTests()
     {
-        _sut = new UpdateUserHandler(_userRepository);
+        _currentUserService.IsAdmin.Returns(true);
+        _sut = new UpdateUserHandler(_userRepository, _currentUserService);
     }
 
     [Fact]
@@ -30,6 +34,41 @@ public class UpdateUserHandlerTests
 
         result.ShouldFailWith(ErrorCode.NotFound);
         _userRepository.DidNotReceiveWithAnyArgs().Update(default!);
+    }
+
+    [Fact]
+    public async Task Handle_WhenCallerIsNotOwnerAndNotAdmin_ReturnsForbidden()
+    {
+        _currentUserService.IsAdmin.Returns(false);
+        _currentUserService.UserId.Returns(Guid.NewGuid());
+
+        var result = await _sut.Handle(
+            new UpdateUserCommand(Guid.NewGuid(), "Ali", "Ahmadi"),
+            CancellationToken.None);
+
+        result.ShouldFailWith(ErrorCode.Forbidden);
+        await _userRepository.DidNotReceiveWithAnyArgs().GetByIdAsync(default!);
+        _userRepository.DidNotReceiveWithAnyArgs().Update(default!);
+    }
+
+    [Fact]
+    public async Task Handle_WhenCallerIsOwner_UpdatesFullName()
+    {
+        _currentUserService.IsAdmin.Returns(false);
+        var user = new UserBuilder()
+            .WithFullName(FullName.Create("Old", "Name"))
+            .Build();
+        _currentUserService.UserId.Returns(user.Id.Value);
+        _userRepository
+            .GetByIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+            .Returns(user);
+
+        var result = await _sut.Handle(
+            new UpdateUserCommand(user.Id.Value, "Ali", "Ahmadi"),
+            CancellationToken.None);
+
+        result.ShouldBeSuccess();
+        _userRepository.Received(1).Update(user);
     }
 
     [Fact]

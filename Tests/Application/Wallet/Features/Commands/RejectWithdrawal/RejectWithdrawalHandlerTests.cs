@@ -1,4 +1,4 @@
-using Application.Wallet.Features.Commands.RejectWithdrawal;
+﻿using Application.Wallet.Features.Commands.RejectWithdrawal;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
@@ -18,8 +18,21 @@ public sealed class RejectWithdrawalHandlerTests : HandlerTestBase
     public RejectWithdrawalHandlerTests()
     {
 
+        CurrentUserService.IsAdmin.Returns(true);
+
         _sut = new RejectWithdrawalHandler(
             _withdrawalRepository, _walletRepository, AuditService, DateTimeProvider, CurrentUserService);
+    }
+
+    [Fact]
+    public async Task Handle_WhenCallerIsNotAdmin_ReturnsForbidden()
+    {
+        CurrentUserService.IsAdmin.Returns(false);
+
+        var result = await _sut.Handle(new RejectWithdrawalCommand(Guid.NewGuid(), "reason"), CancellationToken.None);
+
+        result.ShouldFailWithType(ErrorType.Forbidden);
+        await _withdrawalRepository.DidNotReceiveWithAnyArgs().GetByIdForUpdateAsync(default!);
     }
 
     [Fact]

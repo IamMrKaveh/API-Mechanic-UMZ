@@ -1,4 +1,4 @@
-using Application.Wallet.Features.Commands.MarkWithdrawalPaid;
+﻿using Application.Wallet.Features.Commands.MarkWithdrawalPaid;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
@@ -21,9 +21,22 @@ public sealed class MarkWithdrawalPaidHandlerTests : HandlerTestBase
         _distributedLock.AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new FakeLockHandle("wallet", true));
 
+        CurrentUserService.IsAdmin.Returns(true);
+
         _sut = new MarkWithdrawalPaidHandler(
             _withdrawalRepository, _walletRepository,
             _distributedLock, AuditService, DateTimeProvider, CurrentUserService);
+    }
+
+    [Fact]
+    public async Task Handle_WhenCallerIsNotAdmin_ReturnsForbidden()
+    {
+        CurrentUserService.IsAdmin.Returns(false);
+
+        var result = await _sut.Handle(new MarkWithdrawalPaidCommand(Guid.NewGuid(), "REF-1"), CancellationToken.None);
+
+        result.ShouldFailWithType(ErrorType.Forbidden);
+        await _withdrawalRepository.DidNotReceiveWithAnyArgs().GetByIdForUpdateAsync(default!);
     }
 
     [Fact]
