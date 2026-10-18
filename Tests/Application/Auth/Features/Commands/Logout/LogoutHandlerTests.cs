@@ -1,3 +1,4 @@
+﻿using Domain.Security.Services;
 using Application.Auth.Features.Commands.Logout;
 using Application.Common.Interfaces;
 using Domain.Security.Aggregates;
@@ -29,7 +30,7 @@ public class LogoutHandlerTests : HandlerTestBase
         var result = await _sut.Handle(new LogoutCommand(refreshToken), CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _sessionRepository.DidNotReceiveWithAnyArgs().GetByRefreshTokenAsync(default!, default);
+        await _sessionRepository.DidNotReceiveWithAnyArgs().GetByRefreshTokenHashAsync(default!, default);
         _sessionRepository.DidNotReceiveWithAnyArgs().Update(default!);
     }
 
@@ -42,7 +43,7 @@ public class LogoutHandlerTests : HandlerTestBase
         var result = await _sut.Handle(new LogoutCommand(refreshToken), CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _sessionRepository.DidNotReceiveWithAnyArgs().GetByRefreshTokenAsync(default!, default);
+        await _sessionRepository.DidNotReceiveWithAnyArgs().GetByRefreshTokenHashAsync(default!, default);
         _sessionRepository.DidNotReceiveWithAnyArgs().Update(default!);
     }
 
@@ -51,7 +52,7 @@ public class LogoutHandlerTests : HandlerTestBase
     {
         CurrentUserService.UserId.Returns((Guid?)Guid.NewGuid());
         _sessionRepository
-            .GetByRefreshTokenAsync(Arg.Any<RefreshTokens>(), Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((UserSession?)null);
 
         var result = await _sut.Handle(new LogoutCommand(RefreshTokens.Generate().Value), CancellationToken.None);
@@ -65,14 +66,15 @@ public class LogoutHandlerTests : HandlerTestBase
     {
         var callerGuid = Guid.NewGuid();
         var ownerUserId = UserId.NewId();
-        var session = new UserSessionBuilder().WithUserId(ownerUserId).Build();
+        var token = RefreshTokens.Generate();
+        var session = new UserSessionBuilder().WithUserId(ownerUserId).WithRefreshToken(token).Build();
 
         CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _sessionRepository
-            .GetByRefreshTokenAsync(Arg.Any<RefreshTokens>(), Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(session);
 
-        var result = await _sut.Handle(new LogoutCommand(session.RefreshToken.Value), CancellationToken.None);
+        var result = await _sut.Handle(new LogoutCommand(token.Value), CancellationToken.None);
 
         result.ShouldBeSuccess();
         session.IsRevoked.ShouldBeFalse();
@@ -84,14 +86,15 @@ public class LogoutHandlerTests : HandlerTestBase
     {
         var callerGuid = Guid.NewGuid();
         var callerUserId = UserId.From(callerGuid);
-        var session = new UserSessionBuilder().WithUserId(callerUserId).Build();
+        var token = RefreshTokens.Generate();
+        var session = new UserSessionBuilder().WithUserId(callerUserId).WithRefreshToken(token).Build();
 
         CurrentUserService.UserId.Returns((Guid?)callerGuid);
         _sessionRepository
-            .GetByRefreshTokenAsync(Arg.Any<RefreshTokens>(), Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(session);
 
-        var result = await _sut.Handle(new LogoutCommand(session.RefreshToken.Value), CancellationToken.None);
+        var result = await _sut.Handle(new LogoutCommand(token.Value), CancellationToken.None);
 
         result.ShouldBeSuccess();
         session.IsRevoked.ShouldBeTrue();

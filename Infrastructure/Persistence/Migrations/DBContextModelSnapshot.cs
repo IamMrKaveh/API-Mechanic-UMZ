@@ -17,7 +17,7 @@ namespace Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.17")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1492,11 +1492,11 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("LastActivityAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("RefreshToken")
+                    b.Property<string>("RefreshTokenHash")
                         .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
-                        .HasColumnName("RefreshToken");
+                        .HasMaxLength(88)
+                        .HasColumnType("character varying(88)")
+                        .HasColumnName("RefreshTokenHash");
 
                     b.Property<string>("RevocationReason")
                         .HasMaxLength(50)
@@ -1519,9 +1519,9 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RefreshToken")
+                    b.HasIndex("RefreshTokenHash")
                         .IsUnique()
-                        .HasDatabaseName("IX_UserSessions_RefreshToken");
+                        .HasDatabaseName("IX_UserSessions_RefreshTokenHash");
 
                     b.HasIndex("UserId", "DeviceInfo")
                         .IsUnique()

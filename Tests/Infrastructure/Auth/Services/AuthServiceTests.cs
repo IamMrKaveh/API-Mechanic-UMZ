@@ -1,3 +1,4 @@
+﻿using Domain.Security.Services;
 using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
 using Domain.Security.Aggregates;
@@ -32,7 +33,7 @@ public class AuthServiceTests : HandlerTestBase
         var ip = IpAddress.Create("10.0.0.1");
 
         _sessionRepository
-            .GetByRefreshTokenAsync(refreshToken, Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(refreshToken.Value), Arg.Any<CancellationToken>())
             .Returns((UserSession?)null);
 
         var result = await _sut.RefreshTokenAsync(refreshToken, ip, "agent");
@@ -54,7 +55,7 @@ public class AuthServiceTests : HandlerTestBase
         session.Revoke(DateTime.UtcNow, SessionRevocationReason.UserRequested);
 
         _sessionRepository
-            .GetByRefreshTokenAsync(refreshToken, Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(refreshToken.Value), Arg.Any<CancellationToken>())
             .Returns(session);
 
         var result = await _sut.RefreshTokenAsync(refreshToken, ip, "agent");
@@ -75,7 +76,7 @@ public class AuthServiceTests : HandlerTestBase
             .Build();
 
         _sessionRepository
-            .GetByRefreshTokenAsync(refreshToken, Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(refreshToken.Value), Arg.Any<CancellationToken>())
             .Returns(existingSession);
 
         _sessionService
@@ -102,7 +103,7 @@ public class AuthServiceTests : HandlerTestBase
             .Build();
 
         _sessionRepository
-            .GetByRefreshTokenAsync(refreshToken, Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(refreshToken.Value), Arg.Any<CancellationToken>())
             .Returns(existingSession);
 
         _sessionService
@@ -137,7 +138,7 @@ public class AuthServiceTests : HandlerTestBase
             .Build();
 
         _sessionRepository
-            .GetByRefreshTokenAsync(refreshToken, Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(refreshToken.Value), Arg.Any<CancellationToken>())
             .Returns(existingSession);
 
         _sessionService
@@ -171,7 +172,7 @@ public class AuthServiceTests : HandlerTestBase
             .Build();
 
         _sessionRepository
-            .GetByRefreshTokenAsync(refreshToken, Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(refreshToken.Value), Arg.Any<CancellationToken>())
             .Returns(existingSession);
 
         var newSessionId = Guid.NewGuid();

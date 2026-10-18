@@ -1,4 +1,4 @@
-using Application.Auth.Features.Shared;
+﻿using Application.Auth.Features.Shared;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -16,6 +16,11 @@ public class GoogleLoginHandler(
     {
         var email = Email.Create(request.Email);
         var user = await userRepository.GetByEmailAsync(email, ct);
+
+        // Locked-out accounts must not obtain a session through another login path.
+        if (user is not null && user.IsLockedOut)
+            return ServiceResult<TokenResultDto>.Forbidden(
+                "حساب کاربری به دلیل تلاش‌های ناموفق متعدد قفل شده است. لطفاً بعداً تلاش کنید.");
 
         if (user is null)
         {

@@ -1,4 +1,4 @@
-using Domain.Security.Aggregates;
+﻿using Domain.Security.Aggregates;
 using Domain.Security.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Common.Extensions;
@@ -18,10 +18,9 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<UserSession>
         builder.Property(e => e.UserId)
             .IsRequired();
 
-        builder.Property(e => e.RefreshToken)
-            .HasConversion(v => v.Value, v => RefreshToken.Create(v))
-            .HasColumnName("RefreshToken")
-            .HasMaxLength(512)
+        builder.Property(e => e.RefreshTokenHash)
+            .HasColumnName("RefreshTokenHash")
+            .HasMaxLength(88)
             .IsRequired();
 
         builder.Property(e => e.DeviceInfo)
@@ -46,8 +45,8 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<UserSession>
         builder.Property(e => e.RevokedAt);
         builder.Property(e => e.LastActivityAt);
 
-        builder.HasIndex(e => e.RefreshToken)
-            .HasDatabaseName("IX_UserSessions_RefreshToken")
+        builder.HasIndex(e => e.RefreshTokenHash)
+            .HasDatabaseName("IX_UserSessions_RefreshTokenHash")
             .IsUnique();
 
         builder.HasIndex(e => new { e.UserId, e.DeviceInfo })

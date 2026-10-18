@@ -1,8 +1,9 @@
-using Application.Common.DependencyInjection;
+﻿using Application.Common.DependencyInjection;
 using Application.Common.Services;
 using Application.Payment.Adapters;
 using Application.Payment.Contracts;
 using Domain.Inventory.Services;
+using Microsoft.Extensions.Configuration;
 using Domain.Media.Services;
 using Domain.Payment.Services;
 using Domain.Review.Services;
@@ -18,7 +19,7 @@ public class ApplicationServiceCollectionTests
     {
         var services = new ServiceCollection();
 
-        var result = services.AddApplicationServices();
+        var result = services.AddApplicationServices(new ConfigurationBuilder().Build());
 
         result.ShouldBeSameAs(services);
     }
@@ -27,7 +28,7 @@ public class ApplicationServiceCollectionTests
     public void AddApplicationServices_RegistersDomainServices()
     {
         var services = new ServiceCollection();
-        services.AddApplicationServices();
+        services.AddApplicationServices(new ConfigurationBuilder().Build());
 
         services.ShouldContain(s => s.ServiceType == typeof(ShippingDomainService) && s.Lifetime == ServiceLifetime.Scoped);
         services.ShouldContain(s => s.ServiceType == typeof(ReviewDomainService) && s.Lifetime == ServiceLifetime.Scoped);
@@ -41,7 +42,7 @@ public class ApplicationServiceCollectionTests
     public void AddApplicationServices_RegistersApplicationServices()
     {
         var services = new ServiceCollection();
-        services.AddApplicationServices();
+        services.AddApplicationServices(new ConfigurationBuilder().Build());
 
         services.ShouldContain(s => s.ServiceType == typeof(IAuditContextEnricher) && s.ImplementationType == typeof(AuditContextEnricher));
         services.ShouldContain(s => s.ServiceType == typeof(InventoryReservationService));
@@ -53,7 +54,7 @@ public class ApplicationServiceCollectionTests
     public void AddApplicationServices_RegistersMediatRAndPipelineBehaviors()
     {
         var services = new ServiceCollection();
-        services.AddApplicationServices();
+        services.AddApplicationServices(new ConfigurationBuilder().Build());
 
         services.ShouldContain(s => s.ServiceType == typeof(IPipelineBehavior<,>));
         var behaviors = services.Where(s => s.ServiceType == typeof(IPipelineBehavior<,>)).ToList();
@@ -64,7 +65,7 @@ public class ApplicationServiceCollectionTests
     public void AddApplicationServices_RegistersValidatorsFromAssembly()
     {
         var services = new ServiceCollection();
-        services.AddApplicationServices();
+        services.AddApplicationServices(new ConfigurationBuilder().Build());
 
         services.ShouldContain(s => s.ServiceType.IsGenericType &&
             s.ServiceType.GetGenericTypeDefinition() == typeof(IValidator<>));
@@ -74,7 +75,7 @@ public class ApplicationServiceCollectionTests
     public void AddApplicationServices_RegistersMappingsAsSingletonConfig()
     {
         var services = new ServiceCollection();
-        services.AddApplicationServices();
+        services.AddApplicationServices(new ConfigurationBuilder().Build());
 
         services.ShouldContain(s => s.ServiceType == typeof(TypeAdapterConfig) && s.Lifetime == ServiceLifetime.Singleton);
     }
@@ -83,7 +84,7 @@ public class ApplicationServiceCollectionTests
     public void AddApplicationServices_CanBuildProviderAndResolveDependencyFreeServices()
     {
         var services = new ServiceCollection();
-        services.AddApplicationServices();
+        services.AddApplicationServices(new ConfigurationBuilder().Build());
 
         using var provider = services.BuildServiceProvider();
 

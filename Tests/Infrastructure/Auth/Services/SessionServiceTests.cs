@@ -1,3 +1,4 @@
+﻿using Domain.Security.Services;
 using Application.Auth.Features.Shared;
 using Application.Common.Interfaces;
 using Domain.Security.Aggregates;
@@ -116,7 +117,7 @@ public class SessionServiceTests : HandlerTestBase
 
         result.Value.SessionId.ShouldBe(captured!.Id.Value);
         result.Value.UserId.ShouldBe(userId.Value);
-        result.Value.RefreshToken.ShouldBe(captured.RefreshToken.Value);
+        captured.RefreshTokenHash.ShouldBe(RefreshTokenHasher.Hash(result.Value.RefreshToken));
         result.Value.ExpiresAt.ShouldBeGreaterThanOrEqualTo(before.AddDays(30).AddSeconds(-5));
     }
 
@@ -127,7 +128,7 @@ public class SessionServiceTests : HandlerTestBase
         var ip = IpAddress.Create("10.0.0.1");
 
         _sessionRepository
-            .GetByRefreshTokenAsync(refreshToken, Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(refreshToken.Value), Arg.Any<CancellationToken>())
             .Returns((UserSession?)null);
 
         var result = await _sut.RefreshSessionAsync(refreshToken, ip);
@@ -150,7 +151,7 @@ public class SessionServiceTests : HandlerTestBase
         session.Revoke(DateTime.UtcNow, SessionRevocationReason.UserRequested);
 
         _sessionRepository
-            .GetByRefreshTokenAsync(refreshToken, Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(refreshToken.Value), Arg.Any<CancellationToken>())
             .Returns(session);
 
         var result = await _sut.RefreshSessionAsync(refreshToken, ip);
@@ -173,7 +174,7 @@ public class SessionServiceTests : HandlerTestBase
             .Build();
 
         _sessionRepository
-            .GetByRefreshTokenAsync(refreshToken, Arg.Any<CancellationToken>())
+            .GetByRefreshTokenHashAsync(RefreshTokenHasher.Hash(refreshToken.Value), Arg.Any<CancellationToken>())
             .Returns(existing);
 
         UserSession? newSession = null;
@@ -188,7 +189,7 @@ public class SessionServiceTests : HandlerTestBase
         newSession.ShouldNotBeNull();
         newSession!.UserId.ShouldBe(userId);
         newSession.DeviceInfo.Value.ShouldBe("device-x");
-        newSession.RefreshToken.Value.ShouldNotBe(refreshToken.Value);
+        newSession.RefreshTokenHash.ShouldNotBe(existing.RefreshTokenHash);
         await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 

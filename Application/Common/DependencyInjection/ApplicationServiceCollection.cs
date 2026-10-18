@@ -1,6 +1,8 @@
+﻿using Application.Auth.Features.Shared;
 using Application.Common.Services;
 using Application.Payment.Adapters;
 using Domain.Inventory.Services;
+using Microsoft.Extensions.Configuration;
 using Domain.Media.Services;
 using Domain.Payment.Services;
 using Domain.Review.Services;
@@ -11,8 +13,15 @@ namespace Application.Common.DependencyInjection;
 
 public static class ApplicationServiceCollection
 {
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
+        // Bind Auth settings (OTP window, lockout policy, OTP pepper, session
+        // lifetime) to the "Auth" section so consumers see configured values
+        // instead of code defaults.
+        services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
+
         services.RegisterMediatR();
         services.RegisterDomainServices();
         services.RegisterApplicationServices();

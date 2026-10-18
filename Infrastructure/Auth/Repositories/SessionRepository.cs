@@ -1,4 +1,4 @@
-using Domain.Security.Aggregates;
+﻿using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
@@ -11,9 +11,9 @@ namespace Infrastructure.Auth.Repositories;
 public sealed class SessionRepository(DBContext context, IDateTimeProvider dateTimeProvider)
     : RepositoryBase<UserSession, SessionId>(context), ISessionRepository
 {
-    public async Task<UserSession?> GetByRefreshTokenAsync(RefreshToken refreshToken, CancellationToken ct = default)
+    public async Task<UserSession?> GetByRefreshTokenHashAsync(string refreshTokenHash, CancellationToken ct = default)
     {
-        return await Context.UserSessions.FirstOrDefaultAsync(s => s.RefreshToken == refreshToken, ct);
+        return await Context.UserSessions.FirstOrDefaultAsync(s => s.RefreshTokenHash == refreshTokenHash, ct);
     }
 
     public Task RevokeAllByUserIdAsync(UserId userId, CancellationToken ct = default)

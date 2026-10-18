@@ -1,4 +1,4 @@
-using Application.Payment.Contracts;
+﻿using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 using Domain.Order.Exceptions;
 using Domain.Order.Interfaces;
@@ -186,26 +186,23 @@ public sealed class PaymentService(
         var transaction = await paymentRepository.GetByAuthorityAsync(authority, ct)
             ?? throw new PaymentTransactionNotFoundException(authority);
 
-        var signatureRequired = await featureManager.IsEnabledAsync(
-            FeatureFlags.PaymentCallbackSignatureRequired);
+        // The callback nonce is always mandatory: it is issued at payment
+        // initiation and carried in the callback URL, so a missing/invalid
+        // nonce means the request did not originate from our gateway redirect.
+        var nonceValid = await callbackNonceService.ValidateAndConsumeAsync(
+            transaction.Id.Value, nonce ?? string.Empty, ct);
 
-        if (signatureRequired)
+        if (!nonceValid)
         {
-            var nonceValid = await callbackNonceService.ValidateAndConsumeAsync(
-                transaction.Id.Value, nonce ?? string.Empty, ct);
-
-            if (!nonceValid)
-            {
-                await auditService.LogSecurityEventAsync(
-                    "PaymentWebhookInvalidNonce",
-                    $"Rejected webhook for transaction {transaction.Id.Value} (authority '{authority}') due to invalid or missing nonce.",
-                    IpAddress.Unknown,
-                    null,
-                    ct);
-                throw new ExternalServiceException(
-                    transaction.Gateway.Value,
-                    "درخواست بازگشتی درگاه پرداخت معتبر نیست.");
-            }
+            await auditService.LogSecurityEventAsync(
+                "PaymentWebhookInvalidNonce",
+                $"Rejected webhook for transaction {transaction.Id.Value} (authority '{authority}') due to invalid or missing nonce.",
+                IpAddress.Unknown,
+                null,
+                ct);
+            throw new ExternalServiceException(
+                transaction.Gateway.Value,
+                "درخواست بازگشتی درگاه پرداخت معتبر نیست.");
         }
 
         if (status.Equals("OK", StringComparison.OrdinalIgnoreCase))

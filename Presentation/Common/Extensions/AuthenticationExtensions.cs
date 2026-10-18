@@ -1,4 +1,5 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
+using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
 using Infrastructure.Security.Settings;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -62,6 +63,24 @@ public static class AuthenticationExtensions
 
                     if (!string.Equals(alg, SecurityAlgorithms.HmacSha256, StringComparison.Ordinal))
                         context.Fail("Invalid token signing algorithm.");
+
+                    // Revoked sessions must lose access before their token expires
+                    // (logout-everywhere, password change, admin revocation).
+                    var sessionIdClaim = context.Principal!.FindFirst("sid")?.Value;
+                    if (!Guid.TryParse(sessionIdClaim, out var sessionId))
+                    {
+                        context.Fail("Token is not bound to a session.");
+                        return;
+                    }
+
+                    var revocationChecker =
+                        context.HttpContext.RequestServices.GetService<ISessionRevocationChecker>();
+                    if (revocationChecker is not null &&
+                        !await revocationChecker.IsSessionActiveAsync(
+                            sessionId, context.HttpContext.RequestAborted))
+                    {
+                        context.Fail("Session revoked.");
+                    }
                 };
             });
 

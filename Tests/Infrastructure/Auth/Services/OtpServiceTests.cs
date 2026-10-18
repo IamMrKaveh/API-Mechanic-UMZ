@@ -1,4 +1,4 @@
-using Application.Audit.Contracts;
+﻿using Application.Audit.Contracts;
 using Application.Auth.Features.Shared;
 using Application.Communication.Contracts;
 using Domain.Security.Enums;
@@ -22,6 +22,7 @@ public class OtpServiceTests : HandlerTestBase
         {
             OtpRateLimitWindowMinutes = 10,
             MaxOtpPerWindow = 3,
+            OtpPepper = "test-pepper-value-with-enough-length",
         });
 
         _sut = new OtpService(_otpRepository, _smsService, options, AuditService);
@@ -49,6 +50,38 @@ public class OtpServiceTests : HandlerTestBase
         var hashB = _sut.HashOtp(OtpCode.Create(secondCode));
 
         hashA.ShouldNotBe(hashB);
+    }
+
+    [Fact]
+    public void HashOtp_UsesConfiguredPepper_SameCodeDifferentPepperDifferentHash()
+    {
+        var code = OtpCode.Create("123456");
+        var otherOptions = Options.Create(new AuthOptions
+        {
+            OtpRateLimitWindowMinutes = 10,
+            MaxOtpPerWindow = 3,
+            OtpPepper = "a-completely-different-pepper-value",
+        });
+        var otherService = new OtpService(_otpRepository, _smsService, otherOptions, AuditService);
+
+        _sut.HashOtp(code).ShouldNotBe(otherService.HashOtp(code));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("short-pepper")]
+    public void Constructor_WithMissingOrWeakPepper_Throws(string pepper)
+    {
+        var options = Options.Create(new AuthOptions
+        {
+            OtpRateLimitWindowMinutes = 10,
+            MaxOtpPerWindow = 3,
+            OtpPepper = pepper,
+        });
+
+        Should.Throw<InvalidOperationException>(() =>
+            new OtpService(_otpRepository, _smsService, options, AuditService));
     }
 
     [Fact]

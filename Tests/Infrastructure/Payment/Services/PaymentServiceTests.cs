@@ -1,4 +1,4 @@
-using Application.Payment.Contracts;
+﻿using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 using Domain.Order.Aggregates;
 using Domain.Order.Exceptions;
@@ -290,6 +290,24 @@ public class PaymentServiceTests : HandlerTestBase
     }
 
     [Fact]
+    public async Task ProcessWebhookAsync_WhenNonceIsInvalidAndSignatureFlagDisabled_StillThrows()
+    {
+        var userId = UserId.NewId();
+        var order = NewOrder(userId);
+        var transaction = NewTransaction(order.Id, userId);
+        _paymentRepository.GetByAuthorityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(transaction);
+        _featureManager.IsEnabledAsync(FeatureFlags.PaymentCallbackSignatureRequired).Returns(false);
+        _nonceService.ValidateAndConsumeAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        // Nonce validation is unconditional now - a disabled flag must not
+        // re-open the unauthenticated webhook path.
+        await Should.ThrowAsync<ExternalServiceException>(() =>
+            _sut.ProcessWebhookAsync(transaction.Authority.Value, "OK", "bad-nonce", CancellationToken.None));
+    }
+
+    [Fact]
     public async Task ProcessWebhookAsync_WhenCancelledByUser_MarksTransactionAsFailed()
     {
         var userId = UserId.NewId();
@@ -297,6 +315,8 @@ public class PaymentServiceTests : HandlerTestBase
         var transaction = NewTransaction(order.Id, userId);
         _paymentRepository.GetByAuthorityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(transaction);
+        _nonceService.ValidateAndConsumeAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(true);
 
         await _sut.ProcessWebhookAsync(transaction.Authority.Value, "NOK", null, CancellationToken.None);
 

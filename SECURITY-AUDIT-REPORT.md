@@ -21,6 +21,14 @@
 - **SEC-05 (مهم):** `SecurityMiddleware` بازنویسی شد: (۱) مسیرهای versioned (`api/v{version}/admin/...`) هم تشخیص داده می‌شوند (قبلاً فقط `/api/admin` بررسی می‌شد که با هیچ مسیر واقعی مطابقت نداشت)؛ (۲) **fail-closed**: لیست سفید تنظیم‌شده ولی خالی ⇒ رد با ۴۰۳ + هشدار؛ (۳) نرمال‌سازی IPv4-mapped IPv6 (`::ffff:x.x.x.x`) برای سازگاری با پروکسی‌ها.
 - **تست‌ها:** تست‌های موجود fixture شدند (تغییر رفتار امنیتی، بدون تضعیف assertion) + تست‌های جدید: Forbidden برای غیرادمین/غیرمالک، تست صفت `Roles=Admin` روی دو اکشن، تست‌های مسیر versioned/IPv4-mapped/fail-closed میدلور، تست انتقال‌یافتهٔ endpoint تخفیف.
 
+### ✅ وضعیت اجرا — فاز ۲ پیاده‌سازی شد (۲۰۲۶-۱۰-۱۸)
+- **SEC-06 (مهم):** اعتبارسنجی nonce وب‌هوک پرداخت **بی‌قید و شرط** شد (قبلاً پشت فلگ `Payment.Callback.SignatureRequired` بود؛ الگوی issue-at-initiation → callback URL از قبل کامل بود). parametr مسیر `{gateway}` به allowlist (`zarinpal`/`zarinpalsandbox`) تبدیل شد؛ در غیر آن ۴۰۰. میدلور IP در حالت «فلگ روشن + لیست خالی» fail-closed است (۴۰۳ + لاگ خطا). مقادیر production در `.env`/`.env.example` مستند شد: فلگ IP-whitelist روشن + `Zarinpal__AllowedIps` پر.
+- **SEC-07 (مهم):** رفرش‌توکن فقط به‌صورت **هش SHA-256** ذخیره و جست‌وجو می‌شود (`RefreshTokenHasher` با مقایسهٔ constant-time؛ `UserSession.RefreshToken` → `RefreshTokenHash`؛ مهاجرت EF `HashRefreshTokenStorage`). مهاجرت ستون قدیمی را حذف می‌کند → نشست‌های موجود باطل و کاربران یک‌بار باید دوباره وارد شوند (پیامد امنیتی مورد نظر).
+- **SEC-08 (مهم):** هش OTP با **HMAC-SHA256 با pepper سرور** (`Auth:OtpPepper` از `.env`، حداقل ۱۶ کاراکتر، غیر Present → fail-fast). حملهٔ آفلن کرک ۱۰⁶ حالتِ کد ۶ رقمی با افشای دیتابیس بسته شد.
+- **SEC-09 (مهم):** `AuthOptions` برای اولین بار به بخش `Auth` **bind** شد (قبلاً هرگز bind نمی‌شد و همهٔ تنظیمات آن مرده بودند!) و قفل حساب در `VerifyOtpHandler` و `GoogleLoginHandler` اعمال می‌شود: کاربر قفل‌شده → `Forbidden` پیش از هر بررسی؛ کد نامعتبر → `RecordFailedLogin` (پارامتریک از کانفیگ)؛ کد معتبر → پاک‌سازی شمارنده.
+- **SEC-10 (مهم):** `ISessionRevocationChecker` + کش ۳۰ ثانیه‌ای (منفی ۱۰ ثانیه) در `OnTokenValidated` از طریق claim `sid` — نشست‌های ابطال‌شده (logout-all، تغییر رمز، ابطال ادمین) ظرف ≤۱۰ ثانیه از کار می‌افتند؛ عمر access token از ۶۰ به ۱۵ دقیقه کاهش یافت.
+- **تست‌ها:** ۲۵ تست جدید/به‌روز (nonce بی‌قید‌وشرط، هش رفرش‌توکن، pepper OTP و گاردهایش، قفل حساب، چکر ابطال با کش) + fixture تست‌های موجود.
+
 ---
 
 ## فهرس اولویت‌ها

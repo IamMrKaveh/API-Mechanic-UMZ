@@ -1,4 +1,4 @@
-using Microsoft.FeatureManagement;
+﻿using Microsoft.FeatureManagement;
 using Presentation.Common.Options;
 using SharedContracts.FeatureManagement;
 
@@ -45,6 +45,18 @@ public class WebhookIpWhitelistMiddleware
                 FeatureFlags.PaymentCallbackIpWhitelistRequired,
                 context.Connection.RemoteIpAddress);
             await _next(context);
+            return;
+        }
+
+        if (_allowedIps.Length == 0)
+        {
+            // Flag is on but no IPs are configured: deny (fail-closed) and shout
+            // about the misconfiguration instead of accepting every caller.
+            _logger.LogError(
+                "Webhook IP whitelist is enabled but 'Zarinpal:AllowedIps' is empty; " +
+                "rejecting webhook from {RemoteIp}. Configure the gateway's callback IPs.",
+                context.Connection.RemoteIpAddress);
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
             return;
         }
 
