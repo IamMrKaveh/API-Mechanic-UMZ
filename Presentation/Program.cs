@@ -1,6 +1,7 @@
 using System.Globalization;
 using Application.Common.DependencyInjection;
 using Infrastructure.Common.DependencyInjection;
+using Presentation.Common.Configuration;
 using Presentation.Common.Logging;
 using Serilog.Exceptions;
 
@@ -17,6 +18,11 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
+    // Secrets (JWT key, storage keys, connection strings, ...) live in a
+    // gitignored .env file instead of tracked appsettings*.json files.
+    // Real environment variables always win; a missing .env is a no-op.
+    DotEnvLoader.LoadFromNearestAncestor();
+
     var builder = WebApplication.CreateBuilder(args);
 
     builder.Configuration

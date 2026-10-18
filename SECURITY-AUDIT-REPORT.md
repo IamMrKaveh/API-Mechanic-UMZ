@@ -5,6 +5,15 @@
 **روش:** بررسی دستی کد مسیرهای حساس + اسکن خودکار الگوهای ناامن (SQL خام، رازهای هاردکد، رمزنگاری ضعیف، deserialization، SSRF، کنترل دسترسی).
 **نتیجه کلی:** ۲۶ یافته (۳ بحرانی، ۸ مهم، ۹ متوسط، ۶ کم/اطلاعاتی). چندین سازه امنیتی خوب در پروژه موجود است (فاز ۶) که باید حفظ شود.
 
+### ✅ وضعیت اجرا — فاز ۰ پیاده‌سازی شد (۲۰۲۶-۱۰-۱۸)
+- **انتقال رازها به `.env`:** کلید JWT، کلید Kavenegar، کلیدهای S3/ArvanCloud، رشته‌های اتصال PostgreSQL و شماره تلفن ادمین از `appsettings.json` و `appsettings.Development.json` خارج و به فایل **gitignored** `.env` منتقل شدند (الگوی متغیرها با `__` مطابق جدایی سازندهٔ .NET: `Jwt__Key`، `Storage__SecretKey`، `ConnectionStrings__DefaultConnection`، …). قالب commit‌شدهٔ `.env.example` ساخته شد.
+- **Fail-closed:** مقدار قبلی هر راز در appsettings جایگزین `""` + کامنت راهنما شد؛ در نبود `.env` اپ با خطای صریح `ValidateRequiredConfiguration` متوقف می‌شود (قبلاً هم این اعتبارسنجی وجود داشت و حالا عملاً کار می‌کند).
+- **لودر `.env` بدون وابستگی NuGet:** `Presentation/Common/Configuration/DotEnvLoader.cs` + ۸ تست واحد؛ لودر از cwd به سمت ریشهٔ مخزن بالا می‌رود (app از `Presentation/` اجرا می‌شود) و متغیرهای محیطی واقعی همیشه بر `.env` مقدم هستند.
+- **`otp.json`** (لاگ ۳MB یک نشست AI که نسخهٔ کامل `appsettings.Production.json` با اعتبارنامه‌های زندهٔ Supabase در خود داشت) از Git و دیسک حذف شد.
+- **`docker-compose.yml`** با `env_file: .env` به زنجیرهٔ متغیرها وصل شد.
+- **چرخش اعتبارنامه‌ها و بازنویسی تاریخچهٔ Git طبق تصمیم شما انجام نشد** (مخزن خصوصی؛ بدون نشت تأییدشده). اگر روزی مخزن عمومی یا تیم گسترش پیدا کرد: rotate + `git filter-repo` (حذف `otp.json` و `appsettings.Production.json` از تاریخچه) + gitleaks در pre-commit و CI.
+- **تأیید:** Build ۰ خطا/۰ هشدار؛ ۱۱٬۵۲۱ تست پاس (۱۱٬۵۱۳ baseline + ۸ تست جدید)؛ اجرای واقعی اپ با `.env` تأیید شد. کامیت: `fix security progress`.
+
 ---
 
 ## فهرس اولویت‌ها
@@ -26,7 +35,7 @@
 ### SEC-01 [بحرانی] اعتبارنامه‌هایproduction در فایل‌های ردیابی‌شده Git
 **محل‌ها:**
 - `Presentation/appsettings.json:4,9` — کلید Access/Secret آرشیو S3 (ArvanCloud)
-- `Presentation/appsettings.json:119` — کلید امضای JWT: `"Breaking355662Bad!SecureKeyForHS256Algo1234"`
+- `Presentation/appsettings.json:119` — کلید امضای JWT به‌صورت متن ساده (۴۳ کاراکتر با الگوی `Breaking…Bad!…`؛ مقدار عمداً در این گزارش نقل نشده — پس از فاز ۰ در `.env` نگهداری می‌شود)
 - `Presentation/appsettings.json:123` — کلید API پیامک Kavenegar
 - `Presentation/appsettings.json:222,230` — تکرار کلیدهای S3 در بخش `Storage`
 - **`otp.json` (رأس مخزن، ۳ مگابایت):** لاگ یک نشستِ عامل هوشمند که نسخه کامل `appsettings.Production.json` را در خود دارد؛ شامل **اعتبارنامه زندهٔ دیتابیس production روی Supabase** (`postgres.cjcahidscpiatcgctfnx` روی `aws-1-ap-northeast-1.pooler.supabase.com`، خطوط ~۱۱۱۶۵–۱۲۱۷۱)، کلید JWT و کلید Kavenegar.

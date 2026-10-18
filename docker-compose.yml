@@ -41,6 +41,8 @@ services:
       dockerfile: MainApi/Dockerfile
       args:
         BUILD_CONFIGURATION: Release
+    env_file:
+      - .env
     depends_on:
       - db
     ports:
