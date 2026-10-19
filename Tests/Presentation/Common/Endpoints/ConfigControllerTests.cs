@@ -1,5 +1,4 @@
 using Application.Auth.Features.Shared;
-using Infrastructure.Auth.Options;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,8 +17,12 @@ public class ConfigControllerTests
     {
         var mediator = Substitute.For<IMediator>();
         return new ConfigController(
-            Options.Create(new AuthOptions { SessionExpirationDays = sessionExpirationDays }),
-            Options.Create(new OtpOptions { Length = otpLength, ExpirationMinutes = otpExpirationMinutes }),
+            Options.Create(new AuthOptions
+            {
+                OtpLength = otpLength,
+                OtpExpirationMinutes = otpExpirationMinutes,
+                SessionExpirationDays = sessionExpirationDays
+            }),
             mediator);
     }
 
@@ -56,6 +59,24 @@ public class ConfigControllerTests
         body.Data.OtpResendSeconds.ShouldBe(600);
         body.Data.OtpExpirationMinutes.ShouldBe(10);
         body.Data.SessionExpirationDays.ShouldBe(7);
+    }
+
+    [Fact]
+    public void GetAuthConfig_UsesAuthOptionsDefaults()
+    {
+        // No test-supplied override: the public config must report the actual
+        // AuthOptions defaults (6 digits / 5 minutes), i.e. exactly the values
+        // the OTP pipeline uses when configuration does not override them.
+        var controller = new ConfigController(
+            Options.Create(new AuthOptions()),
+            Substitute.For<IMediator>());
+
+        var ok = controller.GetAuthConfig().ShouldBeOfType<OkObjectResult>();
+        var body = ok.Value.ShouldBeOfType<ApiResponse<AuthPublicConfigDto>>();
+
+        body.Data!.OtpLength.ShouldBe(6);
+        body.Data.OtpExpirationMinutes.ShouldBe(5);
+        body.Data.OtpResendSeconds.ShouldBe(300);
     }
 
     [Fact]

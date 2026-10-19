@@ -33,7 +33,7 @@ public class SessionRevocationCheckerTests : HandlerTestBase
 
         result.ShouldBeTrue();
         await _cacheService.Received(1).SetAsync(
-            Arg.Is<string>(k => k.Contains(sessionId.Value.ToString("N"))),
+            Arg.Is<string>(k => k!.Contains(sessionId.Value.ToString("N"))),
             true,
             Arg.Any<TimeSpan?>(),
             Arg.Any<CancellationToken>());

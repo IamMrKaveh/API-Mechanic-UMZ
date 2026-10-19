@@ -1,5 +1,7 @@
 version: '3.8'
 
+# Local development stack. All secrets come from the gitignored .env file
+# (see .env.example). NEVER commit real values here.
 services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -13,7 +15,10 @@ services:
     volumes:
       - mssql-data:/var/opt/mssql
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$SA_PASSWORD\" -Q \"SELECT 1\" > /dev/null 2>&1 || exit 1"]
+      # Password is passed via the SQLCMDPASSWORD environment variable (not -P)
+      # so it never appears in the container's process list.
+      # -C trusts the container's self-signed cert; the channel is still encrypted.
+      test: ["CMD-SHELL", "SQLCMDPASSWORD=\"$$SA_PASSWORD\" /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -C -Q \"SELECT 1\" > /dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -21,12 +26,15 @@ services:
   db-init:
     image: mcr.microsoft.com/mssql-tools
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    environment:
+      - SA_PASSWORD=${SA_PASSWORD}
     entrypoint: >
       /bin/bash -c "
       echo waiting for db...;
       sleep 20;
-      /opt/mssql-tools/bin/sqlcmd -S db -U sa -P $SA_PASSWORD -Q
+      SQLCMDPASSWORD=\"$$SA_PASSWORD\" /opt/mssql-tools/bin/sqlcmd -S db -U sa -C -Q
       \"CREATE DATABASE [${DB_NAME}];
         IF NOT EXISTS (SELECT * FROM sys.sql_logins WHERE name = '${DB_USER}')
         BEGIN
@@ -38,19 +46,25 @@ services:
   api:
     build:
       context: .
-      dockerfile: MainApi/Dockerfile
+      dockerfile: Presentation/Dockerfile
       args:
         BUILD_CONFIGURATION: Release
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
       - ASPNETCORE_URLS=http://+:8080
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=${DB_NAME};User Id=${DB_USER};Password=${DB_USER_PASSWORD};TrustServerCertificate=True;Encrypt=False;
+      # Production by default (no dev error pages inside a container); developers
+      # can still override to Development from the local .env file.
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      # Encrypt=True: TLS to the database is on. TrustServerCertificate=True only
+      # accepts the self-signed cert of this local dev container; any real
+      # deployment must use a CA-issued certificate with TrustServerCertificate=False.
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=${DB_NAME};User Id=${DB_USER};Password=${DB_USER_PASSWORD};Encrypt=True;TrustServerCertificate=True
 
 volumes:
   mssql-data:

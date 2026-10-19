@@ -1,3 +1,4 @@
+using Application.Auth.Contracts;
 using Infrastructure.Cache.Options;
 
 namespace Presentation.Common.Extensions;
@@ -14,6 +15,7 @@ public static class ConfigurationValidationExtension
         configuration.ValidateFeatureFlagsPresence();
         ValidateProductionCacheAndRateLimit(configuration, builder.Environment);
         ValidateCacheEncryption(configuration, builder.Environment);
+        ValidateInitialAdmin(configuration, builder.Environment);
 
         return builder;
     }
@@ -88,6 +90,34 @@ public static class ConfigurationValidationExtension
         if (missing.Count > 0)
             throw new InvalidOperationException(
                 $"Missing required external-service configuration: {string.Join(", ", missing)}.");
+    }
+
+    private static void ValidateInitialAdmin(
+        IConfiguration configuration,
+        IHostEnvironment environment)
+    {
+        var section = configuration.GetSection(IInitialAdminOptions.SectionName);
+        if (!section.Exists())
+            return;
+
+        // SEC-25: this list auto-promotes matching phone numbers to Admin on
+        // first login. It is a bootstrap mechanism only: in Production it must
+        // be supplied via environment (InitialAdmin__PhoneNumbers__0=...) and
+        // emptied once bootstrap admins exist.
+        var phoneNumbers = section.GetSection("PhoneNumbers").GetChildren()
+            .Select(child => child.Value)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToList();
+
+        if (phoneNumbers.Count == 0)
+            return;
+
+        if (environment.IsProduction())
+        {
+            Log.Warning(
+                "InitialAdmin:PhoneNumbers contains {Count} entry(ies) in Production; anyone logging in with these numbers is promoted to Admin. Empty the list after bootstrap is complete.",
+                phoneNumbers.Count);
+        }
     }
 
     private static void ValidateProductionCacheAndRateLimit(

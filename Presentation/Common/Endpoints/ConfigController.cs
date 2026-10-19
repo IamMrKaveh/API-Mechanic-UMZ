@@ -1,5 +1,4 @@
 ﻿using Application.Auth.Features.Shared;
-using Infrastructure.Auth.Options;
 
 namespace Presentation.Common.Endpoints;
 
@@ -15,20 +14,20 @@ public sealed record AuthPublicConfigDto(
 [AllowAnonymous]
 public sealed class ConfigController(
     IOptions<AuthOptions> authOptions,
-    IOptions<OtpOptions> otpOptions,
     IMediator mediator) : BaseApiController(mediator)
 {
     [HttpGet("auth")]
     [ProducesResponseType(typeof(ApiResponse<AuthPublicConfigDto>), StatusCodes.Status200OK)]
     public IActionResult GetAuthConfig()
     {
-        var otp = otpOptions.Value;
+        // Single source of truth: the Auth section. The public config must report
+        // exactly the values the OTP pipeline actually uses (see SendOtpHandler).
         var auth = authOptions.Value;
 
         var dto = new AuthPublicConfigDto(
-            OtpLength: otp.Length,
-            OtpResendSeconds: otp.ExpirationMinutes * 60,
-            OtpExpirationMinutes: otp.ExpirationMinutes,
+            OtpLength: auth.OtpLength,
+            OtpResendSeconds: auth.OtpExpirationMinutes * 60,
+            OtpExpirationMinutes: auth.OtpExpirationMinutes,
             SessionExpirationDays: auth.SessionExpirationDays);
 
         return Ok(new ApiResponse<AuthPublicConfigDto>(dto, true, null));

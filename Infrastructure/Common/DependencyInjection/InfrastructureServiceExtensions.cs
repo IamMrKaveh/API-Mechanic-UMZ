@@ -273,11 +273,6 @@ public static class InfrastructureServiceExtensions
 
     private static void AddAuthServices(this IServiceCollection services)
     {
-        services.AddOptions<OtpOptions>()
-            .BindConfiguration(OtpOptions.SectionName)
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
         services.AddOptions<InitialAdminOptions>()
             .BindConfiguration(IInitialAdminOptions.SectionName)
             .ValidateOnStart();

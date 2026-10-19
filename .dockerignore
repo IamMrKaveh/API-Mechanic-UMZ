@@ -14,6 +14,11 @@
 **/azds.yaml
 **/bin
 **/charts
+# Environment-specific settings must never be baked into an image;
+# environment values are injected at runtime via .env / env vars.
+**/appsettings.Production.json
+**/appsettings.Development.json
+**/logs
 **/docker-compose*
 **/Dockerfile*
 **/node_modules
@@ -23,6 +28,7 @@
 **/values.dev.yaml
 LICENSE
 README.md
+migrate.sql
 !**/.gitignore
 !.git/HEAD
 !.git/config

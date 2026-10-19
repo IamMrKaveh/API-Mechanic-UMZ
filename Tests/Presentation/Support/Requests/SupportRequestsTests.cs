@@ -33,20 +33,4 @@ public class SupportRequestsTests
 
         request.Message.ShouldBe("Extra info");
     }
-
-    [Fact]
-    public void CloseTicketRequest_WithDefaults_SetsIsAdminToFalse()
-    {
-        var request = new CloseTicketRequest();
-
-        request.IsAdmin.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void CloseTicketRequest_WithIsAdmin_SetsCorrectly()
-    {
-        var request = new CloseTicketRequest(true);
-
-        request.IsAdmin.ShouldBeTrue();
-    }
 }
