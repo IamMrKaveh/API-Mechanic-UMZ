@@ -9,8 +9,6 @@ using Domain.Payment.Interfaces;
 using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Payment.ZarinPal.Options;
-using Microsoft.FeatureManagement;
-using SharedContracts.FeatureManagement;
 using SharedKernel.Exceptions;
 
 namespace Infrastructure.Payment.Services;
@@ -24,8 +22,7 @@ public sealed class PaymentService(
     IAuditService auditService,
     IOptions<ZarinPalOptions> zarinPalOptions,
     ICurrentUserService currentUserService,
-    IPaymentCallbackNonceService callbackNonceService,
-    IFeatureManager featureManager) : IPaymentService
+    IPaymentCallbackNonceService callbackNonceService) : IPaymentService
 {
     private static readonly TimeSpan NonceTtl = TimeSpan.FromMinutes(30);
     private readonly ZarinPalOptions _zarinPalOptions = zarinPalOptions.Value;

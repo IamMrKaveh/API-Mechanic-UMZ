@@ -1,10 +1,12 @@
-﻿using Application.Support.Features.Shared;
+﻿using Application.Common.Interfaces;
+using Application.Support.Features.Shared;
 using Domain.Support.ValueObjects;
 
 namespace Application.Support.Features.Queries.GetTicket;
 
 public class GetTicketHandler(
-    ITicketQueryService supportQueryService)
+    ITicketQueryService supportQueryService,
+    ICurrentUserService currentUserService)
     : IQueryHandler<GetTicketQuery, TicketDto>
 {
     public async Task<ServiceResult<TicketDto>> Handle(
@@ -17,7 +19,9 @@ public class GetTicketHandler(
         if (ticketResult.IsFailure) return ticketResult.Error;
         var ticket = ticketResult.Value;
 
-        if (!request.IsAdmin && ticket.UserId != request.RequestingUserId)
+        // Owner-or-admin check against the authenticated claims, never against
+        // data supplied by the client (SEC-22).
+        if (!currentUserService.IsAdmin && ticket.UserId != currentUserService.UserId)
             return ServiceResult<TicketDto>.Forbidden("دسترسی به این تیکت وجود ندارد.");
 
         return ServiceResult<TicketDto>.Success(ticket);

@@ -12,7 +12,6 @@ using Domain.User.ValueObjects;
 using Infrastructure.Payment.Services;
 using Infrastructure.Payment.ZarinPal.Options;
 using Microsoft.Extensions.Options;
-using SharedContracts.FeatureManagement;
 using SharedKernel.Abstractions.Interfaces;
 using SharedKernel.Exceptions;
 using SharedKernel.ValueObjects;
@@ -26,7 +25,6 @@ public class PaymentServiceTests : HandlerTestBase
     private readonly IPaymentGatewayFactory _gatewayFactory = Substitute.For<IPaymentGatewayFactory>();
     private readonly IPaymentGateway _gateway = Substitute.For<IPaymentGateway>();
     private readonly IPaymentCallbackNonceService _nonceService = Substitute.For<IPaymentCallbackNonceService>();
-    private readonly IFeatureManager _featureManager = Substitute.For<IFeatureManager>();
     private readonly PaymentService _sut;
 
     private static readonly DateTime FixedNow = new(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc);
@@ -39,7 +37,6 @@ public class PaymentServiceTests : HandlerTestBase
         CurrentUserService.FrontendBaseUrl.Returns("https://shop.example.com");
         _nonceService.IssueAsync(Arg.Any<Guid>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns("nonce-123");
-        _featureManager.IsEnabledAsync(Arg.Any<string>()).Returns(false);
         _sut = new PaymentService(
             _paymentRepository,
             _orderRepository,
@@ -54,8 +51,7 @@ public class PaymentServiceTests : HandlerTestBase
                 UseSandbox = false
             }),
             CurrentUserService,
-            _nonceService,
-            _featureManager);
+            _nonceService);
     }
 
     private static global::Domain.Order.Aggregates.Order NewOrder(UserId? userId = null)
@@ -278,7 +274,6 @@ public class PaymentServiceTests : HandlerTestBase
         var transaction = NewTransaction(order.Id, userId);
         _paymentRepository.GetByAuthorityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(transaction);
-        _featureManager.IsEnabledAsync(FeatureFlags.PaymentCallbackSignatureRequired).Returns(true);
         _nonceService.ValidateAndConsumeAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(false);
 
@@ -297,7 +292,6 @@ public class PaymentServiceTests : HandlerTestBase
         var transaction = NewTransaction(order.Id, userId);
         _paymentRepository.GetByAuthorityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(transaction);
-        _featureManager.IsEnabledAsync(FeatureFlags.PaymentCallbackSignatureRequired).Returns(false);
         _nonceService.ValidateAndConsumeAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(false);
 

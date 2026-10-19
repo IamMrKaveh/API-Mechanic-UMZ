@@ -1,5 +1,6 @@
 using Application.Auth.Contracts;
 using Application.Auth.Features.Commands.SendOtp;
+using Application.Auth.Features.Shared;
 using Application.Common.Interfaces;
 using Domain.Security.Aggregates;
 using Domain.Security.Enums;
@@ -7,6 +8,7 @@ using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
+using Microsoft.Extensions.Options;
 using SharedKernel.Abstractions.Interfaces;
 using Tests.TestInfrastructure.Assertions;
 using Users = Domain.User.Aggregates.User;
@@ -24,7 +26,7 @@ public class SendOtpHandlerTests : HandlerTestBase
         _otpService
             .SendOtpAsync(Arg.Any<PhoneNumber>(), Arg.Any<OtpCode>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<bool>.Success(true));
-        _sut = new SendOtpHandler(UnitOfWork, _otpService, _otpRepository, _userRepository, _initialAdminOptions, DateTimeProvider);
+        _sut = new SendOtpHandler(UnitOfWork, _otpService, _otpRepository, _userRepository, _initialAdminOptions, DateTimeProvider, Options.Create(new AuthOptions()));
     }
 
     [Fact]
@@ -149,6 +151,30 @@ public class SendOtpHandlerTests : HandlerTestBase
             Arg.Is<PhoneNumber>(p => p!.Value == "09123456789"),
             Arg.Any<OtpCode>(),
             OtpPurpose.Login,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenRateLimitPasses_UsesOtpExpirationFromAuthOptions()
+    {
+        // SEC-21: OTP lifetime must come from the Auth section, not a hardcoded value.
+        var authOptions = new AuthOptions { OtpExpirationMinutes = 10 };
+        var sut = new SendOtpHandler(
+            UnitOfWork, _otpService, _otpRepository, _userRepository, _initialAdminOptions, DateTimeProvider,
+            Options.Create(authOptions));
+        var existingUser = Users.RegisterByPhone(PhoneNumber.Create("09123456789"));
+        _userRepository
+            .GetByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<CancellationToken>())
+            .Returns(existingUser);
+        _otpService
+            .ValidateRateLimitAsync(Arg.Any<UserId>(), Arg.Any<OtpPurpose>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var result = await sut.Handle(new SendOtpCommand("09123456789", OtpPurpose.Login), CancellationToken.None);
+
+        result.ShouldBeSuccess();
+        await _otpRepository.Received(1).AddAsync(
+            Arg.Is<UserOtp>(o => o!.ExpiresAt == DateTimeProvider.UtcNow.AddMinutes(10)),
             Arg.Any<CancellationToken>());
     }
 
