@@ -9,7 +9,10 @@
 
 .vs/*
 
-Database/
+# Root-anchored: a local database data folder. Without the leading slash this
+# rule also ignored Tests/TestInfrastructure/Database/ (the Testcontainers
+# fixture), which silently kept build-critical source files out of the repo.
+/Database/
 
 .env
 *.env

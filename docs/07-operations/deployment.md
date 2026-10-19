@@ -1,50 +1,48 @@
 # استقرار و عملیات
 
 این سند وضعیت واقعی ابزارهای استقرار ریپو را تحلیل می‌کند: Dockerfile موجود، docker-compose،
-متغیرهای محیطی و نکات انتشار. نکته کلیدی: زنجیره فعلی build داکر و دیتابیس compose **هم‌خوان با کد نیست**
-و این سند آن را صریح مستند می‌کند تا پیش از انتشار اصلاح شود.
+متغیرهای محیطی و نکات انتشار. زنجیرهٔ build داکر در فاز ۴ ممیزی امنیتی اصلاح شد؛ تنها ناهماهنگی
+باقی‌مانده، پروایدر دیتابیس compose (SQL Server) در برابر کد (PostgreSQL) است.
 
 ## Dockerfile
 
-تنها Dockerfile ریپو در `Presentation/Dockerfile` است (پوشه `MainApi/` وجود ندارد):
+تنها Dockerfile ریپو در `Presentation/Dockerfile` است:
 
 | مرحله | ایمیج | اقدامات |
 |---|---|---|
-| `build` | `mcr.microsoft.com/dotnet/sdk:9.0` | کپی `MainApi/MainApi.csproj`، restore، سپس publish با `-c Release` و `/p:PublishTrimmed=true` و `/p:PublishSingleFile=true` |
-| `final` | `mcr.microsoft.com/dotnet/aspnet:9.0-alpine` | کپی خروجی به `/app`، ساخت کاربر غیر root با `appuser` (uid 1000)، `EXPOSE 8080`، `HEALTHCHECK` با `wget http://localhost:8080/health` هر ۳۰ ثانیه، `ENTRYPOINT ["dotnet", "MainApi.dll"]` |
+| `build` | `mcr.microsoft.com/dotnet/sdk:10.0` | کپی کل context فیلترشده (`.dockerignore`)، `dotnet restore Presentation/Presentation.csproj`، سپس publish با `-c ${BUILD_CONFIGURATION}` (پیش‌فرض Release) و `/p:PublishTrimmed=true` / `/p:PublishSingleFile=true` |
+| `final` | `mcr.microsoft.com/dotnet/aspnet:10.0-alpine` | کپی خروجی به `/app`، کاربر غیر root `appuser` (uid 1000)، `EXPOSE 8080`، `HEALTHCHECK` روی `http://localhost:8080/health/live` هر ۳۰ ثانیه، `ENTRYPOINT ["dotnet", "Presentation.dll"]` |
 
-**زنجیره فعلی شکسته است** و باید پیش از انتشار اصلاح شود:
+مسائل زنجیرهٔ قبلی که در فاز ۴ رفع شدند:
 
-1. `docker-compose.yml` به `dockerfile: MainApi/Dockerfile` ارجاع می‌دهد؛ چنین فایلی در ریپو نیست
-   (Dockerfile واقعی `Presentation/Dockerfile` است).
-2. خود Dockerfile هم به `MainApi/MainApi.csproj` ارجاع می‌دهد که وجود ندارد؛ پروژه اجرایی واقعی
-   `Presentation/Presentation.csproj` است.
-3. آرگومان `BUILD_CONFIGURATION` که compose پاس می‌دهد در Dockerfile استفاده نمی‌شود (`-c Release` هاردکد است).
-4. `HEALTHCHECK` مسیر `/health` را صدا می‌زند، اما Endpointهای سلامت تعریف‌شده `/health/live` و
-   `/health/ready` و `/health/details` هستند (see [cross-cutting.md](../02-architecture/cross-cutting.md)).
+1. `docker-compose.yml` به `dockerfile: MainApi/Dockerfile` ارجاع می‌داد که وجود ندارد → اکنون `Presentation/Dockerfile`.
+2. Dockerfile به `MainApi/MainApi.csproj` ارجاع می‌داد → اکنون restore چندپروژه‌ای روی `Presentation/Presentation.csproj`.
+3. آرگومان `BUILD_CONFIGURATION` استفاده نمی‌شد → اکنون به‌عنوان `ARG` واقعی به publish داده می‌شود.
+4. `HEALTHCHECK` مسیر `/health` را صدا می‌زد → اکنون `/health/live` (Endpointهای سلامت: `/health/live`، `/health/ready`، `/health/details` — see [cross-cutting.md](../02-architecture/cross-cutting.md)).
 
-توجه: `.dockerignore` پوشه‌های `Tests/`، `otp.json`، `logs/` و `migrate.sql` را مستثنا نمی‌کند
-و این فایل‌ها به build context ارسال می‌شوند.
+`.dockerignore` اکنون `appsettings.Development.json`، `appsettings.Production.json`، `logs/`، `migrate.sql` و
+فایل‌های compose/Dockerfile را از context حذف می‌کند تا تنظیمات محیطی داخل ایمیج پخته نشوند.
 
 ## تحلیل docker-compose.yml
 
-فایل `docker-compose.yml` ریشه سه سرویس تعریف می‌کند:
+فایل `docker-compose.yml` ریشه سه سرویس تعریف می‌کند (استک توسعهٔ محلی):
 
 | سرویس | تصویر | نقش |
 |---|---|---|
-| `db` | `mcr.microsoft.com/mssql/server:2022-latest` | SQL Server 2022 با `MSSQL_PID=Developer`، پورت ۱۴۳۳، volume `mssql-data` و healthcheck با `sqlcmd SELECT 1` (هر ۱۰ ثانیه، ۳۰ بار) |
-| `db-init` | `mcr.microsoft.com/mssql-tools` | پس از `sleep 20` دیتابیس `${DB_NAME}` را می‌سازد، لاگین/کاربر `${DB_USER}` می‌سازد و به نقش `db_owner` اضافه می‌کند |
-| `api` | build از context ریشه | پورت ۸۰۸۰، `ASPNETCORE_URLS=http://+:8080`، `ASPNETCORE_ENVIRONMENT=Development` و `ConnectionStrings__DefaultConnection` به سرویس `db` |
+| `db` | `mcr.microsoft.com/mssql/server:2022-latest` | SQL Server 2022 با `MSSQL_PID=Developer`، پورت ۱۴۳۳، volume `mssql-data` و healthcheck با `sqlcmd -C` و رمز از `SQLCMDPASSWORD` (رمز در process list دیده نمی‌شود) |
+| `db-init` | `mcr.microsoft.com/mssql-tools` | پس از سالم‌شدن `db`، دیتابیس `${DB_NAME}`، لاگین/کاربر `${DB_USER}` و نقش `db_owner` را می‌سازد |
+| `api` | build از context ریشه | پورت ۸۰۸۰، `ASPNETCORE_URLS=http://+:8080`، `ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}` و `ConnectionStrings__DefaultConnection` به `db` با `Encrypt=True` |
 
-**دو ناهماهنگی جدی:**
+نکات:
 
-- **پروایدر دیتابیس:** کد با Npgsql به PostgreSQL وصل می‌شود
-  (`options.UseNpgsql(...)` در `InfrastructureServiceExtensions.cs`)؛ دیتابیس SQL Server این compose
-  هرگز به API سرویس نمی‌دهد. برای اجرای واقعی به PostgreSQL نیاز است (see [setup-and-run.md](../01-getting-started/setup-and-run.md)).
-- **build سرویس api:** با نبود `MainApi/Dockerfile` (بند بالا) حتی build هم انجام نمی‌شود.
-
-فایل `.env` متغیرهای compose (مثل `SA_PASSWORD`) نیز در ریپو موجود نیست و باید محلی ساخته شود.
-هیچ فایل compose دیگری (override یا production) وجود ندارد.
+- **پروایدر دیتابیس:** کد با Npgsql به PostgreSQL وصل می‌شود (`options.UseNpgsql(...)` در `InfrastructureServiceExtensions.cs`)؛
+  دیتابیس SQL Server این compose به API سرویس نمی‌دهد. برای اجرای واقعی به PostgreSQL نیاز است
+  (see [setup-and-run.md](../01-getting-started/setup-and-run.md)).
+- **TLS دیتابیس:** `Encrypt=True` روشن است؛ `TrustServerCertificate=True` فقط برای گواهی self-signed کانتینر محلی
+  است و در استقرار واقعی باید با CA معتبر و `TrustServerCertificate=False` جایگزین شود.
+- **محیط پیش‌فرض Production است** تا صفحه‌های خطای Development در کانتینر سرو نشوند؛ برای استک محلی
+  در `.env` مقدار `ASPNETCORE_ENVIRONMENT=Development` را فعال کنید (اعتبارسنجی Production به Redis با TLS نیاز دارد).
+- همهٔ رازها از `.env` (gitignored، قالب `.env.example`) می‌آیند؛ هیچ فایل compose دیگری وجود ندارد.
 
 ## متغیرهای محیطی
 
@@ -53,11 +51,14 @@
 | `SA_PASSWORD`، `DB_NAME`، `DB_USER`، `DB_USER_PASSWORD` | فقط `docker-compose.yml` | راه‌اندازی SQL Server و ساخت دیتابیس/کاربر |
 | `ASPNETCORE_URLS`، `ASPNETCORE_ENVIRONMENT` | compose و `launchSettings.json` | آدرس گوش‌دادن و محیط |
 | `ConnectionStrings__DefaultConnection` | compose → کد (قرارداد `__`) | رشته اتصال زمان اجرا |
+| `Jwt__Key`، `Auth__OtpPepper`، `Storage__*`، `Kavenegar__ApiKey`، `ConnectionStrings__*` | `.env` → `DotEnvLoader` → کانفیگ | رازها (فاز ۰) |
+| `FeatureManagement__Payment.Callback.*`، `Zarinpal__AllowedIps__*` | `.env`/env → کانفیگ | سخت‌سازی وب‌هوک پرداخت (فاز ۲) |
 | `ASPNETCORE_ENVIRONMENT` (خواندن صریح) | `InfrastructureServiceExtensions.cs` و `DBContextFactory.cs` | غیرفعال‌کردن Retry در Development و انتخاب پیکربندی design-time |
 
 تنها متغیری که کد با `Environment.GetEnvironmentVariable` می‌خواند همان `ASPNETCORE_ENVIRONMENT` است؛
 بقیه از سازوکار استاندارد پیکربندی می‌آیند. فهرست کامل بخش‌های تنظیمات در
-[01-getting-started/configuration.md](../01-getting-started/configuration.md) است.
+[01-getting-started/configuration.md](../01-getting-started/configuration.md) و فهرست الزامات Production در
+[security-verification.md](security-verification.md) است.
 
 ## مایگریشن‌ها در عملیات
 
@@ -82,7 +83,7 @@
 | لاگ | Sinkهای فعال: Console (Warning+)، `Logs/log-YYYYMMDD.json` (Warning+، ۱۴ فایل) و `Logs/errors/` (Error+، ۹۰ فایل) — پیکربندی در کد است، نه بخش `Serilog` فایل‌های تنظیمات |
 | رؤیت‌پذیری | OpenTelemetry به `OpenTelemetry:OtlpEndpoint` ارسال می‌کند |
 | سرویس‌های پس‌زمینه | همه Jobها و Seederها درون فرایند API اجرا می‌شوند (نه سرویس جدا)؛ در استقرار چندنمونه‌ای، اجرای هم‌زمانشان با قفل Redis کلید `jobs:*` ایمن شده است |
-| اسرار | `appsettings.json` ردیابی‌شده مقادیر حساس دارد؛ پیش از انتشار عمومی ریپو به [security.md](security.md) مراجعه شود |
+| اسرار | `appsettings.json` ردیابی‌شده فقط placeholder خالی دارد؛ مقدار واقعی از `.env`/Secret Manager می‌آید و گیت‌های استارت Production در [security-verification.md](security-verification.md) فهرست شده‌اند |
 
 ## فایل‌های متفرقه ریشه
 
@@ -100,3 +101,4 @@
 - اجرای محیط توسعه: [01-getting-started/setup-and-run.md](../01-getting-started/setup-and-run.md)
 - Jobها، Health Check و Outbox: [02-architecture/cross-cutting.md](../02-architecture/cross-cutting.md)
 - اسکن اسرار و pre-commit: [security.md](security.md)
+- تأیید امنیتی، چرخش رازها و چک‌لیست انتشار: [security-verification.md](security-verification.md)

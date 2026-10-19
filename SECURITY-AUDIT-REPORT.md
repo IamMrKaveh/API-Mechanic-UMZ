@@ -29,6 +29,18 @@
 - **SEC-10 (مهم):** `ISessionRevocationChecker` + کش ۳۰ ثانیه‌ای (منفی ۱۰ ثانیه) در `OnTokenValidated` از طریق claim `sid` — نشست‌های ابطال‌شده (logout-all، تغییر رمز، ابطال ادمین) ظرف ≤۱۰ ثانیه از کار می‌افتند؛ عمر access token از ۶۰ به ۱۵ دقیقه کاهش یافت.
 - **تست‌ها:** ۲۵ تست جدید/به‌روز (nonce بی‌قید‌وشرط، هش رفرش‌توکن، pepper OTP و گاردهایش، قفل حساب، چکر ابطال با کش) + fixture تست‌های موجود.
 
+### ✅ وضعیت اجرا — فاز ۵ پیاده‌سازی شد (۲۰۲۶-۱۰-۱۸)
+- **ابزار تأیید یک‌فرمانی:** `scripts/security/verify-security.ps1` هفت بررسی را پشت‌سرهم اجرا می‌کند (hygiene مخزن، placeholderهای appsettings، `dotnet build -warnaserror`، کل تست‌ها، `dotnet list package --vulnerable`، `gitleaks dir`، `gitleaks git`) و با جدول PASS/FAIL/PENDING و کد خروج غیرصفر در شکست تمام می‌شود. نسخهٔ gitleaks (`8.30.1`) با SHA-256 رسمی پین و در صورت نبود به‌صورت خودکار دانلود/اعتبارسنجی می‌شود. گزینهٔ `-FailOnHistoricalSecrets` برای گیت انتشار اضافه شد.
+- **CI واقعی (نقص جدی قبلی):** `.github/workflows/ci.yml` یک **فایل اکسل خراب** بود (۶٬۱۸۵ بایت با امضای `PK` در commit «phase 0 complete») و بنابراین هیچ CI‌ای وجود نداشت. با workflow چهار-جابی جایگزین شد: `secret-scan` (gitleaks روی بازهٔ commitهای push/PR، blocking)، `secret-history-scan` (کل تاریخچه، هفتگی/دستی)، `build-test` (`dotnet build -warnaserror` + کل تست‌ها روی runner دارای Docker) و `dependency-audit` (شکست در صورت بستهٔ آسیب‌پذیر). `.github/dependabot.yml` هم برای NuGet/Actions/Docker اضافه شد.
+- **gitleaks:** `.gitleaks.toml` بازنویسی شد. نسخهٔ قبلی با lookahead (`(?!...)`) روی موتور RE2 با `MustCompile` **کرش می‌کرد** و عملاً هرگز کار نمی‌کرد. اکنون ۹ قاعدهٔ پروژه‌ای (کلید JWT لو‌رفته، کلیدهای ابر آروان، کاوه‌نگار، MerchantId زرین‌پال، پسورد در رشتهٔ اتصال، URI پستگرس، ردیابی `appsettings.Production/Staging.json` و `otp.json`) با allowlistهای دقیق و بدون تضعیف قواعد پیش‌فرض. اسکن درخت کاری روی «فایل‌های قابل commit» (tracked + untracked غیر ignore) انجام می‌شود تا رازهای محلی gitignored نویز نسازند.
+- **pre-commit:** `.githooks/pre-commit` نسخه‌بندی‌شده + `scripts/security/install-git-hooks.ps1` (بدون نیاز به pre-commit یا Go): ابتدا فایل‌های `.env`/`appsettings.Production.json`/`otp.json` را مسدود می‌کند، سپس gitleaks و در نبود آن `scripts/security/scan-secrets.ps1` (اسکنر PowerShell بدون وابستگی) را روی staged diff اجرا می‌کند. `.pre-commit-config.yaml` نیز به gitleaks v8.30.1 و hook مسدودسازی فایل‌های محیطی به‌روز شد. هر دو مسیر با یک راز جعلی آزمون شدند و commit را بلاک کردند.
+- **چرخش رازها و بازنویسی تاریخچه:** رویهٔ گام‌به‌گام در `docs/07-operations/security-verification.md` + اسکریپت `scripts/security/purge-git-history.ps1` (پیش‌فرض dry-run، بکاپ `git bundle`، حذف مسیرهای لو‌رفته و redaction خودکار مقادیری که gitleaks گزارش می‌کند، بدون چاپ راز). **این دو مرحله عمداً اجرا نشده‌اند** چون نیازمند اعتبارنامه/تصمیم شما و force-push هماهنگ‌شده با همکاران است.
+- **گیت‌های استارت Production (`ValidateProductionHardening`):** رد کلید JWT با الگوی لو‌رفته (SEC-01)، الزام `Auth:OtpPepper` ≥۱۶ کاراکتر (SEC-08)، رد `AllowedHosts: *` (SEC-20)، الزام `Security:AdminIpWhitelist` و `Security:AllowedOrigins` غیرخالی و بدون wildcard (SEC-05/11/12)، اجبار `Payment.Callback.IpWhitelistRequired=true` + `Zarinpal:AllowedIps` غیرخالی (SEC-06) و هشدار برای `InitialAdmin` پر و `Swagger:Enabled=true`. همهٔ مشکلات یک‌جا گزارش می‌شوند. ۸ تست جدید (۲۹ تست در `ConfigurationValidationExtensionTests`).
+- **زیرساخت تست:** `PostgresContainerFixture` ساخت lazy کانتینر را داخل `InitializeAsync` برد تا نبود Docker به «skip» تبدیل شود، نه خطای ساخت fixture (قبلاً ۱٬۵۳۱ تست در ماشین بدون Docker به‌صورت error شکست می‌خوردند).
+- **اسناد:** `docs/07-operations/security-verification.md` جدید (تأیید، چرخش، بازنویسی تاریخچه، چک‌لیست انتشار، نگهداری مستمر)؛ `security.md` و `deployment.md` با واقعیت جدید (Dockerfile/compose فاز ۴، گیت‌های استارت، gitleaks v8.30.1) هم‌راستا شدند و فهرست `docs/README.md` تمدید شد.
+- **نتایج تأیید (اجرای واقعی):** build با `-warnaserror` PASS (۰ خطا/۰ هشدار)؛ ۱۱٬۵۶۵ تست (۱۰٬۰۳۴ پاس + ۱٬۵۳۱ اسکیپ دیتابیسی بدون Docker؛ در CI دارای Docker همه اجرا می‌شوند)؛ هیچ بستهٔ آسیب‌پذیر NuGet؛ `gitleaks dir` صفر یافته؛ `gitleaks git` **۱۴۱ یافتهٔ تاریخی (PENDING)** که پس از بازنویسی تاریخچه به صفر می‌رسد.
+- **اقدامات دستی باقی‌مانده:** (۱) چرخش اعتبارنامه‌های SEC-01، (۲) `powershell -File scripts/security/purge-git-history.ps1 -Execute` و force-push هماهنگ‌شده، (۳) سپس `verify-security.ps1 -FailOnHistoricalSecrets` باید PASS شود.
+
 ### ✅ وضعیت اجرا — فاز ۴ پیاده‌سازی شد (۲۰۲۶-۱۰-۱۸)
 - **SEC-17 (کم):** `Presentation/appsettings.Development.json` از Git خارج شد (در `.gitignore` نگهبان صریح اضافه شد) و همهٔ مقادیر حساس داخلش (`Jwt:Key`، `Kavenegar:ApiKey`، `ConnectionStrings:*`، `Elasticsearch:Password`) خالی ماند؛ برای محیط محلی `.env` یا `dotnet user-secrets` استفاده می‌شود. `appsettings.Production.json` از فاز ۰ gitignored است.
 - **SEC-18 (کم):** `docker-compose.yml` اصلاح شد: `dockerfile: Presentation/Dockerfile` (مسیر قبلی `MainApi/Dockerfile` وجود نداشت)؛ `ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}` با امکان override از `.env`؛ `Encrypt=True` برای اتصال دیتابیس با توضیح صریح دربارهٔ `TrustServerCertificate` (فقط گواهی self-signed کانتینر محلی و الزام CA معتبر در استقرار واقعی)؛ انتظار سلامت دیتابیس (`condition: service_healthy`) برای `db-init` و `api`؛ رمز `sqlcmd` از طریق `SQLCMDPASSWORD` (نه `-P`) تا در process list دیده نشود. `Presentation/Dockerfile` نیز بازنویسی شد: restore چندپروژه‌ای، publish واقعی `Presentation.csproj`، healthcheck روی `/health/live` و نام DLL درست.
@@ -304,10 +316,16 @@ var key = $"{folder}/{Guid.NewGuid()}{ext}";   // نام کاملاً سمت س�
 7. **مستمر:** فاز ۶ + بازبینی امنیتی دوره‌ای.
 
 **چک‌لیست تأیید نهایی:**
-- `dotnet build -warnaserror` + اجرای کامل ۱۱٬۵۱۳ تست (بدون رگرسیون — تست‌های فعلی حفظ شوند).
+- `dotnet build -warnaserror` + اجرای کامل تست‌ها (بدون رگرسیون — تست‌های فعلی حفظ شوند).
 - تست‌های امنیتی جدید: ۴۰۳ برای SEC-02/03/05؛ هش توکن (SEC-07)؛ fail-closed وبهوک (SEC-06).
 - اسکن: `dotnet list package --vulnerable`؛ `gitleaks detect`؛ `npm audit` (اگر اگر前端 جدا است)؛ docker `trivy image` (در محیط دارای Docker).
 - بررسی دستی: نیازمند تغییرات کانفیگ production (کلیدهای rotated، فلگ‌ها روشن، allow-listها پر) پیش از استقرار.
+
+**وضعیت اجرای چک‌لیست (فاز ۵):** همهٔ موارد بالا خودکار شده‌اند: `scripts/security/verify-security.ps1` (اجرای محلی)
+و `.github/workflows/ci.yml` (چهار job: اسکن اسرار بازهٔ commit، اسکن کل تاریخچه، build+test، dependency audit).
+تنها اقلام باقی‌مانده، اقدامات دستی SEC-01 هستند: **چرخش اعتبارنامه‌ها**، **بازنویسی تاریخچهٔ Git**
+(`scripts/security/purge-git-history.ps1`) و سپس تأیید با `verify-security.ps1 -FailOnHistoricalSecrets`.
+رویهٔ کامل و چک‌لیست انتشار در [`docs/07-operations/security-verification.md`](docs/07-operations/security-verification.md) است.
 
 ---
 

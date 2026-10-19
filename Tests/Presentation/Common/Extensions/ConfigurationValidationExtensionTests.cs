@@ -27,6 +27,26 @@ public class ConfigurationValidationExtensionTests
         [$"FeatureManagement:{FeatureFlags.AdminWalletLedgerV2Enabled}"] = "false"
     };
 
+    /// <summary>
+    /// Configuration that satisfies every production gate added in security-audit phase 5
+    /// (Redis TLS, admin IPs, allowed origins, webhook IP allow-list, OTP pepper).
+    /// </summary>
+    private static Dictionary<string, string?> ProductionConfig()
+    {
+        var values = ValidConfig();
+        values["Cache:UseRedis"] = "true";
+        values["Cache:RedisConnectionString"] = "localhost:6379,ssl=true";
+        values["AllowedHosts"] = "api.example.com";
+        values["Auth:OtpPepper"] = "production-otp-pepper-value";
+        values[$"FeatureManagement:{FeatureFlags.PaymentCallbackIpWhitelistRequired}"] = "true";
+        // A non-empty Zarinpal section makes ValidateExternalServices require the merchant id.
+        values["ZarinPal:MerchantId"] = "11111111-1111-1111-1111-111111111111";
+        values["Zarinpal:AllowedIps:0"] = "1.2.3.4";
+        values["Security:AdminIpWhitelist:0"] = "10.0.0.10";
+        values["Security:AllowedOrigins:0"] = "https://app.example.com";
+        return values;
+    }
+
     private static WebApplicationBuilder BuildBuilder(
         Dictionary<string, string?> values,
         string environment = "Development")
@@ -205,12 +225,147 @@ public class ConfigurationValidationExtensionTests
     [Fact]
     public void ValidateRequiredConfiguration_ProductionWithTlsRedis_Passes()
     {
-        var values = ValidConfig();
-        values["Cache:UseRedis"] = "true";
-        values["Cache:RedisConnectionString"] = "localhost:6379,ssl=true";
-        var builder = BuildBuilder(values, Environments.Production);
+        var builder = BuildBuilder(ProductionConfig(), Environments.Production);
 
         Should.NotThrow(() => builder.ValidateRequiredConfiguration());
+    }
+
+    [Fact]
+    public void ValidateRequiredConfiguration_ProductionWithLeakedJwtKey_Throws()
+    {
+        // SEC-01: the signing key that leaked through Git history must be rejected.
+        var values = ProductionConfig();
+        values["Jwt:Key"] = "***SEC-01-REMOVED***";
+        var builder = BuildBuilder(values, Environments.Production);
+
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            builder.ValidateRequiredConfiguration());
+
+        ex.Message.ShouldContain("SEC-01");
+    }
+
+    [Fact]
+    public void ValidateRequiredConfiguration_ProductionWithoutOtpPepper_Throws()
+    {
+        // SEC-08: without a server pepper the OTP hash is offline-crackable.
+        var values = ProductionConfig();
+        values.Remove("Auth:OtpPepper");
+        var builder = BuildBuilder(values, Environments.Production);
+
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            builder.ValidateRequiredConfiguration());
+
+        ex.Message.ShouldContain("Auth:OtpPepper");
+    }
+
+    [Fact]
+    public void ValidateRequiredConfiguration_ProductionWithShortOtpPepper_Throws()
+    {
+        var values = ProductionConfig();
+        values["Auth:OtpPepper"] = "too-short";
+        var builder = BuildBuilder(values, Environments.Production);
+
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            builder.ValidateRequiredConfiguration());
+
+        ex.Message.ShouldContain("Auth:OtpPepper");
+    }
+
+    [Fact]
+    public void ValidateRequiredConfiguration_ProductionWithWildcardHosts_Throws()
+    {
+        // SEC-20: Host header injection.
+        var values = ProductionConfig();
+        values["AllowedHosts"] = "*";
+        var builder = BuildBuilder(values, Environments.Production);
+
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            builder.ValidateRequiredConfiguration());
+
+        ex.Message.ShouldContain("AllowedHosts");
+    }
+
+    [Fact]
+    public void ValidateRequiredConfiguration_ProductionWithoutAdminIpWhitelist_Throws()
+    {
+        // SEC-05: admin routes are fail-closed; an empty list must be caught at startup.
+        var values = ProductionConfig();
+        values.Remove("Security:AdminIpWhitelist:0");
+        var builder = BuildBuilder(values, Environments.Production);
+
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            builder.ValidateRequiredConfiguration());
+
+        ex.Message.ShouldContain("Security:AdminIpWhitelist");
+    }
+
+    [Fact]
+    public void ValidateRequiredConfiguration_ProductionWithWildcardOrigin_Throws()
+    {
+        // SEC-11/SEC-12: the redirect/CORS allow-list must be explicit.
+        var values = ProductionConfig();
+        values["Security:AllowedOrigins:0"] = "*";
+        var builder = BuildBuilder(values, Environments.Production);
+
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            builder.ValidateRequiredConfiguration());
+
+        ex.Message.ShouldContain("Security:AllowedOrigins");
+    }
+
+    [Fact]
+    public void ValidateRequiredConfiguration_ProductionWithWebhookIpWhitelistDisabled_Throws()
+    {
+        // SEC-06: the payment webhook IP allow-list must be enforced in production.
+        var values = ProductionConfig();
+        values[$"FeatureManagement:{FeatureFlags.PaymentCallbackIpWhitelistRequired}"] = "false";
+        var builder = BuildBuilder(values, Environments.Production);
+
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            builder.ValidateRequiredConfiguration());
+
+        ex.Message.ShouldContain(FeatureFlags.PaymentCallbackIpWhitelistRequired);
+    }
+
+    [Fact]
+    public void ValidateRequiredConfiguration_ProductionWithoutGatewayIps_Throws()
+    {
+        // SEC-06: flag on but no IPs would reject every callback (and means the list is unset).
+        var values = ProductionConfig();
+        values.Remove("Zarinpal:AllowedIps:0");
+        var builder = BuildBuilder(values, Environments.Production);
+
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            builder.ValidateRequiredConfiguration());
+
+        ex.Message.ShouldContain("Zarinpal:AllowedIps");
+    }
+
+    [Fact]
+    public void ValidateRequiredConfiguration_ProductionReportsEveryProblemAtOnce()
+    {
+        var values = ProductionConfig();
+        values["AllowedHosts"] = "*";
+        values.Remove("Auth:OtpPepper");
+        values.Remove("Zarinpal:AllowedIps:0");
+        var builder = BuildBuilder(values, Environments.Production);
+
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            builder.ValidateRequiredConfiguration());
+
+        ex.Message.ShouldContain("AllowedHosts");
+        ex.Message.ShouldContain("Auth:OtpPepper");
+        ex.Message.ShouldContain("Zarinpal:AllowedIps");
+    }
+
+    [Fact]
+    public void ValidateRequiredConfiguration_DevelopmentSkipsProductionHardening()
+    {
+        // The same lax values that fail in Production are accepted in Development.
+        var values = ValidConfig();
+        values["AllowedHosts"] = "*";
+
+        Should.NotThrow(() => BuildBuilder(values).ValidateRequiredConfiguration());
     }
 
     [Fact]

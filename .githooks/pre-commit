@@ -1,0 +1,44 @@
+#!/bin/sh
+# Secret scan for staged changes (security-audit phase 5).
+#
+# Installed with `scripts/security/install-git-hooks.ps1`, which sets
+# `git config core.hooksPath .githooks` - no external framework required.
+#
+# Order:
+#   1. refuse environment/settings files outright (SEC-01/SEC-17),
+#   2. run gitleaks when it is installed,
+#   3. fall back to the dependency-free PowerShell scanner otherwise.
+set -e
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+
+old_ifs=$IFS
+IFS='
+'
+for file in $staged; do
+  case "$file" in
+    .env|*/.env|otp.json|*/otp.json|\
+    appsettings.Production.json|*/appsettings.Production.json|\
+    appsettings.Staging.json|*/appsettings.Staging.json)
+      IFS=$old_ifs
+      echo "pre-commit: refusing to commit '$file' (secrets / environment file)." >&2
+      exit 1
+      ;;
+  esac
+done
+IFS=$old_ifs
+
+if command -v gitleaks >/dev/null 2>&1; then
+  exec gitleaks git --pre-commit --redact --staged --verbose --config .gitleaks.toml
+fi
+
+if command -v pwsh >/dev/null 2>&1; then
+  exec pwsh -NoProfile -File scripts/security/scan-secrets.ps1 -Staged
+fi
+
+if command -v powershell >/dev/null 2>&1; then
+  exec powershell -NoProfile -ExecutionPolicy Bypass -File scripts/security/scan-secrets.ps1 -Staged
+fi
+
+echo "pre-commit: no secret scanner available; install gitleaks or PowerShell." >&2
+exit 1

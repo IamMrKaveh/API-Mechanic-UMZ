@@ -1,5 +1,6 @@
 using Application.Auth.Contracts;
 using Infrastructure.Cache.Options;
+using SharedContracts.FeatureManagement;
 
 namespace Presentation.Common.Extensions;
 
@@ -16,6 +17,7 @@ public static class ConfigurationValidationExtension
         ValidateProductionCacheAndRateLimit(configuration, builder.Environment);
         ValidateCacheEncryption(configuration, builder.Environment);
         ValidateInitialAdmin(configuration, builder.Environment);
+        ValidateProductionHardening(configuration, builder.Environment);
 
         return builder;
     }
@@ -119,6 +121,110 @@ public static class ConfigurationValidationExtension
                 phoneNumbers.Count);
         }
     }
+
+    /// <summary>
+    /// Production-only security posture gate (phase 5 of the security audit). Every check
+    /// mirrors an audit finding whose fix only works if the deployment actually configures
+    /// it; failing fast at startup is preferable to silently running with a weakened posture.
+    /// All problems are reported at once so the operator can fix the list in one pass.
+    /// </summary>
+    private static void ValidateProductionHardening(
+        IConfiguration configuration,
+        IHostEnvironment environment)
+    {
+        if (!environment.IsProduction())
+            return;
+
+        var problems = new List<string>();
+
+        // SEC-01: the previously committed signing key must never be reused.
+        var jwtKey = configuration["Jwt:Key"];
+        if (!string.IsNullOrWhiteSpace(jwtKey)
+            && System.Text.RegularExpressions.Regex.IsMatch(
+                jwtKey, "Breaking[0-9]+Bad", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        {
+            problems.Add(
+                "Jwt:Key still matches the signing key that was exposed in Git history (SEC-01). " +
+                "Rotate it and set Jwt__Key from the secret store.");
+        }
+
+        // SEC-08: OTP hashes are only resistant to offline cracking with a server pepper.
+        var otpPepper = configuration["Auth:OtpPepper"];
+        if (string.IsNullOrWhiteSpace(otpPepper) || otpPepper.Length < 16)
+        {
+            problems.Add(
+                "Auth:OtpPepper must be configured with at least 16 characters in Production (SEC-08). " +
+                "Set Auth__OtpPepper from the secret store.");
+        }
+
+        // SEC-20: AllowedHosts="*" allows Host header injection.
+        var allowedHosts = configuration["AllowedHosts"];
+        if (string.IsNullOrWhiteSpace(allowedHosts)
+            || allowedHosts.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Any(host => host == "*"))
+        {
+            problems.Add(
+                "AllowedHosts must list the real hostnames in Production; the wildcard '*' is rejected (SEC-20).");
+        }
+
+        // SEC-05: admin routes are fail-closed, but an empty whitelist would lock out all
+        // administrators; require the operator to state the real IPs instead.
+        if (GetSectionValues(configuration, "Security:AdminIpWhitelist").Count == 0)
+        {
+            problems.Add(
+                "Security:AdminIpWhitelist must list the operations-room IPs in Production (SEC-05).");
+        }
+
+        // SEC-11/SEC-12: the redirect allow-list is also the CORS origin list.
+        var allowedOrigins = GetSectionValues(configuration, "Security:AllowedOrigins");
+        if (allowedOrigins.Count == 0)
+        {
+            problems.Add("Security:AllowedOrigins must list the real frontend origins in Production (SEC-11).");
+        }
+        else if (allowedOrigins.Any(origin => origin.Contains('*')))
+        {
+            problems.Add("Security:AllowedOrigins must not contain wildcards in Production (SEC-12).");
+        }
+
+        // SEC-06: the webhook IP allow-list is only enforced when the flag is on; an empty
+        // list with the flag on would reject every gateway callback, so require both.
+        var ipWhitelistFlag =
+            $"{FeatureManagementExtensions.SectionName}:{FeatureFlags.PaymentCallbackIpWhitelistRequired}";
+        if (!IsEnabled(configuration, ipWhitelistFlag))
+        {
+            problems.Add($"{ipWhitelistFlag} must be true in Production (SEC-06).");
+        }
+
+        if (GetSectionValues(configuration, "Zarinpal:AllowedIps").Count == 0)
+        {
+            problems.Add(
+                "Zarinpal:AllowedIps must list the payment gateway's official callback IPs in Production (SEC-06).");
+        }
+
+        if (problems.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Production security configuration is incomplete:" + Environment.NewLine +
+                string.Join(Environment.NewLine, problems.Select(problem => $" - {problem}")));
+        }
+
+        if (IsEnabled(configuration, "Swagger:Enabled"))
+        {
+            Log.Warning(
+                "Swagger:Enabled is true in Production; the OpenAPI surface is publicly reachable. " +
+                "Set Swagger:Enabled=false unless the API is protected by network policy.");
+        }
+    }
+
+    private static List<string> GetSectionValues(IConfiguration configuration, string sectionPath)
+        => configuration.GetSection(sectionPath).GetChildren()
+            .Select(child => child.Value)
+            .OfType<string>()
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToList();
+
+    private static bool IsEnabled(IConfiguration configuration, string key)
+        => bool.TryParse(configuration[key], out var enabled) && enabled;
 
     private static void ValidateProductionCacheAndRateLimit(
         IConfiguration configuration,
