@@ -1,10 +1,20 @@
+# Secret scanning and hygiene hooks.
+#
+# Two supported ways to enable the same protection:
+#   1. framework-free (recommended here): `pwsh -File scripts/security/install-git-hooks.ps1`
+#      which points core.hooksPath at .githooks/pre-commit,
+#   2. pre-commit framework: `pip install pre-commit && pre-commit install`.
+#
+# The gitleaks hook is pinned to the same version used by CI (.github/workflows/ci.yml)
+# and scripts/security/verify-security.ps1, and reads .gitleaks.toml automatically.
 repos:
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.4
+    rev: v8.30.1
     hooks:
       - id: gitleaks
-        name: gitleaks (staged)
-        args: ["protect", "--staged", "--redact", "--config", ".gitleaks.toml"]
+        name: gitleaks (staged secrets)
+        # The hook entry is `gitleaks git --pre-commit --redact --staged --verbose`;
+        # .gitleaks.toml is picked up from the repository root.
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -22,4 +32,10 @@ repos:
         entry: dotnet format --verify-no-changes --severity warn
         language: system
         types_or: [c#]
+        pass_filenames: false
+
+      - id: blocked-environment-files
+        name: block .env / production settings files
+        entry: scripts/security/block-environment-files.sh
+        language: script
         pass_filenames: false

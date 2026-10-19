@@ -43,7 +43,8 @@ Mechanic API یک API فروشگاهی اینترنتی روی .NET 9 است ک�
 | [05-api/conventions.md](05-api/conventions.md) | قراردادهای سراسری REST: مسیردهی، نسخه‌بندی، پاکت پاسخ، خطا، Swagger |
 | [06-testing/testing-strategy.md](06-testing/testing-strategy.md) | ساختار پروژه Tests، TestInfrastructure، اجرای تست‌ها |
 | [07-operations/deployment.md](07-operations/deployment.md) | Dockerfile، تحلیل docker-compose، مایگریشن و نکات انتشار |
-| [07-operations/security.md](07-operations/security.md) | DataProtection، ماژول Security، gitleaks و pre-commit |
+| [07-operations/security.md](07-operations/security.md) | DataProtection، ماژول Security، گیت‌های استارت، gitleaks و pre-commit |
+| [07-operations/security-verification.md](07-operations/security-verification.md) | تأیید خودکار امنیتی، چرخش رازها، بازنویسی تاریخچهٔ Git و چک‌لیست انتشار |
 | [08-appendix/glossary.md](08-appendix/glossary.md) | واژه‌نامه اصطلاحات با ارجاع به کد واقعی و سند اصلی |
 
 ## درخت کامل مستندات
@@ -75,7 +76,8 @@ docs/
 │   └── testing-strategy.md
 ├── 07-operations/
 │   ├── deployment.md
-│   └── security.md
+│   ├── security.md
+│   └── security-verification.md
 └── 08-appendix/
     └── glossary.md
 ```

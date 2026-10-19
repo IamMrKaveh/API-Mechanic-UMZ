@@ -1,0 +1,50 @@
+version: 2
+
+# Continuous dependency hygiene for the security audit's "sustained" phase:
+# vulnerable packages surface as pull requests that the CI dependency audit and
+# test suite validate automatically.
+updates:
+  - package-ecosystem: nuget
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - security
+    groups:
+      microsoft-extensions:
+        patterns:
+          - 'Microsoft.*'
+      entity-framework:
+        patterns:
+          - 'Npgsql*'
+          - 'Microsoft.EntityFrameworkCore*'
+      testing:
+        patterns:
+          - 'xunit*'
+          - 'NSubstitute'
+          - 'Shouldly'
+          - 'Bogus'
+          - 'Respawn'
+          - 'Testcontainers*'
+          - 'coverlet*'
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - ci
+
+  - package-ecosystem: docker
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - docker

@@ -1,2 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Shell hooks and scripts must keep LF endings, otherwise Git Bash on Windows
+# fails with "\r: command not found" when the pre-commit hook runs.
+.githooks/* text eol=lf
+scripts/security/*.sh text eol=lf
+
+# PowerShell scripts and documentation keep their native endings.
+*.ps1 text eol=crlf
