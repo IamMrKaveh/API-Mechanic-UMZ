@@ -23,10 +23,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/security/verify-secu
 | ۱ | `.env` و فایل‌های محیطی ردیابی نشده باشند | `git ls-files` | FAIL |
 | ۲ | `Presentation/appsettings.json` هیچ راز زنده‌ای نداشته باشد | تحلیل JSONC | FAIL |
 | ۳ | Build با هشدار به‌عنوان خطا | `dotnet build -warnaserror` | FAIL |
-| ۴ | کل تست‌ها | `dotnet test` | FAIL |
-| ۵ | بستهٔ آسیب‌پذیر NuGet | `dotnet list package --vulnerable --include-transitive` | FAIL |
-| ۶ | اسرار در فایل‌های کاری | `gitleaks dir` | FAIL |
-| ۷ | اسرار در تاریخچهٔ Git | `gitleaks git --log-opts=--all` | PENDING تا بازنویسی تاریخچه |
+| ۴ | نگهبان‌های امنیتی فاز ۶ | `dotnet test --filter "Tests.Security.*"` | FAIL |
+| ۵ | کل تست‌ها | `dotnet test` | FAIL |
+| ۶ | بستهٔ آسیب‌پذیر NuGet | `dotnet list package --vulnerable --include-transitive` | FAIL |
+| ۷ | اسرار در فایل‌های کاری | `gitleaks dir` | FAIL |
+| ۸ | اسرار در تاریخچهٔ Git | `gitleaks git --log-opts=--all` | PENDING تا بازنویسی تاریخچه |
 
 گزینه‌ها:
 
@@ -42,7 +43,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/security/verify-secu
 | بررسی | وضعیت |
 |---|---|
 | Build با `-warnaserror` | PASS (۰ خطا، ۰ هشدار) |
-| کل تست‌ها | PASS — ۱۱٬۵۶۵ تست (۱۰٬۰۳۴ پاس + ۱٬۵۳۱ اسکیپ دیتابیسی بدون Docker؛ در CI با Docker همه اجرا می‌شوند) |
+| نگهبان‌های امنیتی فاز ۶ | PASS (۳۱ تست مجموعهٔ `Tests.Security`) |
+| کل تست‌ها | PASS — ۱۱٬۵۹۹ تست (۱۰٬۰۶۸ پاس + ۱٬۵۳۱ اسکیپ دیتابیسی بدون Docker؛ در CI با Docker همه اجرا می‌شوند) |
 | بسته‌های آسیب‌پذیر | PASS (هیچ بستهٔ آسیب‌پذیری در ۷ گزارش پروژه) |
 | `gitleaks dir` (کد فعلی) | PASS (۰ یافته در فایل‌های قابل commit) |
 | `gitleaks git` (تاریخچه) | **PENDING** — ۱۴۱ یافتهٔ تاریخی مربوط به پیش از فاز ۰ (حذف `otp.json`، `appsettings.Production.json`، `MainApi/.env` و مقادیر داخل appsettings قدیمی) |

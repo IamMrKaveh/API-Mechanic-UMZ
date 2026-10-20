@@ -37,7 +37,7 @@ OTP و سشن‌های کاربر موضوع سند آینده `03-modules/ident
 
 | Middleware | نقش عملیاتی |
 |---|---|
-| `SecurityHeadersMiddleware` | ست‌کردن CSP، HSTS، `X-Frame-Options`، `Referrer-Policy` و `Permissions-Policy` طبق `SecurityHeadersOptions` |
+| `SecurityHeadersMiddleware` | ست‌کردن CSP (با nonce، `EnableNonce=true`)، HSTS، `X-Frame-Options`، `Referrer-Policy`، `Permissions-Policy` و COOP/COEP/CORP (هر سه در appsettings فعال‌اند) طبق `SecurityHeadersOptions` |
 | `UseAdminIpWhitelist` | محدودکردن مسیرهای ادمین (`/api/admin` و `/api/v{version}/admin`) به `Security:AdminIpWhitelist`؛ **fail-closed** وقتی لیست خالی است |
 | `WebhookIpWhitelistMiddleware` | پذیرش Callbackهای درگاه پرداخت فقط از IPهای مجاز (`Webhook:AllowedPaths`، `Zarinpal:AllowedIps`)؛ غیرفعال‌بودن فلگ یا لیست خالی هر دو در لاگ ثبت می‌شوند |
 | `SessionActivityMiddleware` | ردیابی آخرین فعالیت سشن‌های کاربر (جزئیات سشن: سند آینده `03-modules/identity/auth-security.md`) |
@@ -117,6 +117,7 @@ Hook ابتدا فایل‌های محیطی (`.env`، `appsettings.Production.j
 ## اسناد مرتبط
 
 - تأیید امنیتی، چرخش رازها و چک‌لیست انتشار: [security-verification.md](security-verification.md)
+- نقاط قوت امنیتی و نگهبان‌های خودکار (فاز ۶): [security-invariants.md](security-invariants.md)
 - گزارش ممیزی و وضعیت فازها: [SECURITY-AUDIT-REPORT.md](../../SECURITY-AUDIT-REPORT.md)
 - جریان‌های OTP، JWT و سشن کاربر: `03-modules/identity/auth-security.md` (فاز بعدی داکیومنت‌سازی)
 - تنظیمات مرتبط (`Security`، `SecurityHeaders`، `Webhook`): [01-getting-started/configuration.md](../01-getting-started/configuration.md)

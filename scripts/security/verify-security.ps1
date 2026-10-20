@@ -398,11 +398,30 @@ $buildSucceeded = Invoke-Checked -Check 'dotnet build -warnaserror' -Action {
 # 4. Tests --------------------------------------------------------------------
 if ($SkipTests) {
     Add-Result -Check 'dotnet test' -Status 'SKIPPED' -Detail 'disabled with -SkipTests'
+    Add-Result -Check 'security invariants (phase 6)' -Status 'SKIPPED' -Detail 'disabled with -SkipTests'
 }
 elseif (-not $buildSucceeded) {
     Add-Result -Check 'dotnet test' -Status 'SKIPPED' -Detail 'build failed'
+    Add-Result -Check 'security invariants (phase 6)' -Status 'SKIPPED' -Detail 'build failed'
 }
 else {
+    # Phase 6 invariants run first: they are fast and point at the exact file/line
+    # when a documented security strength has regressed.
+    Invoke-Checked -Check 'security invariants (phase 6)' -Action {
+        $invariants = Invoke-Native -FilePath 'dotnet' -Arguments @(
+            'test', 'Tests/Tests.csproj', '-c', 'Release', '--no-build',
+            '--filter', 'FullyQualifiedName~Tests.Security.',
+            '--logger', 'console;verbosity=minimal'
+        )
+
+        $summary = ($invariants.Output -split "`r?`n" | Where-Object { $_ -match 'Passed!\s|Failed!\s' } | Select-Object -Last 1)
+        if ($invariants.ExitCode -ne 0) {
+            $tail = ($invariants.Output -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -Last 10) -join [Environment]::NewLine
+            throw ('security invariants failed:' + [Environment]::NewLine + $tail)
+        }
+
+        $summary.Trim()
+    } | Out-Null
     Invoke-Checked -Check 'dotnet test' -Action {
         $resultsDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ('mechanic-tests-' + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $resultsDirectory -Force | Out-Null

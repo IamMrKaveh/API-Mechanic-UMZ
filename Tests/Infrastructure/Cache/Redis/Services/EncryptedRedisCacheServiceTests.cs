@@ -205,6 +205,61 @@ public class EncryptedRedisCacheServiceTests
         await _inner.Received(1).ExistsAsync("k", Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task GetAsync_ForSensitiveType_WhenAuthenticationTagIsTampered_ReturnsDefault()
+    {
+        // AES-GCM authenticates the ciphertext: a modified payload must never be
+        // decrypted into attacker-controlled data (phase 6, audit item 8).
+        var sut = CreateEnabledSut();
+
+        EncryptedRedisCacheService.EncryptedPayload? captured = null;
+        await _inner.SetAsync(
+            Arg.Any<string>(),
+            Arg.Do<EncryptedRedisCacheService.EncryptedPayload>(p => captured = p),
+            Arg.Any<TimeSpan?>(),
+            Arg.Any<CancellationToken>());
+
+        await sut.SetAsync("secret-k", new SensitiveDto { Secret = "hunter2" });
+        captured.ShouldNotBeNull();
+
+        var tampered = new EncryptedRedisCacheService.EncryptedPayload
+        {
+            Version = captured!.Version,
+            KeyId = captured.KeyId,
+            NonceBase64 = captured.NonceBase64,
+            CiphertextBase64 = captured.CiphertextBase64,
+            TagBase64 = Convert.ToBase64String(new byte[16])
+        };
+
+        _inner.GetAsync<EncryptedRedisCacheService.EncryptedPayload>("secret-k", Arg.Any<CancellationToken>())
+            .Returns(tampered);
+
+        var result = await sut.GetAsync<SensitiveDto>("secret-k");
+
+        result.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task SetAsync_ForSensitiveType_ProducesAFreshNoncePerWrite()
+    {
+        // A reused nonce would break AES-GCM confidentiality guarantees.
+        var sut = CreateEnabledSut();
+
+        var payloads = new List<EncryptedRedisCacheService.EncryptedPayload>();
+        await _inner.SetAsync(
+            Arg.Any<string>(),
+            Arg.Do<EncryptedRedisCacheService.EncryptedPayload>(payloads.Add),
+            Arg.Any<TimeSpan?>(),
+            Arg.Any<CancellationToken>());
+
+        await sut.SetAsync("secret-k", new SensitiveDto { Secret = "hunter2" });
+        await sut.SetAsync("secret-k", new SensitiveDto { Secret = "hunter2" });
+
+        payloads.Count.ShouldBe(2);
+        payloads[0].NonceBase64.ShouldNotBe(payloads[1].NonceBase64);
+        payloads[0].CiphertextBase64.ShouldNotBe(payloads[1].CiphertextBase64);
+    }
+
     [Sensitive]
     public sealed class SensitiveDto
     {
