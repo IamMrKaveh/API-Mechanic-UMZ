@@ -430,7 +430,7 @@ After the GitHub Release is published, update the Homebrew tap automatically:
         with:
           identifier: MyOrg.MyTool
           version: ${{ steps.version.outputs.version }}
-          installers-***SEC-01-REMOVED*** '\.zip$'
+          installers-regex: '\.zip$'
           token: ${{ secrets.WINGET_GITHUB_TOKEN }}
 ```
 

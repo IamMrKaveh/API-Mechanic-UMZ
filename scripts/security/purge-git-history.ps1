@@ -63,11 +63,14 @@ Set-StrictMode -Version Latest
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $repoRoot
 
+# File-level leaks. The last three are paths from the pre-audit project layout that
+# no longer exist in HEAD; removing them keeps legacy connection strings out of history.
 $pathsToRemove = @(
     'otp.json'
     'Presentation/appsettings.Production.json'
     'MainApi/.env'
     'MainApi/appsettings.json'
+    'DataAccessLayer/MechanicContext.cs'
 )
 
 function Invoke-Native {
@@ -184,11 +187,14 @@ if (-not $ReplacementsPath) {
         $temporaryReplacements = Join-Path ([System.IO.Path]::GetTempPath()) ('filter-repo-replacements-' + [guid]::NewGuid().ToString('N') + '.txt')
         $lines = New-Object System.Collections.Generic.List[string]
         foreach ($secret in $secrets) {
-            # Regex-escape so the literal leaked value is matched exactly once.
-            $lines.Add('***SEC-01-REMOVED***' + [System.Text.RegularExpressions.Regex]::Escape($secret) + '==>***SEC-01-REMOVED***')
+            # Use *literal* replacements: regex-escaping a secret makes filter-repo's
+            # Python regex engine interpret the backslashes and silently fail to match.
+            if ($secret.Length -lt 8) { continue }
+            if ($secret.Contains('==>') -or $secret.Contains("`n") -or $secret.Contains("`r")) { continue }
+            $lines.Add($secret + '==>***SEC-01-REMOVED***')
         }
-        # Remove all occurrences of the leaked signing-key pattern even if a variant slipped through.
-        $lines.Add('***SEC-01-REMOVED***Breaking[0-9]+Bad[A-Za-z0-9!@#$%^&*()+_\-]*==>***SEC-01-REMOVED***')
+        # Catch variants of the leaked signing key that a partial secret may have missed.
+        $lines.Add('regex:Breaking[0-9]+Bad[A-Za-z0-9!@#$%^&*()+_\-]*==>***SEC-01-REMOVED***')
         Set-Content -LiteralPath $temporaryReplacements -Value $lines -Encoding ASCII
         $ReplacementsPath = $temporaryReplacements
         Write-Host ("Redaction list built from {0} historical secret value(s)." -f $secrets.Count)

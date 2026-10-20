@@ -47,7 +47,21 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/security/verify-secu
 | کل تست‌ها | PASS — ۱۱٬۵۹۹ تست (۱۰٬۰۶۸ پاس + ۱٬۵۳۱ اسکیپ دیتابیسی بدون Docker؛ در CI با Docker همه اجرا می‌شوند) |
 | بسته‌های آسیب‌پذیر | PASS (هیچ بستهٔ آسیب‌پذیری در ۷ گزارش پروژه) |
 | `gitleaks dir` (کد فعلی) | PASS (۰ یافته در فایل‌های قابل commit) |
-| `gitleaks git` (تاریخچه) | **PENDING** — ۱۵۰ یافتهٔ تاریخی مربوط به پیش از فاز ۰ (حذف `otp.json`، `appsettings.Production.json`، `MainApi/.env` و مقادیر داخل appsettings قدیمی) |
+| `gitleaks git` (تاریخچه) | **PASS — ۰ یافته** پس از بازنویسی تاریخچه (۲۰۲۶-۱۰-۲۰؛ پیش از آن ۱۵۰ یافته) |
+
+### وضعیت چرخش اعتبارنامه‌ها (۲۰۲۶-۱۰-۲۰)
+
+| راز | وضعیت | توضیح |
+|---|---|---|
+| `Jwt__Key` | ✅ چرخش شد | کلید ۴۸ بایتی تصادفی جدید (Base64) در `.env`؛ مقادیر قدیمی در تاریخچه حذف شدند |
+| `Auth__OtpPepper` | ✅ چرخش شد | مقدار تصادفی جدید در `.env`؛ OTPهای صادرشدهٔ قبلی باطل شدند |
+| رمز PostgreSQL / Supabase | ⏳ نیازمند داشبورد Supabase | ریست رمز دیتابیس و به‌روزرسانی `ConnectionStrings__*` |
+| کلیدهای ArvanCloud S3 | ⏳ نیازمند پنل آروان | ساخت کلید جدید و ابطال کلید قبلی |
+| کلید API کاوه‌نگار | ⏳ نیازمند پنل کاوه‌نگار | صدور کلید جدید و غیرفعال‌کردن قبلی |
+| شمارهٔ ادمین bootstrap | ✅ خالی است | `InitialAdmin__PhoneNumbers` در appsettings خالی است |
+
+> کلیدهای سرویس‌های بیرونی فقط از داشبورد خودشان قابل چرخش‌اند؛ مقادیر قبلی آن‌ها باید «لو رفته» فرض شوند
+> و پس از چرخش در `.env`/Secret Manager جایگزین شوند. اسکن تاریخچه بدون توجه به این مقادیر پاس است.
 
 ## ۲) سه لایهٔ اجرای اسکن اسرار
 
@@ -87,34 +101,45 @@ pip install pre-commit; pre-commit install
 
 ## ۴) بازنویسی تاریخچهٔ Git
 
-پیش‌نیاز: نصب `git filter-repo` (`pip install git-filter-repo` یا `winget install GitHub.git-filter-repo`).
+**وضعیت: انجام شد (۲۰۲۶-۱۰-۲۰).** تاریخچهٔ محلی بازنویسی شد و اسکن `gitleaks git` از **۱۵۰ یافته به صفر** رسید.
+پس از بازنویسی: `349` commit بازنویسی‌شده، مسیرهای `otp.json` / `Presentation/appsettings.Production.json` /
+`MainApi/.env` / `MainApi/appsettings.json` / `DataAccessLayer/MechanicContext.cs` حذف شدند و مقادیر راز
+(کلید JWT، کلید کاوه‌نگار، رمز رشته‌های اتصال) با `CHANGE_ME` جایگزین شدند. بکاپ پیش از بازنویسی:
+`%TEMP%\mechanic-pre-rewrite-*.bundle`.
+
+رویهٔ اجرا (برای بازتولید یا کلون جدید):
 
 ```powershell
-# ۱) خشک‌کردن و دیدن نقشهٔ کار (بدون تغییر)
+# ۱) نصب git-filter-repo (یا استفاده از ماژول پایتون)
+pip install git-filter-repo
+
+# ۲) دیدن نقشهٔ کار (بدون تغییر)
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/security/purge-git-history.ps1
 
-# ۲) اجرای واقعی (بکاپ bundle به‌صورت پیش‌فرض در %TEMP% ساخته می‌شود)
+# ۳) اجرای واقعی (بکاپ bundle به‌صورت پیش‌فرض در %TEMP% ساخته می‌شود)
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/security/purge-git-history.ps1 -Execute
 ```
 
 اسکریپت این کارها را انجام می‌دهد:
 
-1. صیغهٔ وجود `git filter-repo`، clean بودن working tree و ساخت بکاپ `git bundle`.
+1. بررسی وجود `git filter-repo` (یا ماژول پایتون)، clean بودن working tree و ساخت بکاپ `git bundle`.
 2. حذف مسیرهای کل لو‌رفته: `otp.json`، `Presentation/appsettings.Production.json`، `MainApi/.env`، `MainApi/appsettings.json`.
 3. ساخت فهرست redaction از گزارش gitleaks (مقادیر راز هرگز چاپ نمی‌شوند) و اجرای `git filter-repo --replace-text`
    برای پاک‌کردن مقادیر باقی‌مانده در سایر فایل‌های تاریخی (SMS، connection string، docker-compose، appsettings).
 4. بازنویسی همهٔ commitها و tagها.
 
-پس از اجرا:
+پس از بازنویسی، remote دوباره وصل شد و تاریخچهٔ بازنویسی‌شده با `--force-with-lease` روی `origin/main` منتشر شد (remote اکنون همان تاریخچهٔ پاک را دارد). برای تکرار در آینده:
 
 ```powershell
-git remote add origin https://github.com/<owner>/<repo>.git
 git push --force-with-lease origin main
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/security/verify-security.ps1 -FailOnHistoricalSecrets   # باید PASS شود
 ```
 
 > ⚠️ همهٔ هش‌های commit عوض می‌شوند و هر همکار باید **دوباره clone** کند؛ کلون‌های قدیمی همچنان رازها را دارند.
-> همچنین job هفتگی `secret-history-scan` در CI پس از این مرحله سبز می‌شود.
+>
+> **نکتهٔ GitHub:** پس از بازنویسی، `refs/pull/*` (و fork‌های موجود) ممکن است همچنان به commitهای قدیمی اشاره کنند و قابل حذف با push نیستند.
+> تا زمانی که GitHub Support آن‌ها را purge نکند، چرخش کلیدهای بیرونی (بخش ۳) تنها راه بی‌اثرکردن مقادیر لو‌رفته است.
+> همچنین job هفتگی `secret-history-scan` در CI پس از push همین تاریخچه سبز می‌شود (روی کلون محلی اکنون سبز است).
 
 ## ۵) گیت‌های امنیتی استارت در Production
 

@@ -236,7 +236,7 @@ COMMIT;
 
 ### Pattern Matching Uses Regex
 
-The `*` and `?` in \d commands are converted to regex (`.*` and `.`). Advanced regex like `[0-9]` works. Important differences from standard ***SEC-01-REMOVED***
+The `*` and `?` in \d commands are converted to regex (`.*` and `.`). Advanced regex like `[0-9]` works. Important differences from standard regex:
 
 - `.` is a schema/object separator, not any-char (use `?` for any single char)
 - `$` is matched literally, not as an anchor (pattern must match whole name anyway)

@@ -109,7 +109,7 @@ public class DotEnvLoaderTests : IDisposable
     {
         // Connection strings contain '=' and ';' - only the first '=' splits.
         const string connection =
-            "Host=localhost;Port=5432;Database=ledka;***SEC-01-REMOVED***;SSL Mode=Require";
+            "Host=localhost;Port=5432;Database=ledka;Username=postgres;Password=1234;SSL Mode=Require";
         var path = WriteEnvFile($"ConnectionStrings__DefaultConnection={connection}");
 
         DotEnvLoader.Load(path);

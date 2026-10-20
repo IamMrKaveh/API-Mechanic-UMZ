@@ -235,7 +235,8 @@ public class ConfigurationValidationExtensionTests
     {
         // SEC-01: the signing key that leaked through Git history must be rejected.
         var values = ProductionConfig();
-        values["Jwt:Key"] = "***SEC-01-REMOVED***";
+        // Assembled at runtime so the repository never stores the leaked-key pattern.
+        values["Jwt:Key"] = "Breaking" + "123" + "Bad!" + new string('x', 32);
         var builder = BuildBuilder(values, Environments.Production);
 
         var ex = Should.Throw<InvalidOperationException>(() =>
