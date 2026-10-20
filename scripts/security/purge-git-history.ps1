@@ -22,7 +22,9 @@
     passed, and creates a backup bundle by default.
 
     Prerequisites: `git filter-repo` (pip install git-filter-repo / winget install
-    GitHub.git-filter-repo). Run it only after rotating the credentials.
+    GitHub.git-filter-repo). On Windows the pip module is used through
+    `python -m git_filter_repo` when the `git filter-repo` alias is unavailable.
+    Run it only after rotating the credentials.
 
 .PARAMETER Execute
     Perform the rewrite. Without this switch the script only prints the plan.
@@ -36,6 +38,10 @@
 .PARAMETER GitleaksPath
     Path to a gitleaks executable used to build the replacement list.
 
+.PARAMETER PythonPath
+    Python interpreter used for the `-m git_filter_repo` fallback when
+    `git filter-repo` is not available on PATH (Windows-friendly).
+
 .EXAMPLE
     powershell -NoProfile -ExecutionPolicy Bypass -File scripts/security/purge-git-history.ps1
 
@@ -47,7 +53,8 @@ param(
     [switch]$Execute,
     [string]$ReplacementsPath,
     [switch]$SkipBackup,
-    [string]$GitleaksPath
+    [string]$GitleaksPath,
+    [string]$PythonPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -91,11 +98,41 @@ if (-not (Test-Path -LiteralPath '.git')) {
     throw 'Run this script inside the repository clone.'
 }
 
-$filterRepo = Invoke-Native -FilePath 'git' -Arguments @('filter-repo', '--version')
-if ($filterRepo.ExitCode -ne 0) {
+# Resolve git-filter-repo -----------------------------------------------------
+# Preferred: `git filter-repo` on PATH. Windows fallback: the Python module
+# (`pip install git-filter-repo` provides `python -m git_filter_repo`), because
+# Git for Windows does not always resolve a bare `git-filter-repo` script.
+function Resolve-FilterRepo {
+    param([string]$Python)
+
+    $direct = Invoke-Native -FilePath 'git' -Arguments @('filter-repo', '--version')
+    if ($direct.ExitCode -eq 0) {
+        return [pscustomobject]@{ File = 'git'; Prefix = @('filter-repo') }
+    }
+
+    $candidates = @()
+    if ($Python) { $candidates += $Python }
+    foreach ($name in @('python', 'python3', 'py')) {
+        $command = Get-Command $name -ErrorAction SilentlyContinue
+        if ($command) { $candidates += $command.Source }
+    }
+
+    foreach ($candidate in $candidates) {
+        $module = Invoke-Native -FilePath $candidate -Arguments @('-m', 'git_filter_repo', '--version')
+        if ($module.ExitCode -eq 0) {
+            return [pscustomobject]@{ File = $candidate; Prefix = @('-m', 'git_filter_repo') }
+        }
+    }
+
+    return $null
+}
+
+$filterRepoCommand = Resolve-FilterRepo -Python $PythonPath
+if ($null -eq $filterRepoCommand) {
     Write-Host 'git filter-repo is not installed.' -ForegroundColor Red
-    Write-Host '  pip install git-filter-repo'
+    Write-Host '  pip install git-filter-repo        # provides python -m git_filter_repo'
     Write-Host '  or: winget install GitHub.git-filter-repo'
+    Write-Host 'Then re-run, optionally with -PythonPath <python.exe>.'
     Write-Host 'See docs/07-operations/security-verification.md for the full runbook.'
     exit 2
 }
@@ -187,11 +224,13 @@ if (-not $SkipBackup) {
 
 # Rewrite ---------------------------------------------------------------------
 try {
-    $arguments = @('filter-repo', '--force', '--invert-paths')
+    $arguments = @()
+    $arguments += $filterRepoCommand.Prefix
+    $arguments += @('--force', '--invert-paths')
     foreach ($path in $pathsToRemove) { $arguments += @('--path', $path) }
     if ($ReplacementsPath) { $arguments += @('--replace-text', $ReplacementsPath) }
 
-    $rewrite = Invoke-Native -FilePath 'git' -Arguments $arguments
+    $rewrite = Invoke-Native -FilePath $filterRepoCommand.File -Arguments $arguments
     if ($rewrite.ExitCode -ne 0) {
         throw ('git filter-repo failed: ' + $rewrite.Output.Trim())
     }
