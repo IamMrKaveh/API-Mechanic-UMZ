@@ -1,4 +1,4 @@
-﻿using Application.Payment.Contracts;
+using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 using Domain.Order.Aggregates;
 using Domain.Order.Exceptions;
@@ -254,6 +254,31 @@ public class PaymentServiceTests : HandlerTestBase
         order.IsPaid.ShouldBeTrue();
         _paymentRepository.Received(1).Update(transaction);
         await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task VerifyPaymentAsync_PassesTheServerSideTransactionAmountToTheGateway()
+    {
+        // Phase 6 invariant (audit item 6): the amount verified with the gateway
+        // always comes from the stored transaction, never from caller input.
+        var userId = UserId.NewId();
+        var order = NewOrder(userId);
+        var transaction = NewTransaction(order.Id, userId);
+        _paymentRepository.GetByAuthorityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(transaction);
+        _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
+        _gateway.GatewayName.Returns(transaction.Gateway.Value);
+        _gateway.VerifyAsync(Arg.Any<string>(), Arg.Any<Money>(), Arg.Any<CancellationToken>())
+            .Returns(new PaymentVerificationResult(Guid.NewGuid(), true, 987654L, "6037-****", 1500m));
+
+        transaction.Amount.ShouldNotBeNull();
+
+        await _sut.VerifyPaymentAsync(transaction.Authority.Value, CancellationToken.None);
+
+        await _gateway.Received(1).VerifyAsync(
+            transaction.Authority.Value,
+            transaction.Amount,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
