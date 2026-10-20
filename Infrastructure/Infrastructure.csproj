@@ -44,7 +44,7 @@
 		<PackageReference Include="Elastic.Transport" Version="0.15.1" />
 
 		<!-- Storage / External خدمات -->
-		<PackageReference Include="AWSSDK.S3" Version="4.0.20.2" />
+		<PackageReference Include="AWSSDK.S3" Version="4.0.104.5" />
 		<PackageReference Include="Kavenegar" Version="1.2.5" />
 
 		<!-- Cloud Secrets -->
