@@ -28,7 +28,7 @@ public class GetInventoryReportIntegrationTests(PostgresContainerFixture fixture
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetInventoryReportAsync_EmptyDatabase_ReturnsAllZeroCounts()
     {
         var result = await _sut.GetInventoryReportAsync(CancellationToken.None);

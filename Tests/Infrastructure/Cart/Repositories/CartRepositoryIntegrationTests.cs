@@ -1,4 +1,4 @@
-﻿using Domain.Cart.ValueObjects;
+using Domain.Cart.ValueObjects;
 using Infrastructure.Cart.Repositories;
 using Tests.TestInfrastructure.Base;
 
@@ -16,7 +16,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Add_AndFindByIdAsync_PersistsCartAndReturnsItWithCartItems()
     {
         var user = await SeedUserAsync();
@@ -54,7 +54,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         reloadedItem.Quantity.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindActiveByUserIdAsync_WhenActiveCartExists_ReturnsCart()
     {
         var user = await SeedUserAsync();
@@ -71,7 +71,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         found.IsCheckedOut.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindActiveByUserIdAsync_WhenCartIsCheckedOut_ReturnsNull()
     {
         var user = await SeedUserAsync();
@@ -87,7 +87,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         found.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindActiveByGuestTokenAsync_WhenActiveCartExists_ReturnsCart()
     {
         var guestToken = GuestToken.Generate();
@@ -102,7 +102,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         found!.GuestToken.ShouldBe(guestToken);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_WhenItemAddedToExistingCart_PersistsNewItem()
     {
         var user = await SeedUserAsync();
@@ -122,7 +122,7 @@ public class CartRepositoryIntegrationTests(PostgresContainerFixture fixture) : 
         reloaded!.CartItems.Any(i => i.VariantSku.Value == "NEW-SKU").ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Remove_DeletesCartFromDatabase()
     {
         var guestToken = GuestToken.Generate();

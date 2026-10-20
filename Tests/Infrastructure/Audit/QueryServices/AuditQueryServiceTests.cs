@@ -37,7 +37,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
             details,
             userAgent);
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_EmptyDatabase_ReturnsEmptyListWithZeroTotal()
     {
         var (logs, total) = await _sut.SearchAsync(new AuditSearchRequest());
@@ -46,7 +46,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         total.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_MultipleLogs_ReturnsAllWithTotal()
     {
         Context.AuditLogs.AddRange(
@@ -62,7 +62,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs.Count.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_FilteredByUserId_ReturnsMatchingOnly()
     {
         var targetUser = await SeedUserAsync();
@@ -86,7 +86,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs[0].UserId.ShouldBe(targetUser.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_FilteredByEventType_ReturnsMatchingOnly()
     {
         Context.AuditLogs.Add(CreateLog(eventType: "UserLogin"));
@@ -106,7 +106,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs[0].EventType.ShouldBe("UserLogout");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_FilteredByEntityType_ReturnsMatchingOnly()
     {
         Context.AuditLogs.Add(CreateLog(entityType: "Order"));
@@ -126,7 +126,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs[0].EntityType.ShouldBe("Order");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_FilteredByAction_ReturnsMatchingOnly()
     {
         Context.AuditLogs.Add(CreateLog(action: "Create"));
@@ -146,7 +146,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs[0].Action.ShouldBe("Delete");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_FilteredByKeywordInDetails_ReturnsMatching()
     {
         Context.AuditLogs.Add(CreateLog(details: "user reset password successfully"));
@@ -166,7 +166,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs[0].Details!.ShouldContain("password");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_FilteredByIpAddress_ReturnsMatchingOnly()
     {
         Context.AuditLogs.Add(CreateLog(ipAddress: "10.0.0.1"));
@@ -186,7 +186,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs[0].IpAddress.ShouldBe("10.0.0.2");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_SortByEventTypeDesc_ReturnsAlphabeticallyDescending()
     {
         Context.AuditLogs.Add(CreateLog(eventType: "Bravo"));
@@ -206,7 +206,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs.Select(l => l.EventType).ToList().ShouldBe(new List<string> { "Charlie", "Bravo", "Alpha" });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_SortByActionAsc_ReturnsAlphabeticallyAscending()
     {
         Context.AuditLogs.Add(CreateLog(action: "Zeta"));
@@ -226,7 +226,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs.Select(l => l.Action).ToList().ShouldBe(new List<string> { "Alpha", "Mike", "Zeta" });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_DefaultSort_OrdersByCreatedAtDescending()
     {
         Context.AuditLogs.Add(CreateLog(eventType: "First"));
@@ -251,7 +251,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs[1].CreatedAt.ShouldBeGreaterThanOrEqualTo(logs[2].CreatedAt);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_Pagination_ReturnsSecondPageWithSubsetAndFullTotal()
     {
         for (var i = 0; i < 5; i++)
@@ -271,7 +271,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         logs.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExportToCsvAsync_EmptyDatabase_ReturnsOnlyHeader()
     {
         var bytes = await _sut.ExportToCsvAsync(new AuditExportRequest { MaxRows = 100 });
@@ -282,7 +282,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         lines.Length.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExportToCsvAsync_WithLogs_ReturnsHeaderPlusRows()
     {
         Context.AuditLogs.Add(CreateLog(eventType: "Login"));
@@ -299,7 +299,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         csv.ShouldContain("Logout");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExportToCsvAsync_MaxRowsCapsResult()
     {
         for (var i = 0; i < 5; i++)
@@ -316,7 +316,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         lines.Length.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExportToCsvAsync_ValuesWithCommas_ArePropertyEscaped()
     {
         Context.AuditLogs.Add(CreateLog(eventType: "Login,With,Comma", action: "OK"));
@@ -329,7 +329,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         csv.ShouldContain("\"Login,With,Comma\"");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExportToJsonAsync_EmptyDatabase_ReturnsEmptyJsonArray()
     {
         var bytes = await _sut.ExportToJsonAsync(new AuditExportRequest { MaxRows = 100 });
@@ -339,7 +339,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         items!.Count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExportToJsonAsync_WithLogs_ReturnsSerializedList()
     {
         Context.AuditLogs.Add(CreateLog(eventType: "Login"));
@@ -356,7 +356,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         items.Select(i => i.EventType).ShouldContain("Logout");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExportToJsonAsync_MaxRowsCapsResult()
     {
         for (var i = 0; i < 6; i++)
@@ -372,7 +372,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         items!.Count.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStatisticsAsync_EmptyDatabase_ReturnsZeroTotalWithEmptyDictionaries()
     {
         var stats = await _sut.GetStatisticsAsync(from: null, to: null);
@@ -383,7 +383,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         stats.ByHour.Count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStatisticsAsync_MultipleLogs_GroupsByEventType()
     {
         Context.AuditLogs.Add(CreateLog(eventType: "Login"));
@@ -399,7 +399,7 @@ public class AuditQueryServiceTests(PostgresContainerFixture fixture) : Integrat
         stats.ByEventType["Logout"].ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStatisticsAsync_DateRange_FiltersLogsCorrectly()
     {
         Context.AuditLogs.Add(CreateLog(eventType: "InRange"));

@@ -1,4 +1,4 @@
-﻿using Domain.Inventory.Aggregates;
+using Domain.Inventory.Aggregates;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
 using Infrastructure.Inventory.Repositories;
@@ -34,7 +34,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ValidWarehouse_PersistsAcrossContexts()
     {
         var warehouse = new WarehouseBuilder()
@@ -64,7 +64,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         loaded.IsActive.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenWarehouseDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(WarehouseId.NewId());
@@ -72,7 +72,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_ReturnsAllPersistedWarehouses()
     {
         var w1 = new WarehouseBuilder().WithCode("WH-A1").WithPriority(1).Build();
@@ -90,7 +90,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         results.ShouldContain(w => w.Id == w2.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDefaultAsync_WhenDefaultWarehouseExists_ReturnsIt()
     {
         var defaultWh = new WarehouseBuilder().WithCode("WH-DEF").AsDefault().Build();
@@ -108,7 +108,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         loaded.IsDefault.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDefaultAsync_WhenNoDefaultExists_ReturnsNull()
     {
         var w = new WarehouseBuilder().WithCode("WH-NONDEF").Build();
@@ -122,7 +122,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByCodeAsync_MatchingCode_ReturnsTrue()
     {
         var w = new WarehouseBuilder().WithCode("WH-EXISTS").Build();
@@ -136,7 +136,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByCodeAsync_NonMatchingCode_ReturnsFalse()
     {
         var exists = await _sut.ExistsByCodeAsync("WH-NOT-THERE");
@@ -144,7 +144,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByCodeAsync_WithExcludeId_ExcludesOwnEntry()
     {
         var w = new WarehouseBuilder().WithCode("WH-SELF").Build();
@@ -158,7 +158,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterDeactivate_PersistsIsActiveFalse()
     {
         var w = new WarehouseBuilder().WithCode("WH-DEACT").Build();
@@ -182,7 +182,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         final!.IsActive.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Remove_ExistingWarehouse_DeletesFromDatabase()
     {
         var w = new WarehouseBuilder().WithCode("WH-REM").Build();
@@ -200,7 +200,7 @@ public class WarehouseRepositoryTests(PostgresContainerFixture fixture) : IAsync
         (await _sut.GetByIdAsync(w.Id)).ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_DuplicateCode_ThrowsOnSaveDueToUniqueIndex()
     {
         var first = new WarehouseBuilder().WithCode("WH-DUP").Build();

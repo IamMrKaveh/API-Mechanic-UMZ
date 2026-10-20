@@ -17,7 +17,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         return user;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_AddAddress_RoundTripsAllProperties()
     {
         var user = await SeedUserAsync();
@@ -56,7 +56,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         reloaded.UpdatedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_SetDefaultAddress_PersistsDefaultFlag()
     {
         var user = await SeedUserAsync();
@@ -81,7 +81,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         owner.DefaultAddressId.ShouldBe(second.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenUserIsDeleted_AddressesAreCascadeDeleted()
     {
         var user = await SeedUserAsync();
@@ -105,7 +105,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         remaining.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task QueryFilter_WhenUserIsDeactivated_AddressesAreHidden()
     {
         var user = await SeedUserAsync();
@@ -127,7 +127,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         hidden.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(UserAddress));
@@ -139,7 +139,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         primaryKey.Properties[0].Name.ShouldBe(nameof(UserAddress.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_User_ForeignKeyIsRequiredWithCascadeDelete()
     {
         var entityType = Context.Model.FindEntityType(typeof(UserAddress));
@@ -154,7 +154,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         fk.PrincipalToDependent!.Name.ShouldBe(nameof(global::Domain.User.Aggregates.User.Addresses));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_TitleReceiverProvinceCityAddressPostal_HaveExpectedMaxLengths()
     {
         var entityType = Context.Model.FindEntityType(typeof(UserAddress));
@@ -177,7 +177,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         entityType.FindProperty(nameof(UserAddress.PostalCode))!.GetMaxLength().ShouldBe(20);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PhoneNumber_IsRequiredOwnedType()
     {
         var navigation = Context.Model.FindEntityType(typeof(UserAddress))!.FindNavigation(nameof(UserAddress.PhoneNumber));
@@ -191,7 +191,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         value.GetColumnName().ShouldBe("ReceiverPhoneNumber");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_LatitudeAndLongitude_HaveDecimalColumnTypes()
     {
         var entityType = Context.Model.FindEntityType(typeof(UserAddress));
@@ -201,7 +201,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         entityType.FindProperty(nameof(UserAddress.Longitude))!.GetColumnType().ShouldBe("numeric(9,6)");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasIndexOnUserId()
     {
         var entityType = Context.Model.FindEntityType(typeof(UserAddress));
@@ -212,7 +212,7 @@ public class UserAddressConfigurationTests(PostgresContainerFixture fixture) : I
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasQueryFilter()
     {
         var entityType = Context.Model.FindEntityType(typeof(UserAddress));

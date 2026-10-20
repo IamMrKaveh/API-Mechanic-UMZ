@@ -26,7 +26,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsAllScalarPropertiesAndRoundTripsAuditLogId()
     {
         var auditLog = new AuditLogBuilder()
@@ -61,7 +61,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         reloaded.CreatedAt.ShouldNotBe(default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WithNullUserId_PersistsUserIdAsNull()
     {
         var auditLog = new AuditLogBuilder()
@@ -81,7 +81,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         reloaded.UserId.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WithUserId_RoundTripsStronglyTypedUserId()
     {
         var user = new UserBuilder().Build();
@@ -108,7 +108,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         reloaded.UserId!.Value.ShouldBe(user.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_EventType_IsRequiredAndHasMaxLength100()
     {
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -122,7 +122,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         property.GetMaxLength().ShouldBe(100);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Action_IsRequiredAndHasMaxLength200()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -134,7 +134,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         property.GetMaxLength().ShouldBe(200);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_IpAddress_IsRequiredAndHasMaxLength45()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -146,7 +146,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         property.GetMaxLength().ShouldBe(45);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_UserAgent_IsNullableAndHasMaxLength500()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -158,7 +158,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         property.GetMaxLength().ShouldBe(500);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_EntityType_IsNullableAndHasMaxLength100()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -170,7 +170,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         property.GetMaxLength().ShouldBe(100);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_EntityId_IsNullableAndHasMaxLength100()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -182,7 +182,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         property.GetMaxLength().ShouldBe(100);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_IntegrityHash_IsRequiredAndHasMaxLength200()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -194,7 +194,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         property.GetMaxLength().ShouldBe(200);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Details_HasTextColumnType()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -205,7 +205,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         property!.GetColumnType().ShouldBe("text");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HashVersion_IsRequiredAndHasDefaultValueOne()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -217,7 +217,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         property.GetDefaultValue().ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_CreatedAt_UsesTimestampWithTimeZoneColumnType()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -228,7 +228,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         property!.GetColumnType().ShouldBe("timestamp(6) with time zone");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -240,7 +240,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         primaryKey.Properties[0].Name.ShouldBe(nameof(AuditLog.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasSingleColumnIndexOnUserId()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -253,7 +253,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasSingleColumnIndexOnCreatedAt()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -266,7 +266,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasSingleColumnIndexOnEventType()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -279,7 +279,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasSingleColumnIndexOnHashVersion()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -292,7 +292,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasNamedIndexOnEntityType()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -306,7 +306,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         index.Properties[0].Name.ShouldBe(nameof(AuditLog.EntityType));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasNamedIndexOnIsArchived()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -320,7 +320,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         index.Properties[0].Name.ShouldBe(nameof(AuditLog.IsArchived));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCompositeIndexOnCreatedAtIsArchivedEventType()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));
@@ -336,7 +336,7 @@ public class AuditLogConfigurationTests(PostgresContainerFixture fixture) : IAsy
         index.Properties.Any(p => p.Name == nameof(AuditLog.EventType)).ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCompositeIndexOnEntityTypeEntityId()
     {
         var entityType = _context.Model.FindEntityType(typeof(AuditLog));

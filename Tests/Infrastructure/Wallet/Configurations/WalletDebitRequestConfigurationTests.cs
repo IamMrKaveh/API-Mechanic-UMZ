@@ -67,7 +67,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         return (wallet, request);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DebitRequest_RoundTripsAllScalarProperties()
     {
         var (wallet, request) = await SeedPendingRequestAsync(
@@ -97,7 +97,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         loaded.RejectionReason.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DebitRequest_StatusIsPersistedAsInteger()
     {
         var (_, request) = await SeedPendingRequestAsync();
@@ -111,7 +111,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         rawStatus.ShouldBe((int)WalletDebitRequestStatus.Pending);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DebitRequest_AmountStoredInOwnedAmountAndCurrencyColumns()
     {
         var (_, request) = await SeedPendingRequestAsync(amount: 250_000m);
@@ -127,7 +127,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         raw.Currency.ShouldBe("IRT");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DebitRequest_ApproveTransitionPersistsRespondedFields()
     {
         var (wallet, request) = await SeedPendingRequestAsync();
@@ -144,7 +144,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         loaded.RespondedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DebitRequest_RejectionReasonIsPersisted()
     {
         var (wallet, request) = await SeedPendingRequestAsync();
@@ -160,7 +160,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         loaded.RejectionReason.ShouldBe("not authorized");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DebitRequest_RejectionReasonLongerThan500Characters_ThrowsOnSave()
     {
         var (wallet, request) = await SeedPendingRequestAsync();
@@ -171,7 +171,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DebitRequest_ReasonLongerThan500Characters_ThrowsOnSave()
     {
         var owner = await SeedActiveUserAsync();
@@ -192,7 +192,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DebitRequest_DescriptionLongerThan1000Characters_ThrowsOnSave()
     {
         var owner = await SeedActiveUserAsync();
@@ -213,7 +213,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DebitRequest_UsesTableNameWalletDebitRequests()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletDebitRequest));
@@ -221,7 +221,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         entityType!.GetTableName().ShouldBe("WalletDebitRequests");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DebitRequest_HasCompositeIndexOnOwnerIdAndStatus()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletDebitRequest));
@@ -233,7 +233,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
             .ShouldBe(new[] { nameof(WalletDebitRequest.OwnerId), nameof(WalletDebitRequest.Status) });
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DebitRequest_HasIndexOnExpiresAt()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletDebitRequest));
@@ -243,7 +243,7 @@ public class WalletDebitRequestConfigurationTests(PostgresContainerFixture fixtu
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DebitRequest_IsRemovedWhenParentWalletIsDeleted()
     {
         var (wallet, request) = await SeedPendingRequestAsync();

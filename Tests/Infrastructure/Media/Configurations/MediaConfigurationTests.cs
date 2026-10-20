@@ -38,7 +38,7 @@ public class MediaConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         return media;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_RoundTripsMediaIdConversion()
     {
         var media = new MediaBuilder()
@@ -57,7 +57,7 @@ public class MediaConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.Id.Value.ShouldBe(media.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_MapsOwnedFilePathToFilePathAndFileNameAndExtensionColumns()
     {
         var media = new MediaBuilder()
@@ -77,7 +77,7 @@ public class MediaConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.Path.Extension.ShouldBe("png");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_MapsOwnedFileSizeToFileSizeColumn()
     {
         var media = new MediaBuilder()
@@ -93,7 +93,7 @@ public class MediaConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.Size.Bytes.ShouldBe(4096);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PreservesAllScalarProperties()
     {
         var entityId = Guid.NewGuid();
@@ -121,7 +121,7 @@ public class MediaConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.CreatedAt.ShouldNotBe(default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Ignore_ExposedComputedProperties_AreNotPersistedAsSeparateColumns()
     {
         var media = new MediaBuilder()
@@ -143,7 +143,7 @@ public class MediaConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.FileSize.ShouldBe(loaded.Size.Bytes);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task QueryFilter_WithSoftDeletedMedia_ExcludesFromDefaultQuery()
     {
         var media = new MediaBuilder().WithEntityType("Product").Build();
@@ -161,7 +161,7 @@ public class MediaConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         visible.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task IgnoreQueryFilters_WithSoftDeletedMedia_ReturnsSoftDeletedRow()
     {
         var media = new MediaBuilder().WithEntityType("Product").Build();
@@ -186,7 +186,7 @@ public class MediaConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.DeletedBy.ShouldBe(deletedBy.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_ByEntityTypeAndEntityIdCompositeIndex_ReturnsMatchingRows()
     {
         var productId = Guid.NewGuid();
@@ -208,7 +208,7 @@ public class MediaConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         brandMedias.Count.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterSetAsPrimary_PersistsPrimaryFlag()
     {
         var media = new MediaBuilder().WithEntityType("Product").WithIsPrimary(false).Build();

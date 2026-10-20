@@ -10,7 +10,7 @@ namespace Tests.Infrastructure.Cart.Configurations;
 [Collection(nameof(DatabaseCollection))]
 public class CartItemConfigurationTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsCartItemAndRoundTripsAllScalarPropertiesAndOwnedPrices()
     {
         var user = await SeedUserAsync();
@@ -44,7 +44,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         reloaded.AddedAt.ShouldNotBe(default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenCartDeleted_CascadesDeleteToCartItems()
     {
         var user = await SeedUserAsync();
@@ -69,7 +69,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         remainingItems.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToCartItemsTable()
     {
         Skip.IfNot(Fixture.IsDockerAvailable, Fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -79,7 +79,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         entityType!.GetTableName().ShouldBe("CartItems");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -91,7 +91,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         primaryKey.Properties[0].Name.ShouldBe(nameof(CartItem.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Id_HasValueGeneratedNever()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -102,7 +102,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         idProperty!.ValueGenerated.ShouldBe(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.Never);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_VariantIdAndProductId_AreRequired()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -117,7 +117,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         productId!.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_ProductName_IsRequiredAndHasMaxLengthFromProductName()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -129,7 +129,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         property.GetMaxLength().ShouldBe(ProductName.MaxLength);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_VariantSku_IsRequiredAndHasMaxLength100()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -141,7 +141,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         property.GetMaxLength().ShouldBe(100);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_QuantityAndAddedAt_AreRequired()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -156,7 +156,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         addedAt!.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_OwnsOriginalPrice_WithConfiguredColumnNamesAndPrecision()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -182,7 +182,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         currency.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_OwnsSellingPrice_WithConfiguredColumnNamesAndPrecision()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -208,7 +208,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         currency.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_IgnoresTotalPriceVariantAndProductNavigations()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -219,7 +219,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         entityType.FindNavigation(nameof(CartItem.Product)).ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasIndexOnCartId()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -232,7 +232,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasIndexOnVariantId()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));
@@ -245,7 +245,7 @@ public class CartItemConfigurationTests(PostgresContainerFixture fixture) : Inte
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasIndexOnProductId()
     {
         var entityType = Context.Model.FindEntityType(typeof(CartItem));

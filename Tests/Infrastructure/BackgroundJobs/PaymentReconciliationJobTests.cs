@@ -104,7 +104,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
         return transaction;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WhenGatewayConfirmsPayment_MarksSuccessAndWarns()
     {
         var transaction = await SeedOldPendingTransactionAsync();
@@ -142,7 +142,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WhenGatewayThrows_MarksFailedWithoutWarning()
     {
         var transaction = await SeedOldPendingTransactionAsync();
@@ -173,7 +173,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
         await AuditService.DidNotReceiveWithAnyArgs().LogWarningAsync(default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WhenNoStaleTransactions_DoesNotCallGateway()
     {
         var job = BuildJob();
@@ -190,7 +190,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
         await _gateway.DidNotReceiveWithAnyArgs().VerifyAsync(default!, default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_AcquiresLockWithExpectedKeyAndExpiry()
     {
         var job = BuildJob();

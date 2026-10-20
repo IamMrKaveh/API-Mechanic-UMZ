@@ -44,7 +44,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         return transfer;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Transfer_RoundTripsAllScalarProperties()
     {
         var transfer = await SeedTransferAsync(amount: 75_000m, description: "birthday gift");
@@ -69,7 +69,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         loaded.FailureReason.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Transfer_StatusIsStoredAsString()
     {
         var transfer = await SeedTransferAsync();
@@ -83,7 +83,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         raw.ShouldBe(WalletTransferStatus.PendingOtp.ToString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Transfer_CompletedTransitionPersistsCompletedAt()
     {
         var transfer = await SeedTransferAsync();
@@ -98,7 +98,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         loaded.CompletedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Transfer_CancelTransitionPersistsCancelledAt()
     {
         var transfer = await SeedTransferAsync();
@@ -113,7 +113,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         loaded.CancelledAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Transfer_DuplicateCorrelationId_ThrowsDueToUniqueIndex()
     {
         var first = await SeedTransferAsync();
@@ -129,7 +129,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Transfer_OtpHashLongerThan128Characters_ThrowsOnSave()
     {
         var transfer = new WalletTransferBuilder().WithOtpHash(new string('h', 129)).Build();
@@ -139,7 +139,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Transfer_DescriptionLongerThan500Characters_ThrowsOnSave()
     {
         var transfer = new WalletTransferBuilder().WithDescription(new string('d', 501)).Build();
@@ -149,7 +149,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Transfer_XminConcurrencyTokenChangesAfterUpdate()
     {
         var transfer = await SeedTransferAsync();
@@ -163,7 +163,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         updatedXmin.ShouldNotBe(initialXmin);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Transfer_ConcurrencyConflict_ThrowsDbUpdateConcurrencyException()
     {
         var transfer = await SeedTransferAsync();
@@ -185,7 +185,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         await Should.ThrowAsync<DbUpdateConcurrencyException>(async () => await contextB.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Transfer_UsesTableNameWalletTransfers()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletTransfer));
@@ -193,7 +193,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         entityType!.GetTableName().ShouldBe("WalletTransfers");
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("IX_WalletTransfers_FromUserId")]
     [InlineData("IX_WalletTransfers_ToUserId")]
     [InlineData("IX_WalletTransfers_Status")]
@@ -207,7 +207,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Transfer_CorrelationIdIndexIsUnique()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletTransfer));
@@ -217,7 +217,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
         index.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Transfer_FromUserIdAndToUserIdAreMappedToDeclaredColumns()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletTransfer));
@@ -229,7 +229,7 @@ public class WalletTransferConfigurationTests(PostgresContainerFixture fixture) 
             .GetColumnName(storeObject).ShouldBe("ToUserId");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Transfer_DomainEventsAreIgnored()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletTransfer));

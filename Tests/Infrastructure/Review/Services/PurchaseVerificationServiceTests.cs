@@ -80,7 +80,7 @@ public class PurchaseVerificationServiceTests(PostgresContainerFixture fixture)
         return (user.Id, product.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UserHasPurchasedProductAsync_WhenDeliveredOrderWithinWindow_ReturnsTrue()
     {
         var (userId, productId) = await SeedDeliveredOrderAsync(daysAgo: 5);
@@ -91,7 +91,7 @@ public class PurchaseVerificationServiceTests(PostgresContainerFixture fixture)
         result.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UserHasPurchasedProductAsync_WhenDeliveredBeforeWindow_ReturnsFalse()
     {
         var (userId, productId) = await SeedDeliveredOrderAsync(daysAgo: 100);
@@ -102,7 +102,7 @@ public class PurchaseVerificationServiceTests(PostgresContainerFixture fixture)
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UserHasPurchasedProductAsync_WhenOrderNotDelivered_ReturnsFalse()
     {
         var user = await SeedUserAsync();
@@ -124,7 +124,7 @@ public class PurchaseVerificationServiceTests(PostgresContainerFixture fixture)
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UserHasPurchasedProductAsync_WhenDifferentUser_ReturnsFalse()
     {
         var (_, productId) = await SeedDeliveredOrderAsync();
@@ -136,7 +136,7 @@ public class PurchaseVerificationServiceTests(PostgresContainerFixture fixture)
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UserHasPurchasedProductAsync_WhenDifferentProduct_ReturnsFalse()
     {
         var (userId, _) = await SeedDeliveredOrderAsync();
@@ -147,7 +147,7 @@ public class PurchaseVerificationServiceTests(PostgresContainerFixture fixture)
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UserHasPurchasedProductAsync_WhenWindowIsNarrower_ExcludesOlderDelivery()
     {
         var (userId, productId) = await SeedDeliveredOrderAsync(daysAgo: 10);

@@ -52,7 +52,7 @@ public class ElasticsearchEventHandlerTests(PostgresContainerFixture fixture) : 
         BrandSearchDocument? document = null)
         => new(entityId, change, document);
 
-    [Fact]
+    [SkippableFact]
     public async Task HandleProductChangedAsync_WithIntEntityId_ThrowsFormatExceptionWhenParsingAsGuid()
     {
         await using var context = _fixture.CreateContext();
@@ -69,7 +69,7 @@ public class ElasticsearchEventHandlerTests(PostgresContainerFixture fixture) : 
             .LogSystemEventAsync(default!, default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HandleCategoryChangedAsync_WithIntEntityId_ThrowsFormatExceptionWhenParsingAsGuid()
     {
         await using var context = _fixture.CreateContext();
@@ -84,7 +84,7 @@ public class ElasticsearchEventHandlerTests(PostgresContainerFixture fixture) : 
         (await context.ElasticsearchOutboxMessages.CountAsync()).ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HandleBrandChangedAsync_WithIntEntityId_ThrowsFormatExceptionWhenParsingAsGuid()
     {
         await using var context = _fixture.CreateContext();
@@ -99,7 +99,7 @@ public class ElasticsearchEventHandlerTests(PostgresContainerFixture fixture) : 
         (await context.ElasticsearchOutboxMessages.CountAsync()).ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task InterfaceExplicitHandleProductChangedAsync_IsFireAndForgetAndDoesNotThrow()
     {
         await using var context = _fixture.CreateContext();
@@ -115,7 +115,7 @@ public class ElasticsearchEventHandlerTests(PostgresContainerFixture fixture) : 
         act.ShouldNotThrow();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handler_ImplementsIElasticsearchEventHandlerContract()
     {
         await using var context = _fixture.CreateContext();
@@ -125,7 +125,7 @@ public class ElasticsearchEventHandlerTests(PostgresContainerFixture fixture) : 
         sut.ShouldBeAssignableTo<IElasticsearchEventHandler>();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handler_IsSealed()
     {
         await using var context = _fixture.CreateContext();
@@ -135,7 +135,7 @@ public class ElasticsearchEventHandlerTests(PostgresContainerFixture fixture) : 
         sut.GetType().IsSealed.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Constructor_RequiresNonNullDependencies()
     {
         // Primary constructor injects two dependencies; both are used in Handle* methods.
@@ -146,7 +146,7 @@ public class ElasticsearchEventHandlerTests(PostgresContainerFixture fixture) : 
         act.ShouldNotThrow();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HandleProductChangedAsync_ExceptionOccursBeforeAddingOutboxMessage()
     {
         // Regression pin: prove the Guid.Parse call happens before context.ElasticsearchOutboxMessages.AddAsync,
@@ -170,7 +170,7 @@ public class ElasticsearchEventHandlerTests(PostgresContainerFixture fixture) : 
         pending.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HandleCategoryChangedAsync_DoesNotInvokeAuditService()
     {
         // The Category and Brand overloads do not log to audit even on the happy path.
@@ -192,7 +192,7 @@ public class ElasticsearchEventHandlerTests(PostgresContainerFixture fixture) : 
         await auditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HandleBrandChangedAsync_DoesNotInvokeAuditService()
     {
         await using var context = _fixture.CreateContext();

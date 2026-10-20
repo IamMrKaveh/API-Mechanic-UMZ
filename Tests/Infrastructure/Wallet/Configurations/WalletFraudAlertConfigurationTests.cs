@@ -47,7 +47,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         return alert;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_RoundTripsAllScalarProperties()
     {
         var alert = await SeedAlertAsync(
@@ -74,7 +74,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         loaded.ReviewNote.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_SeverityIsPersistedAsInteger()
     {
         var alert = await SeedAlertAsync(severity: FraudAlertSeverity.Critical);
@@ -88,7 +88,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         raw.ShouldBe((int)FraudAlertSeverity.Critical);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_StatusIsPersistedAsInteger()
     {
         var alert = await SeedAlertAsync();
@@ -102,7 +102,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         raw.ShouldBe((int)FraudAlertStatus.Open);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_ReviewedTransitionIsPersisted()
     {
         var alert = await SeedAlertAsync();
@@ -120,7 +120,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         loaded.ReviewNote.ShouldBe("confirmed suspicious");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_DismissedTransitionIsPersisted()
     {
         var alert = await SeedAlertAsync();
@@ -138,7 +138,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         loaded.ReviewNote.ShouldBe("false positive");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_RuleNameLongerThan128Characters_ThrowsOnSave()
     {
         var alert = new WalletFraudAlertBuilder().WithRuleName(new string('r', 129)).Build();
@@ -148,7 +148,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_DescriptionLongerThan1000Characters_ThrowsOnSave()
     {
         var alert = new WalletFraudAlertBuilder().WithDescription(new string('d', 1001)).Build();
@@ -158,7 +158,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_MetadataLongerThan2000Characters_ThrowsOnSave()
     {
         var alert = new WalletFraudAlertBuilder().WithMetadata(new string('m', 2001)).Build();
@@ -168,7 +168,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_ReviewNoteLongerThan500Characters_ThrowsOnSave()
     {
         var alert = await SeedAlertAsync();
@@ -178,7 +178,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_XminConcurrencyTokenChangesAfterUpdate()
     {
         var alert = await SeedAlertAsync();
@@ -192,7 +192,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         updatedXmin.ShouldNotBe(initialXmin);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FraudAlert_ConcurrencyConflict_ThrowsDbUpdateConcurrencyException()
     {
         var alert = await SeedAlertAsync();
@@ -214,7 +214,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         await Should.ThrowAsync<DbUpdateConcurrencyException>(async () => await contextB.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_FraudAlert_UsesTableNameWalletFraudAlerts()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletFraudAlert));
@@ -222,7 +222,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         entityType!.GetTableName().ShouldBe("WalletFraudAlerts");
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("IX_WalletFraudAlerts_Status")]
     [InlineData("IX_WalletFraudAlerts_Severity")]
     [InlineData("IX_WalletFraudAlerts_UserId")]
@@ -237,7 +237,7 @@ public class WalletFraudAlertConfigurationTests(PostgresContainerFixture fixture
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_FraudAlert_DomainEventsAreIgnored()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletFraudAlert));

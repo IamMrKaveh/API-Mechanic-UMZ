@@ -163,7 +163,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         return order;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserProfileAsync_WhenUserExists_ReturnsMappedProfile()
     {
         var user = await SeedUserAsync(firstName: "Reza", lastName: "Ahmadi", phone: "09121110000", emailVerified: true);
@@ -181,7 +181,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.IsEmailVerified.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserProfileAsync_WhenUserDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetUserProfileAsync(UserId.NewId(), CancellationToken.None);
@@ -189,7 +189,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserProfileAsync_WhenUserIsDeactivated_ReturnsNullDueToGlobalQueryFilter()
     {
         var user = await SeedUserAsync();
@@ -203,7 +203,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserProfileAsync_WhenPhoneNumberIsNull_ReturnsEmptyString()
     {
         var user = await SeedUserAsync(phone: null);
@@ -215,7 +215,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result!.PhoneNumber.ShouldBe("");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserDashboardAsync_WhenUserExists_AggregatesOrdersWishlistsAddressesAndTickets()
     {
         var user = await SeedUserAsync();
@@ -240,7 +240,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.OpenTickets.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserDashboardAsync_WhenUserDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetUserDashboardAsync(UserId.NewId(), CancellationToken.None);
@@ -248,7 +248,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUsersPagedAsync_WithMultipleUsers_ReturnsPagedAndOrderedByCreatedAtDescending()
     {
         var older = await SeedUserAsync(email: $"older-{Guid.NewGuid():N}@example.com", phone: "09121000001");
@@ -269,7 +269,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         page2.Items[0].Id.ShouldBe(older.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUsersPagedAsync_WithSearchTermMatchingEmail_ReturnsMatchingUsersOnly()
     {
         var target = await SeedUserAsync(email: $"unique-search-{Guid.NewGuid():N}@example.com", phone: "09122220001");
@@ -282,7 +282,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.Items[0].Id.ShouldBe(target.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUsersPagedAsync_WithSearchTermMatchingFirstNameCaseInsensitive_ReturnsMatchingUsers()
     {
         var target = await SeedUserAsync(firstName: "Mohammad", lastName: "Bagheri", phone: "09122220011");
@@ -295,7 +295,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.Items[0].Id.ShouldBe(target.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUsersPagedAsync_WithIsAdminFilter_ReturnsOnlyMatchingUsers()
     {
         var admin = await SeedUserAsync(isAdmin: true, phone: "09123330001");
@@ -309,7 +309,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.Items[0].IsAdmin.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminUsersPagedAsync_WithRoleAdminFilter_ReturnsOnlyAdmins()
     {
         var admin = await SeedUserAsync(isAdmin: true, phone: "09124440001");
@@ -325,7 +325,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.Items[0].Roles.ShouldContain("Admin");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminUsersPagedAsync_AggregatesOrderStatsAndWalletBalanceAndAddressStats()
     {
         var user = await SeedUserAsync(firstName: "Hassan", lastName: "Karimi", phone: "09125550001");
@@ -360,7 +360,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         item.DefaultAddressSummary.ShouldBe("Fars - Shiraz");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminUsersPagedAsync_WithMinTotalSpentFilter_ReturnsOnlyUsersMeetingSpendThreshold()
     {
         var highSpender = await SeedUserAsync(phone: "09126660001");
@@ -376,7 +376,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.Items.ShouldNotContain(i => i.Id == lowSpender.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserAddressesAsync_ReturnsAllAddressesForUser()
     {
         var user = await SeedUserAsync();
@@ -395,7 +395,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldContain(a => a.Title == "Office" && a.City == "Karaj");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserAddressesAsync_WhenUserHasNoAddresses_ReturnsEmpty()
     {
         var user = await SeedUserAsync();
@@ -406,7 +406,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetActiveSessionsAsync_ReturnsOnlyActiveSessionsOrderedByCreatedAtDescending()
     {
         var user = await SeedUserAsync();
@@ -448,7 +448,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result[1].IsCurrent.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetActiveSessionsAsync_ExcludesExpiredSessions()
     {
         var user = await SeedUserAsync();
@@ -472,7 +472,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetActiveSessionsAsync_MarksSessionExpiringWithin24HoursAsExpiringSoon()
     {
         var user = await SeedUserAsync();
@@ -496,7 +496,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result[0].IsExpiringSoon.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserReviewsPagedAsync_ReturnsUsersReviewsExcludingSoftDeleted()
     {
         var user = await SeedUserAsync();
@@ -517,7 +517,7 @@ public class UserQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.Items.Any(i => i.Id == deleted.Id.Value).ShouldBeFalse();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 0)]
     [InlineData(-1, -5)]
     public async Task GetUserReviewsPagedAsync_WithInvalidPaging_UsesDefaults(int page, int pageSize)

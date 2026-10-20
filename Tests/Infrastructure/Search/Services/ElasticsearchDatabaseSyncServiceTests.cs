@@ -44,7 +44,7 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
         return ex;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncProductAsync_AgainstCurrentSchema_ThrowsUndefinedTable()
     {
         await ShouldThrowUndefinedTableAsync(() =>
@@ -53,7 +53,7 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
         await _searchService.DidNotReceiveWithAnyArgs().IndexProductAsync(default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncCategoryAsync_AgainstCurrentSchema_ThrowsUndefinedTable()
     {
         await ShouldThrowUndefinedTableAsync(() =>
@@ -62,7 +62,7 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
         await _searchService.DidNotReceiveWithAnyArgs().IndexCategoryAsync(default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncBrandAsync_AgainstCurrentSchema_ThrowsUndefinedTable()
     {
         await ShouldThrowUndefinedTableAsync(() =>
@@ -71,7 +71,7 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
         await _searchService.DidNotReceiveWithAnyArgs().IndexBrandAsync(default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAllProductsAsync_AgainstCurrentSchema_ThrowsUndefinedTable()
     {
         await ShouldThrowUndefinedTableAsync(() =>
@@ -80,7 +80,7 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
         await _bulkService.DidNotReceiveWithAnyArgs().BulkIndexProductsAsync(default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAllCategoriesAsync_AgainstCurrentSchema_ThrowsUndefinedTable()
     {
         await ShouldThrowUndefinedTableAsync(() =>
@@ -89,7 +89,7 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
         await _bulkService.DidNotReceiveWithAnyArgs().BulkIndexCategoriesAsync(default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAllBrandsAsync_AgainstCurrentSchema_ThrowsUndefinedTable()
     {
         await ShouldThrowUndefinedTableAsync(() =>
@@ -98,7 +98,7 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
         await _bulkService.DidNotReceiveWithAnyArgs().BulkIndexBrandsAsync(default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FullSyncAsync_AgainstCurrentSchema_ThrowsOnFirstStep()
     {
         await ShouldThrowUndefinedTableAsync(() =>
@@ -109,7 +109,7 @@ public class ElasticsearchDatabaseSyncServiceTests(PostgresContainerFixture fixt
         await _bulkService.DidNotReceiveWithAnyArgs().BulkIndexProductsAsync(default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAsync_AgainstCurrentSchema_ThrowsWithoutCompletionLog()
     {
         await ShouldThrowUndefinedTableAsync(() =>

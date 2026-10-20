@@ -65,7 +65,7 @@
 | `Mapping/` | `MapsterConfigFixture` برای تست‌های نگاشت |
 | `Helpers/` | `CatalogSeeder` — Seed دسته/برند/محصول واقعی در `DBContext` |
 | `Database/` | `PostgresContainerFixture` (Testcontainers با `postgres:16-alpine`، کاربر/پایگاه `mechanic/mechanic_tests`) و `DatabaseCollection` |
-| `ContainerEngine/` | `ContainerEngineBootstrap` (تشخیص خودکار Podman در زمان لود اسمبلی)، `ContainerEngineResolver` (انتخاب endpoint)، `PodmanProbe` (خواندن `podman machine inspect`/`podman info`/`system connection list`) |
+| `ContainerEngine/` | `ContainerEngineBootstrap` (تشخیص خودکار Podman در زمان لود اسمبلی)، `ContainerEngineResolver` (انتخاب endpoint)، `PodmanProbe` (خواندن `podman machine inspect`/`podman info`/`system connection list`)، `ContainerEngineEndpointProbe` (تست دسترس‌پذیری endpoint) |
 
 ## تست یکپارچه
 
@@ -74,14 +74,19 @@
 - کانتینر PostgreSQL (`postgres:16-alpine`) به ازای هر اجرا یک بار بالا می‌آید
   (`[Collection(nameof(DatabaseCollection))]`) و بعد از هر تست با Respawn (اسکیمای `public`) ریست می‌شود.
 - الگوی مشخصه: `[Trait("Category", "Integration")]`؛ نمونه: `Tests/Integration/Order/OrderStatusRepositoryIntegrationTests.cs`.
-- بدون هیچ موتور کانتینری، این تست‌ها اجرا نمی‌شوند: فیکسچر پیام `No container engine reachable...` می‌سازد
-  (شامل موتور обнаружен‌شده) و `verify-security.ps1` این موارد را به‌صورت **اسکیپ محیطی** می‌شمارد.
+- تست‌های این بخش با `[SkippableFact]`/`[SkippableTheory]` علامت‌گذاری شده‌اند؛ بدون موتور کانتینر،
+  فیکسچر `SkipException` با پیام `No container engine reachable...` می‌سازد و نتیجه در Visual Studio و `dotnet test`
+  به‌صورت **Skipped** گزارش می‌شود (نه Failed).
 
 ## موتور کانتینر تست (Podman)
 
 Testcontainers با API سازگار Docker صحبت می‌کند؛ Podman همین API را از طریق **named pipe** (ویندوز) یا
 **unix socket** (لینوکس/مک) ارائه می‌دهد. `ContainerEngineBootstrap` یک `[ModuleInitializer]` است که پیش از
 هر مصرف Testcontainers اجرا می‌شود و در صورت نبود `DOCKER_HOST`، Podman را کشف و پیکربندی می‌کند.
+کاندیدها (pipe ماشین، pipe مبتنی بر نام connection و سوکت‌ها) با یک probe کوتاه بررسی می‌شوند؛ اگر pipe
+Podman برای پروسهٔ تست باز نشود (مثلاً VS غیر-elevated)، `docker_engine` (Podman Desktop با Docker Compatibility
+یا Docker Desktop) به‌عنوان fallback امتحان می‌شود. اگر هیچ endpointی پاسخ ندهد، همان endpoint اول Podman
+برای پیام تشخیصی انتخاب می‌شود و تست‌ها Skip می‌شوند.
 
 | حالت | endpoint | نکته |
 |---|---|---|
@@ -146,7 +151,7 @@ steps:
 
 | نشانه | علت | راه‌حل |
 |---|---|---|
-| `Access to the path is denied` هنگام اتصال به `npipe://./pipe/podman-machine-default` | پروسه تست اجازهٔ بازکردن named pipe را ندارد (محیط sandbox/سیاست امنیتی) | تست را در محیط عادی اجرا کنید یا `DOCKER_HOST` را به سوکت `unix://` بدهید؛ در CI از سوکت rootful استفاده می‌شود |
+| `Access to the path is denied` هنگام اتصال به `npipe://./pipe/podman-machine-default` (نمونه: Visual Studio) | پروسهٔ تست (testhost) اجازهٔ بازکردن named pipe را ندارد: Podman/win-sshproxy در سطح دسترسی یا session دیگری اجرا شده (معمولاً elevated) و VS غیر-elevated است، یا sandbox امنیتی مانع است | ۱) VS را با همان سطح دسترسی Podman (Run as Administrator) اجرا کنید یا Podman Desktop را non-elevated ری‌استارت کنید؛ ۲) در Podman Desktop گزینهٔ **Docker Compatibility** را روشن کنید تا `docker_engine` ساخته شود (bootstrap آن را probe و به‌عنوان fallback استفاده می‌کند)؛ ۳) `podman machine stop; podman machine start`؛ ۴) تشخیص دقیق: `scripts/testing/diagnose-podman.ps1` |
 | `creating lockfile for VM: ... access denied` از `podman machine inspect` | پروسه اجازهٔ نوشتن در `%USERPROFILE%\.config\containers` را ندارد | fallback خودکار روی `podman system connection list` انجام می‌شود؛ یا `PODMAN_PATH`/`DOCKER_HOST` را صریح بدهید |
 | `podman machine start` خطا می‌دهد | WSL/machine نصب یا healthy نیست | `podman machine init`، سپس `podman machine start`؛ در لینوکس `systemctl --user enable --now podman.socket` |
 | تست‌ها با پیام «No running Podman» اسکیپ می‌شوند | machine خاموش است یا Podman پیدا نشد | `podman machine start`؛ در صورت نصب غیراستاندارد `-PodmanPath` |
@@ -168,5 +173,5 @@ dotnet test --collect:"XPlat Code Coverage"     # پوشش با coverlet
 | مورد | توضیح |
 |---|---|
 | `Tests.csproj.Backup.tmp` | فایل بکاپ قدیمی در ریشه Tests باقی مانده و بخشی از build نیست |
-| `SkippableTestFrameworkSetup.cs` | ارثیه پکیج قدیمی `Xunit.RequiresDockerFact`؛ پکیج فعلی `Xunit.SkippableFact` است و `Skip.IfNot` داخل `IAsyncLifetime` توسط xUnit ساده به skip تبدیل نمی‌شود (به‌صورت failure با پیام «No container engine» گزارش می‌شود؛ `verify-security.ps1` آن را اسکیپ می‌شمارد) |
+| تست‌های کانتینری | فایل قدیمی `SkippableTestFrameworkSetup.cs` (ارجاع به پکیج ناموجود `Xunit.RequiresDockerFact`) حذف شد؛ همهٔ تست‌های وابسته به موتور کانتینر اکنون `[SkippableFact]`/`[SkippableTheory]` هستند و نبود موتور به **Skipped** منجر می‌شود |
 | نبود Fake زمان | فیکه مثل `FakeDateTimeProvider` وجود ندارد؛ تست‌های وابسته به زمان از Builder/Seed استفاده می‌کنند |

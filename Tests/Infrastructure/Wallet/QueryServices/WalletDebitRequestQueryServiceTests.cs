@@ -73,7 +73,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
         _seededWallets[ownerId] = wallet;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPageAsync_WhenNoDebitRequestsExist_ReturnsEmptyPaginatedResult()
     {
         var result = await _sut.GetPageAsync(1, 20, null, CancellationToken.None);
@@ -85,7 +85,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
         result.PageSize.ShouldBe(20);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPageAsync_WithSingleRequest_ReturnsMappedDtoWithUserFullNames()
     {
         var owner = await SeedUserAsync("Reza", "Kazemi", "09121110001");
@@ -105,7 +105,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
         dto.Status.ShouldBe(nameof(WalletDebitRequestStatus.Pending));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPageAsync_OrdersItemsByCreatedAtDescending()
     {
         var owner = await SeedUserAsync(phone: "09122220001");
@@ -127,7 +127,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
         result.Items[2].Amount.ShouldBe(100_000m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPageAsync_WithOwnerFilter_ReturnsOnlyMatchingOwnerRequests()
     {
         var ownerA = await SeedUserAsync(phone: "09123330001");
@@ -145,7 +145,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
         result.Items[0].OwnerId.ShouldBe(ownerA.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPageAsync_WithRequestedByFilter_ReturnsOnlyMatchingRequesterRequests()
     {
         var owner = await SeedUserAsync(phone: "09124440001");
@@ -163,7 +163,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
         result.Items[0].RequestedBy.ShouldBe(adminA.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPageAsync_WithStatusFilterPending_ReturnsOnlyPendingRequests()
     {
         var owner = await SeedUserAsync(phone: "09125550001");
@@ -179,7 +179,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
         result.Items[0].Status.ShouldBe(nameof(WalletDebitRequestStatus.Pending));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPageAsync_WithStatusFilterMatchingNothing_ReturnsEmpty()
     {
         var owner = await SeedUserAsync(phone: "09126660001");
@@ -195,7 +195,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
         result.Items.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPageAsync_WithPaging_ReturnsCorrectPage()
     {
         var owner = await SeedUserAsync(phone: "09127770001");
@@ -217,7 +217,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
         page3.Items.Count.ShouldBe(1);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 0, 1, 20)]
     [InlineData(-1, -5, 1, 20)]
     [InlineData(2, 500, 2, 200)]
@@ -229,7 +229,7 @@ public class WalletDebitRequestQueryServiceTests(PostgresContainerFixture fixtur
         result.PageSize.ShouldBe(expectedPageSize);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPageAsync_WithDateRangeFilter_ReturnsOnlyRequestsInsideRange()
     {
         var owner = await SeedUserAsync(phone: "09128880001");

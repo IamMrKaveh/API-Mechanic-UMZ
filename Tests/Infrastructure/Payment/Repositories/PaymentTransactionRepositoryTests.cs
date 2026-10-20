@@ -85,7 +85,7 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
         return (user, order);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ValidTransaction_PersistsAcrossContexts()
     {
         var (user, order) = await PersistUserAndOrderAsync();
@@ -115,7 +115,7 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
         loaded.Gateway.Value.ShouldBe("Zarinpal");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByAuthorityAsync_WhenAuthorityExists_ReturnsTransaction()
     {
         var (user, order) = await PersistUserAndOrderAsync();
@@ -138,7 +138,7 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
         loaded!.Authority.Value.ShouldBe(authority);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByAuthorityAsync_WhenAuthorityDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByAuthorityAsync("MISSING-AUTHORITY-VALUE-1");
@@ -146,7 +146,7 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPendingExpiredTransactionsAsync_ReturnsOnlyPendingTransactionsBeforeCutoff()
     {
         var (user, order) = await PersistUserAndOrderAsync();
@@ -182,7 +182,7 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
         results.ShouldNotContain(t => t.Id == pendingFresh.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetVerifiedByOrderIdAsync_WhenSuccessTransactionExists_ReturnsIt()
     {
         var (user, order) = await PersistUserAndOrderAsync();
@@ -207,7 +207,7 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
         loaded.RefId.ShouldBe(987654321L);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetVerifiedByOrderIdAsync_WhenOnlyPendingExists_ReturnsNull()
     {
         var (user, order) = await PersistUserAndOrderAsync();
@@ -228,7 +228,7 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetActiveByOrderIdAsync_WhenPendingExists_ReturnsIt()
     {
         var (user, order) = await PersistUserAndOrderAsync();
@@ -251,7 +251,7 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
         loaded.Status.ShouldBe(PaymentStatus.Pending);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetActiveByOrderIdAsync_WhenTransactionIsFailed_ReturnsNull()
     {
         var (user, order) = await PersistUserAndOrderAsync();
@@ -273,7 +273,7 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterMarkAsSuccess_PersistsNewStatusAndRefId()
     {
         var (user, order) = await PersistUserAndOrderAsync();
@@ -307,7 +307,7 @@ public class PaymentTransactionRepositoryTests(PostgresContainerFixture fixture)
         final.Fee.ShouldBe(2500m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_DuplicateAuthority_ThrowsOnSaveChangesDueToUniqueIndex()
     {
         var (user, order) = await PersistUserAndOrderAsync();

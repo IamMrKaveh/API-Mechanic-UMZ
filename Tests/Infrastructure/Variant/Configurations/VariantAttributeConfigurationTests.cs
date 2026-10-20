@@ -1,4 +1,4 @@
-﻿using global::Domain.Variant.Entities;
+using global::Domain.Variant.Entities;
 using Tests.TestInfrastructure.Base;
 
 namespace Tests.Infrastructure.Variant.Configurations;
@@ -48,7 +48,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         return variant;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_SetAttributes_PersistsAttributeLink()
     {
         var (attributeType, attributeValue) = await SeedAttributeAsync();
@@ -68,7 +68,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         reloaded.DisplayValue.ShouldBe("Display Red");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_SetAttributesTwice_UpdatesDisplayValueWithoutDuplicating()
     {
         var (attributeType, attributeValue) = await SeedAttributeAsync();
@@ -88,7 +88,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         rows[0].DisplayValue.ShouldBe("Second");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_RemoveAssignment_DeletesAttributeRow()
     {
         var (attributeType, attributeValue) = await SeedAttributeAsync();
@@ -107,7 +107,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateVariantValue_InsertedViaSql_ThrowsDbUpdateException()
     {
         var (attributeType, attributeValue) = await SeedAttributeAsync();
@@ -129,7 +129,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         Context.ChangeTracker.Clear();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task QueryFilter_WhenAttributeTypeIsDeleted_AttributeIsHidden()
     {
         var (attributeType, attributeValue) = await SeedAttributeAsync();
@@ -152,7 +152,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         hidden.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToProductVariantAttributesTable()
     {
         Skip.IfNot(Fixture.IsDockerAvailable, Fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -162,7 +162,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         entityType!.GetTableName().ShouldBe("ProductVariantAttributes");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(VariantAttribute));
@@ -174,7 +174,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         primaryKey.Properties[0].Name.ShouldBe(nameof(VariantAttribute.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DisplayValue_IsRequiredWithMaxLength256()
     {
         var property = Context.Model.FindEntityType(typeof(VariantAttribute))!.FindProperty(nameof(VariantAttribute.DisplayValue));
@@ -183,7 +183,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         property.GetMaxLength().ShouldBe(256);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_ValueAndAttributeType_ForeignKeysAreRequiredWithRestrictDelete()
     {
         var entityType = Context.Model.FindEntityType(typeof(VariantAttribute));
@@ -202,7 +202,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         typeFk.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasUniqueIndexesWithExpectedNames()
     {
         var entityType = Context.Model.FindEntityType(typeof(VariantAttribute));
@@ -224,7 +224,7 @@ public class VariantAttributeConfigurationTests(PostgresContainerFixture fixture
         byVariant!.IsUnique.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasQueryFilter()
     {
         var entityType = Context.Model.FindEntityType(typeof(VariantAttribute));

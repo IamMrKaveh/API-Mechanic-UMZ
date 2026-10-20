@@ -18,7 +18,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByUserIdAsync_NoNotifications_ReturnsEmptyPagedResult()
     {
         var result = await _sut.GetByUserIdAsync(UserId.NewId(), 1, 10);
@@ -30,7 +30,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         result.PageSize.ShouldBe(10);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByUserIdAsync_UserWithNotifications_ReturnsOnlyForThatUser()
     {
         var targetUser = await SeedUserAsync();
@@ -64,7 +64,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         result.Items.ShouldAllBe(n => n.UserId == targetUser.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByUserIdAsync_MappedFields_MatchAggregate()
     {
         var user = await SeedUserAsync();
@@ -93,7 +93,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         dto.Id.ShouldBe(notification.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByUserIdAsync_MultipleNotifications_ReturnsOrderedByCreatedAtDescending()
     {
         var user = await SeedUserAsync();
@@ -114,7 +114,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         result.Items[1].CreatedAt.ShouldBeGreaterThanOrEqualTo(result.Items[2].CreatedAt);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(1, 2, 2, 4)]
     [InlineData(2, 2, 2, 4)]
     [InlineData(3, 2, 0, 4)]
@@ -142,7 +142,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         result.PageSize.ShouldBe(pageSize);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUnreadCountAsync_NoNotifications_ReturnsZero()
     {
         var result = await _sut.GetUnreadCountAsync(UserId.NewId());
@@ -150,7 +150,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         result.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUnreadCountAsync_MixOfReadAndUnread_CountsOnlyUnread()
     {
         var user = await SeedUserAsync();
@@ -171,7 +171,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         result.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUnreadCountAsync_OtherUsersUnread_NotCounted()
     {
         var user = await SeedUserAsync();
@@ -187,7 +187,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         result.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_NoNotifications_ReturnsEmptyPagedResult()
     {
         var result = await _sut.GetAllAsync(1, 10);
@@ -196,7 +196,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         result.Items.Count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_MultipleUsers_ReturnsAllNotifications()
     {
         var user1 = await SeedUserAsync();
@@ -213,7 +213,7 @@ public class NotificationQueryServiceTests(PostgresContainerFixture fixture) : I
         result.Items.Count.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_Ordering_ReturnsNewestFirst()
     {
         var user = await SeedUserAsync();

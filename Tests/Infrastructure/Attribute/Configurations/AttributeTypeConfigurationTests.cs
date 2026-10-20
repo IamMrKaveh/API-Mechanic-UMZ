@@ -28,7 +28,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsAllScalarPropertiesAndRoundTripsAttributeTypeId()
     {
         var attributeType = await new AttributeTypeBuilder()
@@ -59,7 +59,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         rowVersion!.Length.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task QueryFilter_WithSoftDeletedAttributeType_ExcludesFromDefaultQuery()
     {
         var attributeType = await new AttributeTypeBuilder()
@@ -82,7 +82,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         visible.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task IgnoreQueryFilters_WithSoftDeletedAttributeType_ReturnsSoftDeletedRow()
     {
         var attributeType = await new AttributeTypeBuilder()
@@ -108,7 +108,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         loaded.IsActive.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenAddingValueToAttributeType_CascadesValueOnDelete()
     {
         var attributeType = await new AttributeTypeBuilder()
@@ -141,7 +141,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         remainingValue.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_UpdatingAttributeType_ChangesRowVersion()
     {
         var attributeType = await new AttributeTypeBuilder()
@@ -163,7 +163,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         updatedRowVersion.SequenceEqual(initialRowVersion).ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Name_IsRequiredAndHasMaxLength100()
     {
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -177,7 +177,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         property.GetMaxLength().ShouldBe(100);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DisplayName_IsRequiredAndHasMaxLength100()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeType));
@@ -189,7 +189,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         property.GetMaxLength().ShouldBe(100);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeType));
@@ -201,7 +201,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         primaryKey.Properties[0].Name.ShouldBe(nameof(AttributeType.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasRowVersionShadowProperty()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeType));
@@ -213,7 +213,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         rowVersion.ValueGenerated.ShouldBe(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAddOrUpdate);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasQueryFilterConfigured()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeType));
@@ -222,7 +222,7 @@ public class AttributeTypeConfigurationTests(PostgresContainerFixture fixture) :
         entityType!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCascadeDeleteFromAttributeTypeToValues()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeType));

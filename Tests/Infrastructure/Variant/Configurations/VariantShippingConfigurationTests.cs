@@ -45,7 +45,7 @@ public class VariantShippingConfigurationTests(PostgresContainerFixture fixture)
         return shipping;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_SetShippingMethods_PersistsDimensionsAndMultiplier()
     {
         var variant = await SeedVariantAsync();
@@ -68,7 +68,7 @@ public class VariantShippingConfigurationTests(PostgresContainerFixture fixture)
         reloaded.ShippingMultiplier.ShouldBe(1.5m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_UpdateShippingMethods_UpdatesDimensions()
     {
         var variant = await SeedVariantAsync();
@@ -89,7 +89,7 @@ public class VariantShippingConfigurationTests(PostgresContainerFixture fixture)
         rows[0].ShippingMultiplier.ShouldBe(2m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_RemoveShippingMethods_DeletesRows()
     {
         var variant = await SeedVariantAsync();
@@ -108,7 +108,7 @@ public class VariantShippingConfigurationTests(PostgresContainerFixture fixture)
         count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenShippingHasVariantShippings_DeletingShippingIsRestricted()
     {
         var variant = await SeedVariantAsync();
@@ -125,7 +125,7 @@ public class VariantShippingConfigurationTests(PostgresContainerFixture fixture)
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(VariantShipping));
@@ -137,7 +137,7 @@ public class VariantShippingConfigurationTests(PostgresContainerFixture fixture)
         primaryKey.Properties[0].Name.ShouldBe(nameof(VariantShipping.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_VariantIdAndShippingId_AreRequiredWithConverters()
     {
         var entityType = Context.Model.FindEntityType(typeof(VariantShipping));
@@ -154,7 +154,7 @@ public class VariantShippingConfigurationTests(PostgresContainerFixture fixture)
         shippingId.GetValueConverter().ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DimensionsAndMultiplier_HaveDecimalColumnTypesAndDefaults()
     {
         var entityType = Context.Model.FindEntityType(typeof(VariantShipping));
@@ -171,7 +171,7 @@ public class VariantShippingConfigurationTests(PostgresContainerFixture fixture)
         entityType!.FindProperty(nameof(VariantShipping.ShippingMultiplier))!.GetDefaultValue().ShouldBe(1m);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Shipping_ForeignKeyHasRestrictDelete()
     {
         var entityType = Context.Model.FindEntityType(typeof(VariantShipping));
@@ -183,7 +183,7 @@ public class VariantShippingConfigurationTests(PostgresContainerFixture fixture)
         fk!.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasIndexesOnVariantIdAndShippingId()
     {
         var entityType = Context.Model.FindEntityType(typeof(VariantShipping));

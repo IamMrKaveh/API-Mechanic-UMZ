@@ -24,7 +24,7 @@ public class ElasticsearchInitialSyncServiceTests(PostgresContainerFixture fixtu
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAllDataAsync_WhenConnectionFactoryThrows_PropagatesAfterStartLog()
     {
         _sqlConnectionFactory.CreateConnectionAsync()
@@ -45,7 +45,7 @@ public class ElasticsearchInitialSyncServiceTests(PostgresContainerFixture fixtu
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SyncAllDataAsync_AgainstPostgresSchema_ThrowsPostgresExceptionForTSqlDialect()
     {
         // The sync queries use SQL Server dialect (bit comparisons like

@@ -31,7 +31,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ValidStatus_PersistsAcrossContexts()
     {
         var status = OrderStatus.Create(
@@ -64,7 +64,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         loaded.IsDefault.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenStatusDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(OrderStatusId.NewId());
@@ -72,7 +72,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDefaultAsync_WhenDefaultExists_ReturnsIt()
     {
         var defaultStatus = OrderStatus.Create("Placed", "ثبت شده", sortOrder: 0);
@@ -94,7 +94,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         loaded.IsDefault.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDefaultAsync_WhenNoDefaultExists_ReturnsNull()
     {
         var status = OrderStatus.Create("NoDefault", "بدون پیش‌فرض");
@@ -109,7 +109,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameAsync_MatchingName_ReturnsTrue()
     {
         var status = OrderStatus.Create("UniqueName-1", "نام یکتا");
@@ -124,7 +124,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameAsync_NonMatchingName_ReturnsFalse()
     {
         var exists = await _sut.ExistsByNameAsync("Does-Not-Exist");
@@ -132,7 +132,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameAsync_WithExcludeId_ExcludesOwnEntry()
     {
         var status = OrderStatus.Create("UniqueName-2", "نام یکتا ۲");
@@ -147,7 +147,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task IsInUseAsync_WhenNoOrderReferencesStatus_ReturnsFalse()
     {
         var status = OrderStatus.Create("Reserved", "رزرو", null, null, 1, true, false);
@@ -159,7 +159,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task IsInUseAsync_WhenAnOrderHasMatchingStatusValue_ReturnsTrue()
     {
         var status = OrderStatus.Create("Pending", "در انتظار", null, null, 2, true, false);
@@ -219,7 +219,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         result.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterUpdate_PersistsNewValues()
     {
         var status = OrderStatus.Create("Editable", "قابل ویرایش", sortOrder: 1);
@@ -256,7 +256,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         final.AllowEdit.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Remove_ExistingStatus_DeletesFromDatabase()
     {
         var status = OrderStatus.Create("Removable", "قابل حذف");
@@ -275,7 +275,7 @@ public class OrderStatusRepositoryTests(PostgresContainerFixture fixture) : IAsy
         (await _sut.GetByIdAsync(status.Id)).ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_DuplicateName_ThrowsOnSaveDueToUniqueIndex()
     {
         var first = OrderStatus.Create("DupName", "تکراری");

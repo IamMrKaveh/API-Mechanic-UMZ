@@ -35,7 +35,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         return wishlist;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_NewWishlistItem_RoundTripsAllProperties()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -56,7 +56,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         reloaded.UpdatedAt.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateUserProduct_ThrowsDbUpdateException()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -70,7 +70,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_SameProductForDifferentUsers_BothPersist()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -83,7 +83,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenUserIsDeleted_WishlistItemsAreCascadeDeleted()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -103,7 +103,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         remaining.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task QueryFilter_WhenUserIsDeactivated_WishlistIsHidden()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -122,7 +122,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         hidden.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToWishlistsTable()
     {
         Skip.IfNot(Fixture.IsDockerAvailable, Fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -132,7 +132,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         entityType!.GetTableName().ShouldBe("Wishlists");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(Wishlists));
@@ -144,7 +144,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         primaryKey.Properties[0].Name.ShouldBe(nameof(Wishlists.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_UserIdAndProductId_AreRequiredWithConverters()
     {
         var entityType = Context.Model.FindEntityType(typeof(Wishlists));
@@ -161,7 +161,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         productId.GetValueConverter().ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasUniqueIndexOnUserIdProductId()
     {
         var entityType = Context.Model.FindEntityType(typeof(Wishlists));
@@ -175,7 +175,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         index!.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasSingleColumnIndexesOnUserIdAndProductId()
     {
         var entityType = Context.Model.FindEntityType(typeof(Wishlists));
@@ -189,7 +189,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_UserAndProduct_ForeignKeysHaveCascadeDelete()
     {
         var entityType = Context.Model.FindEntityType(typeof(Wishlists));
@@ -208,7 +208,7 @@ public class WishlistConfigurationTests(PostgresContainerFixture fixture) : Inte
         productFk.IsRequired.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasQueryFilter()
     {
         var entityType = Context.Model.FindEntityType(typeof(Wishlists));

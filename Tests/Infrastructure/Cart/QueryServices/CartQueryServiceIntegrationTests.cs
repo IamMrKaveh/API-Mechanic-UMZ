@@ -1,4 +1,4 @@
-﻿using Application.Media.Contracts;
+using Application.Media.Contracts;
 using Application.Media.Features.Shared;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
@@ -27,7 +27,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_WithUserId_WhenCartHasItems_ReturnsDetailWithAggregatedTotals()
     {
         var user = await SeedUserAsync();
@@ -73,7 +73,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         detailA.ProductImage.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_WithGuestToken_WhenCartHasItems_ReturnsDetail()
     {
         var guestToken = GuestToken.Generate();
@@ -99,7 +99,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         result.TotalPrice.ShouldBe(80m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_WhenNeitherUserIdNorGuestTokenProvided_ReturnsNull()
     {
         var result = await _sut.GetCartDetailAsync(null, null, CancellationToken.None);
@@ -107,7 +107,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_WithUnknownUserId_ReturnsNull()
     {
         var result = await _sut.GetCartDetailAsync(UserId.NewId(), null, CancellationToken.None);
@@ -115,7 +115,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_WhenCartIsCheckedOut_ReturnsNull()
     {
         var user = await SeedUserAsync();
@@ -130,7 +130,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_PopulatesProductImageFromMediaQueryService()
     {
         var user = await SeedUserAsync();
@@ -175,7 +175,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartSummaryAsync_WhenCartHasItems_ReturnsAggregatedCountsAndTotal()
     {
         var user = await SeedUserAsync();
@@ -205,7 +205,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         summary.TotalPrice.ShouldBe(2 * 60m + 5 * 40m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartSummaryAsync_WhenNoCartExists_ReturnsZeroSummary()
     {
         var summary = await _sut.GetCartSummaryAsync(UserId.NewId(), null, CancellationToken.None);
@@ -216,7 +216,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         summary.TotalPrice.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartSummaryAsync_WithGuestToken_ReturnsSummary()
     {
         var guestToken = GuestToken.Generate();
@@ -236,7 +236,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         summary.TotalPrice.ShouldBe(120m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateCartForCheckoutAsync_WhenCartHasItems_ReturnsValid()
     {
         var user = await SeedUserAsync();
@@ -252,7 +252,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         validation.Errors.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateCartForCheckoutAsync_WhenCartIsEmpty_ReturnsInvalidWithEmptyCartError()
     {
         var user = await SeedUserAsync();
@@ -267,7 +267,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         validation.Errors.ShouldContain("سبد خرید خالی است.");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateCartForCheckoutAsync_WhenCartDoesNotExist_ReturnsInvalidWithNotFoundError()
     {
         var validation = await _sut.ValidateCartForCheckoutAsync(UserId.NewId(), null, CancellationToken.None);
@@ -277,7 +277,7 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
         validation.Errors.ShouldContain("سبد خرید یافت نشد.");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateCartForCheckoutAsync_WhenNeitherUserIdNorGuestTokenProvided_ReturnsInvalidWithNotFoundError()
     {
         var validation = await _sut.ValidateCartForCheckoutAsync(null, null, CancellationToken.None);

@@ -28,7 +28,7 @@ public class GetRevenueReportIntegrationTests(PostgresContainerFixture fixture) 
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetRevenueReportAsync_EmptyDatabase_ReturnsZeroTotalsAndEmptyByStatus()
     {
         var from = DateTime.UtcNow.AddDays(-30);

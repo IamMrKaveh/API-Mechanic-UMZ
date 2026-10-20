@@ -38,7 +38,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         return review;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_LikeVote_PersistsAndRoundTrips()
     {
         var review = await SeedApprovedReviewAsync();
@@ -63,7 +63,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         vote.UpdatedAt.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ChangeVoteType_UpdatesTypeAndSetsUpdatedAt()
     {
         var review = await SeedApprovedReviewAsync();
@@ -89,7 +89,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         votes[0].UpdatedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateVoteForSameUser_DoesNotCreateSecondRow()
     {
         var review = await SeedApprovedReviewAsync();
@@ -109,7 +109,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         count.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateReviewIdUserId_InsertedViaSql_ThrowsDbUpdateException()
     {
         var review = await SeedApprovedReviewAsync();
@@ -135,7 +135,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         Context.ChangeTracker.Clear();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenReviewIsDeleted_VotesAreCascadeDeleted()
     {
         var review = await SeedApprovedReviewAsync();
@@ -161,7 +161,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         remaining.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToReviewVotesTable()
     {
         Skip.IfNot(Fixture.IsDockerAvailable, Fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -171,7 +171,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         entityType!.GetTableName().ShouldBe("ReviewVotes");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(ReviewVote));
@@ -183,7 +183,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         primaryKey.Properties[0].Name.ShouldBe(nameof(ReviewVote.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_ReviewIdAndUserId_AreRequiredWithConverters()
     {
         var entityType = Context.Model.FindEntityType(typeof(ReviewVote));
@@ -200,7 +200,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         userId.GetValueConverter().ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Type_IsRequiredStringWithMaxLength20()
     {
         var property = Context.Model.FindEntityType(typeof(ReviewVote))!.FindProperty(nameof(ReviewVote.Type));
@@ -209,7 +209,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         property.GetMaxLength().ShouldBe(20);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_CreatedAtIsRequired_UpdatedAtIsOptional()
     {
         var entityType = Context.Model.FindEntityType(typeof(ReviewVote));
@@ -219,7 +219,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
         entityType.FindProperty(nameof(ReviewVote.UpdatedAt))!.IsNullable.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasUniqueIndexOnReviewIdUserIdWithExpectedName()
     {
         var entityType = Context.Model.FindEntityType(typeof(ReviewVote));
@@ -234,7 +234,7 @@ public class ReviewVoteConfigurationTests(PostgresContainerFixture fixture) : In
             ignoreOrder: true);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasNonUniqueIndexOnReviewId()
     {
         var entityType = Context.Model.FindEntityType(typeof(ReviewVote));

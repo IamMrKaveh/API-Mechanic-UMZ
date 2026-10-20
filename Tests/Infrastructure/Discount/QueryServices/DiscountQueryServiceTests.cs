@@ -36,7 +36,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPagedAsync_ReturnsAllActiveDiscountsWithCorrectTotal()
     {
         await SeedAsync(new DiscountCodeBuilder().WithCode("A").Build());
@@ -54,7 +54,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         items.Count.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPagedAsync_WithIncludeExpiredFalse_FiltersOutExpiredDiscounts()
     {
         await SeedAsync(new DiscountCodeBuilder().WithCode("LIVE").Build());
@@ -76,7 +76,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         items.Select(i => i.Code).ShouldContain("FUTURE");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPagedAsync_WithIncludeExpiredTrue_IncludesExpiredDiscounts()
     {
         await SeedAsync(new DiscountCodeBuilder().WithCode("LIVE").Build());
@@ -94,7 +94,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         items.Select(i => i.Code).ShouldContain("PAST");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPagedAsync_AppliesPaginationAndOrdersByCreatedAtDescending()
     {
         var first = new DiscountCodeBuilder().WithCode("FIRST").Build();
@@ -129,7 +129,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         page2Items.Single().Code.ShouldBe("FIRST");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDetailByIdAsync_WhenDiscountExists_ReturnsFullDetail()
     {
         var discount = new DiscountCodeBuilder()
@@ -157,7 +157,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         dto.Restrictions.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDetailByIdAsync_WhenIdDoesNotExist_ReturnsNull()
     {
         var dto = await _sut.GetDetailByIdAsync(DiscountCodeId.NewId(), CancellationToken.None);
@@ -165,7 +165,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         dto.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDiscountInfoByCodeAsync_NormalizesInputCodeAndReturnsInfo()
     {
         var discount = new DiscountCodeBuilder()
@@ -186,7 +186,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         dto.IsRedeemable.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDiscountInfoByCodeAsync_WhenCodeDoesNotExist_ReturnsNull()
     {
         var dto = await _sut.GetDiscountInfoByCodeAsync("MISSING", CancellationToken.None);
@@ -194,7 +194,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         dto.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateDiscountAsync_WhenCodeDoesNotExist_ReturnsInvalid()
     {
         var result = await _sut.ValidateDiscountAsync(
@@ -208,7 +208,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Error.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateDiscountAsync_OnRedeemableCode_ReturnsValidWithComputedAmounts()
     {
         var discount = new DiscountCodeBuilder()
@@ -234,7 +234,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.DiscountValue.ShouldBe(10m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateDiscountAsync_OnExpiredCode_ReturnsInvalid()
     {
         var discount = new DiscountCodeBuilder()
@@ -254,7 +254,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Error.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateDiscountAsync_OnInactiveCode_ReturnsInvalid()
     {
         var discount = new DiscountCodeBuilder().WithCode("OFFCODE").Build();
@@ -272,7 +272,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Error.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUsageReportByIdAsync_WhenDiscountHasNoUsages_ReturnsEmptyReport()
     {
         var discount = new DiscountCodeBuilder()
@@ -293,7 +293,7 @@ public class DiscountQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         report.Usages.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUsageReportByIdAsync_WhenIdDoesNotExist_ReturnsNull()
     {
         var report = await _sut.GetUsageReportByIdAsync(DiscountCodeId.NewId(), CancellationToken.None);

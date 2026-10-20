@@ -46,7 +46,7 @@ public class OrderStatusConfigurationTests(PostgresContainerFixture fixture) : I
         return status;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_RoundTripsOrderStatusIdConversion()
     {
         var status = BuildStatus();
@@ -60,7 +60,7 @@ public class OrderStatusConfigurationTests(PostgresContainerFixture fixture) : I
         loaded.Id.Value.ShouldBe(status.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PreservesAllScalarProperties()
     {
         var status = OrderStatus.Create(
@@ -92,7 +92,7 @@ public class OrderStatusConfigurationTests(PostgresContainerFixture fixture) : I
         loaded.RowVersion.Length.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateName_ThrowsDbUpdateExceptionDueToUniqueIndex()
     {
         var first = BuildStatus(name: "DuplicateStatusName");
@@ -108,7 +108,7 @@ public class OrderStatusConfigurationTests(PostgresContainerFixture fixture) : I
         });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_ByName_ExercisesNameIndexAndReturnsMatchingRow()
     {
         var target = BuildStatus(name: "Confirmed");
@@ -124,7 +124,7 @@ public class OrderStatusConfigurationTests(PostgresContainerFixture fixture) : I
         loaded!.Id.ShouldBe(target.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_BySortOrder_ExercisesSortOrderIndexAndReturnsOrdered()
     {
         var first = BuildStatus(sortOrder: 1);
@@ -144,7 +144,7 @@ public class OrderStatusConfigurationTests(PostgresContainerFixture fixture) : I
         loaded.ShouldBe(new[] { 1, 2, 3 });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_ByIsActive_ExercisesIsActiveIndex()
     {
         var active = BuildStatus();
@@ -169,7 +169,7 @@ public class OrderStatusConfigurationTests(PostgresContainerFixture fixture) : I
         inactives[0].Id.ShouldBe(inactive.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_ByIsDefault_ExercisesIsDefaultIndex()
     {
         var defaultStatus = BuildStatus();
@@ -188,7 +188,7 @@ public class OrderStatusConfigurationTests(PostgresContainerFixture fixture) : I
         loaded!.IsDefault.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task RowVersion_ConfiguredAsConcurrencyToken_ChangesBetweenInsertAndUpdate()
     {
         var status = BuildStatus();
@@ -217,7 +217,7 @@ public class OrderStatusConfigurationTests(PostgresContainerFixture fixture) : I
         reloaded.SortOrder.ShouldBe(99);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ConcurrencyConflict_WhenTwoContextsUpdateSameRowVersion_SecondSaveThrowsDbUpdateConcurrencyException()
     {
         var status = BuildStatus();
@@ -241,7 +241,7 @@ public class OrderStatusConfigurationTests(PostgresContainerFixture fixture) : I
             await contextB.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task DomainEvents_AreIgnoredByEfCore_AndNotPersistedAsColumn()
     {
         var status = OrderStatus.Create(

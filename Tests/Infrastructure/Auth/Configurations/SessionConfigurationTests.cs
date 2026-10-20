@@ -1,4 +1,4 @@
-﻿using Domain.Security.Services;
+using Domain.Security.Services;
 using Domain.Security.Aggregates;
 using Domain.Security.Enums;
 using Domain.Security.ValueObjects;
@@ -37,7 +37,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_NewUserSession_RoundTripsAllMappedProperties()
     {
         var userId = UserId.NewId();
@@ -72,7 +72,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
         reloaded.LastActivityAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DuplicateRefreshToken_ThrowsDbUpdateException()
     {
         var sharedToken = RefreshToken.Generate();
@@ -92,7 +92,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
             await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_SameUserAndDeviceWhileActive_ThrowsDbUpdateException()
     {
         var userId = UserId.NewId();
@@ -119,7 +119,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
             await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_SameUserAndDeviceAfterRevocation_Succeeds()
     {
         var userId = UserId.NewId();
@@ -154,7 +154,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
         count.ShouldBe(2);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(SessionRevocationReason.UserRequested)]
     [InlineData(SessionRevocationReason.AdminRevoked)]
     [InlineData(SessionRevocationReason.SecurityConcern)]
@@ -189,7 +189,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
         rawReason.ShouldBe(reason.ToString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_UserSession_HasRowVersionShadowPropertyThatChangesOnUpdate()
     {
         var session = new UserSessionBuilder().Build();
@@ -209,7 +209,7 @@ public class SessionConfigurationTests(PostgresContainerFixture fixture) : IAsyn
         updatedRowVersion.ShouldNotBe(initialRowVersion);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_UserSessionByRefreshToken_ReturnsExpectedSession()
     {
         var token = RefreshToken.Generate();

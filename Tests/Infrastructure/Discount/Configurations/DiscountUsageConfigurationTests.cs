@@ -26,7 +26,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToDiscountUsageRecordsTable()
     {
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -36,7 +36,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         entityType!.GetTableName().ShouldBe("DiscountUsageRecords");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -48,7 +48,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         primaryKey.Properties[0].Name.ShouldBe(nameof(DiscountUsageRecord.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DiscountCodeId_IsRequired()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -59,7 +59,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         property!.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_UserId_IsRequired()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -70,7 +70,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         property!.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_OrderId_IsRequired()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -81,7 +81,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         property!.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Code_IsRequiredAndHasMaxLength50()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -93,7 +93,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         property.GetMaxLength().ShouldBe(50);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DiscountedAmount_HasDecimal184ColumnTypeAndIsRequired()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -105,7 +105,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         property.GetColumnType().ShouldBe("numeric(18,4)");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_UsageCountAtTimeAndUsedAt_AreRequired()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -115,7 +115,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         entityType.FindProperty(nameof(DiscountUsageRecord.UsedAt))!.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasRestrictDeleteBehaviorOnUser()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -126,7 +126,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         navigation!.ForeignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasRestrictDeleteBehaviorOnOrder()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -137,7 +137,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         navigation!.ForeignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasSingleColumnIndexOnDiscountCodeId()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -150,7 +150,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasSingleColumnIndexOnUserId()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -163,7 +163,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasSingleColumnIndexOnOrderId()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));
@@ -176,7 +176,7 @@ public class DiscountUsageConfigurationTests(PostgresContainerFixture fixture) :
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasQueryFilterConfigured()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountUsageRecord));

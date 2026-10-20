@@ -29,7 +29,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         return product;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsProductAndRoundTripsAllScalarProperties()
     {
         var (brand, category) = await SeedBrandWithCategoryAsync();
@@ -61,7 +61,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         reloaded.CreatedAt.ShouldNotBe(default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateSlug_ThrowsDbUpdateException()
     {
         var slug = $"dup-product-{Guid.NewGuid():N}"[..24];
@@ -79,7 +79,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenBrandHasProducts_DeletingBrandIsRestricted()
     {
         var product = await SeedProductAsync();
@@ -91,7 +91,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenCategoryHasProducts_DeletingCategoryIsRestricted()
     {
         var product = await SeedProductAsync();
@@ -103,7 +103,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenProductIsDeleted_VariantsAreCascadeDeleted()
     {
         var product = await SeedProductAsync();
@@ -130,7 +130,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         remaining.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_SoftDeleteLifecycle_PersistsFlags()
     {
         var product = await SeedProductAsync();
@@ -149,7 +149,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         reloaded.DeletedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToProductsTable()
     {
         Skip.IfNot(Fixture.IsDockerAvailable, Fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -159,7 +159,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         entityType!.GetTableName().ShouldBe("Products");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(Products));
@@ -171,7 +171,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         primaryKey.Properties[0].Name.ShouldBe(nameof(Products.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Id_IsNeverValueGenerated()
     {
         var entityType = Context.Model.FindEntityType(typeof(Products));
@@ -183,7 +183,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         id.GetValueConverter().ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Name_IsRequiredWithMaxLengthAndNonUniqueIndex()
     {
         var entityType = Context.Model.FindEntityType(typeof(Products));
@@ -204,7 +204,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         index!.IsUnique.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Slug_IsRequiredWithMaxLengthAndUniqueIndex()
     {
         var entityType = Context.Model.FindEntityType(typeof(Products));
@@ -224,7 +224,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         index!.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Brand_ForeignKeyIsRequiredWithRestrictDelete()
     {
         var entityType = Context.Model.FindEntityType(typeof(Products));
@@ -238,7 +238,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         fk.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Category_ForeignKeyIsRequiredWithRestrictDelete()
     {
         var entityType = Context.Model.FindEntityType(typeof(Products));
@@ -252,7 +252,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         fk.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCascadeDeleteFromProductToVariants()
     {
         var entityType = Context.Model.FindEntityType(typeof(Products));
@@ -263,7 +263,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         navigation!.ForeignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasExpectedSingleColumnIndexes()
     {
         var entityType = Context.Model.FindEntityType(typeof(Products));
@@ -277,7 +277,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_CreatedAtAndUpdatedAt_AreRequired()
     {
         var entityType = Context.Model.FindEntityType(typeof(Products));
@@ -287,7 +287,7 @@ public class ProductConfigurationTests(PostgresContainerFixture fixture) : Integ
         entityType.FindProperty(nameof(Products.UpdatedAt))!.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasXminConcurrencyToken()
     {
         var entityType = Context.Model.FindEntityType(typeof(Products));

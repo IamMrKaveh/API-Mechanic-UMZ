@@ -58,7 +58,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         return (wallet, reservation);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Reservation_RoundTripsAllScalarProperties()
     {
         var (wallet, reservation) = await SeedActiveReservationAsync(
@@ -81,7 +81,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         loaded.ResolvedAt.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Reservation_StatusIsStoredAsString()
     {
         var (_, reservation) = await SeedActiveReservationAsync();
@@ -95,7 +95,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         raw.ShouldBe(WalletReservationStatus.Active.ToString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Reservation_ReleaseTransitionPersistsResolvedAtAndReleasedStatus()
     {
         var (wallet, reservation) = await SeedActiveReservationAsync();
@@ -113,7 +113,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         loaded.ResolvedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Reservation_PurposeLongerThan200Characters_ThrowsOnSave()
     {
         var owner = await SeedActiveUserAsync();
@@ -127,7 +127,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Reservation_IsRemovedWhenParentWalletIsDeleted()
     {
         var (wallet, reservation) = await SeedActiveReservationAsync();
@@ -145,7 +145,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Reservation_QueryFilterHidesReservationWhenOwnerIsInactive()
     {
         var owner = await SeedActiveUserAsync();
@@ -171,7 +171,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         ignoringFilters.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Reservation_WalletIdShadowPropertyIsMappedAsColumn()
     {
         var (wallet, reservation) = await SeedActiveReservationAsync();
@@ -185,7 +185,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         raw.ShouldBe(wallet.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Reservation_HasIndexOnWalletId()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletReservation));
@@ -195,7 +195,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Reservation_HasCompositeIndexOnWalletIdAndStatus()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletReservation));
@@ -205,7 +205,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Reservation_AmountIsMappedToAmountAndAmountCurrencyColumns()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletReservation));
@@ -216,7 +216,7 @@ public class WalletReservationConfigurationTests(PostgresContainerFixture fixtur
         amountOwnedType.FindProperty(nameof(Money.Currency))!.GetColumnName(storeObject).ShouldBe("AmountCurrency");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Reservation_StatusColumnMaxLengthIs20()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletReservation));

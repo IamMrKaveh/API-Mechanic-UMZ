@@ -1,4 +1,4 @@
-﻿using Domain.Brand.ValueObjects;
+using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
@@ -46,7 +46,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         return variant;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ValidInventory_PersistsAcrossContexts()
     {
         var variant = await PersistVariantAsync("SKU-INV-1");
@@ -73,7 +73,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         loaded.IsUnlimited.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenInventoryDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(InventoryId.NewId());
@@ -81,7 +81,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdAsync_WhenExists_ReturnsInventory()
     {
         var variant = await PersistVariantAsync("SKU-INV-2");
@@ -102,7 +102,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         loaded.StockQuantity.Value.ShouldBe(10);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdAsync_WhenNoInventoryForVariant_ReturnsNull()
     {
         var loaded = await _sut.GetByVariantIdAsync(VariantId.NewId());
@@ -110,7 +110,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdWithLedgerAsync_WhenInventoryHasLedgerEntries_LoadsThem()
     {
         var variant = await PersistVariantAsync("SKU-INV-3");
@@ -131,7 +131,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         loaded.LedgerEntries.ShouldContain(e => e.QuantityDelta == 20);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdsAsync_ReturnsAllMatchingInventories()
     {
         var variantA = await PersistVariantAsync("SKU-INV-A");
@@ -159,7 +159,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         results.ShouldNotContain(i => i.VariantId == variantC.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByReferenceNumberAsync_ReturnsOnlyInventoriesWithMatchingLedgerReference()
     {
         var variantA = await PersistVariantAsync("SKU-INV-REF-A");
@@ -184,7 +184,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         results.Single().LedgerEntries.ShouldContain(e => e.ReferenceNumber == "ORDER-REF-1");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByReferenceNumberAsync_WhenNoMatch_ReturnsEmpty()
     {
         var results = await _sut.GetByReferenceNumberAsync("NO-SUCH-REF");
@@ -192,7 +192,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         results.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterIncreaseStock_PersistsNewStockQuantity()
     {
         var variant = await PersistVariantAsync("SKU-INV-UP");
@@ -224,7 +224,7 @@ public class InventoryRepositoryTests(PostgresContainerFixture fixture) : Integr
         final!.StockQuantity.Value.ShouldBe(15);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_DuplicateVariantId_ThrowsOnSaveDueToUniqueIndex()
     {
         var variant = await PersistVariantAsync("SKU-INV-DUP");

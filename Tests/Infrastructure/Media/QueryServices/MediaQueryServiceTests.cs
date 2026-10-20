@@ -50,7 +50,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         await deletionContext.DisposeAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenMediaExists_ReturnsDtoWithResolvedPublicUrl()
     {
         var media = new MediaBuilder()
@@ -83,7 +83,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto.PublicUrl.ShouldBe("https://cdn.test/uploads/products/hero.png");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenMediaDoesNotExist_ReturnsNull()
     {
         var dto = await _sut.GetByIdAsync(MediaId.NewId());
@@ -91,7 +91,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenMediaIsSoftDeleted_ReturnsNull()
     {
         var media = new MediaBuilder().WithEntityType("Product").Build();
@@ -107,7 +107,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByEntityAsync_ReturnsMediasOrderedBySortOrder()
     {
         var entityId = Guid.NewGuid();
@@ -125,7 +125,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Select(dto => dto.SortOrder).ToList().ShouldBe(new[] { 0, 1, 2 });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByEntityAsync_ProjectsPublicUrlUsingUrlResolver()
     {
         var entityId = Guid.NewGuid();
@@ -144,7 +144,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Single().PublicUrl.ShouldBe("https://cdn.test/uploads/products/a.png");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPrimaryByEntityAsync_WhenPrimaryExists_ReturnsPrimaryDto()
     {
         var entityId = Guid.NewGuid();
@@ -164,7 +164,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto.IsPrimary.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPrimaryByEntityAsync_WhenNoPrimary_ReturnsNull()
     {
         var entityId = Guid.NewGuid();
@@ -178,7 +178,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPrimaryByEntitiesAsync_ReturnsDictionaryKeyedByEntityId()
     {
         var productA = Guid.NewGuid();
@@ -208,7 +208,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result[productB].Id.ShouldBe(primaryB.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPrimaryByEntitiesAsync_WithEmptyEntityIds_ReturnsEmptyDictionary()
     {
         var result = await _sut.GetPrimaryByEntitiesAsync("Product", Array.Empty<Guid>());
@@ -216,7 +216,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPrimaryByEntitiesAsync_DeduplicatesInputEntityIds()
     {
         var productId = Guid.NewGuid();
@@ -233,7 +233,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result[productId].Id.ShouldBe(primary.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_WithEntityTypeFilter_ReturnsOnlyMatchingEntityType()
     {
         for (var i = 0; i < 3; i++)
@@ -251,7 +251,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         page.Items.ShouldAllBe(dto => dto.EntityType == "Product");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_WithNullEntityTypeFilter_ReturnsAllEntityTypes()
     {
         await PersistAsync(new MediaBuilder().WithEntityType("Product").Build());
@@ -267,7 +267,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         page.Items.Count.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_AppliesPagingWindow()
     {
         for (var i = 0; i < 5; i++)
@@ -285,7 +285,7 @@ public class MediaQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         page.TotalPages.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_ExcludesSoftDeletedMedia()
     {
         var alive = new MediaBuilder().WithEntityType("Product").Build();

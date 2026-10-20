@@ -54,7 +54,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         return product;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ValidVariant_PersistsAcrossContexts()
     {
         var product = await PersistProductAsync();
@@ -84,7 +84,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         loaded.IsDeleted.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenVariantDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(VariantId.NewId());
@@ -92,7 +92,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdsAsync_ReturnsAllMatchingVariants()
     {
         var product = await PersistProductAsync();
@@ -118,7 +118,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         results.ShouldNotContain(v => v.Id == v3.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdsWithShippingsAsync_WithEmptyInput_ReturnsEmpty()
     {
         var results = await _sut.GetByIdsWithShippingsAsync(Array.Empty<VariantId>());
@@ -126,7 +126,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         results.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsAsync_WhenVariantExists_ReturnsTrue()
     {
         var product = await PersistProductAsync();
@@ -142,7 +142,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsAsync_WhenVariantIsSoftDeleted_ReturnsFalse()
     {
         var product = await PersistProductAsync();
@@ -159,7 +159,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySkuAsync_MatchingSku_ReturnsTrue()
     {
         var product = await PersistProductAsync();
@@ -175,7 +175,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySkuAsync_NonMatchingSku_ReturnsFalse()
     {
         var exists = await _sut.ExistsBySkuAsync(Sku.Create("SKU-MISSING"));
@@ -183,7 +183,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySkuAsync_WithExcludeId_ExcludesOwnEntry()
     {
         var product = await PersistProductAsync();
@@ -199,7 +199,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetWithProductAsync_LoadsProductNavigation()
     {
         var product = await PersistProductAsync();
@@ -217,7 +217,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         loaded.Product.Id.ShouldBe(product.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterChangePrice_PersistsNewPrice()
     {
         var product = await PersistProductAsync();
@@ -250,7 +250,7 @@ public class VariantRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         final.OriginalPrice.Amount.ShouldBe(300m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_DuplicateSku_ThrowsOnSaveDueToUniqueIndex()
     {
         var product = await PersistProductAsync();

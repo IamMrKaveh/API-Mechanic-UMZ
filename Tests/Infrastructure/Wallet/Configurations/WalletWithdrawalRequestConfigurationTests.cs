@@ -45,7 +45,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         return request;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_RoundTripsAllScalarProperties()
     {
         var request = await SeedWithdrawalAsync(
@@ -75,7 +75,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         loaded.BankReferenceNumber.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_StatusIsStoredAsString()
     {
         var request = await SeedWithdrawalAsync();
@@ -89,7 +89,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         raw.ShouldBe(WalletWithdrawalStatus.Pending.ToString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_ApproveTransitionPersistsApprovedAt()
     {
         var request = await SeedWithdrawalAsync();
@@ -106,7 +106,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         loaded.ProcessedBy.ShouldBe(admin);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_RejectTransitionPersistsRejectionReasonAndRejectedAt()
     {
         var request = await SeedWithdrawalAsync();
@@ -124,7 +124,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         loaded.ProcessedBy.ShouldBe(admin);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_PaidTransitionPersistsBankReferenceAndPaidAt()
     {
         var request = await SeedWithdrawalAsync();
@@ -142,7 +142,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         loaded.ProcessedBy.ShouldBe(admin);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_CancelTransitionPersistsCancelledAt()
     {
         var request = await SeedWithdrawalAsync();
@@ -157,7 +157,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         loaded.CancelledAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_DuplicateReservationId_ThrowsDueToUniqueIndex()
     {
         var first = await SeedWithdrawalAsync();
@@ -171,7 +171,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_AccountHolderLongerThan150Characters_ThrowsOnSave()
     {
         var request = new WalletWithdrawalRequestBuilder()
@@ -183,7 +183,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_DescriptionLongerThan500Characters_ThrowsOnSave()
     {
         var request = new WalletWithdrawalRequestBuilder()
@@ -195,7 +195,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_RejectionReasonLongerThan500Characters_ThrowsOnSave()
     {
         var request = await SeedWithdrawalAsync();
@@ -205,7 +205,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_BankReferenceLongerThan64Characters_ThrowsOnSave()
     {
         var request = await SeedWithdrawalAsync();
@@ -215,7 +215,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_XminConcurrencyTokenChangesAfterUpdate()
     {
         var request = await SeedWithdrawalAsync();
@@ -229,7 +229,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         updatedXmin.ShouldNotBe(initialXmin);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_ConcurrencyConflict_ThrowsDbUpdateConcurrencyException()
     {
         var request = await SeedWithdrawalAsync();
@@ -251,7 +251,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         await Should.ThrowAsync<DbUpdateConcurrencyException>(async () => await contextB.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Withdrawal_IbanIsPersistedAsStringViaConversion()
     {
         var request = await SeedWithdrawalAsync();
@@ -265,7 +265,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         raw.ShouldBe(request.Iban.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Withdrawal_UsesTableNameWalletWithdrawalRequests()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletWithdrawalRequest));
@@ -273,7 +273,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         entityType!.GetTableName().ShouldBe("WalletWithdrawalRequests");
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("IX_WalletWithdrawalRequests_UserId")]
     [InlineData("IX_WalletWithdrawalRequests_Status")]
     [InlineData("IX_WalletWithdrawalRequests_CreatedAt")]
@@ -286,7 +286,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Withdrawal_ReservationIdIndexIsUnique()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletWithdrawalRequest));
@@ -296,7 +296,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         index.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Withdrawal_IbanColumnMaxLengthIs32()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletWithdrawalRequest));
@@ -305,7 +305,7 @@ public class WalletWithdrawalRequestConfigurationTests(PostgresContainerFixture 
         property!.GetMaxLength().ShouldBe(32);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Withdrawal_DomainEventsAreIgnored()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletWithdrawalRequest));

@@ -1,4 +1,4 @@
-﻿using global::Domain.Variant.Aggregates;
+using global::Domain.Variant.Aggregates;
 using Tests.TestInfrastructure.Base;
 using Variants = global::Domain.Variant.Aggregates.ProductVariant;
 
@@ -34,7 +34,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         return variant;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsVariantAndRoundTripsAllScalarAndOwnedProperties()
     {
         var product = await SeedProductAsync();
@@ -62,7 +62,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         reloaded.UpdatedAt.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateSku_ThrowsDbUpdateException()
     {
         var product = await SeedProductAsync();
@@ -77,7 +77,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ChangePriceAndSku_PersistNewValues()
     {
         var product = await SeedProductAsync();
@@ -99,7 +99,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         reloaded.UpdatedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DeactivateAndActivate_PersistIsActiveFlag()
     {
         var product = await SeedProductAsync();
@@ -121,7 +121,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         activated.IsActive.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenVariantIsDeleted_AttributesAndShippingsAreCascadeDeleted()
     {
         var product = await SeedProductAsync();
@@ -163,7 +163,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         (await Context.VariantShippings.CountAsync(s => s.VariantId == variant.Id)).ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToProductVariantsTable()
     {
         Skip.IfNot(Fixture.IsDockerAvailable, Fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -173,7 +173,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         entityType!.GetTableName().ShouldBe("ProductVariants");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(Variants));
@@ -185,7 +185,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         primaryKey.Properties[0].Name.ShouldBe(nameof(Variants.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Id_IsNeverValueGenerated()
     {
         var id = Context.Model.FindEntityType(typeof(Variants))!.FindProperty(nameof(Variants.Id));
@@ -194,7 +194,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         id.GetValueConverter().ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Sku_IsRequiredWithMaxLength100AndUniqueIndex()
     {
         var entityType = Context.Model.FindEntityType(typeof(Variants));
@@ -212,7 +212,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         index!.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_SellingPriceAndOriginalPrice_AreRequiredOwnedTypes()
     {
         var entityType = Context.Model.FindEntityType(typeof(Variants));
@@ -222,7 +222,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         entityType.FindNavigation(nameof(Variants.OriginalPrice)).ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasExpectedNonUniqueIndexes()
     {
         var entityType = Context.Model.FindEntityType(typeof(Variants));
@@ -237,7 +237,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCascadeDeleteToAttributesAndShippings()
     {
         var entityType = Context.Model.FindEntityType(typeof(Variants));
@@ -252,7 +252,7 @@ public class VariantConfigurationTests(PostgresContainerFixture fixture) : Integ
         shippings!.ForeignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_CreatedAtIsRequired_UpdatedAtIsOptional()
     {
         var entityType = Context.Model.FindEntityType(typeof(Variants));

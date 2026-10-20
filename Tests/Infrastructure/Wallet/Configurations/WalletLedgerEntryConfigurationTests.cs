@@ -68,7 +68,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         return entry;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_RoundTripsCreditWithAllProperties()
     {
         var (owner, wallet) = await SeedOwnerAndWalletAsync();
@@ -98,7 +98,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         loaded.CorrelationId.ShouldBe("corr-id");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_TransactionTypeIsStoredAsString()
     {
         var (owner, wallet) = await SeedOwnerAndWalletAsync();
@@ -113,7 +113,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         raw.ShouldBe(WalletTransactionType.Credit.ToString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_OccurredAtIsMappedToCreatedAtColumn()
     {
         var (owner, wallet) = await SeedOwnerAndWalletAsync();
@@ -126,7 +126,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         property!.GetColumnName(storeObject).ShouldBe("CreatedAt");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_OwnerIdIsMappedToUserIdColumn()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletLedgerEntry));
@@ -136,7 +136,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         property!.GetColumnName(storeObject).ShouldBe("UserId");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_AmountIsMappedToAmountDeltaColumn()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletLedgerEntry));
@@ -147,7 +147,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         amountProperty!.GetColumnName(storeObject).ShouldBe("AmountDelta");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_DuplicateIdempotencyKey_ThrowsDueToUniqueFilteredIndex()
     {
         var (owner, wallet) = await SeedOwnerAndWalletAsync();
@@ -165,7 +165,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_TwoNullIdempotencyKeys_AreAllowedByFilteredIndex()
     {
         var (owner, wallet) = await SeedOwnerAndWalletAsync();
@@ -182,7 +182,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         await Should.NotThrowAsync(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_ReferenceIdIsRequired()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletLedgerEntry));
@@ -192,7 +192,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         property.GetMaxLength().ShouldBe(200);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_DebitEntryPersistsAsDebitTransactionType()
     {
         var (owner, wallet) = await SeedOwnerAndWalletAsync();
@@ -210,7 +210,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         loaded.Amount.Amount.ShouldBe(5_000m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_QueryFilterHidesEntriesForInactiveOwner()
     {
         var (owner, wallet) = await SeedOwnerAndWalletAsync();
@@ -229,7 +229,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         ignoringFilters.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_ForeignKeyToNonexistentWallet_ThrowsOnSave()
     {
         var owner = new UserBuilder().Build();
@@ -247,7 +247,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_DeletingWalletWithLedgerEntries_ThrowsBecauseRestrictOnDelete()
     {
         var (owner, wallet) = await SeedOwnerAndWalletAsync();
@@ -260,7 +260,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("IX_WalletLedgerEntries_WalletId_OccurredAt")]
     [InlineData("IX_WalletLedgerEntries_UserId_OccurredAt")]
     [InlineData("IX_WalletLedgerEntries_IdempotencyKey")]
@@ -277,7 +277,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_LedgerEntry_IdempotencyKeyIndexIsUnique()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletLedgerEntry));
@@ -287,7 +287,7 @@ public class WalletLedgerEntryConfigurationTests(PostgresContainerFixture fixtur
         index.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_LedgerEntry_ForeignKeyToRelatedTopUp_IsSetNullOnDelete()
     {
         var (owner, wallet) = await SeedOwnerAndWalletAsync();

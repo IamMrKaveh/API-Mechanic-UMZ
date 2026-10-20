@@ -18,7 +18,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         return ticket;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_OpenTicket_RoundTripsAllScalarProperties()
     {
         var customerId = global::Domain.User.ValueObjects.UserId.NewId();
@@ -48,7 +48,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         reloaded.CreatedAt.ShouldNotBe(default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DefaultPriority_IsNormal()
     {
         var ticket = new TicketBuilder().Build();
@@ -59,7 +59,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         reloaded.Priority.Value.ShouldBe(TicketPriority.Normal.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_AddMessages_PersistsMessagesAndUpdatesActivity()
     {
         var customerId = global::Domain.User.ValueObjects.UserId.NewId();
@@ -82,7 +82,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         reloaded.LastActivityAt.ShouldNotBe(default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_CloseTicket_PersistsClosedStatus()
     {
         var ticket = new TicketBuilder().Build();
@@ -98,7 +98,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         reloaded.IsClosed.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenTicketIsDeleted_MessagesAreCascadeDeleted()
     {
         var customerId = global::Domain.User.ValueObjects.UserId.NewId();
@@ -122,7 +122,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         remaining.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(Tickets));
@@ -134,7 +134,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         primaryKey.Properties[0].Name.ShouldBe(nameof(Tickets.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Subject_IsRequiredWithMaxLength500()
     {
         var property = Context.Model.FindEntityType(typeof(Tickets))!.FindProperty(nameof(Tickets.Subject));
@@ -143,7 +143,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         property.GetMaxLength().ShouldBe(500);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_StatusPriorityAndCategory_HaveExpectedMaxLengthsAndConverters()
     {
         var entityType = Context.Model.FindEntityType(typeof(Tickets));
@@ -168,7 +168,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         category.GetValueConverter().ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_CustomerIdIsRequired_AssignedAgentIdIsOptional()
     {
         var entityType = Context.Model.FindEntityType(typeof(Tickets));
@@ -178,7 +178,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         entityType.FindProperty(nameof(Tickets.AssignedAgentId))!.IsNullable.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasExpectedIndexes()
     {
         var entityType = Context.Model.FindEntityType(typeof(Tickets));
@@ -198,7 +198,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         composite.ShouldNotBeNull("composite index on Status+Priority should exist");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCascadeDeleteFromTicketToMessages()
     {
         var navigation = Context.Model.FindEntityType(typeof(Tickets))!.FindNavigation(nameof(Tickets.Messages));
@@ -207,7 +207,7 @@ public class TicketConfigurationTests(PostgresContainerFixture fixture) : Integr
         navigation.ForeignKey.Properties.Select(p => p.Name).ShouldBe([nameof(global::Domain.Support.Entities.TicketMessage.TicketId)]);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_CreatedAtAndUpdatedAtAreRequired_OptionalDatesAreNullable()
     {
         var entityType = Context.Model.FindEntityType(typeof(Tickets));

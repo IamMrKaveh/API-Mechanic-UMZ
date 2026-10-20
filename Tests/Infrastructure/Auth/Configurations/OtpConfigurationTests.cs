@@ -35,7 +35,7 @@ public class OtpConfigurationTests(PostgresContainerFixture fixture) : IAsyncLif
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_NewUserOtp_RoundTripsAllMappedPropertiesIncludingCodeHash()
     {
         var userId = UserId.NewId();
@@ -64,7 +64,7 @@ public class OtpConfigurationTests(PostgresContainerFixture fixture) : IAsyncLif
         reloaded.ExpiresAt.ShouldBeGreaterThan(reloaded.CreatedAt);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(OtpPurpose.EmailVerification)]
     [InlineData(OtpPurpose.PasswordReset)]
     [InlineData(OtpPurpose.PhoneVerification)]
@@ -92,7 +92,7 @@ public class OtpConfigurationTests(PostgresContainerFixture fixture) : IAsyncLif
         rawPurpose.ShouldBe(purpose.ToString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_UserOtp_HasRowVersionShadowPropertyThatChangesOnUpdate()
     {
         var otp = new UserOtpBuilder()
@@ -116,7 +116,7 @@ public class OtpConfigurationTests(PostgresContainerFixture fixture) : IAsyncLif
         updatedRowVersion.ShouldNotBe(initialRowVersion);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_UserOtp_VerifyPersistsIsVerifiedAndVerifiedAt()
     {
         var otp = new UserOtpBuilder()
@@ -140,7 +140,7 @@ public class OtpConfigurationTests(PostgresContainerFixture fixture) : IAsyncLif
         reloaded.VerificationAttempts.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_UserOtpByUserAndPurposeAndExpiry_ReturnsExpectedRow()
     {
         var userId = UserId.NewId();

@@ -43,7 +43,7 @@ public class OutboxArchiveMessageConfigurationTests(PostgresContainerFixture fix
         return message;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FromProcessed_RoundTripsAllMappedProperties()
     {
         var createdAt = DateTime.UtcNow.AddMinutes(-5);
@@ -73,7 +73,7 @@ public class OutboxArchiveMessageConfigurationTests(PostgresContainerFixture fix
         reloaded.Error.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_FromProcessed_UsesOutboxMessagesArchiveTable()
     {
         var source = NewProcessedSource(DateTime.UtcNow.AddMinutes(-2), DateTime.UtcNow.AddMinutes(-1));
@@ -89,7 +89,7 @@ public class OutboxArchiveMessageConfigurationTests(PostgresContainerFixture fix
         count.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FromProcessed_UnprocessedOutboxMessage_ThrowsInvalidOperationException()
     {
         var unprocessed = OutboxMessage.Create("Unprocessed", "{}", DateTime.UtcNow);
@@ -99,7 +99,7 @@ public class OutboxArchiveMessageConfigurationTests(PostgresContainerFixture fix
         action.ShouldThrow<InvalidOperationException>();
     }
 
-    [Fact]
+    [SkippableFact]
     public void FromProcessed_NullSource_ThrowsArgumentNullException()
     {
         var action = () => OutboxArchiveMessage.FromProcessed(null!, DateTime.UtcNow);
@@ -107,7 +107,7 @@ public class OutboxArchiveMessageConfigurationTests(PostgresContainerFixture fix
         action.ShouldThrow<ArgumentNullException>();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_ArchivedMessagesOrderedByArchivedAt_ReturnsExpectedOrder()
     {
         var now = DateTime.UtcNow;
@@ -132,7 +132,7 @@ public class OutboxArchiveMessageConfigurationTests(PostgresContainerFixture fix
         ordered.ShouldBe(new[] { "Older", "Newer" });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_ArchivedFailedMessage_PreservesRetryCountAndErrorMessage()
     {
         var source = OutboxMessage.Create("FailedThenProcessed", "{}", DateTime.UtcNow.AddMinutes(-3));

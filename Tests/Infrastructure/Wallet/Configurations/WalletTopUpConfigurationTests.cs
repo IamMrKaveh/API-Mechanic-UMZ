@@ -42,7 +42,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         return topUp;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_TopUp_RoundTripsAllScalarProperties()
     {
         var topUp = await SeedTopUpAsync(amount: 100_000m, gateway: "idpay");
@@ -64,7 +64,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         loaded.FailureReason.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_TopUp_StatusIsStoredAsString()
     {
         var topUp = await SeedTopUpAsync();
@@ -78,7 +78,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         raw.ShouldBe(WalletTopUpStatus.Pending.ToString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_TopUp_SucceededTransitionPersistsGatewayRefIdAndCompletedAt()
     {
         var topUp = await SeedTopUpAsync();
@@ -96,7 +96,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         loaded.CompletedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_TopUp_FailedTransitionPersistsFailureReason()
     {
         var topUp = await SeedTopUpAsync();
@@ -112,7 +112,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         loaded.CompletedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_TopUp_DuplicateGatewayAuthority_ThrowsDueToUniqueFilteredIndex()
     {
         var first = await SeedTopUpAsync();
@@ -128,7 +128,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_TopUp_TwoNullGatewayAuthorities_AreAllowedByFilteredIndex()
     {
         var first = await SeedTopUpAsync();
@@ -139,7 +139,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         await Should.NotThrowAsync(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_TopUp_GatewayLongerThan64Characters_ThrowsOnSave()
     {
         var topUp = new WalletTopUpBuilder().WithGateway(new string('g', 65)).Build();
@@ -149,7 +149,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_TopUp_FailureReasonLongerThan500Characters_ThrowsOnSave()
     {
         var topUp = await SeedTopUpAsync();
@@ -159,7 +159,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_TopUp_XminConcurrencyTokenChangesAfterUpdate()
     {
         var topUp = await SeedTopUpAsync();
@@ -173,7 +173,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         updatedXmin.ShouldNotBe(initialXmin);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_TopUp_ConcurrencyConflict_ThrowsDbUpdateConcurrencyException()
     {
         var topUp = await SeedTopUpAsync();
@@ -195,7 +195,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         await Should.ThrowAsync<DbUpdateConcurrencyException>(async () => await contextB.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_TopUp_UsesTableNameWalletTopUps()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletTopUp));
@@ -203,7 +203,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         entityType!.GetTableName().ShouldBe("WalletTopUps");
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("IX_WalletTopUps_UserId")]
     [InlineData("IX_WalletTopUps_Status")]
     [InlineData("IX_WalletTopUps_CreatedAt")]
@@ -216,7 +216,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_TopUp_GatewayAuthorityIndexIsUnique()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletTopUp));
@@ -226,7 +226,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         index.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_TopUp_UserIdIsMappedToUserIdColumn()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletTopUp));
@@ -236,7 +236,7 @@ public class WalletTopUpConfigurationTests(PostgresContainerFixture fixture) : I
         property!.GetColumnName(storeObject).ShouldBe("UserId");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_TopUp_DomainEventsAreIgnored()
     {
         var entityType = _context.Model.FindEntityType(typeof(WalletTopUp));

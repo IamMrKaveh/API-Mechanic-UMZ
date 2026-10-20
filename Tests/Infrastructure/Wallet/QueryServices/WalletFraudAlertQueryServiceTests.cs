@@ -70,7 +70,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         return alert;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAlertsPageAsync_WhenNoAlerts_ReturnsEmpty()
     {
         var result = await _sut.GetAlertsPageAsync(null, null, null, 1, 20, null, null, CancellationToken.None);
@@ -79,7 +79,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         result.Items.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAlertsPageAsync_WithSingleAlert_ReturnsMappedDtoWithUserFullName()
     {
         var user = await SeedUserAsync("Neda", "Sharifi", "09121112001");
@@ -98,7 +98,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         dto.Status.ShouldBe(nameof(FraudAlertStatus.Open));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAlertsPageAsync_OrderedByTriggeredAtDescending()
     {
         var user = await SeedUserAsync(phone: "09121112101");
@@ -116,7 +116,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         result.Items[2].Id.ShouldBe(first.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAlertsPageAsync_WithStatusFilterOpen_ReturnsOnlyOpen()
     {
         var user = await SeedUserAsync(phone: "09121112201");
@@ -131,7 +131,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         result.Items[0].Id.ShouldBe(open.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAlertsPageAsync_WithSeverityFilter_ReturnsOnlyMatchingSeverity()
     {
         var user = await SeedUserAsync(phone: "09121112301");
@@ -146,7 +146,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         result.Items[0].Id.ShouldBe(high.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAlertsPageAsync_WithUserIdFilter_ReturnsOnlyAlertsForThatUser()
     {
         var userA = await SeedUserAsync(phone: "09121112401");
@@ -161,7 +161,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         result.Items[0].Id.ShouldBe(target.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAlertsPageAsync_WithDateRangeFilter_ReturnsOnlyAlertsWithinRange()
     {
         var user = await SeedUserAsync(phone: "09121112501");
@@ -181,7 +181,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         result.Items[0].Id.ShouldBe(recent.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAlertsPageAsync_WithPaging_ReturnsCorrectSlice()
     {
         var user = await SeedUserAsync(phone: "09121112601");
@@ -200,7 +200,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         page3.Items.Count.ShouldBe(1);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 0, 1, 20)]
     [InlineData(-2, -1, 1, 20)]
     [InlineData(1, 500, 1, 200)]
@@ -212,7 +212,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         result.PageSize.ShouldBe(expectedPageSize);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenAlertExists_ReturnsMappedDto()
     {
         var user = await SeedUserAsync("Hassan", "Karimi", "09121112701");
@@ -227,7 +227,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         result.RuleName.ShouldBe("GeoAnomalyRule");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenAlertDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
@@ -235,7 +235,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOpenAlertsCountAsync_ReturnsCountOfOnlyOpenAlerts()
     {
         var user = await SeedUserAsync(phone: "09121112801");
@@ -250,7 +250,7 @@ public class WalletFraudAlertQueryServiceTests(PostgresContainerFixture fixture)
         count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOpenAlertsCountAsync_WhenNoAlerts_ReturnsZero()
     {
         var count = await _sut.GetOpenAlertsCountAsync(CancellationToken.None);

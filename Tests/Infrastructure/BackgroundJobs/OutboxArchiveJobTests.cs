@@ -40,7 +40,7 @@ public class OutboxArchiveJobTests(PostgresContainerFixture fixture) : Integrati
     private static OutboxMessage PendingMessage() =>
         OutboxMessage.Create("OrderCreated", "{\"id\":2}", DateTime.UtcNow);
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WithOldProcessedMessage_ArchivesAndRemovesIt()
     {
         var oldDate = DateTime.UtcNow.AddDays(-40);
@@ -71,7 +71,7 @@ public class OutboxArchiveJobTests(PostgresContainerFixture fixture) : Integrati
         archived!.Type.ShouldBe("OrderCreated");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WithPoisonedOldMessage_KeepsIt()
     {
         var oldDate = DateTime.UtcNow.AddDays(-40);
@@ -98,7 +98,7 @@ public class OutboxArchiveJobTests(PostgresContainerFixture fixture) : Integrati
         (await verify.OutboxArchiveMessages.FirstOrDefaultAsync(a => a.Id == poisoned.Id)).ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_AcquiresLockWithExpectedKeyAndExpiry()
     {
         var job = BuildJob();

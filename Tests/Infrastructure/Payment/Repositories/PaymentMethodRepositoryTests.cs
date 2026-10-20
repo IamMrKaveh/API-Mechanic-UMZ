@@ -38,7 +38,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         return method;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_ExistingMethod_ReturnsPaymentMethod()
     {
         var method = new PaymentMethodBuilder()
@@ -56,7 +56,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         loaded.Code.Value.ShouldBe("get-by-id-existing");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_NonExistentMethod_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(PaymentMethodId.NewId());
@@ -64,7 +64,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByCodeAsync_ExistingCode_ReturnsPaymentMethod()
     {
         var method = new PaymentMethodBuilder()
@@ -79,7 +79,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         loaded!.Id.ShouldBe(method.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByCodeAsync_UnknownCode_ReturnsNull()
     {
         var loaded = await _sut.GetByCodeAsync(PaymentMethodCode.Create("no-such-code"));
@@ -87,7 +87,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameAsync_MatchingName_ReturnsTrue()
     {
         var method = new PaymentMethodBuilder()
@@ -101,7 +101,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameAsync_WithExcludeId_ExcludesOwnEntry()
     {
         var method = new PaymentMethodBuilder()
@@ -115,7 +115,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameAsync_UnknownName_ReturnsFalse()
     {
         var exists = await _sut.ExistsByNameAsync(PaymentMethodName.Create("Nonexistent Method"));
@@ -123,7 +123,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByCodeAsync_MatchingCode_ReturnsTrue()
     {
         var method = new PaymentMethodBuilder()
@@ -137,7 +137,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByCodeAsync_WithExcludeId_ExcludesOwnEntry()
     {
         var method = new PaymentMethodBuilder()
@@ -151,7 +151,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByCodeAsync_UnknownCode_ReturnsFalse()
     {
         var exists = await _sut.ExistsByCodeAsync(PaymentMethodCode.Create("never-inserted"));
@@ -159,7 +159,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_DefaultParameters_ReturnsOnlyActiveNonDeleted()
     {
         var active = new PaymentMethodBuilder()
@@ -192,7 +192,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         result.Single().Id.ShouldBe(active.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_WithIncludeInactive_ReturnsActiveAndInactiveNonDeleted()
     {
         var active = new PaymentMethodBuilder()
@@ -227,7 +227,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         result.Any(m => m.Id == deleted.Id).ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_WithIncludeDeleted_ReturnsAllIncludingSoftDeleted()
     {
         var active = new PaymentMethodBuilder()
@@ -253,7 +253,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         result.Any(m => m.Id == deleted.Id).ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_MultipleMethods_OrdersBySortOrderThenName()
     {
         var third = new PaymentMethodBuilder()
@@ -294,7 +294,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         result[3].Id.ShouldBe(third.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ThenSave_PersistsMethodAcrossContexts()
     {
         var method = new PaymentMethodBuilder()
@@ -325,7 +325,7 @@ public class PaymentMethodRepositoryTests(PostgresContainerFixture fixture) : IA
         loaded.Fee.Percentage.ShouldBe(2.5m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_Deactivate_PersistsIsActiveFalse()
     {
         var method = new PaymentMethodBuilder()

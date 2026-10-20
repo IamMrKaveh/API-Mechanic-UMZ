@@ -92,7 +92,7 @@ public class EfAutoEvictIntegrationTests(PostgresContainerFixture fixture) : IAs
         await _context.SaveChangesAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SavingTaggedEntity_EvictsCachedQuery()
     {
         var mediator = _provider.GetRequiredService<IMediator>();
@@ -108,7 +108,7 @@ public class EfAutoEvictIntegrationTests(PostgresContainerFixture fixture) : IAs
         _counter.Calls.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SavingUnrelatedEntity_KeepsCachedQuery()
     {
         var mediator = _provider.GetRequiredService<IMediator>();

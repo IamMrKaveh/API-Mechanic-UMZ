@@ -103,7 +103,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
             .WithUserId(userId);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByAuthorityAsync_NonExistentAuthority_ReturnsNull()
     {
         var result = await _sut.GetByAuthorityAsync("A000000000000000000000");
@@ -111,7 +111,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByAuthorityAsync_ExistingTransaction_ReturnsMappedDto()
     {
         var (orderId, userId) = await PersistOrderAsync();
@@ -140,7 +140,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Status.ShouldBe("Pending");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStatusByAuthorityAsync_NonExistentAuthority_ReturnsNull()
     {
         var result = await _sut.GetStatusByAuthorityAsync("A" + new string('9', 24));
@@ -148,7 +148,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStatusByAuthorityAsync_PendingTransaction_ReturnsStatusWithIsSuccessFalse()
     {
         var (orderId, userId) = await PersistOrderAsync();
@@ -174,7 +174,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.RefId.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByOrderIdAsync_NoTransactionsForOrder_ReturnsEmptyList()
     {
         var result = await _sut.GetByOrderIdAsync(OrderId.NewId());
@@ -183,7 +183,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByOrderIdAsync_MultipleTransactions_ReturnsOrderedByCreatedAtDescending()
     {
         var (orderId, userId) = await PersistOrderAsync();
@@ -220,7 +220,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result[0].CreatedAt.ShouldBeGreaterThan(result[1].CreatedAt);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPagedAsync_NoFilters_ReturnsAllPagedByCreatedAtDescending()
     {
         var (o1, u1) = await PersistOrderAsync();
@@ -261,7 +261,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[1].CreatedAt.ShouldBeGreaterThan(result.Items[2].CreatedAt);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPagedAsync_FilteredByOrderId_ReturnsMatchingOnly()
     {
         var (targetOrderId, targetUserId) = await PersistOrderAsync();
@@ -288,7 +288,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].OrderId.ShouldBe(targetOrderId.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPagedAsync_FilteredByUserId_ReturnsMatchingOnly()
     {
         var (o1, targetUserId) = await PersistOrderAsync();
@@ -315,7 +315,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].UserId.ShouldBe(targetUserId.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPagedAsync_FilteredByStatusPending_ReturnsPendingOnly()
     {
         var (orderId, userId) = await PersistOrderAsync();
@@ -339,7 +339,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         successResult.TotalCount.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPagedAsync_FilteredByGateway_ReturnsMatchingOnly()
     {
         var (o1, u1) = await PersistOrderAsync();
@@ -368,7 +368,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].Gateway.ShouldBe("Zarinpal");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPagedAsync_FilteredByDateRange_ReturnsOnlyWithinRange()
     {
         var (o1, u1) = await PersistOrderAsync();
@@ -409,7 +409,7 @@ public class PaymentQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].Authority.ShouldBe("B" + new string('1', 24));
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(1, 2, 2, 3)]
     [InlineData(2, 2, 1, 3)]
     [InlineData(1, 10, 3, 3)]

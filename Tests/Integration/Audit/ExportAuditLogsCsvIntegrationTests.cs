@@ -35,7 +35,7 @@ public class ExportAuditLogsCsvIntegrationTests(PostgresContainerFixture fixture
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_CsvExportWithEntityTypeOrder_ReturnsOnlyOrderRows()
     {
         var query = new ExportAuditLogsQuery(
@@ -72,7 +72,7 @@ public class ExportAuditLogsCsvIntegrationTests(PostgresContainerFixture fixture
         csv.ShouldNotContain(",Product,");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_CsvExportWithoutFilters_UsesDefaultMaxRowsCap()
     {
         var query = new ExportAuditLogsQuery(
@@ -87,7 +87,7 @@ public class ExportAuditLogsCsvIntegrationTests(PostgresContainerFixture fixture
         result.Value.FileContent.Length.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_JsonExport_ReturnsValidJsonContentType()
     {
         var query = new ExportAuditLogsQuery(

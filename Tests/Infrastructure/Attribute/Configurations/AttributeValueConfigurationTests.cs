@@ -28,7 +28,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsAllScalarPropertiesAndRoundTripsAttributeValueId()
     {
         var attributeType = await new AttributeTypeBuilder()
@@ -60,7 +60,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         rowVersion!.Length.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WithoutHexCode_PersistsHexCodeAsNull()
     {
         var attributeType = await new AttributeTypeBuilder()
@@ -79,7 +79,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         reloaded.HexCode.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task QueryFilter_WithSoftDeletedAttributeType_ExcludesValues()
     {
         var attributeType = await new AttributeTypeBuilder()
@@ -105,7 +105,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         visible.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task IgnoreQueryFilters_WithSoftDeletedAttributeValue_ReturnsSoftDeletedRow()
     {
         var attributeType = await new AttributeTypeBuilder()
@@ -131,7 +131,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         loaded!.IsDeleted.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Value_IsRequiredAndHasMaxLength100()
     {
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -145,7 +145,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         property.GetMaxLength().ShouldBe(100);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DisplayValue_IsRequiredAndHasMaxLength100()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeValue));
@@ -157,7 +157,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         property.GetMaxLength().ShouldBe(100);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HexCode_IsNullableAndHasMaxLength50()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeValue));
@@ -169,7 +169,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         property.GetMaxLength().ShouldBe(50);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_AttributeTypeId_IsRequired()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeValue));
@@ -180,7 +180,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         property!.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeValue));
@@ -192,7 +192,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         primaryKey.Properties[0].Name.ShouldBe(nameof(AttributeValue.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasRowVersionShadowProperty()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeValue));
@@ -204,7 +204,7 @@ public class AttributeValueConfigurationTests(PostgresContainerFixture fixture) 
         rowVersion.ValueGenerated.ShouldBe(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAddOrUpdate);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasQueryFilterConfigured()
     {
         var entityType = _context.Model.FindEntityType(typeof(AttributeValue));

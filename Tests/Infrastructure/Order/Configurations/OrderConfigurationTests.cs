@@ -106,7 +106,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         _context.ChangeTracker.Clear();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_RoundTripsOrderIdAndUserIdConversions()
     {
         var user = await PersistUserAsync();
@@ -120,7 +120,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.UserId.Value.ShouldBe(user.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PreservesOrderNumberAndStatusValueConversions()
     {
         var user = await PersistUserAsync();
@@ -134,7 +134,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.Status.ShouldBe(OrderStatusValue.Created);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PersistsOwnedReceiverInfoIntoConfiguredColumns()
     {
         var user = await PersistUserAsync();
@@ -154,7 +154,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.ReceiverInfo.PhoneNumber.ShouldBe("09121234567");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PersistsOwnedDeliveryAddressIntoConfiguredColumns()
     {
         var user = await PersistUserAsync();
@@ -176,7 +176,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.DeliveryAddress.PostalCode.ShouldBe("1234567890");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PersistsAllOwnedMoneyValuesWithCurrency()
     {
         var user = await PersistUserAsync();
@@ -199,7 +199,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.FinalAmount.Currency.ShouldBe("IRT");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateIdempotencyKey_ThrowsDbUpdateException()
     {
         var user = await PersistUserAsync();
@@ -218,7 +218,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateOrderNumber_ThrowsDbUpdateException()
     {
         var user = await PersistUserAsync();
@@ -240,7 +240,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task QueryFilter_WithSoftDeletedOrder_ExcludesFromDefaultQuery()
     {
         var user = await PersistUserAsync();
@@ -259,7 +259,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         visible.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task IgnoreQueryFilters_WithSoftDeletedOrder_ReturnsSoftDeletedRow()
     {
         var user = await PersistUserAsync();
@@ -281,7 +281,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         loaded!.IsDeleted.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenUpdate_XminConcurrencyTokenChangesBetweenInsertAndUpdate()
     {
         var user = await PersistUserAsync();
@@ -306,7 +306,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         updatedXmin.ShouldNotBe(initialXmin);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_ByUserIdIndex_ReturnsMatchingOrders()
     {
         var user = await PersistUserAsync();
@@ -326,7 +326,7 @@ public class OrderConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         result[0].Id.ShouldBe(mine.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterAssignPaymentMethod_PersistsPaymentMethodIdForeignKey()
     {
         var user = await PersistUserAsync();

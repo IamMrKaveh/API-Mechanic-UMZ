@@ -46,7 +46,7 @@ public class FailedElasticOperationConfigurationTests(PostgresContainerFixture f
             CreatedAt = createdAt ?? DateTime.UtcNow
         };
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PreservesAllScalarProperties()
     {
         var operation = BuildOperation(
@@ -75,7 +75,7 @@ public class FailedElasticOperationConfigurationTests(PostgresContainerFixture f
         loaded.CreatedAt.ShouldNotBe(default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WithLargeDocumentPayload_PersistsWithoutTruncation()
     {
         var largeDocument = new string('x', 20_000);
@@ -92,7 +92,7 @@ public class FailedElasticOperationConfigurationTests(PostgresContainerFixture f
         loaded.Document.ShouldBe(largeDocument);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WithLargeErrorPayload_PersistsWithoutTruncation()
     {
         var largeError = new string('e', 15_000);
@@ -109,7 +109,7 @@ public class FailedElasticOperationConfigurationTests(PostgresContainerFixture f
         loaded.Error.ShouldBe(largeError);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("Pending")]
     [InlineData("Processed")]
     [InlineData("Failed")]
@@ -127,7 +127,7 @@ public class FailedElasticOperationConfigurationTests(PostgresContainerFixture f
         count.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_ByEntityTypeAndEntityIdComposite_ReturnsMatchingRows()
     {
         var entityId = Guid.NewGuid().ToString();
@@ -147,7 +147,7 @@ public class FailedElasticOperationConfigurationTests(PostgresContainerFixture f
         result[0].Id.ShouldBe(target.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_FilteringByStatus_ExercisesStatusIndexAndReturnsExpectedRows()
     {
         var pending = BuildOperation(status: "Pending", entityId: "p1");
@@ -168,7 +168,7 @@ public class FailedElasticOperationConfigurationTests(PostgresContainerFixture f
         pendingResults.ShouldNotContain(failed.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_MultipleRowsWithSameEntityTypeAndEntityId_AllPersistWithoutUniqueConstraint()
     {
         var entityId = Guid.NewGuid().ToString();

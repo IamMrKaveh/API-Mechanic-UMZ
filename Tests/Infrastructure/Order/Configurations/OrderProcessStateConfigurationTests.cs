@@ -28,7 +28,7 @@ public class OrderProcessStateConfigurationTests(PostgresContainerFixture fixtur
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PreservesAllScalarProperties()
     {
         var orderId = OrderId.NewId();
@@ -51,7 +51,7 @@ public class OrderProcessStateConfigurationTests(PostgresContainerFixture fixtur
         loaded.UpdatedAt.ShouldNotBe(default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_RoundTripsOrderIdConversion()
     {
         var orderId = OrderId.NewId();
@@ -67,7 +67,7 @@ public class OrderProcessStateConfigurationTests(PostgresContainerFixture fixtur
         loaded.OrderId.ShouldBe(orderId);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(ProcessStepEnum.Created)]
     [InlineData(ProcessStepEnum.InventoryReserved)]
     [InlineData(ProcessStepEnum.PaymentPending)]
@@ -92,7 +92,7 @@ public class OrderProcessStateConfigurationTests(PostgresContainerFixture fixtur
         loaded.CurrentStep.ShouldBe(step);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_AfterMarkFailed_PersistsFailureReasonAndFailedStatus()
     {
         var state = OrderProcessState.Create(OrderId.NewId());
@@ -109,7 +109,7 @@ public class OrderProcessStateConfigurationTests(PostgresContainerFixture fixtur
         loaded.FailureReason.ShouldBe("insufficient stock");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_AfterMarkCompleted_PersistsCompletedStep()
     {
         var state = OrderProcessState.Create(OrderId.NewId());
@@ -125,7 +125,7 @@ public class OrderProcessStateConfigurationTests(PostgresContainerFixture fixtur
         loaded.Status.ShouldBe(ProcessStatusEnum.Completed);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_AfterIncrementRetry_PersistsUpdatedRetryCount()
     {
         var state = OrderProcessState.Create(OrderId.NewId());
@@ -142,7 +142,7 @@ public class OrderProcessStateConfigurationTests(PostgresContainerFixture fixtur
         loaded.RetryCount.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateOrderId_ThrowsDbUpdateExceptionDueToUniqueIndex()
     {
         var orderId = OrderId.NewId();
@@ -159,7 +159,7 @@ public class OrderProcessStateConfigurationTests(PostgresContainerFixture fixtur
         });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_TwoStatesForDifferentOrders_BothPersistSuccessfully()
     {
         var first = OrderProcessState.Create(OrderId.NewId());
@@ -177,7 +177,7 @@ public class OrderProcessStateConfigurationTests(PostgresContainerFixture fixtur
         secondLoaded.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persisted_StateMappedToOrderProcessStatesTable_IsQueryableViaContextDbSet()
     {
         var state = OrderProcessState.Create(OrderId.NewId(), correlationId: "trace-1");

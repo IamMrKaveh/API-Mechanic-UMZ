@@ -37,7 +37,7 @@ public class AuditableEntityInterceptorTests(PostgresContainerFixture fixture) :
             new DomainEventInterceptor(Substitute.For<IOutboxEventTypeRegistry>()));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SavingChanges_WithAddedAuditableEntity_SetsCreatedAtToProviderUtcNowAndLeavesUpdatedAtNull()
     {
         var fixedNow = new DateTime(2026, 3, 15, 10, 0, 0, DateTimeKind.Utc);
@@ -60,7 +60,7 @@ public class AuditableEntityInterceptorTests(PostgresContainerFixture fixture) :
         persisted.UpdatedAt.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SavingChanges_WithModifiedAuditableEntity_UpdatesUpdatedAtToProviderUtcNowAndPreservesCreatedAt()
     {
         var createdAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -97,7 +97,7 @@ public class AuditableEntityInterceptorTests(PostgresContainerFixture fixture) :
         persisted.UpdatedAt.ShouldBe(updatedAt);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SavingChanges_WithNonAuditableEntity_DoesNotThrow()
     {
         var provider = Substitute.For<IDateTimeProvider>();

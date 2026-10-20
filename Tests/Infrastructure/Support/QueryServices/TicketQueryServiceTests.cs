@@ -58,7 +58,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         return ticket;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminTicketsPagedAsync_WhenNoMatchingTickets_ReturnsEmptyResult()
     {
         await PersistTicketAsync(priority: TicketPriority.Low);
@@ -78,7 +78,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.PageSize.ShouldBe(10);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminTicketsPagedAsync_FiltersByStatusAndPriority()
     {
         var customerId = UserId.NewId();
@@ -113,7 +113,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         dto.ResolvedAt.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminTicketsPagedAsync_WithUserIdFilter_ReturnsOnlyThatCustomerTickets()
     {
         var customerId = UserId.NewId();
@@ -133,7 +133,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.Single().CustomerId.ShouldBe(customerId.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminTicketsPagedAsync_OrderedByCreatedAtDescending()
     {
         var t1 = await PersistTicketAsync(priority: TicketPriority.Normal);
@@ -157,7 +157,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         ids[2].ShouldBe(t1.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminTicketsPagedAsync_WithPaging_ReturnsCorrectPage()
     {
         await PersistTicketAsync(priority: TicketPriority.Normal);
@@ -174,7 +174,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         page2.Items.Count.ShouldBe(1);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 0)]
     [InlineData(-1, -5)]
     public async Task GetAdminTicketsPagedAsync_WithInvalidPaging_UsesDefaults(int page, int pageSize)
@@ -194,7 +194,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.TotalCount.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTicketDetailAsync_WhenTicketExists_ReturnsDetailWithOrderedMessages()
     {
         var customerId = UserId.NewId();
@@ -230,7 +230,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Messages[1].SenderId.ShouldBe(agentId.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTicketDetailAsync_WhenTicketDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetTicketDetailAsync(TicketId.NewId());
@@ -238,7 +238,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTicketsPagedAsync_WhenNoTickets_ReturnsEmptyResult()
     {
         var result = await _sut.GetTicketsPagedAsync(
@@ -256,7 +256,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.PageSize.ShouldBe(10);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTicketsPagedAsync_ReturnsMappedListItems()
     {
         var customerId = UserId.NewId();
@@ -284,7 +284,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         dto.LastReplyAt.ShouldBe(ticket.LastActivityAt, TimeSpan.FromMicroseconds(1));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTicketsPagedAsync_WithStatusFilter_ReturnsOnlyMatchingStatus()
     {
         var customerId = UserId.NewId();
@@ -305,7 +305,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.Single().Id.ShouldBe(openTicket.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTicketsPagedAsync_WithPriorityFilter_ReturnsOnlyMatchingPriority()
     {
         var customerId = UserId.NewId();
@@ -324,7 +324,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.Single().Id.ShouldBe(highTicket.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTicketsPagedAsync_OrderedByCreatedAtDescending()
     {
         var customerId = UserId.NewId();
@@ -343,7 +343,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         ids[2].ShouldBe(t1.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTicketsPagedAsync_WithPaging_ReturnsCorrectPage()
     {
         var customerId = UserId.NewId();
@@ -361,7 +361,7 @@ public class TicketQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         page2.Items.Count.ShouldBe(1);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 0)]
     [InlineData(-1, -5)]
     public async Task GetTicketsPagedAsync_WithInvalidPaging_UsesDefaults(int page, int pageSize)

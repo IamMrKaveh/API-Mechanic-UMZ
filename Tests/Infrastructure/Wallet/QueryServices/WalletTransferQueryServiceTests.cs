@@ -71,7 +71,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         return transfer;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTransfersPageAsync_WhenNoTransfers_ReturnsEmptyPage()
     {
         var result = await _sut.GetTransfersPageAsync(1, 20, null, CancellationToken.None);
@@ -80,7 +80,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         result.Items.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTransfersPageAsync_WithSingleTransfer_MapsFromAndToFullNames()
     {
         var sender = await SeedUserAsync("Reza", "Kazemi", "09121230001");
@@ -101,7 +101,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         dto.Status.ShouldBe(nameof(WalletTransferStatus.PendingOtp));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTransfersPageAsync_OrdersByCreatedAtDescending()
     {
         var sender = await SeedUserAsync("A", "One", "09121231001");
@@ -121,7 +121,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         result.Items[2].Id.ShouldBe(older.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTransfersPageAsync_WithUserIdFilter_ReturnsTransfersWhereUserIsSenderOrReceiver()
     {
         var alice = await SeedUserAsync("Alice", "Test", "09121232001");
@@ -142,7 +142,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         result.Items.ShouldContain(t => t.Id == charlieToAlice.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTransfersPageAsync_WithStatusFilterCompleted_ReturnsOnlyCompletedTransfers()
     {
         var sender = await SeedUserAsync("S", "F", "09121233001");
@@ -159,7 +159,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         result.Items[0].Id.ShouldBe(completed.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTransfersPageAsync_WithDateRangeFilter_ReturnsOnlyTransfersInsideRange()
     {
         var sender = await SeedUserAsync("S", "D", "09121234001");
@@ -181,7 +181,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         result.Items[0].Id.ShouldBe(recent.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTransfersPageAsync_WithPaging_ReturnsCorrectSlice()
     {
         var sender = await SeedUserAsync("S", "P", "09121235001");
@@ -202,7 +202,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         page3.Items.Count.ShouldBe(1);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 0, 1, 20)]
     [InlineData(-3, -1, 1, 20)]
     [InlineData(1, 500, 1, 200)]
@@ -214,7 +214,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         result.PageSize.ShouldBe(expectedPageSize);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenTransferExists_ReturnsMappedDtoWithFullNames()
     {
         var sender = await SeedUserAsync("Hassan", "Nazari", "09121236001");
@@ -231,7 +231,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         result.Amount.ShouldBe(90_000m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenTransferDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
@@ -239,7 +239,7 @@ public class WalletTransferQueryServiceTests(PostgresContainerFixture fixture) :
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenUsersAreMissing_ReturnsDtoWithNullFullNames()
     {
         var transfer = new WalletTransferBuilder()

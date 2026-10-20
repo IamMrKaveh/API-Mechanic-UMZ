@@ -28,7 +28,7 @@ public class GetDashboardStatisticsIntegrationTests(PostgresContainerFixture fix
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDashboardStatisticsAsync_EmptyDatabase_ReturnsAllZeroTotals()
     {
         var from = DateTime.UtcNow.AddDays(-30);
@@ -44,7 +44,7 @@ public class GetDashboardStatisticsIntegrationTests(PostgresContainerFixture fix
         result.TotalProducts.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDashboardStatisticsAsync_NullFromAndTo_UsesDefaultLast30DaysWindow()
     {
         var result = await _sut.GetDashboardStatisticsAsync(from: null, to: null, CancellationToken.None);

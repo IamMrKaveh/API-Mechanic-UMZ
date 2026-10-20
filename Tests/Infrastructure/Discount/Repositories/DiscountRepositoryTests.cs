@@ -31,7 +31,7 @@ public class DiscountRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ThenGetByIdAsync_ReturnsPersistedDiscountCode()
     {
         var discount = new DiscountCodeBuilder()
@@ -56,7 +56,7 @@ public class DiscountRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.IsActive.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenIdDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(DiscountCodeId.NewId(), CancellationToken.None);
@@ -64,7 +64,7 @@ public class DiscountRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.ShouldBeNull();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("save10")]
     [InlineData("  Save10  ")]
     [InlineData("SAVE10")]
@@ -83,7 +83,7 @@ public class DiscountRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.Code.ShouldBe("SAVE10");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByCodeAsync_WhenCodeDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByCodeAsync("DOES-NOT-EXIST", CancellationToken.None);
@@ -91,7 +91,7 @@ public class DiscountRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_PreservesMaximumDiscountAmountThroughMoneyConverter()
     {
         var discount = new DiscountCodeBuilder()
@@ -112,7 +112,7 @@ public class DiscountRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.MaximumDiscountAmount.Currency.ShouldBe("IRT");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_WithNullMaximumDiscountAmount_PersistsAsNull()
     {
         var discount = new DiscountCodeBuilder()
@@ -130,7 +130,7 @@ public class DiscountRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.MaximumDiscountAmount.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_ModifiesPersistedDiscount_ChangesAreReflectedOnReload()
     {
         var discount = new DiscountCodeBuilder()
@@ -167,7 +167,7 @@ public class DiscountRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         reloaded.ExpiresAt!.Value.ShouldBe(new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdWithUsagesAsync_WhenNoUsages_ReturnsDiscountWithEmptyUsagesCollection()
     {
         var discount = new DiscountCodeBuilder().WithCode("EMPTYU").Build();
@@ -184,7 +184,7 @@ public class DiscountRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         loaded.Restrictions.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_PersistsFreeShippingValueThroughOwnedTypeMapping()
     {
         var discount = new DiscountCodeBuilder()

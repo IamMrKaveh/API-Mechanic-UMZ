@@ -16,7 +16,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         return shipping;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsShippingAndRoundTripsAllScalarAndOwnedProperties()
     {
         var shipping = new ShippingBuilder()
@@ -46,7 +46,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         reloaded.UpdatedAt.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateName_ThrowsDbUpdateException()
     {
         var name = $"Dup Ship {Guid.NewGuid():N}"[..20];
@@ -60,7 +60,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_SetAsDefaultAndUnsetDefault_PersistFlags()
     {
         var shipping = new ShippingBuilder()
@@ -85,7 +85,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         afterUnset.IsDefault.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_RequestDeletion_DeactivatesShipping()
     {
         var shipping = new ShippingBuilder()
@@ -102,7 +102,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         reloaded.IsActive.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DefaultFreeShipping_IsDisabledWithNullThreshold()
     {
         var shipping = new ShippingBuilder()
@@ -118,7 +118,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         reloaded.QualifiesForFreeShipping(global::SharedKernel.ValueObjects.Money.FromDecimal(1_000_000m, "IRT")).ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(Shippings));
@@ -130,7 +130,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         primaryKey.Properties[0].Name.ShouldBe(nameof(Shippings.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Name_IsRequiredWithMaxLength200AndUniqueIndex()
     {
         var entityType = Context.Model.FindEntityType(typeof(Shippings));
@@ -148,7 +148,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         index!.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DescriptionAndEstimatedDeliveryTime_HaveExpectedMaxLengths()
     {
         var entityType = Context.Model.FindEntityType(typeof(Shippings));
@@ -158,7 +158,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         entityType.FindProperty(nameof(Shippings.EstimatedDeliveryTime))!.GetMaxLength().ShouldBe(200);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MaxWeight_HasDecimalColumnType()
     {
         var property = Context.Model.FindEntityType(typeof(Shippings))!.FindProperty(nameof(Shippings.MaxWeight));
@@ -166,7 +166,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         property!.GetColumnType().ShouldBe("numeric(18,2)");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_BaseCost_IsRequiredOwnedType()
     {
         var navigation = Context.Model.FindEntityType(typeof(Shippings))!.FindNavigation(nameof(Shippings.BaseCost));
@@ -174,7 +174,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         navigation!.IsCollection.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_FreeShippingDeliveryTimeAndOrderRange_AreOwnedTypes()
     {
         var entityType = Context.Model.FindEntityType(typeof(Shippings));
@@ -185,7 +185,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         entityType.FindNavigation(nameof(Shippings.OrderRange)).ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_IsActiveAndIsDefault_HaveNonUniqueIndexes()
     {
         var entityType = Context.Model.FindEntityType(typeof(Shippings));
@@ -200,7 +200,7 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_CreatedAtIsRequired_UpdatedAtIsOptional()
     {
         var entityType = Context.Model.FindEntityType(typeof(Shippings));

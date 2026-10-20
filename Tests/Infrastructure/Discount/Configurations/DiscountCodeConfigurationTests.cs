@@ -28,7 +28,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsAllScalarPropertiesAndOwnedDiscountValue()
     {
         var discount = new DiscountCodeBuilder()
@@ -61,7 +61,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         rowVersion!.Length.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WithNullMaximumDiscountAmount_PersistsAsNull()
     {
         var discount = new DiscountCodeBuilder()
@@ -78,7 +78,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         reloaded.MaximumDiscountAmount.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateCode_ThrowsDbUpdateException()
     {
         var first = new DiscountCodeBuilder().WithCode("DUP1").Build();
@@ -93,7 +93,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         await Should.ThrowAsync<DbUpdateException>(() => _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToDiscountCodesTable()
     {
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -103,7 +103,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         entityType!.GetTableName().ShouldBe("DiscountCodes");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountCode));
@@ -115,7 +115,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         primaryKey.Properties[0].Name.ShouldBe(nameof(DiscountCode.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Code_IsRequiredAndHasMaxLength50()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountCode));
@@ -127,7 +127,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         property.GetMaxLength().ShouldBe(50);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasUniqueIndexOnCode()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountCode));
@@ -141,7 +141,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         index!.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_OwnsDiscountValue_WithConfiguredColumnNamesAndTypes()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountCode));
@@ -165,7 +165,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         type.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MaximumDiscountAmount_HasDecimal184ColumnType()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountCode));
@@ -177,7 +177,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         property.GetColumnType().ShouldBe("numeric(18,4)");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasRowVersionShadowProperty()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountCode));
@@ -189,7 +189,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         rowVersion.ValueGenerated.ShouldBe(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAddOrUpdate);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCascadeDeleteFromDiscountCodeToRestrictions()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountCode));
@@ -200,7 +200,7 @@ public class DiscountCodeConfigurationTests(PostgresContainerFixture fixture) : 
         navigation!.ForeignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCascadeDeleteFromDiscountCodeToUsages()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountCode));

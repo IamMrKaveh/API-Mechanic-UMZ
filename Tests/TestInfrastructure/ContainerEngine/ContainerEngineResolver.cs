@@ -28,16 +28,30 @@ internal static class ContainerEngineResolver
         string? dockerHost,
         bool isWindows,
         PodmanEnvironment? podman)
+        => ResolveCandidates(enginePreference, dockerHost, isWindows, podman).FirstOrDefault();
+
+    /// <summary>
+    /// All Podman endpoints that could work, in preference order. The bootstrap
+    /// probes them (a pipe may be denied for the test process even when the
+    /// machine is running) and falls back to Docker's endpoint when none answers.
+    /// </summary>
+    internal static IReadOnlyList<ContainerEngineDescriptor> ResolveCandidates(
+        string? enginePreference,
+        string? dockerHost,
+        bool isWindows,
+        PodmanEnvironment? podman)
     {
+        var candidates = new List<ContainerEngineDescriptor>();
+
         if (string.Equals(enginePreference, "docker", StringComparison.OrdinalIgnoreCase))
-            return null;
+            return candidates;
 
         // An explicit endpoint always wins: the developer (or CI) already decided.
         if (!string.IsNullOrWhiteSpace(dockerHost))
-            return null;
+            return candidates;
 
         if (podman is null || string.IsNullOrWhiteSpace(podman.PodmanPath))
-            return null;
+            return candidates;
 
         // A running machine is the most precise source (endpoint + rootful flag).
         if (podman.Machine is { } machine
@@ -48,7 +62,10 @@ internal static class ContainerEngineResolver
                 : ToUnixEndpoint(machine.SocketPath);
 
             if (machineEndpoint is not null)
-                return Build(machineEndpoint, !machine.Rootful, $"Podman machine '{machine.Name}'");
+            {
+                candidates.Add(Build(
+                    machineEndpoint, !machine.Rootful, $"Podman machine '{machine.Name}'"));
+            }
         }
 
         var rootless = podman.Host?.Rootless ?? false;
@@ -58,27 +75,40 @@ internal static class ContainerEngineResolver
             // `podman info` reports the socket *inside* the WSL machine, which is not
             // reachable from Windows. The Windows endpoint is a named pipe named after
             // the default Podman machine/connection.
-            if (podman.Host is null)
-                return null;
+            if (podman.Host is not null)
+            {
+                var name = podman.DefaultConnection?.Name
+                           ?? podman.Machine?.Name
+                           ?? DefaultMachineName;
 
-            var name = podman.DefaultConnection?.Name
-                       ?? podman.Machine?.Name
-                       ?? DefaultMachineName;
+                candidates.Add(Build(
+                    $"npipe://./pipe/{name}",
+                    rootless,
+                    $"Podman machine '{name}' (from podman system connection)"));
+            }
+        }
+        else
+        {
+            // Native Linux / macOS without a machine: use the socket Podman reports.
+            if (IsSupportedEndpoint(podman.Host?.RemoteSocket))
+            {
+                candidates.Add(Build(
+                    podman.Host!.RemoteSocket!, rootless, "Podman host socket"));
+            }
 
-            return Build(
-                $"npipe://./pipe/{name}",
-                rootless,
-                $"Podman machine '{name}' (from podman system connection)");
+            if (IsSupportedEndpoint(podman.DefaultConnection?.Uri))
+            {
+                candidates.Add(Build(
+                    podman.DefaultConnection!.Uri,
+                    rootless,
+                    $"Podman connection '{podman.DefaultConnection.Name}'"));
+            }
         }
 
-        // Native Linux / macOS without a machine: use the socket Podman reports.
-        if (IsSupportedEndpoint(podman.Host?.RemoteSocket))
-            return Build(podman.Host!.RemoteSocket!, rootless, "Podman host socket");
-
-        if (IsSupportedEndpoint(podman.DefaultConnection?.Uri))
-            return Build(podman.DefaultConnection!.Uri, rootless, $"Podman connection '{podman.DefaultConnection.Name}'");
-
-        return null;
+        return candidates
+            .GroupBy(candidate => candidate.DockerHost, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .ToList();
     }
 
     /// <summary>

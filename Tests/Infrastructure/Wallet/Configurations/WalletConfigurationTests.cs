@@ -48,7 +48,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         return wallet;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_RoundTripsAllScalarProperties()
     {
         var owner = await SeedActiveUserAsync();
@@ -68,7 +68,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         loaded.FrozenBy.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_StoresBalanceInOwnedColumnsCurrentBalanceAndBalanceCurrency()
     {
         var owner = await SeedActiveUserAsync();
@@ -88,7 +88,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         rawColumns.Currency.ShouldBe("IRT");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_DefaultCurrencyIsIRTWhenCreatedWithoutOverride()
     {
         var owner = await SeedActiveUserAsync();
@@ -103,7 +103,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         loaded.Balance.Currency.ShouldBe("IRT");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_DuplicateOwnerId_ThrowsDbUpdateExceptionDueToUniqueIndex()
     {
         var owner = await SeedActiveUserAsync();
@@ -116,7 +116,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_QueryFilterHidesWalletWhenOwnerIsInactive()
     {
         var owner = await SeedActiveUserAsync();
@@ -134,7 +134,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         ignoringFilters.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_FreezePropertiesArePersistedWhenSet()
     {
         var owner = await SeedActiveUserAsync();
@@ -154,7 +154,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         loaded.FrozenBy.ShouldBe(admin.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_FreezeReasonLongerThan500Characters_ThrowsOnSave()
     {
         var owner = await SeedActiveUserAsync();
@@ -167,7 +167,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_XminConcurrencyTokenChangesAfterUpdate()
     {
         var owner = await SeedActiveUserAsync();
@@ -184,7 +184,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         updatedXmin.ShouldNotBe(initialXmin);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_ConcurrencyConflict_ThrowsDbUpdateConcurrencyException()
     {
         var owner = await SeedActiveUserAsync();
@@ -207,7 +207,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         await Should.ThrowAsync<DbUpdateConcurrencyException>(async () => await contextB.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_UsesTableNameWallets()
     {
         var entityType = _context.Model.FindEntityType(typeof(Wallets));
@@ -215,7 +215,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         entityType!.GetTableName().ShouldBe("Wallets");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_MapsOwnerIdColumnAsUserId()
     {
         var entityType = _context.Model.FindEntityType(typeof(Wallets));
@@ -225,7 +225,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         property!.GetColumnName(storeObject).ShouldBe("UserId");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_HasUniqueIndexOnOwnerId()
     {
         var entityType = _context.Model.FindEntityType(typeof(Wallets));
@@ -236,7 +236,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         index!.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_HasIndexOnIsActive()
     {
         var entityType = _context.Model.FindEntityType(typeof(Wallets));
@@ -246,7 +246,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_MapsIdWithGuidConversion()
     {
         var owner = await SeedActiveUserAsync();
@@ -262,7 +262,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         raw!.RawId.ShouldBe(wallet.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_CascadesDeleteToDebitRequests()
     {
         var owner = await SeedActiveUserAsync();
@@ -287,7 +287,7 @@ public class WalletConfigurationTests(PostgresContainerFixture fixture) : IAsync
         debitRequestExists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Wallet_BalanceCurrencyMaxLengthIs10()
     {
         var entityType = _context.Model.FindEntityType(typeof(Wallets));

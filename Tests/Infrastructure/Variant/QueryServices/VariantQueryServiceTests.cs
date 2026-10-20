@@ -73,7 +73,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         return variant;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductVariantsAsync_WhenProductHasNoVariants_ReturnsEmpty()
     {
         var productId = await SeedProductAsync();
@@ -84,7 +84,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductVariantsAsync_WhenVariantsExist_ReturnsMappedDtosWithInventoryStock()
     {
         var productId = await SeedProductAsync();
@@ -117,7 +117,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         dto.EnabledShippingIds.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductVariantsAsync_WhenNoInventoryRow_ReturnsZeroStockAndNotInStock()
     {
         var productId = await SeedProductAsync();
@@ -134,7 +134,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result[0].IsUnlimited.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductVariantsAsync_WhenInventoryIsUnlimited_MapsIsUnlimitedAndIsInStock()
     {
         var productId = await SeedProductAsync();
@@ -157,7 +157,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result[0].IsInStock.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductVariantsAsync_WhenActiveOnlyIsTrue_ExcludesInactiveVariants()
     {
         var productId = await SeedProductAsync();
@@ -176,7 +176,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result[0].Id.ShouldBe(active.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductVariantsAsync_WhenActiveOnlyIsFalse_IncludesInactiveVariants()
     {
         var productId = await SeedProductAsync();
@@ -194,7 +194,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductVariantsAsync_ExcludesSoftDeletedVariants()
     {
         var productId = await SeedProductAsync();
@@ -213,7 +213,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result[0].Id.ShouldBe(visible.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductVariantsAsync_OnlyReturnsVariantsForRequestedProduct()
     {
         var product1 = await SeedProductAsync();
@@ -231,7 +231,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         resultForProduct2.Count().ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetVariantShippingInfoAsync_WhenVariantDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetVariantShippingInfoAsync(VariantId.NewId(), CancellationToken.None);
@@ -239,7 +239,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetVariantShippingInfoAsync_WhenVariantExistsWithoutShippings_ReturnsDefaultMultiplierAndEmptyLists()
     {
         var productId = await SeedProductAsync();
@@ -258,7 +258,7 @@ public class VariantQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.AvailableShippings.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetVariantShippingInfoAsync_WhenVariantIsSoftDeleted_ReturnsNull()
     {
         var productId = await SeedProductAsync();

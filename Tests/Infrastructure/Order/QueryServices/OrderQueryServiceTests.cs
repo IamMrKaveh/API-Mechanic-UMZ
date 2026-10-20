@@ -153,7 +153,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         return transaction.Id;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserOrdersAsync_WithNoOrders_ReturnsEmptyPaginatedResult()
     {
         var user = await SeedUserAsync();
@@ -166,7 +166,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.PageSize.ShouldBe(10);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserOrdersAsync_ReturnsOnlyOrdersOfTheGivenUser()
     {
         var userA = await SeedUserAsync();
@@ -182,7 +182,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items.ShouldAllBe(o => o.Id != Guid.Empty);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserOrdersAsync_OrdersByCreatedAtDescending()
     {
         var user = await SeedUserAsync();
@@ -200,7 +200,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items[2].Id.ShouldBe(order1.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserOrdersAsync_MapsOrderPropertiesAndItemCount()
     {
         var user = await SeedUserAsync();
@@ -223,7 +223,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto.CreatedAt.ShouldBe(order.CreatedAt, PgTimestampTolerance);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(1, 2, 2, 5)]
     [InlineData(3, 2, 1, 5)]
     [InlineData(1, 10, 5, 5)]
@@ -245,7 +245,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.TotalCount.ShouldBe(total);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrdersAsync_WithNoFilters_ReturnsAllNonDeletedOrders()
     {
         await SeedOrderAsync();
@@ -260,7 +260,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items.Count.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrdersAsync_IncludesDeletedOrdersButFiltersThemOut()
     {
         var order = await SeedOrderAsync();
@@ -276,7 +276,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items.ShouldAllBe(o => o.IsDeleted == false);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrdersAsync_FiltersByUserId()
     {
         var userA = await SeedUserAsync();
@@ -293,7 +293,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items.ShouldAllBe(o => o.UserId == userA.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrdersAsync_FiltersByStatus()
     {
         var pendingOrder = await SeedOrderAsync();
@@ -310,7 +310,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items[0].Id.ShouldBe(pendingOrder.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrdersAsync_FiltersByDateRange()
     {
         var orderOld = await SeedOrderAsync();
@@ -330,7 +330,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items[0].Id.ShouldBe(orderMid.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrdersAsync_WithIsPaidTrue_ReturnsOnlyPaidStatuses()
     {
         var paidOrder = await SeedOrderAsync();
@@ -350,7 +350,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items[0].IsPaid.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrdersAsync_WithIsPaidFalse_ExcludesPaidStatuses()
     {
         var paidOrder = await SeedOrderAsync();
@@ -369,7 +369,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items[0].Id.ShouldBe(pendingOrder.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrdersAsync_OrdersByCreatedAtDescending()
     {
         var older = await SeedOrderAsync();
@@ -384,7 +384,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items[1].Id.ShouldBe(older.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrdersAsync_ProjectsRowVersionAsBase64FromXmin()
     {
         var order = await SeedOrderAsync();
@@ -400,7 +400,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         Convert.FromBase64String(dto.RowVersion).Length.ShouldBe(4);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrdersAsync_MapsReceiverNameAndOrderItems()
     {
         var user = await SeedUserAsync();
@@ -424,7 +424,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto.OrderItemsCount.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderDetailsAsync_WithUnknownId_ReturnsNull()
     {
         var user = await SeedUserAsync();
@@ -434,7 +434,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderDetailsAsync_ForOrderNotBelongingToUser_ReturnsNull()
     {
         var owner = await SeedUserAsync();
@@ -446,7 +446,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderDetailsAsync_ForOwnOrder_ReturnsMappedDto()
     {
         var user = await SeedUserAsync();
@@ -483,7 +483,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.DeliveryAddress.PostalCode.ShouldBe(order.DeliveryAddress.PostalCode);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderDetailsAsync_ForNewOrder_IsCancellableIsTrueAndAllowedTransitionsIncludeCancelled()
     {
         var user = await SeedUserAsync();
@@ -496,7 +496,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.AllowedTransitions.ShouldContain(OrderStatusValue.Cancelled.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderDetailsAsync_ForCancelledOrder_HasEmptyAllowedTransitions()
     {
         var user = await SeedUserAsync();
@@ -513,7 +513,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.CancellationReason.ShouldBe("لغو تست");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderDetailsAsync_WithProductPrimaryImage_ResolvesImageUrl()
     {
         var user = await SeedUserAsync();
@@ -539,7 +539,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         _urlResolver.Received().ResolveMediaUrl(media.FilePath);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderDetailsAsync_WhenProductHasNoPrimaryImage_LeavesImageUrlNull()
     {
         var user = await SeedUserAsync();
@@ -551,7 +551,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items.ShouldAllBe(item => item.ImageUrl == null);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrderDetailsAsync_WithUnknownId_ReturnsNull()
     {
         var result = await _sut.GetAdminOrderDetailsAsync(OrderId.NewId());
@@ -559,7 +559,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrderDetailsAsync_ReturnsMappedDtoWithRowVersionAndSetsETagHeader()
     {
         var order = await SeedOrderAsync();
@@ -575,7 +575,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         _httpContext.Response.Headers.ETag[0]!.ShouldBe($"\"{result.RowVersion}\"");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminOrderDetailsAsync_IncludesSoftDeletedOrders()
     {
         var order = await SeedOrderAsync();
@@ -588,7 +588,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.IsDeleted.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderStatisticsAsync_WithNoOrders_ReturnsAllZeros()
     {
         var result = await _sut.GetOrderStatisticsAsync();
@@ -603,7 +603,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.AverageOrderValue.ShouldBe(0m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderStatisticsAsync_CountsOrdersByEachStatus()
     {
         var pending = await SeedOrderAsync();
@@ -644,7 +644,7 @@ public class OrderQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.CancelledOrders.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderStatisticsAsync_ComputesTotalRevenueAndAverageOnlyOverPaidStatuses()
     {
         var paid = await SeedOrderAsync();

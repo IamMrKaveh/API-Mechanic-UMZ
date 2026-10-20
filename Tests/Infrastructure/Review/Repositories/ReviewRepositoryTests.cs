@@ -107,7 +107,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         return (user, product);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ValidReview_PersistsAcrossContexts()
     {
         var (user, product) = await PersistUserAndProductAsync();
@@ -141,7 +141,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         loaded.IsDeleted.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenReviewDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(ReviewId.NewId());
@@ -149,7 +149,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenReviewIsSoftDeleted_ReturnsNull()
     {
         var (user, product) = await PersistUserAndProductAsync();
@@ -171,7 +171,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdIncludingDeletedAsync_WhenSoftDeleted_ReturnsReview()
     {
         var (user, product) = await PersistUserAndProductAsync();
@@ -195,7 +195,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         loaded.IsDeleted.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UserHasReviewedProductAsync_WhenReviewExists_ReturnsTrue()
     {
         var (user, product) = await PersistUserAndProductAsync();
@@ -216,7 +216,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UserHasReviewedProductAsync_WhenNoReviewExists_ReturnsFalse()
     {
         var (user, product) = await PersistUserAndProductAsync();
@@ -226,7 +226,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task UserHasReviewedProductAsync_WhenReviewIsSoftDeleted_ReturnsFalse()
     {
         var (user, product) = await PersistUserAndProductAsync();
@@ -248,7 +248,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByUserAndProductAsync_WhenReviewExists_ReturnsIt()
     {
         var (user, product) = await PersistUserAndProductAsync();
@@ -270,7 +270,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         loaded!.Id.ShouldBe(review.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ListByUserAsync_ReturnsOnlyReviewsForThatUserOrderedByCreatedAtDescending()
     {
         var (userA, productA) = await PersistUserAndProductAsync();
@@ -317,7 +317,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         results[0].CreatedAt.ShouldBeGreaterThanOrEqualTo(results[1].CreatedAt);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ListByProductAsync_ReturnsOnlyNonDeletedReviewsForThatProduct()
     {
         var (userA, product) = await PersistUserAndProductAsync();
@@ -350,7 +350,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         results.ShouldNotContain(r => r.Id == deleted.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterApprove_PersistsApprovedStatus()
     {
         var (user, product) = await PersistUserAndProductAsync();
@@ -382,7 +382,7 @@ public class ReviewRepositoryTests(PostgresContainerFixture fixture) : IAsyncLif
         final!.Status.ShouldBe(ReviewStatus.Approved);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Remove_ExistingReview_DeletesFromDatabase()
     {
         var (user, product) = await PersistUserAndProductAsync();

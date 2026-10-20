@@ -70,7 +70,7 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
         await job.StopAsync(CancellationToken.None);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WithExpiredActiveReservation_SendsReleaseCommandWithRealIds()
     {
         var (userId, reservationId) = await SeedReservationAsync(FixedNow.AddMinutes(-1));
@@ -91,7 +91,7 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WithNonExpiredReservation_DoesNotSendReleaseCommand()
     {
         await SeedReservationAsync(FixedNow.AddMinutes(10));
@@ -107,7 +107,7 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WithAlreadyReleasedReservation_DoesNotSendReleaseCommand()
     {
         await SeedReservationAsync(FixedNow.AddMinutes(-1), releaseBeforeSave: true);
@@ -123,7 +123,7 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WhenMediatorThrows_LogsItemErrorAndContinues()
     {
         await SeedReservationAsync(FixedNow.AddMinutes(-1));
@@ -140,7 +140,7 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_AcquiresLockWithExpectedKeyAndExpiry()
     {
         await RunJobOnceAsync(BuildJob());

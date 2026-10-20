@@ -42,7 +42,7 @@ public class NotificationConfigurationTests(PostgresContainerFixture fixture) : 
         return user.Id;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_NewNotification_RoundTripsAllMappedProperties()
     {
         var userId = await SeedUserAsync();
@@ -76,7 +76,7 @@ public class NotificationConfigurationTests(PostgresContainerFixture fixture) : 
         reloaded.UpdatedAt.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_NotificationWithoutOptionalFields_StoresNullValues()
     {
         var userId = await SeedUserAsync();
@@ -102,7 +102,7 @@ public class NotificationConfigurationTests(PostgresContainerFixture fixture) : 
         reloaded.RelatedEntityId.ShouldBeNull();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("OrderCreated")]
     [InlineData("OrderPaid")]
     [InlineData("OrderShipped")]
@@ -135,7 +135,7 @@ public class NotificationConfigurationTests(PostgresContainerFixture fixture) : 
         reloaded.Type.Value.ShouldBe(type.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_MarkAsRead_PersistsIsReadFlagAndUpdatedAt()
     {
         var userId = await SeedUserAsync();
@@ -160,7 +160,7 @@ public class NotificationConfigurationTests(PostgresContainerFixture fixture) : 
         reloaded.UpdatedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_NotificationsByUserId_ReturnsOnlyMatchingNotifications()
     {
         var firstUser = await SeedUserAsync();
@@ -185,7 +185,7 @@ public class NotificationConfigurationTests(PostgresContainerFixture fixture) : 
         results[0].Id.ShouldBe(firstUserNotification.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_MultipleNotificationsForSameUser_AreAllPersisted()
     {
         var userId = await SeedUserAsync();

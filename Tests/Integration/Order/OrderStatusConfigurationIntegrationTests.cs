@@ -23,7 +23,7 @@ public class OrderStatusConfigurationIntegrationTests(PostgresContainerFixture f
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task OrderStatusConfiguration_EnforcesUniqueName()
     {
         _context.OrderStatuses.Add(OrderStatus.Create("Paid", "پرداخت شده", null, null, 4, false, false));
@@ -34,7 +34,7 @@ public class OrderStatusConfigurationIntegrationTests(PostgresContainerFixture f
         await Should.ThrowAsync<DbUpdateException>(async () => await second.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task OrderStatusConfiguration_PersistsAllScalarProperties()
     {
         var s = OrderStatus.Create("Shipped", "ارسال شده", "truck", "#6610f2", 6, true, false);
@@ -56,7 +56,7 @@ public class OrderStatusConfigurationIntegrationTests(PostgresContainerFixture f
         loaded.RowVersion.Length.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task OrderStatusConfiguration_IgnoresDomainEvents()
     {
         var s = OrderStatus.Create("Delivered", "تحویل شده", null, null, 7, false, false);

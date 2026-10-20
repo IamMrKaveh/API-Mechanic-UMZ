@@ -24,7 +24,7 @@ public class SqlConnectionFactoryTests(PostgresContainerFixture fixture) : IAsyn
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Ctor_WithoutDefaultConnectionString_ThrowsInvalidOperationException()
     {
         var configuration = new ConfigurationBuilder()
@@ -34,7 +34,7 @@ public class SqlConnectionFactoryTests(PostgresContainerFixture fixture) : IAsyn
         Should.Throw<InvalidOperationException>(() => new SqlConnectionFactory(configuration));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Ctor_WithEmptyDefaultConnectionString_ThrowsInvalidOperationException()
     {
         var configuration = new ConfigurationBuilder()
@@ -47,7 +47,7 @@ public class SqlConnectionFactoryTests(PostgresContainerFixture fixture) : IAsyn
         Should.Throw<InvalidOperationException>(() => new SqlConnectionFactory(configuration));
     }
 
-    [Fact]
+    [SkippableFact]
     public void ImplementsISqlConnectionFactory()
     {
         var configuration = new ConfigurationBuilder()
@@ -60,7 +60,7 @@ public class SqlConnectionFactoryTests(PostgresContainerFixture fixture) : IAsyn
         new SqlConnectionFactory(configuration).ShouldBeAssignableTo<ISqlConnectionFactory>();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CreateConnectionAsync_WithValidConnectionString_ReturnsOpenNpgsqlConnection()
     {
         var configuration = new ConfigurationBuilder()

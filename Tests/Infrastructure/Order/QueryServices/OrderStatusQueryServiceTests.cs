@@ -67,7 +67,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         return status;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_WithNoStatuses_ReturnsEmptyList()
     {
         var result = await _sut.GetAllAsync(onlyActive: null, CancellationToken.None);
@@ -76,7 +76,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_WithoutFilter_ReturnsAllStatusesIncludingInactive()
     {
         await SeedStatusAsync("Draft", "پیش‌نویس", 1);
@@ -87,7 +87,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         result.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_WithOnlyActiveTrue_FiltersOutInactive()
     {
         await SeedStatusAsync("Draft", "پیش‌نویس", 1);
@@ -100,7 +100,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         result[0].IsActive.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_WithOnlyActiveFalse_ReturnsAllStatuses()
     {
         await SeedStatusAsync("Draft", "پیش‌نویس", 1);
@@ -111,7 +111,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         result.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_OrdersBySortOrderAscending()
     {
         await SeedStatusAsync("Third", "سوم", 30);
@@ -123,7 +123,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         result.Select(s => s.Name).ToList().ShouldBe(new[] { "First", "Second", "Third" });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllAsync_MapsAllPropertiesFromEntityToDto()
     {
         var seeded = await SeedStatusAsync(
@@ -147,7 +147,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         dto.Color.ShouldBe(seeded.Color);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WithUnknownId_ReturnsNull()
     {
         var result = await _sut.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
@@ -156,7 +156,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         _httpContext.Response.Headers.ETag.Count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WithExistingId_ReturnsMappedDto()
     {
         var seeded = await SeedStatusAsync(
@@ -176,7 +176,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         result.AllowEdit.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WithExistingId_SetsETagHeaderFromRowVersion()
     {
         var seeded = await SeedStatusAsync("WithETag", "با ETag", 8);
@@ -189,7 +189,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         _httpContext.Response.Headers.ETag[0]!.ShouldBe(expectedEtag);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_ReturnsInactiveStatus()
     {
         var seeded = await SeedStatusAsync("HiddenStatus", "پنهان", 9, activate: false);
@@ -200,7 +200,7 @@ public class OrderStatusQueryServiceTests(PostgresContainerFixture fixture) : IA
         result.IsActive.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WithHttpContextNull_DoesNotThrow()
     {
         _httpContextAccessor.HttpContext.Returns((HttpContext?)null);

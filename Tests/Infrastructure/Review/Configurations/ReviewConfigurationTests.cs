@@ -37,7 +37,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         return review;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsReviewAndRoundTripsAllScalarProperties()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -71,7 +71,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         reloaded.CreatedAt.ShouldNotBe(default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ApproveRejectAndAdminReply_PersistStateTransitions()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -95,7 +95,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         reloaded.RepliedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenReviewIsDeleted_VotesAreCascadeDeleted()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -123,7 +123,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         remaining.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenUserHasReviews_DeletingUserIsRestricted()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -141,7 +141,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenProductHasReviews_DeletingProductIsRestricted()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -159,7 +159,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_SoftDeletedReview_RemainsQueryableWithoutGlobalFilter()
     {
         var (user, product) = await SeedUserAndProductAsync();
@@ -181,7 +181,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         reloaded!.IsDeleted.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToProductReviewsTable()
     {
         Skip.IfNot(Fixture.IsDockerAvailable, Fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -191,7 +191,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         entityType!.GetTableName().ShouldBe("ProductReviews");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(Reviews));
@@ -203,7 +203,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         primaryKey.Properties[0].Name.ShouldBe(nameof(Reviews.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Title_HasMaxLength100()
     {
         var property = Context.Model.FindEntityType(typeof(Reviews))!.FindProperty(nameof(Reviews.Title));
@@ -211,7 +211,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         property!.GetMaxLength().ShouldBe(100);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_RejectionReason_HasMaxLength500()
     {
         var property = Context.Model.FindEntityType(typeof(Reviews))!.FindProperty(nameof(Reviews.RejectionReason));
@@ -219,7 +219,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         property!.GetMaxLength().ShouldBe(500);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_CommentAndAdminReply_AreTextColumns()
     {
         var entityType = Context.Model.FindEntityType(typeof(Reviews));
@@ -229,7 +229,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         entityType.FindProperty(nameof(Reviews.AdminReply))!.GetColumnType().ShouldBe("text");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Status_IsRequiredWithMaxLength50AndNamedIndex()
     {
         var entityType = Context.Model.FindEntityType(typeof(Reviews));
@@ -247,7 +247,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         index!.GetDatabaseName().ShouldBe("IX_ProductReviews_Status");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Rating_IsRequiredOwnedValue()
     {
         var entityType = Context.Model.FindEntityType(typeof(Reviews));
@@ -258,7 +258,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         navigation!.IsCollection.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_UserAndProduct_ForeignKeysAreRequiredWithRestrictDelete()
     {
         var entityType = Context.Model.FindEntityType(typeof(Reviews));
@@ -277,7 +277,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         productFk.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Order_ForeignKeyIsOptionalWithSetNullDelete()
     {
         var entityType = Context.Model.FindEntityType(typeof(Reviews));
@@ -290,7 +290,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         orderFk.DeleteBehavior.ShouldBe(DeleteBehavior.SetNull);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCascadeDeleteFromReviewToVotes()
     {
         var navigation = Context.Model.FindEntityType(typeof(Reviews))!.FindNavigation(nameof(Reviews.Votes));
@@ -298,7 +298,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         navigation!.ForeignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasUniqueFilteredIndexOnUserProductOrder()
     {
         var entityType = Context.Model.FindEntityType(typeof(Reviews));
@@ -314,7 +314,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         index.GetFilter()!.ShouldContain("IsDeleted");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasExpectedSingleColumnIndexes()
     {
         var entityType = Context.Model.FindEntityType(typeof(Reviews));
@@ -328,7 +328,7 @@ public class ReviewConfigurationTests(PostgresContainerFixture fixture) : Integr
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasXminConcurrencyToken()
     {
         var xmin = Context.Model.FindEntityType(typeof(Reviews))!.FindProperty("xmin");

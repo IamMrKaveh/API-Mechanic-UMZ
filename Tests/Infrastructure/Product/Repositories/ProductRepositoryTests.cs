@@ -47,7 +47,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         return (category, brand);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_WithValidProduct_PersistsProduct()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -78,7 +78,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         persisted.IsDeleted.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenProductDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetByIdAsync(ProductId.NewId());
@@ -86,7 +86,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenProductExists_ReturnsProductWithBrandAndVariantsCollection()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -112,7 +112,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Variants.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_WhenSlugExists_ReturnsTrue()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -135,7 +135,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_WhenSlugDoesNotExist_ReturnsFalse()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -157,7 +157,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_WhenSlugMatchesExcludedProductId_ReturnsFalse()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -180,7 +180,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_WhenSlugExistsAndExcludedIdIsDifferent_ReturnsTrue()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -209,7 +209,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_WhenMatchingProductIsSoftDeleted_ReturnsFalse()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -235,7 +235,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_WithModifiedProduct_PersistsChanges()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -272,7 +272,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         persisted.IsFeatured.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_WithNullRowVersion_DoesNotSetOriginalXmin()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -294,7 +294,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         _context.Entry(product).State.ShouldBe(EntityState.Modified);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_WithFourByteRowVersion_SetsOriginalXmin()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -317,7 +317,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         _context.Entry(product).State.ShouldBe(EntityState.Modified);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SetOriginalRowVersion_WithEmptyRowVersion_DoesNotModifyOriginalXmin()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();
@@ -338,7 +338,7 @@ public class ProductRepositoryTests(PostgresContainerFixture fixture) : IAsyncLi
         afterXmin.ShouldBe(beforeXmin);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SetOriginalRowVersion_WithFourByteRowVersion_SetsOriginalXmin()
     {
         var (category, brand) = await SeedCategoryAndBrandAsync();

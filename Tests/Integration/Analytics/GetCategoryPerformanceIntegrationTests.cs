@@ -28,7 +28,7 @@ public class GetCategoryPerformanceIntegrationTests(PostgresContainerFixture fix
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryPerformanceAsync_EmptyDatabase_ReturnsEmptyPaginatedResult()
     {
         var from = DateTime.UtcNow.AddDays(-30);
@@ -43,7 +43,7 @@ public class GetCategoryPerformanceIntegrationTests(PostgresContainerFixture fix
         result.Page.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryPerformanceAsync_NullDateRangeOnEmptyDatabase_ReturnsEmptyPaginatedResult()
     {
         var result = await _sut.GetCategoryPerformanceAsync(null, null, CancellationToken.None);

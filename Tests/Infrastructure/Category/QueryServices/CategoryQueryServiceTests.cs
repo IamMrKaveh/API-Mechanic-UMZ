@@ -37,7 +37,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryDetailAsync_NonExistentCategory_ReturnsNull()
     {
         var result = await _sut.GetCategoryDetailAsync(CategoryId.NewId());
@@ -45,7 +45,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryDetailAsync_ExistingCategoryWithPrimaryIconAndBrands_ReturnsMappedDetail()
     {
         var category = await new CategoryBuilder()
@@ -98,7 +98,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.RowVersion.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryDetailAsync_ExistingCategoryWithoutPrimaryMedia_ReturnsNullIconUrl()
     {
         var category = await new CategoryBuilder()
@@ -125,7 +125,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.BrandCount.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryTreeAsync_MixedActiveAndInactive_ReturnsOnlyActiveOrderedBySortOrderThenName()
     {
         var active1 = await new CategoryBuilder()
@@ -166,7 +166,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result[2].Name.ShouldBe("Charlie Tree");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoriesPagedAsync_SearchTermCaseInsensitive_ReturnsMatchingCategoriesOnly()
     {
         var a = await new CategoryBuilder().WithName("Engine Parts").WithSlug("engine-parts-p1").BuildAsync();
@@ -184,7 +184,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Items[0].Name.ShouldBe("Engine Parts");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoriesPagedAsync_IsActiveFilter_ReturnsOnlyMatchingActiveState()
     {
         var active = await new CategoryBuilder().WithName("Active Paged").WithSlug("active-paged").BuildAsync();
@@ -204,7 +204,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         inactiveResult.Items[0].Name.ShouldBe("Inactive Paged");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoriesPagedAsync_WithPagination_ReturnsRequestedPage()
     {
         for (var i = 0; i < 5; i++)
@@ -235,7 +235,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         allNames.Distinct().Count().ShouldBe(5);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoriesPagedAsync_WithPrimaryActiveIcon_ResolvesIconUrl()
     {
         var category = await new CategoryBuilder()
@@ -263,7 +263,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Items[0].ProductCount.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryWithBrandsAsync_NonExistentCategory_ReturnsNull()
     {
         var result = await _sut.GetCategoryWithBrandsAsync(CategoryId.NewId());
@@ -271,7 +271,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryWithBrandsAsync_ExcludesDeletedBrandsAndResolvesLogo()
     {
         var category = await new CategoryBuilder()
@@ -320,7 +320,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Brands[0].LogoPath.ShouldBe("https://cdn.test/uploads/brands/live/logo.png");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryProductsAsync_FiltersByCategoryAndOrdersByCreatedAtDescending()
     {
         var targetCategory = await new CategoryBuilder()
@@ -388,7 +388,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Items.ShouldAllBe(p => p.MinPrice == 0m && p.MaxPrice == 0m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryProductsAsync_ActiveOnlyTrue_ExcludesInactiveProducts()
     {
         var category = await new CategoryBuilder()
@@ -432,7 +432,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Items[0].IsActive.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPublicCategoriesAsync_ReturnsOnlyActiveCategoriesFilteredBySearch()
     {
         var active1 = await new CategoryBuilder().WithName("Public Alpha").WithSlug("public-alpha").WithSortOrder(2).BuildAsync();
@@ -456,7 +456,7 @@ public class CategoryQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         searched.Items[0].Name.ShouldBe("Public Alpha");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPublicCategoriesAsync_ResolvesIconUrlFromPrimaryActiveMedia()
     {
         var category = await new CategoryBuilder()

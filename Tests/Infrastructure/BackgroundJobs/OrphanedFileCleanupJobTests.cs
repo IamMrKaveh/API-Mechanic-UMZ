@@ -53,7 +53,7 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
         return media;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WithOldDeletedMedia_DeletesFileAndRemovesRow()
     {
         DateTimeProvider.UtcNow.Returns(new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
@@ -83,7 +83,7 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
             .ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WithRecentlyDeletedMedia_KeepsRow()
     {
         DateTimeProvider.UtcNow.Returns(new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
@@ -106,7 +106,7 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
             .ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WhenStorageThrows_LogsErrorAndKeepsRow()
     {
         DateTimeProvider.UtcNow.Returns(new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
@@ -131,7 +131,7 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
             .ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_AcquiresLockWithExpectedKeyAndExpiry()
     {
         DateTimeProvider.UtcNow.Returns(DateTime.UtcNow);

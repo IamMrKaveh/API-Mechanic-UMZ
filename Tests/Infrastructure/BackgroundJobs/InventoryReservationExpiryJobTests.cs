@@ -83,7 +83,7 @@ public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture
         return variant.Id;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_LogsStartMessage()
     {
         var job = BuildJob();
@@ -102,7 +102,7 @@ public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WhenGroupQueryIsUntranslatable_LogsErrorWithoutRollingBack()
     {
         await SeedExpiredReservationAsync("ORDER-EXP-1", FixedNow.AddHours(-2));
@@ -123,7 +123,7 @@ public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WithOnlyFreshReservations_DoesNotRelease()
     {
         await SeedExpiredReservationAsync("ORDER-FRESH", FixedNow.AddMinutes(-5));
@@ -142,7 +142,7 @@ public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture
         await _inventoryService.DidNotReceiveWithAnyArgs().ReleaseReservationAsync(default!, default!, default!, default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_AcquiresLockWithExpectedKeyAndExpiry()
     {
         var job = BuildJob();

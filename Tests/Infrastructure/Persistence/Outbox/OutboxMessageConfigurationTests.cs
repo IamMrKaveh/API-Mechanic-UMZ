@@ -36,7 +36,7 @@ public class OutboxMessageConfigurationTests(PostgresContainerFixture fixture) :
             traceState: "vendor=example");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_NewOutboxMessage_RoundTripsAllMappedProperties()
     {
         var createdAt = DateTime.UtcNow;
@@ -61,7 +61,7 @@ public class OutboxMessageConfigurationTests(PostgresContainerFixture fixture) :
         reloaded.TraceState.ShouldBe("vendor=example");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_MarkProcessed_PersistsProcessedAtAndClearsError()
     {
         var message = NewPendingMessage(DateTime.UtcNow);
@@ -83,7 +83,7 @@ public class OutboxMessageConfigurationTests(PostgresContainerFixture fixture) :
         reloaded.RetryCount.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_MarkFailed_IncrementsRetryCountAndStoresError()
     {
         var message = NewPendingMessage(DateTime.UtcNow);
@@ -102,7 +102,7 @@ public class OutboxMessageConfigurationTests(PostgresContainerFixture fixture) :
         reloaded.ProcessedAt.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_MarkPoisoned_PersistsPoisonedFlagAndErrorMessage()
     {
         var message = NewPendingMessage(DateTime.UtcNow);
@@ -118,7 +118,7 @@ public class OutboxMessageConfigurationTests(PostgresContainerFixture fixture) :
         reloaded.Error.ShouldBe("payload validation failed");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_PendingFilteredIndex_YieldsOnlyEligibleMessages()
     {
         var now = DateTime.UtcNow;
@@ -148,7 +148,7 @@ public class OutboxMessageConfigurationTests(PostgresContainerFixture fixture) :
         pending.Select(m => m.Id).ShouldNotContain(overRetries.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_OutboxMessageWithoutTracingHeaders_PersistsNullValues()
     {
         var message = OutboxMessage.Create("EventNoTrace", "{}", DateTime.UtcNow);
@@ -164,7 +164,7 @@ public class OutboxMessageConfigurationTests(PostgresContainerFixture fixture) :
         reloaded.Error.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DuplicatePrimaryKey_ThrowsDbUpdateException()
     {
         var first = NewPendingMessage(DateTime.UtcNow, "First");

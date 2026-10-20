@@ -35,7 +35,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ThenGetByIdAsync_RoundTripsAggregateFromDatabase()
     {
         var userId = UserId.NewId();
@@ -61,7 +61,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         loaded.CodeHash.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenNotExists_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(OtpId.NewId());
@@ -69,7 +69,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLatestActiveByUserIdAsync_WhenMultipleActive_ReturnsMostRecentByCreatedAt()
     {
         var userId = UserId.NewId();
@@ -101,7 +101,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         latest!.Id.ShouldBe(newer.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLatestActiveByUserIdAsync_WhenLatestIsVerified_ReturnsNull()
     {
         var userId = UserId.NewId();
@@ -124,7 +124,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         latest.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLatestActiveByUserIdAsync_WhenLatestIsExpired_ReturnsNull()
     {
         var userId = UserId.NewId();
@@ -146,7 +146,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         latest.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLatestActiveByUserIdAsync_FiltersByPurpose()
     {
         var userId = UserId.NewId();
@@ -177,7 +177,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         latestReset!.Id.ShouldBe(passwordResetOtp.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLatestActiveByUserIdAsync_FiltersByUserId()
     {
         var userA = UserId.NewId();
@@ -207,7 +207,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         latestA.UserId.ShouldBe(userA);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CountRecentByUserIdAsync_CountsOnlyEntriesWithinWindow()
     {
         var userId = UserId.NewId();
@@ -231,7 +231,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         count.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CountRecentByUserIdAsync_FiltersByPurpose()
     {
         var userId = UserId.NewId();
@@ -251,7 +251,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         resetCount.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CountRecentByUserIdAsync_WhenNoRecentEntries_ReturnsZero()
     {
         var userId = UserId.NewId();
@@ -261,7 +261,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterVerifyingOtp_PersistsVerifiedStateAndAttempts()
     {
         var userId = UserId.NewId();
@@ -292,7 +292,7 @@ public class OtpRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifeti
         reloaded.VerificationAttempts.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task PurposeIsStoredAsString_RoundTripPreservesEnumValue()
     {
         var userId = UserId.NewId();

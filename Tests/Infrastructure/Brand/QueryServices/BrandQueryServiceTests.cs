@@ -34,7 +34,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandDetailAsync_NonExistentBrand_ReturnsNull()
     {
         var dto = await _sut.GetBrandDetailAsync(BrandId.NewId());
@@ -42,7 +42,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandDetailAsync_ExistingBrand_ProjectsBasicFields()
     {
         var brand = await new BrandBuilder()
@@ -69,7 +69,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto.ActiveProductCount.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandDetailAsync_WithSeededCategory_PopulatesCategoryName()
     {
         var category = await new CategoryBuilder()
@@ -92,7 +92,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto!.CategoryName.ShouldBe("Automotive");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandDetailAsync_WithoutSeededCategory_ReturnsEmptyCategoryName()
     {
         var brand = await new BrandBuilder().BuildAsync();
@@ -107,7 +107,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         dto!.CategoryName.ShouldBe(string.Empty);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandDetailAsync_ResolvesLogoPathThroughUrlResolver()
     {
         var brand = await new BrandBuilder()
@@ -128,7 +128,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         _urlResolver.Received().ResolveMediaUrl("brands/logo.png");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandDetailAsync_ReturnsBase64EncodedRowVersion()
     {
         var brand = await new BrandBuilder().BuildAsync();
@@ -151,7 +151,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         decoded.ShouldBe(currentRowVersion!);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandsPagedAsync_NoFilters_ReturnsAllBrandsOrderedByName()
     {
         var brandZeta = await new BrandBuilder().WithName("Zeta").WithSlug("zeta").BuildAsync();
@@ -176,7 +176,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items.Select(i => i.Name).ToList().ShouldBe(new[] { "Alpha", "Mike", "Zeta" });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandsPagedAsync_WithCategoryFilter_ReturnsBrandsInThatCategoryOnly()
     {
         var categoryA = CategoryId.NewId();
@@ -203,7 +203,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items.Select(i => i.CategoryId).ShouldAllBe(id => id == categoryA.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandsPagedAsync_WithSearchOnName_MatchesCaseInsensitively()
     {
         var brandOne = await new BrandBuilder().WithName("Contoso Industries").WithSlug("contoso-industries").BuildAsync();
@@ -226,7 +226,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items[0].Name.ShouldBe("Contoso Industries");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandsPagedAsync_WithSearchOnSlug_MatchesCaseInsensitively()
     {
         var brandOne = await new BrandBuilder().WithName("Northwind").WithSlug("northwind-traders").BuildAsync();
@@ -249,7 +249,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items[0].Slug.ShouldBe("adventure-works");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandsPagedAsync_WithIsActiveFalse_ReturnsOnlyDeactivatedBrands()
     {
         var activeBrand = await new BrandBuilder().WithName("Active Brand").WithSlug("active-brand").BuildAsync();
@@ -274,7 +274,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.Items[0].Name.ShouldBe("Inactive Brand");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBrandsPagedAsync_WithPagination_ReturnsRequestedSliceOfOrderedResults()
     {
         var brands = new List<global::Domain.Brand.Aggregates.Brand>();
@@ -306,7 +306,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.PageSize.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPublicBrandsAsync_ReturnsOnlyActiveBrandsOrderedByName()
     {
         var activeBravo = await new BrandBuilder().WithName("Bravo").WithSlug("bravo").BuildAsync();
@@ -326,7 +326,7 @@ public class BrandQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLi
         result.ShouldAllBe(i => i.IsActive);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPublicBrandsAsync_WithCategoryFilter_ReturnsOnlyBrandsInThatCategory()
     {
         var categoryA = CategoryId.NewId();

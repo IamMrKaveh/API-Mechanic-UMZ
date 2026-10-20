@@ -22,7 +22,7 @@ public class TicketMessageConfigurationTests(PostgresContainerFixture fixture) :
         return ticket;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_CustomerMessage_RoundTripsAllProperties()
     {
         var ticket = await SeedTicketAsync();
@@ -49,7 +49,7 @@ public class TicketMessageConfigurationTests(PostgresContainerFixture fixture) :
         reloaded.IsFromAgent().ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_AgentMessage_IsFromAgent()
     {
         var ticket = await SeedTicketAsync();
@@ -66,7 +66,7 @@ public class TicketMessageConfigurationTests(PostgresContainerFixture fixture) :
         reloaded.SenderType.ShouldBe(TicketMessageSenderType.Agent);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_MultipleMessagesForTicket_AllPersisted()
     {
         var ticket = await SeedTicketAsync();
@@ -82,7 +82,7 @@ public class TicketMessageConfigurationTests(PostgresContainerFixture fixture) :
         count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(TicketMessage));
@@ -94,7 +94,7 @@ public class TicketMessageConfigurationTests(PostgresContainerFixture fixture) :
         primaryKey.Properties[0].Name.ShouldBe(nameof(TicketMessage.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_TicketIdAndSenderId_AreRequiredWithConverters()
     {
         var entityType = Context.Model.FindEntityType(typeof(TicketMessage));
@@ -111,7 +111,7 @@ public class TicketMessageConfigurationTests(PostgresContainerFixture fixture) :
         senderId.GetValueConverter().ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Content_IsRequiredWithMaxLength5000()
     {
         var property = Context.Model.FindEntityType(typeof(TicketMessage))!.FindProperty(nameof(TicketMessage.Content));
@@ -120,7 +120,7 @@ public class TicketMessageConfigurationTests(PostgresContainerFixture fixture) :
         property.GetMaxLength().ShouldBe(5000);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_SenderType_IsRequiredStringWithMaxLength20()
     {
         var property = Context.Model.FindEntityType(typeof(TicketMessage))!.FindProperty(nameof(TicketMessage.SenderType));
@@ -129,7 +129,7 @@ public class TicketMessageConfigurationTests(PostgresContainerFixture fixture) :
         property.GetMaxLength().ShouldBe(20);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_IsEditedIsRequired_SentAtIsRequired_EditedAtIsOptional()
     {
         var entityType = Context.Model.FindEntityType(typeof(TicketMessage));
@@ -140,7 +140,7 @@ public class TicketMessageConfigurationTests(PostgresContainerFixture fixture) :
         entityType.FindProperty(nameof(TicketMessage.EditedAt))!.IsNullable.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasIndexOnTicketId()
     {
         var entityType = Context.Model.FindEntityType(typeof(TicketMessage));

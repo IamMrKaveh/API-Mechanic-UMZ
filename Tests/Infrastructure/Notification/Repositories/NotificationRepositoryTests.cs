@@ -42,7 +42,7 @@ public class NotificationRepositoryTests(PostgresContainerFixture fixture) : IAs
         return user;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ValidNotification_PersistsAcrossContexts()
     {
         var user = await PersistActiveUserAsync();
@@ -73,7 +73,7 @@ public class NotificationRepositoryTests(PostgresContainerFixture fixture) : IAs
         loaded.IsRead.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenNotificationDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(NotificationId.NewId());
@@ -81,7 +81,7 @@ public class NotificationRepositoryTests(PostgresContainerFixture fixture) : IAs
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenOwnerIsDeactivated_ReturnsNullDueToQueryFilter()
     {
         var user = await PersistActiveUserAsync();
@@ -106,7 +106,7 @@ public class NotificationRepositoryTests(PostgresContainerFixture fixture) : IAs
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUnreadByUserIdAsync_ReturnsOnlyUnreadNotificationsForThatUser()
     {
         var userA = await PersistActiveUserAsync();
@@ -139,7 +139,7 @@ public class NotificationRepositoryTests(PostgresContainerFixture fixture) : IAs
         results.ShouldNotContain(n => n.Id == unreadB.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUnreadByUserIdAsync_ReturnsResultsOrderedByCreatedAtDescending()
     {
         var user = await PersistActiveUserAsync();
@@ -163,7 +163,7 @@ public class NotificationRepositoryTests(PostgresContainerFixture fixture) : IAs
         results[0].CreatedAt.ShouldBeGreaterThanOrEqualTo(results[1].CreatedAt);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterMarkAsRead_PersistsIsReadTrue()
     {
         var user = await PersistActiveUserAsync();
@@ -192,7 +192,7 @@ public class NotificationRepositoryTests(PostgresContainerFixture fixture) : IAs
         final.UpdatedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Remove_ExistingNotification_DeletesFromDatabase()
     {
         var user = await PersistActiveUserAsync();

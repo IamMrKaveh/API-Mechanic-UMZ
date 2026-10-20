@@ -27,7 +27,7 @@ public class OrderProcessStateRepositoryIntegrationTests(PostgresContainerFixtur
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByOrderIdAsync_ReturnsState_WhenExists()
     {
         var orderId = OrderId.NewId();
@@ -44,14 +44,14 @@ public class OrderProcessStateRepositoryIntegrationTests(PostgresContainerFixtur
         result.Status.ShouldBe(ProcessStatusEnum.InProgress);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByOrderIdAsync_ReturnsNull_WhenNotExists()
     {
         var result = await _sut.GetByOrderIdAsync(OrderId.NewId(), CancellationToken.None);
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_PersistsState_AfterSave()
     {
         var orderId = OrderId.NewId();
@@ -65,7 +65,7 @@ public class OrderProcessStateRepositoryIntegrationTests(PostgresContainerFixtur
         loaded!.Id.ShouldBe(state.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task OrderProcessState_EnforcesUniqueOrderIdIndex()
     {
         var orderId = OrderId.NewId();
@@ -77,7 +77,7 @@ public class OrderProcessStateRepositoryIntegrationTests(PostgresContainerFixtur
         await Should.ThrowAsync<DbUpdateException>(async () => await second.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task OrderProcessState_StoresEnumsAsStrings()
     {
         var orderId = OrderId.NewId();

@@ -62,7 +62,7 @@ public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : In
         return entries;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdAsync_WithNoEntries_ReturnsEmptyPaginatedResult()
     {
         var variantId = await SeedVariantAsync();
@@ -76,7 +76,7 @@ public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : In
         result.PageSize.ShouldBe(10);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdAsync_WithEntriesForVariant_ReturnsMatchingEntriesOnly()
     {
         var variantIdA = await SeedVariantAsync();
@@ -91,7 +91,7 @@ public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : In
         result.Items.ShouldAllBe(dto => dto.VariantId == variantIdA.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdAsync_WithManyEntries_OrdersByCreatedAtDescending()
     {
         var variantId = await SeedVariantAsync();
@@ -107,7 +107,7 @@ public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : In
         result.Items.Select(dto => dto.Id).ToList().ShouldBe(expectedOrder);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(1, 2, 2, 5)]
     [InlineData(2, 2, 2, 5)]
     [InlineData(3, 2, 1, 5)]
@@ -127,7 +127,7 @@ public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : In
         result.PageSize.ShouldBe(pageSize);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdAsync_MapsAllPropertiesFromEntityToDto()
     {
         var variantId = await SeedVariantAsync();
@@ -154,7 +154,7 @@ public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : In
         dto.CreatedAt.ShouldBe(entry.CreatedAt, PgTimestampTolerance);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdAsync_WithUnknownVariantId_ReturnsEmptyResult()
     {
         var unknownVariantId = VariantId.NewId();
@@ -165,7 +165,7 @@ public class StockLedgerQueryServiceTests(PostgresContainerFixture fixture) : In
         result.TotalCount.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdAsync_HonorsCancellationToken()
     {
         var variantId = await SeedVariantAsync();

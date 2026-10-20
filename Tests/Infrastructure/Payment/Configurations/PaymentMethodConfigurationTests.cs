@@ -35,7 +35,7 @@ public class PaymentMethodConfigurationTests(PostgresContainerFixture fixture) :
         return method;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Save_ThenReload_PreservesAllPropertiesAndOwnedFee()
     {
         var method = new PaymentMethodBuilder()
@@ -62,7 +62,7 @@ public class PaymentMethodConfigurationTests(PostgresContainerFixture fixture) :
         loaded.Fee.Percentage.ShouldBe(3.75m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task QueryFilter_WithSoftDeletedMethod_ExcludesFromDefaultQuery()
     {
         var method = new PaymentMethodBuilder()
@@ -83,7 +83,7 @@ public class PaymentMethodConfigurationTests(PostgresContainerFixture fixture) :
         visible.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task IgnoreQueryFilters_WithSoftDeletedMethod_ReturnsSoftDeletedRow()
     {
         var method = new PaymentMethodBuilder()
@@ -107,7 +107,7 @@ public class PaymentMethodConfigurationTests(PostgresContainerFixture fixture) :
         loaded.IsActive.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateCode_ThrowsDbUpdateException()
     {
         var first = new PaymentMethodBuilder()
@@ -129,7 +129,7 @@ public class PaymentMethodConfigurationTests(PostgresContainerFixture fixture) :
         });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateName_ThrowsDbUpdateException()
     {
         var first = new PaymentMethodBuilder()

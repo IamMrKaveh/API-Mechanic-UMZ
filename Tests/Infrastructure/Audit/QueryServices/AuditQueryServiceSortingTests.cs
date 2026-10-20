@@ -32,7 +32,7 @@ public class AuditQueryServiceSortingTests(PostgresContainerFixture fixture) : I
         await _fixture.ResetAsync();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("CreatedAt", true)]
     [InlineData("CreatedAt", false)]
     [InlineData("EventType", true)]
@@ -72,7 +72,7 @@ public class AuditQueryServiceSortingTests(PostgresContainerFixture fixture) : I
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SearchAsync_WithEntityTypeFilter_ReturnsOnlyMatchingRows()
     {
         var request = new AuditSearchRequest

@@ -8,7 +8,7 @@ namespace Tests.Infrastructure.Cart.Configurations;
 [Collection(nameof(DatabaseCollection))]
 public class CartConfigurationTests(PostgresContainerFixture fixture) : IntegrationTestBase(fixture)
 {
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsUserCartAndRoundTripsAllScalarProperties()
     {
         var user = await SeedUserAsync();
@@ -34,7 +34,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         rowVersion!.Length.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsGuestCartWithGuestTokenAndNullUserId()
     {
         var guestToken = GuestToken.Generate();
@@ -52,7 +52,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         reloaded.GuestToken!.Value.ShouldBe(guestToken.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenUserOfCartIsDeleted_SetsUserIdToNull()
     {
         var user = await SeedUserAsync();
@@ -71,7 +71,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         reloaded.UserId.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToCartsTable()
     {
         Skip.IfNot(Fixture.IsDockerAvailable, Fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -81,7 +81,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         entityType!.GetTableName().ShouldBe("Carts");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(Carts));
@@ -93,7 +93,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         primaryKey.Properties[0].Name.ShouldBe(nameof(Carts.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_GuestToken_HasMaxLength256AndIsNullable()
     {
         var entityType = Context.Model.FindEntityType(typeof(Carts));
@@ -105,7 +105,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         property.GetMaxLength().ShouldBe(256);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_UserId_IsNullable()
     {
         var entityType = Context.Model.FindEntityType(typeof(Carts));
@@ -116,7 +116,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         property!.IsNullable.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_AppliedDiscountCodeId_IsNullable()
     {
         var entityType = Context.Model.FindEntityType(typeof(Carts));
@@ -127,7 +127,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         property!.IsNullable.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasRowVersionShadowProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(Carts));
@@ -139,7 +139,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         rowVersion.ValueGenerated.ShouldBe(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAddOrUpdate);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCompositeIndexOnUserIdAndIsCheckedOut()
     {
         var entityType = Context.Model.FindEntityType(typeof(Carts));
@@ -153,7 +153,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCompositeIndexOnGuestTokenAndIsCheckedOut()
     {
         var entityType = Context.Model.FindEntityType(typeof(Carts));
@@ -167,7 +167,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         index.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasSetNullDeleteBehaviorOnUserId()
     {
         var entityType = Context.Model.FindEntityType(typeof(Carts));
@@ -182,7 +182,7 @@ public class CartConfigurationTests(PostgresContainerFixture fixture) : Integrat
         foreignKey.IsRequired.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasCascadeDeleteFromCartToCartItems()
     {
         var entityType = Context.Model.FindEntityType(typeof(Carts));

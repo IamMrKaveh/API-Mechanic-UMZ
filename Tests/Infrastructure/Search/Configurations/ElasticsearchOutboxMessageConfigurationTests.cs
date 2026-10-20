@@ -34,7 +34,7 @@ public class ElasticsearchOutboxMessageConfigurationTests(PostgresContainerFixtu
         return message;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PreservesAllScalarProperties()
     {
         var message = ElasticsearchOutboxMessage.Create(
@@ -63,7 +63,7 @@ public class ElasticsearchOutboxMessageConfigurationTests(PostgresContainerFixtu
         loaded.NextAttemptAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_AfterMarkFailed_PersistsErrorAndNextAttemptAndRetryCount()
     {
         var message = ElasticsearchOutboxMessage.Create(
@@ -86,7 +86,7 @@ public class ElasticsearchOutboxMessageConfigurationTests(PostgresContainerFixtu
         loaded.IsPoisoned.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_AfterMarkPoisoned_PersistsPoisonedFlagAndClearsNextAttempt()
     {
         var message = ElasticsearchOutboxMessage.Create(
@@ -107,7 +107,7 @@ public class ElasticsearchOutboxMessageConfigurationTests(PostgresContainerFixtu
         loaded.NextAttemptAt.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateIdempotencyKey_ThrowsDbUpdateException()
     {
         var entityId = Guid.NewGuid();
@@ -124,7 +124,7 @@ public class ElasticsearchOutboxMessageConfigurationTests(PostgresContainerFixtu
         });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DifferentChangeTypeForSameEntity_ProducesDistinctIdempotencyKeysAndPersistsBoth()
     {
         var entityId = Guid.NewGuid();
@@ -142,7 +142,7 @@ public class ElasticsearchOutboxMessageConfigurationTests(PostgresContainerFixtu
         count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task IsPoisoned_ForBrandNewMessage_DefaultsToFalseAtDatabaseLevel()
     {
         var message = ElasticsearchOutboxMessage.Create(
@@ -160,7 +160,7 @@ public class ElasticsearchOutboxMessageConfigurationTests(PostgresContainerFixtu
         loaded.IsPoisoned.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persisted_MessageMappedToConfiguredTable_IsQueryableViaContextDbSet()
     {
         var message = ElasticsearchOutboxMessage.Create(
@@ -178,7 +178,7 @@ public class ElasticsearchOutboxMessageConfigurationTests(PostgresContainerFixtu
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_AfterMarkProcessed_PersistsProcessedAtAndClearsNextAttempt()
     {
         var message = ElasticsearchOutboxMessage.Create(

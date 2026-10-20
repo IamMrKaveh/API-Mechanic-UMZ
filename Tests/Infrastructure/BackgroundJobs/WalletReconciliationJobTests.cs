@@ -57,7 +57,7 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
         return wallet;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WhenBalanceMismatchesLedger_LogsDiscrepancy()
     {
         await SeedWalletWithLedgerAsync(balance: 250_000m, ledgerSum: 100_000m);
@@ -78,7 +78,7 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WhenBalanceMatchesLedger_DoesNotLog()
     {
         await SeedWalletWithLedgerAsync(balance: 100_000m, ledgerSum: 100_000m);
@@ -96,7 +96,7 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
         await AuditService.DidNotReceiveWithAnyArgs().LogSystemEventAsync(default!, default!, default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_WhenLockNotAcquired_DoesNothing()
     {
         var handle = Substitute.For<ILockHandle>();
@@ -119,7 +119,7 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
         scopeFactory.DidNotReceiveWithAnyArgs().CreateScope();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteAsync_AcquiresLockWithExpectedKeyAndExpiry()
     {
         var job = BuildJob();

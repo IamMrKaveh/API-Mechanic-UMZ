@@ -66,7 +66,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         return variant;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_StockIncreased_EnqueuesProductOutboxMessageForKnownVariant()
     {
         var variant = await SeedProductVariantAsync();
@@ -84,7 +84,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         messages[0].ChangeType.ShouldBe("StockChanged");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_StockReserved_EnqueuesProductOutboxMessageForKnownVariant()
     {
         var variant = await SeedProductVariantAsync();
@@ -102,7 +102,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         messages[0].ChangeType.ShouldBe("StockChanged");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_StockReservationReleased_EnqueuesProductOutboxMessageForKnownVariant()
     {
         var variant = await SeedProductVariantAsync();
@@ -120,7 +120,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         messages[0].ChangeType.ShouldBe("StockChanged");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_OutboxEntityId_MatchesProductIdOfPersistedVariant()
     {
         var variant = await SeedProductVariantAsync();
@@ -136,7 +136,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         message.EntityId.ShouldBe(variant.ProductId.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_SerializedDocument_ContainsProductIdOfVariant()
     {
         var variant = await SeedProductVariantAsync();
@@ -152,7 +152,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         message.Document.ShouldContain(variant.ProductId.Value.ToString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_StockIncreased_WhenVariantDoesNotExist_DoesNothing()
     {
         await using var context = _fixture.CreateContext();
@@ -165,7 +165,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         (await verify.ElasticsearchOutboxMessages.CountAsync()).ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_StockReserved_WhenVariantDoesNotExist_DoesNothing()
     {
         await using var context = _fixture.CreateContext();
@@ -178,7 +178,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         (await verify.ElasticsearchOutboxMessages.CountAsync()).ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_StockReservationReleased_WhenVariantDoesNotExist_DoesNothing()
     {
         await using var context = _fixture.CreateContext();
@@ -191,7 +191,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         (await verify.ElasticsearchOutboxMessages.CountAsync()).ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_MultipleStockEventsForSameVariant_EnqueuesOneMessagePerEvent()
     {
         var variant = await SeedProductVariantAsync();
@@ -209,7 +209,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         count.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_PropagatesCancellationTokenToDbQuery()
     {
         var variant = await SeedProductVariantAsync();
@@ -224,7 +224,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
             sut.Handle(IncreaseNotification(variant.Id), cts.Token));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handler_ImplementsAllThreeStockEventNotificationHandlers()
     {
         await using var context = _fixture.CreateContext();
@@ -235,7 +235,7 @@ public class InventoryStockSearchSyncHandlerTests(PostgresContainerFixture fixtu
         sut.ShouldBeAssignableTo<INotificationHandler<DomainEventNotification<StockReservationReleasedEvent>>>();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handler_IsSealed()
     {
         await using var context = _fixture.CreateContext();

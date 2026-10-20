@@ -30,7 +30,7 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAuditLogAsync_ValidLog_PersistsAcrossContexts()
     {
         var auditLog = new AuditLogBuilder()
@@ -63,7 +63,7 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.IsArchived.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenIdDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(AuditLogId.NewId());
@@ -71,7 +71,7 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task VerifyIntegrity_AfterRoundTrip_ReturnsTrue()
     {
         var auditLog = new AuditLogBuilder()
@@ -90,7 +90,7 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded!.VerifyIntegrity().ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetForArchiveAsync_ReturnsOnlyLogsBeforeCutoff()
     {
         var oldLog = new AuditLogBuilder().WithEventType("Order").WithAction("Old").Build();
@@ -121,7 +121,7 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         results.ShouldNotContain(l => l.Id == newLog.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetForArchiveAsync_WithIncludeEventTypes_FiltersByEventType()
     {
         var securityLog = new AuditLogBuilder().WithEventType("Security").WithAction("Login").Build();
@@ -146,7 +146,7 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         results.ShouldNotContain(l => l.Id == orderLog.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetForArchiveAsync_WithExcludeEventTypes_ExcludesMatchingEventTypes()
     {
         var securityLog = new AuditLogBuilder().WithEventType("Security").WithAction("Login").Build();
@@ -171,7 +171,7 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         results.ShouldContain(l => l.Id == orderLog.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetForArchiveAsync_WithBatchSize_LimitsReturnedItems()
     {
         for (var i = 0; i < 5; i++)
@@ -197,7 +197,7 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         results.Count.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetForArchiveAsync_OnlyNonArchivedTrue_ExcludesArchivedLogs()
     {
         var archived = new AuditLogBuilder().WithEventType("Order").WithAction("Archived").Build();
@@ -224,7 +224,7 @@ public class AuditRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         results.ShouldContain(l => l.Id == active.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task RemoveRangeAsync_ExistingLogs_DeletesFromDatabase()
     {
         var log1 = new AuditLogBuilder().WithEventType("Order").WithAction("A1").Build();

@@ -53,7 +53,7 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
         await context.SaveChangesAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CheckHealthAsync_WhenQueueIsEmpty_ReturnsHealthyWithZeroCounts()
     {
         await using var context = _fixture.CreateContext();
@@ -66,7 +66,7 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
         result.Data["failed_count"].ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CheckHealthAsync_WithFewPendingAndFailed_ReturnsHealthy()
     {
         await SeedAsync(pendingCount: 5, failedCount: 2);
@@ -82,7 +82,7 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
         result.Data.ShouldContainKey("oldest_pending");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CheckHealthAsync_With101Failed_ReturnsUnhealthy()
     {
         await SeedAsync(pendingCount: 0, failedCount: 101);
@@ -97,7 +97,7 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
         result.Data["failed_count"].ShouldBe(101);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CheckHealthAsync_WithExactly100Failed_StaysHealthy()
     {
         await SeedAsync(pendingCount: 0, failedCount: 100);
@@ -110,7 +110,7 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CheckHealthAsync_With1001Pending_ReturnsDegraded()
     {
         await SeedAsync(pendingCount: 1001, failedCount: 0);
@@ -125,7 +125,7 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
         result.Data["pending_count"].ShouldBe(1001);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CheckHealthAsync_WithExactly1000Pending_StaysHealthy()
     {
         await SeedAsync(pendingCount: 1000, failedCount: 0);
@@ -138,7 +138,7 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CheckHealthAsync_WithPendingOperations_ReportsOldestPendingTimestamp()
     {
         var oldest = DateTime.UtcNow.AddHours(-3);
@@ -158,7 +158,7 @@ public class ElasticsearchDLQHealthCheckTests(PostgresContainerFixture fixture) 
         ((DateTime)result.Data["oldest_pending"]).ShouldBe(oldest, TimeSpan.FromMinutes(1));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CheckHealthAsync_WhenContextIsBroken_ReturnsUnhealthyAndLogsError()
     {
         var auditService = Substitute.For<IAuditService>();

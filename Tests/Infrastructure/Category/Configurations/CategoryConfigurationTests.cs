@@ -26,7 +26,7 @@ public class CategoryConfigurationTests(PostgresContainerFixture fixture) : IAsy
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateCategoryName_ThrowsDbUpdateException()
     {
         var first = await new CategoryBuilder()
@@ -47,7 +47,7 @@ public class CategoryConfigurationTests(PostgresContainerFixture fixture) : IAsy
         await Should.ThrowAsync<DbUpdateException>(() => _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateCategorySlug_ThrowsDbUpdateException()
     {
         var first = await new CategoryBuilder()
@@ -68,7 +68,7 @@ public class CategoryConfigurationTests(PostgresContainerFixture fixture) : IAsy
         await Should.ThrowAsync<DbUpdateException>(() => _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PersistsAllScalarPropertiesAndRoundTripsCategoryId()
     {
         var category = await new CategoryBuilder()
@@ -99,7 +99,7 @@ public class CategoryConfigurationTests(PostgresContainerFixture fixture) : IAsy
         rowVersion.Length.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_UpdatingCategory_ChangesRowVersion()
     {
         var category = await new CategoryBuilder()

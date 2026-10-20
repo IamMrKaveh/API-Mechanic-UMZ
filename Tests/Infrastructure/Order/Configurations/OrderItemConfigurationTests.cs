@@ -97,7 +97,7 @@ public class OrderItemConfigurationTests(PostgresContainerFixture fixture) : IAs
         return order;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_RoundTripsOrderItemIdConversion()
     {
         var user = await PersistUserAsync();
@@ -111,7 +111,7 @@ public class OrderItemConfigurationTests(PostgresContainerFixture fixture) : IAs
         loaded.OrderId.Value.ShouldBe(order.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PreservesProductAndVariantIds()
     {
         var user = await PersistUserAsync();
@@ -125,7 +125,7 @@ public class OrderItemConfigurationTests(PostgresContainerFixture fixture) : IAs
         loaded.VariantId.Value.ShouldBe(expected.VariantId.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_MapsOwnedUnitPriceIntoUnitPriceAmountAndCurrencyColumns()
     {
         var user = await PersistUserAsync();
@@ -139,7 +139,7 @@ public class OrderItemConfigurationTests(PostgresContainerFixture fixture) : IAs
         loaded.UnitPrice.Currency.ShouldBe("IRT");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_ThenReload_PreservesProductNameAndSku()
     {
         var user = await PersistUserAsync();
@@ -154,7 +154,7 @@ public class OrderItemConfigurationTests(PostgresContainerFixture fixture) : IAs
         loaded.Quantity.ShouldBe(expected.Quantity);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task TotalPrice_IsIgnoredByEfCore_ButComputedFromUnitPriceAndQuantityWhenLoaded()
     {
         var user = await PersistUserAsync();
@@ -168,7 +168,7 @@ public class OrderItemConfigurationTests(PostgresContainerFixture fixture) : IAs
         loaded.TotalPrice.Currency.ShouldBe("IRT");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task DeleteOrder_CascadesToOrderItemsThroughConfiguredForeignKey()
     {
         var user = await PersistUserAsync();
@@ -191,7 +191,7 @@ public class OrderItemConfigurationTests(PostgresContainerFixture fixture) : IAs
         itemExists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task QueryFilter_WhenParentOrderIsSoftDeleted_ExcludesChildItemsFromDefaultQuery()
     {
         var user = await PersistUserAsync();
@@ -210,7 +210,7 @@ public class OrderItemConfigurationTests(PostgresContainerFixture fixture) : IAs
         visibleItem.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task IgnoreQueryFilters_WhenParentOrderIsSoftDeleted_ReturnsChildItemRow()
     {
         var user = await PersistUserAsync();
@@ -232,7 +232,7 @@ public class OrderItemConfigurationTests(PostgresContainerFixture fixture) : IAs
         loaded!.Id.ShouldBe(itemId);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Query_ByOrderIdIndex_ReturnsAllItemsForOrder()
     {
         var user = await PersistUserAsync();

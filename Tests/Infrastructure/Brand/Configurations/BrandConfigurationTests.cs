@@ -26,7 +26,7 @@ public class BrandConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_DuplicateSlug_ThrowsDbUpdateException()
     {
         var sharedSlug = "shared-brand-slug";
@@ -52,7 +52,7 @@ public class BrandConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
             await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Brand_StoresOwnedNameAndSlugAsColumnsAndCanBeQueriedByThem()
     {
         var brand = await new BrandBuilder()
@@ -79,7 +79,7 @@ public class BrandConfigurationTests(PostgresContainerFixture fixture) : IAsyncL
         bySlug!.Id.ShouldBe(brand.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Persist_Brand_XminConcurrencyTokenIsRefreshedOnInsertAndUpdate()
     {
         var brand = await new BrandBuilder().BuildAsync();

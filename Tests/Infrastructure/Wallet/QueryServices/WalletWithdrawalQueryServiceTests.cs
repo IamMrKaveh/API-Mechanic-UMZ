@@ -74,7 +74,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         return withdrawal;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByUserAsync_WhenNoRequests_ReturnsEmpty()
     {
         var user = await SeedUserAsync();
@@ -86,7 +86,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.Items.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByUserAsync_WithRequests_MapsAmountIbanStatusAndUserFullName()
     {
         var user = await SeedUserAsync("Reza", "Karimi", "09121240001");
@@ -104,7 +104,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         dto.Status.ShouldBe(nameof(WalletWithdrawalStatus.Pending));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByUserAsync_OrderedByCreatedAtDescending()
     {
         var user = await SeedUserAsync(phone: "09121241001");
@@ -119,7 +119,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.Items[1].Id.ShouldBe(older.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByUserAsync_ReturnsOnlyRequestsForRequestedUser()
     {
         var userA = await SeedUserAsync(phone: "09121242001");
@@ -134,7 +134,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.Items[0].Id.ShouldBe(forA.Id.Value);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 0, 1, 10)]
     [InlineData(-3, -1, 1, 10)]
     [InlineData(1, 500, 1, 10)]
@@ -149,7 +149,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.PageSize.ShouldBe(expectedPageSize);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByStatusAsync_WhenStatusIsPending_ReturnsOnlyPendingRequests()
     {
         var user = await SeedUserAsync(phone: "09121244001");
@@ -165,7 +165,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.Items[0].Status.ShouldBe(nameof(WalletWithdrawalStatus.Pending));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByStatusAsync_WhenStatusIsNull_ReturnsAllRequests()
     {
         var user = await SeedUserAsync(phone: "09121245001");
@@ -179,7 +179,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.TotalCount.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByStatusAsync_OrdersByCreatedAtAscending()
     {
         var user = await SeedUserAsync(phone: "09121246001");
@@ -197,7 +197,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.Items[2].Id.ShouldBe(third.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByStatusAsync_WithDateRangeFilter_ReturnsOnlyRequestsInsideRange()
     {
         var user = await SeedUserAsync(phone: "09121247001");
@@ -215,7 +215,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.Items[0].Id.ShouldBe(recent.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenRequestExists_ReturnsMappedDto()
     {
         var user = await SeedUserAsync("Sara", "Amini", "09121248001");
@@ -230,7 +230,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.Amount.ShouldBe(500_000m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenRequestDoesNotExist_ReturnsNull()
     {
         var result = await _sut.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
@@ -238,7 +238,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenRequestIsApproved_MapsApprovedAtTimestamp()
     {
         var user = await SeedUserAsync(phone: "09121249001");
@@ -252,7 +252,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         result.ApprovedAt.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPendingCountAsync_WhenNoRequests_ReturnsZero()
     {
         var count = await _sut.GetPendingCountAsync(CancellationToken.None);
@@ -260,7 +260,7 @@ public class WalletWithdrawalQueryServiceTests(PostgresContainerFixture fixture)
         count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetPendingCountAsync_ReturnsCountOfOnlyPendingRequests()
     {
         var user = await SeedUserAsync(phone: "09121250001");

@@ -169,7 +169,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         await _context.SaveChangesAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_WithNoProducts_ReturnsEmptyResult()
     {
         var result = await _sut.GetAdminProductsAsync(
@@ -180,7 +180,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.TotalCount.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_WithIncludeDeletedFalse_ExcludesSoftDeletedProducts()
     {
         var cat = await SeedCategoryAsync();
@@ -196,7 +196,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items.ShouldAllBe(p => p.IsDeleted == false);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_WithIncludeDeletedTrue_IncludesSoftDeletedProducts()
     {
         var cat = await SeedCategoryAsync();
@@ -211,7 +211,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.TotalCount.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_FiltersByIsActive()
     {
         var cat = await SeedCategoryAsync();
@@ -227,7 +227,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].IsActive.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_FiltersByBrandId()
     {
         var cat = await SeedCategoryAsync();
@@ -245,7 +245,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items.ShouldAllBe(p => p.BrandId == brandA.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_FiltersByCategoryId()
     {
         var catA = await SeedCategoryAsync();
@@ -263,7 +263,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].CategoryId.ShouldBe(catB.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_SearchByName_UsesCaseInsensitiveILike()
     {
         var cat = await SeedCategoryAsync();
@@ -279,7 +279,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].Name.ShouldBe("HeadPhone Wireless");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_OrdersByCreatedAtDescending()
     {
         var cat = await SeedCategoryAsync();
@@ -297,7 +297,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items.Select(x => x.Id).ToList().ShouldBe(new[] { p3.Id.Value, p2.Id.Value, p1.Id.Value });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_ComputesMinPriceAndTotalStockAcrossVariants()
     {
         var cat = await SeedCategoryAsync();
@@ -316,7 +316,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].HasStock.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_HasStockTrue_WhenAnyVariantIsUnlimited()
     {
         var cat = await SeedCategoryAsync();
@@ -331,7 +331,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].HasStock.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_WithPrimaryImage_ResolvesUrl()
     {
         var cat = await SeedCategoryAsync();
@@ -347,7 +347,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         _urlResolver.Received().ResolveMediaUrl("uploads/prod/img.png");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminProductsAsync_WithNoPrimaryImage_LeavesUrlNull()
     {
         var cat = await SeedCategoryAsync();
@@ -361,7 +361,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].PrimaryImageUrl.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductDetailAsync_WithUnknownId_ReturnsNull()
     {
         var result = await _sut.GetProductDetailAsync(ProductId.NewId());
@@ -369,7 +369,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductDetailAsync_WithSoftDeletedProduct_ReturnsNull()
     {
         var cat = await SeedCategoryAsync();
@@ -381,7 +381,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductDetailAsync_ReturnsMappedDtoWithBrandAndCategoryNames()
     {
         var cat = await SeedCategoryAsync("CategoryX");
@@ -406,7 +406,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Variants[0].IsInStock.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductDetailAsync_ProjectsRowVersionAsBase64()
     {
         var cat = await SeedCategoryAsync();
@@ -420,7 +420,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         Convert.FromBase64String(result.RowVersion).Length.ShouldBe(4);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductDetailAsync_ResolvesPrimaryImageUrlWhenPresent()
     {
         var cat = await SeedCategoryAsync();
@@ -434,7 +434,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.PrimaryImageUrl.ShouldBe("https://cdn.test/uploads/prod/detail.png");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductCatalogAsync_ReturnsOnlyActiveAndNonDeletedProducts()
     {
         var cat = await SeedCategoryAsync();
@@ -455,7 +455,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].Id.ShouldBe(active.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductCatalogAsync_FiltersByIsFeatured()
     {
         var cat = await SeedCategoryAsync();
@@ -474,7 +474,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].IsFeatured.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductCatalogAsync_FiltersByPriceRange()
     {
         var cat = await SeedCategoryAsync();
@@ -495,7 +495,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].Id.ShouldBe(expensive.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductCatalogAsync_InStockOnly_ExcludesProductsWithNoStock()
     {
         var cat = await SeedCategoryAsync();
@@ -516,7 +516,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].Id.ShouldBe(inStock.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductCatalogAsync_HasDiscountTrue_ReturnsOnlyDiscountedProducts()
     {
         var cat = await SeedCategoryAsync();
@@ -539,7 +539,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].DiscountPercentage.ShouldBe(20);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductCatalogAsync_HasDiscountFalse_ExcludesDiscountedProducts()
     {
         var cat = await SeedCategoryAsync();
@@ -560,7 +560,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].Id.ShouldBe(full.Id.Value);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("price_asc")]
     [InlineData("price_desc")]
     [InlineData("name_asc")]
@@ -609,7 +609,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductCatalogAsync_ComputesDiscountPercentageCorrectly()
     {
         var cat = await SeedCategoryAsync();
@@ -629,7 +629,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].OriginalPrice.ShouldBe(100_000m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductCatalogAsync_ProductWithNoActiveVariants_HasNullMinPrice()
     {
         var cat = await SeedCategoryAsync();
@@ -649,7 +649,7 @@ public class ProductQueryServiceTests(PostgresContainerFixture fixture) : IAsync
         result.Items[0].HasDiscount.ShouldBeFalse();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(1, 2, 2, 5)]
     [InlineData(3, 2, 1, 5)]
     [InlineData(1, 10, 5, 5)]

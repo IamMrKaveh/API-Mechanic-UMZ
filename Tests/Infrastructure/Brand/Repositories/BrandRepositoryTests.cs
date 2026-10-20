@@ -29,7 +29,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_ExistingBrand_ReturnsBrand()
     {
         var brand = await new BrandBuilder().BuildAsync();
@@ -47,7 +47,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.CategoryId.ShouldBe(brand.CategoryId);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_NonExistentBrand_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(BrandId.NewId());
@@ -55,7 +55,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameInCategoryAsync_MatchingNameAndCategory_ReturnsTrue()
     {
         var categoryId = CategoryId.NewId();
@@ -73,7 +73,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameInCategoryAsync_NameInDifferentCategory_ReturnsFalse()
     {
         var categoryA = CategoryId.NewId();
@@ -93,7 +93,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameInCategoryAsync_WithExcludeId_ExcludesOwnEntry()
     {
         var categoryId = CategoryId.NewId();
@@ -111,7 +111,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_MatchingSlug_ReturnsTrue()
     {
         var brand = await new BrandBuilder()
@@ -127,7 +127,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_NonMatchingSlug_ReturnsFalse()
     {
         var brand = await new BrandBuilder()
@@ -144,7 +144,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_WithExcludeId_ExcludesOwnEntry()
     {
         var brand = await new BrandBuilder()
@@ -160,7 +160,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ThenSave_PersistsBrandAcrossContexts()
     {
         var brand = await new BrandBuilder()
@@ -187,7 +187,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.CategoryId.ShouldBe(brand.CategoryId);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_ChangeCategory_PersistsAcrossContexts()
     {
         var originalCategory = CategoryId.NewId();
@@ -214,7 +214,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded!.CategoryId.ShouldBe(newCategory);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_Deactivate_PersistsIsActiveFalse()
     {
         var brand = await new BrandBuilder().BuildAsync();
@@ -236,7 +236,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded!.IsActive.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCurrentRowVersion_AfterSave_ReturnsFourByteToken()
     {
         var brand = await new BrandBuilder().BuildAsync();
@@ -251,7 +251,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         rowVersion!.Length.ShouldBe(sizeof(uint));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCurrentRowVersion_AfterUpdate_ChangesFromPreviousValue()
     {
         var brand = await new BrandBuilder().BuildAsync();
@@ -273,7 +273,7 @@ public class BrandRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         afterUpdate!.ShouldNotBe(beforeUpdate!);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WithStaleRowVersion_ThrowsDbUpdateConcurrencyException()
     {
         var brand = await new BrandBuilder().BuildAsync();

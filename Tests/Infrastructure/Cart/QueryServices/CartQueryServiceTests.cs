@@ -1,4 +1,4 @@
-﻿using Application.Cart.Contracts;
+using Application.Cart.Contracts;
 using Application.Media.Contracts;
 using Application.Media.Features.Shared;
 using Domain.Product.ValueObjects;
@@ -79,7 +79,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         return cart;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_NoUserNoGuestToken_ReturnsNull()
     {
         var result = await _sut.GetCartDetailAsync(userId: null, guestToken: null);
@@ -87,7 +87,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_UserWithoutCart_ReturnsNull()
     {
         var result = await _sut.GetCartDetailAsync(userId: UserId.NewId(), guestToken: null);
@@ -95,7 +95,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_UserWithCart_ReturnsMappedCart()
     {
         var userId = await SeedUserAsync();
@@ -126,7 +126,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.TotalItems.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_CartWithMultipleItems_SumsCorrectly()
     {
         var userId = await SeedUserAsync();
@@ -146,7 +146,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.TotalPrice.ShouldBe(3 * 50_000m + 1 * 200_000m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartDetailAsync_UserProvided_DoesNotReturnCheckedOutCart()
     {
         var userId = await SeedUserAsync();
@@ -166,7 +166,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCartSummaryAsync_UserWithCart_ReturnsAggregatedSummary()
     {
         var userId = await SeedUserAsync();
@@ -186,7 +186,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.TotalPrice.ShouldBe(2 * 100m + 5 * 300m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateCartForCheckoutAsync_UserWithEmptyCart_ReturnsCartEmptyError()
     {
         var userId = await SeedUserAsync();
@@ -202,7 +202,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
         result.Errors[0].ShouldContain("خالی");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ValidateCartForCheckoutAsync_UserWithNonEmptyCart_ReturnsValid()
     {
         var userId = await SeedUserAsync();

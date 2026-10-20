@@ -33,7 +33,7 @@ public class OrderProcessStateRepositoryTests(PostgresContainerFixture fixture) 
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ValidState_PersistsAcrossContexts()
     {
         var orderId = OrderId.NewId();
@@ -55,7 +55,7 @@ public class OrderProcessStateRepositoryTests(PostgresContainerFixture fixture) 
         loaded.RetryCount.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByOrderIdAsync_WhenNoStateForOrder_ReturnsNull()
     {
         var loaded = await _sut.GetByOrderIdAsync(OrderId.NewId());
@@ -63,7 +63,7 @@ public class OrderProcessStateRepositoryTests(PostgresContainerFixture fixture) 
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByOrderIdAsync_AfterMarkFailed_ReturnsUpdatedState()
     {
         var orderId = OrderId.NewId();
@@ -82,7 +82,7 @@ public class OrderProcessStateRepositoryTests(PostgresContainerFixture fixture) 
         loaded.FailureReason.ShouldBe("insufficient stock");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_DuplicateOrderId_ThrowsOnSaveDueToUniqueIndex()
     {
         var orderId = OrderId.NewId();

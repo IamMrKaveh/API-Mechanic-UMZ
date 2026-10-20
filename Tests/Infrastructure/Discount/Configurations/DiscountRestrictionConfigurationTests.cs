@@ -30,7 +30,7 @@ public class DiscountRestrictionConfigurationTests(PostgresContainerFixture fixt
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_MappedToDiscountRestrictionsTable()
     {
         Skip.IfNot(_fixture.IsDockerAvailable, _fixture.UnavailabilityReason ?? "Docker engine not available.");
@@ -40,7 +40,7 @@ public class DiscountRestrictionConfigurationTests(PostgresContainerFixture fixt
         entityType!.GetTableName().ShouldBe("DiscountRestrictions");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountRestriction));
@@ -52,7 +52,7 @@ public class DiscountRestrictionConfigurationTests(PostgresContainerFixture fixt
         primaryKey.Properties[0].Name.ShouldBe(nameof(DiscountRestriction.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DiscountCodeId_IsRequired()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountRestriction));
@@ -63,7 +63,7 @@ public class DiscountRestrictionConfigurationTests(PostgresContainerFixture fixt
         property!.IsNullable.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_RestrictionType_IsRequiredAndHasMaxLength50AndStringConversion()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountRestriction));
@@ -77,7 +77,7 @@ public class DiscountRestrictionConfigurationTests(PostgresContainerFixture fixt
         property.ClrType.ShouldBe(typeof(DiscountRestrictionType));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_RestrictionValue_IsRequiredAndHasMaxLength500()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountRestriction));
@@ -89,7 +89,7 @@ public class DiscountRestrictionConfigurationTests(PostgresContainerFixture fixt
         property.GetMaxLength().ShouldBe(500);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasNavigationToDiscountCode()
     {
         var entityType = _context.Model.FindEntityType(typeof(DiscountRestriction));
@@ -99,7 +99,7 @@ public class DiscountRestrictionConfigurationTests(PostgresContainerFixture fixt
         navigation.ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_WhenDiscountCodeDeleted_CascadesDeleteToRestrictions()
     {
         var discount = new DiscountCodeBuilder().WithCode("CASCADE-RESTR").Build();

@@ -127,6 +127,65 @@ public class ContainerEngineResolverTests
     }
 
     [Fact]
+    public void ResolveCandidates_WindowsRootless_ReturnsMachinePipeFirstAndDeduplicates()
+    {
+        var candidates = ContainerEngineResolver.ResolveCandidates(
+            enginePreference: null,
+            dockerHost: null,
+            isWindows: true,
+            podman: Environment(
+                machine: Machine(rootful: false),
+                host: new PodmanHost(LinuxSocket, Rootless: true),
+                connection: new PodmanConnection("podman-machine-default", "ssh://user@host/socket", IsDefault: true)));
+
+        candidates.Count.ShouldBe(1);
+        candidates[0].DockerHost.ShouldBe("npipe://./pipe/podman-machine-default");
+        candidates[0].DisableRyuk.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ResolveCandidates_Unix_IncludesMachineAndHostEndpointsInOrder()
+    {
+        var candidates = ContainerEngineResolver.ResolveCandidates(
+            enginePreference: null,
+            dockerHost: null,
+            isWindows: false,
+            podman: Environment(
+                machine: Machine(socket: LinuxSocket),
+                host: new PodmanHost("unix:///run/user/1000/podman/podman.sock", Rootless: true)));
+
+        candidates.Count.ShouldBe(1, "an identical socket must be deduplicated");
+        candidates[0].DockerHost.ShouldBe("unix:///run/user/1000/podman/podman.sock");
+    }
+
+    [Fact]
+    public void ResolveCandidates_WithoutMachine_ReturnsHostAndConnectionCandidates()
+    {
+        var candidates = ContainerEngineResolver.ResolveCandidates(
+            enginePreference: null,
+            dockerHost: null,
+            isWindows: false,
+            podman: Environment(
+                host: new PodmanHost("unix:///run/user/1000/podman/podman.sock", Rootless: true),
+                connection: new PodmanConnection("rootful", "unix:///run/podman/podman.sock", IsDefault: true)));
+
+        candidates.Count.ShouldBe(2);
+        candidates[0].DockerHost.ShouldBe("unix:///run/user/1000/podman/podman.sock");
+        candidates[1].DockerHost.ShouldBe("unix:///run/podman/podman.sock");
+    }
+
+    [Fact]
+    public void ResolveCandidates_WithDockerHostConfigured_ReturnsNone()
+    {
+        ContainerEngineResolver.ResolveCandidates(
+                enginePreference: null,
+                dockerHost: "tcp://127.0.0.1:2375",
+                isWindows: true,
+                podman: Environment(machine: Machine()))
+            .ShouldBeEmpty();
+    }
+
+    [Fact]
     public void Resolve_WindowsWithoutReachableEngine_ReturnsNull()
     {
         // `podman info` failing means no running machine, so a pipe would be misleading.

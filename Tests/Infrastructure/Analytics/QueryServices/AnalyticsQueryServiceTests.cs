@@ -1,4 +1,4 @@
-﻿using Application.Analytics.Contracts;
+using Application.Analytics.Contracts;
 using Infrastructure.Analytics.QueryServices;
 using Tests.TestInfrastructure.Base;
 using Inventories = Domain.Inventory.Aggregates.Inventory;
@@ -17,7 +17,7 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDashboardStatisticsAsync_EmptyDatabase_ReturnsAllZeros()
     {
         var result = await _sut.GetDashboardStatisticsAsync(null, null);
@@ -30,7 +30,7 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.TotalProducts.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetDashboardStatisticsAsync_WithProductsInDatabase_CountsAllProducts()
     {
         var (brand, category) = await SeedBrandWithCategoryAsync();
@@ -53,7 +53,7 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.TotalProducts.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetInventoryReportAsync_EmptyDatabase_ReturnsAllZeros()
     {
         var result = await _sut.GetInventoryReportAsync();
@@ -65,7 +65,7 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.LowStockVariants.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetInventoryReportAsync_MixedInventories_CountsEachStateCorrectly()
     {
         var (brand, category) = await SeedBrandWithCategoryAsync();
@@ -101,7 +101,7 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.LowStockVariants.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetRevenueReportAsync_NoOrdersInRange_ReturnsZeros()
     {
         var result = await _sut.GetRevenueReportAsync(
@@ -116,7 +116,7 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.ByStatus.Count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTopSellingProductsAsync_NoOrderItems_ReturnsEmptyResult()
     {
         var result = await _sut.GetTopSellingProductsAsync(
@@ -131,7 +131,7 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.PageSize.ShouldBe(10);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetCategoryPerformanceAsync_NoOrders_ReturnsEmptyResult()
     {
         var result = await _sut.GetCategoryPerformanceAsync(null, null);
@@ -141,7 +141,7 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Items.Count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetSalesChartDataAsync_NoOrdersInRange_ReturnsEmptyResult()
     {
         var result = await _sut.GetSalesChartDataAsync(
@@ -154,7 +154,7 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.TotalCount.ShouldBe(0);
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("day")]
     [InlineData("week")]
     [InlineData("month")]

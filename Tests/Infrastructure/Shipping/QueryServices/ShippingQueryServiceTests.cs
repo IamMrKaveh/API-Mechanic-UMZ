@@ -126,7 +126,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         await _context.SaveChangesAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetShippingDetailAsync_WithUnknownId_ReturnsNull()
     {
         var result = await _sut.GetShippingDetailAsync(ShippingId.NewId());
@@ -134,7 +134,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetShippingDetailAsync_ReturnsMappedDto()
     {
         var shipping = await SeedShippingAsync(
@@ -159,7 +159,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.RowVersion.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllShippingsAsync_WithNoShippings_ReturnsEmpty()
     {
         var result = await _sut.GetAllShippingsAsync();
@@ -168,7 +168,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllShippingsAsync_WhenIncludeInactiveFalse_ExcludesInactive()
     {
         await SeedShippingAsync(name: "Active");
@@ -180,7 +180,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result[0].IsActive.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllShippingsAsync_WhenIncludeInactiveTrue_IncludesInactive()
     {
         await SeedShippingAsync(name: "Active");
@@ -191,7 +191,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllShippingsAsync_MapsPropertiesAndOrdersBySortOrder()
     {
         var s3 = await SeedShippingAsync(name: "Third", sortOrder: 30, baseCost: 300);
@@ -206,7 +206,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result[0].DeliveryTimeDisplay.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CalculateShippingCostAsync_WithUnknownShipping_ReturnsEmptyDto()
     {
         var result = await _sut.CalculateShippingCostAsync(
@@ -220,7 +220,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.IsFree.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CalculateShippingCostAsync_WithInactiveShipping_ReturnsEmptyDto()
     {
         var shipping = await SeedShippingAsync(isActive: false);
@@ -231,7 +231,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Cost.ShouldBe(0m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task CalculateShippingCostAsync_WithActiveShipping_ReturnsCost()
     {
         var shipping = await SeedShippingAsync(name: "Post", baseCost: 40_000m);
@@ -246,7 +246,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.MaxDeliveryDays.ShouldBe(shipping.DeliveryTime.MaxDays);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAvailableShippingsAsync_WithNoShippings_ReturnsEmpty()
     {
         var result = await _sut.GetAvailableShippingsAsync(Money.Create(100_000m));
@@ -254,7 +254,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAvailableShippingsAsync_ReturnsOnlyActiveShippingsOrderedBySortOrder()
     {
         var second = await SeedShippingAsync(name: "Second", sortOrder: 20);
@@ -267,7 +267,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Select(r => r.Name).ToList().ShouldBe(new[] { "First", "Second" });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAvailableShippingsAsync_MapsCostAndDeliveryDisplay()
     {
         var shipping = await SeedShippingAsync(name: "Fast", baseCost: 25_000m);
@@ -282,7 +282,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         dto.DeliveryTimeDisplay.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAvailableShippingsForVariantsAsync_WithEmptyVariants_ReturnsEmpty()
     {
         var result = await _sut.GetAvailableShippingsForVariantsAsync(Array.Empty<Guid>());
@@ -290,7 +290,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAvailableShippingsForVariantsAsync_WithEmptyGuidsOnly_ReturnsEmpty()
     {
         var result = await _sut.GetAvailableShippingsForVariantsAsync(new[] { Guid.Empty, Guid.Empty });
@@ -298,7 +298,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAvailableShippingsForVariantsAsync_ReturnsOnlyLinkedActiveShippings()
     {
         var (_, variant) = await SeedProductAndVariantAsync();
@@ -315,7 +315,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result[0].Id.ShouldBe(linked.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAvailableShippingsForVariantsAsync_UsesBaseCostAsCost_AndSetsIsFreeToFalse()
     {
         var (_, variant) = await SeedProductAndVariantAsync();
@@ -329,7 +329,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result[0].IsFree.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetShippingQuotesAsync_WithEmptyItems_FallsBackToGetAvailableShippings()
     {
         await SeedShippingAsync(name: "GenericA", sortOrder: 1);
@@ -342,7 +342,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetShippingQuotesAsync_WithItemsHavingZeroQuantity_FallsBackToAvailableShippings()
     {
         await SeedShippingAsync(name: "GenericA", sortOrder: 1);
@@ -357,7 +357,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.Count.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetShippingQuotesAsync_WhenNoVariantsLinkedToActiveShippings_ReturnsEmpty()
     {
         await SeedShippingAsync(name: "Unrelated");
@@ -372,7 +372,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetShippingQuotesAsync_ReturnsQuotesForLinkedActiveShippingsOnly()
     {
         var (_, variant) = await SeedProductAndVariantAsync();
@@ -395,7 +395,7 @@ public class ShippingQueryServiceTests(PostgresContainerFixture fixture) : IAsyn
         result[0].Cost.ShouldBe(40_000m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetShippingQuotesAsync_AppliesMultiplierAndQuantity()
     {
         var (_, variant) = await SeedProductAndVariantAsync();

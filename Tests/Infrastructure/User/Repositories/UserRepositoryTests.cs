@@ -31,7 +31,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_ThenGetByIdAsync_RoundTripsAggregateFromDatabase()
     {
         var fullName = FullName.Create("Ali", "Rezaei");
@@ -65,7 +65,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.FailedLoginAttempts.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenIdDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByIdAsync(UserId.NewId());
@@ -73,7 +73,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WhenUserIsDeactivated_ReturnsNullDueToGlobalQueryFilter()
     {
         var user = new UserBuilder().Build();
@@ -91,7 +91,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetActiveByIdAsync_WhenUserIsActive_ReturnsUser()
     {
         var user = new UserBuilder().Build();
@@ -107,7 +107,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.IsActive.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetActiveByIdAsync_WhenUserIsDeactivated_ReturnsNull()
     {
         var user = new UserBuilder().Build();
@@ -125,7 +125,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByEmailAsync_WhenEmailExists_ReturnsUser()
     {
         var email = Email.Create($"lookup-{Guid.NewGuid():N}@example.com");
@@ -142,7 +142,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.Email.Value.ShouldBe(email.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByEmailAsync_WhenEmailDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetByEmailAsync(Email.Create($"missing-{Guid.NewGuid():N}@example.com"));
@@ -150,7 +150,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByPhoneNumberAsync_WhenPhoneExists_ReturnsUser()
     {
         var phone = PhoneNumber.Create("09121112233");
@@ -168,7 +168,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.PhoneNumber!.Value.ShouldBe("09121112233");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByPhoneNumberAsync_WhenPhoneDoesNotExist_ReturnsNull()
     {
         var user = new UserBuilder().WithPhoneNumber(null).Build();
@@ -181,7 +181,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByPhoneNumberAsync_WhenPhoneExists_ReturnsTrue()
     {
         var phone = PhoneNumber.Create("09122223344");
@@ -196,7 +196,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByPhoneNumberAsync_WhenPhoneDoesNotExist_ReturnsFalse()
     {
         var exists = await _sut.ExistsByPhoneNumberAsync(PhoneNumber.Create("09127776655"));
@@ -204,7 +204,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByPhoneNumberAsync_WhenExcludeIdMatchesOwner_ReturnsFalse()
     {
         var phone = PhoneNumber.Create("09123334455");
@@ -219,7 +219,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByPhoneNumberAsync_WhenOwnerIsDeactivated_StillReturnsTrue()
     {
         var phone = PhoneNumber.Create("09124445566");
@@ -238,7 +238,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetWithAddressesAsync_WhenUserHasAddresses_LoadsAddresses()
     {
         var user = new UserBuilder().Build();
@@ -260,7 +260,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.Addresses.ShouldContain(a => a.Title == "Office");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetWithAddressesAsync_WhenUserHasNoAddresses_ReturnsUserWithEmptyAddresses()
     {
         var user = new UserBuilder().Build();
@@ -275,7 +275,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded!.Addresses.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserAddressAsync_WhenAddressExists_ReturnsAddress()
     {
         var user = new UserBuilder().Build();
@@ -293,7 +293,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.UserId.ShouldBe(user.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserAddressAsync_WhenAddressDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.GetUserAddressAsync(UserAddressId.NewId());
@@ -301,7 +301,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserAddressAsync_WhenOwnerIsDeactivated_ReturnsNullDueToQueryFilter()
     {
         var user = new UserBuilder().Build();
@@ -321,7 +321,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAllActiveUserIdsAsync_ReturnsOnlyActiveUsers()
     {
         var activeOne = new UserBuilder().Build();
@@ -345,7 +345,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         ids.ShouldNotContain(inactive.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterUpdatingProfile_PersistsChanges()
     {
         var user = new UserBuilder().Build();
@@ -371,7 +371,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         reloaded.PhoneNumber!.Value.ShouldBe("09121110000");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_TwoUsersWithSameEmail_ThrowsOnSaveChangesDueToUniqueIndex()
     {
         var email = Email.Create($"dup-{Guid.NewGuid():N}@example.com");
@@ -387,7 +387,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_TwoUsersWithSamePhoneNumber_ThrowsOnSaveChangesDueToUniqueIndex()
     {
         var phone = PhoneNumber.Create("09125000000");
@@ -409,7 +409,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         await Should.ThrowAsync<DbUpdateException>(async () => await _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_TwoUsersBothWithoutPhoneNumber_SucceedsBecauseUniqueIndexIsFiltered()
     {
         var first = new UserBuilder()
@@ -435,7 +435,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loadedSecond!.PhoneNumber.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_UserWithDefaultAddress_PersistsDefaultAddressIdAndIsDefaultFlag()
     {
         var user = new UserBuilder().Build();
@@ -456,7 +456,7 @@ public class UserRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.Addresses[0].IsDefault.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_UserOwnedValueObjectsRoundTripCorrectly()
     {
         var email = Email.Create($"vo-{Guid.NewGuid():N}@example.com");

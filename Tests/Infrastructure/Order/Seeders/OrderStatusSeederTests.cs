@@ -41,13 +41,13 @@ public class OrderStatusSeederTests(PostgresContainerFixture fixture) : IAsyncLi
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task StopAsync_CompletesWithoutThrowing()
     {
         await _sut.StopAsync(CancellationToken.None);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task StartAsync_SeedsSortOrdersSequentiallyFromZero()
     {
         await _sut.StartAsync(CancellationToken.None);
@@ -64,7 +64,7 @@ public class OrderStatusSeederTests(PostgresContainerFixture fixture) : IAsyncLi
         orders.Last().Name.ShouldBe("Expired");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task StartAsync_SetsCancelAndEditFlagsPerDefinition()
     {
         await _sut.StartAsync(CancellationToken.None);
@@ -83,7 +83,7 @@ public class OrderStatusSeederTests(PostgresContainerFixture fixture) : IAsyncLi
         shipped.AllowEdit.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task StartAsync_SetsIconsAndColors()
     {
         await _sut.StartAsync(CancellationToken.None);
@@ -98,7 +98,7 @@ public class OrderStatusSeederTests(PostgresContainerFixture fixture) : IAsyncLi
         expired.Icon.ShouldBe("hourglass_disabled");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task StartAsync_MarksOnlyCreatedAsDefault()
     {
         await _sut.StartAsync(CancellationToken.None);
@@ -112,7 +112,7 @@ public class OrderStatusSeederTests(PostgresContainerFixture fixture) : IAsyncLi
         defaults.ShouldBe(["Created"]);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task StartAsync_WhenSaveFails_LogsErrorAndDoesNotThrow()
     {
         await _context.DisposeAsync();

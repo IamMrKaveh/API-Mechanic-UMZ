@@ -1,4 +1,4 @@
-﻿using Domain.Cart.Interfaces;
+using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Cart.Repositories;
@@ -43,7 +43,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         return user;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Add_ThenFindByIdAsync_ReturnsCartAcrossContexts()
     {
         var user = await PersistUserAsync();
@@ -63,7 +63,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.IsCheckedOut.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByIdAsync_WhenCartDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.FindByIdAsync(CartId.NewId());
@@ -71,7 +71,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByUserIdAsync_WhenActiveCartExists_ReturnsCart()
     {
         var user = await PersistUserAsync();
@@ -89,7 +89,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.UserId.ShouldBe(user.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByUserIdAsync_WhenCartIsCheckedOut_ReturnsNull()
     {
         var user = await PersistUserAsync();
@@ -111,7 +111,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByUserIdAsync_WhenUserHasNoCart_ReturnsNull()
     {
         var loaded = await _sut.FindByUserIdAsync(UserId.NewId());
@@ -119,7 +119,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByGuestTokenAsync_WhenActiveGuestCartExists_ReturnsCart()
     {
         var guestToken = GuestToken.Generate();
@@ -138,7 +138,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.GuestToken!.Value.ShouldBe(guestToken.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByGuestTokenAsync_WhenCartIsCheckedOut_ReturnsNull()
     {
         var guestToken = GuestToken.Generate();
@@ -160,7 +160,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByIdAsync_WithCartItems_LoadsIncludedItems()
     {
         var user = await PersistUserAsync();
@@ -192,7 +192,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         item.OriginalPrice.Amount.ShouldBe(200m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterAddingItem_PersistsChange()
     {
         var user = await PersistUserAsync();
@@ -224,7 +224,7 @@ public class CartRepositoryTests(PostgresContainerFixture fixture) : IAsyncLifet
         final.CartItems.Single().Quantity.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Remove_ExistingCart_DeletesFromDatabase()
     {
         var user = await PersistUserAsync();

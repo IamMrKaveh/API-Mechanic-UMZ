@@ -28,7 +28,7 @@ public class GetSalesChartDataIntegrationTests(PostgresContainerFixture fixture)
         await _fixture.ResetAsync();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("day")]
     [InlineData("week")]
     [InlineData("month")]

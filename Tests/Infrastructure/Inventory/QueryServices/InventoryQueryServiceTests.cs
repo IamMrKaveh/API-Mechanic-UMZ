@@ -1,4 +1,4 @@
-﻿using Application.Inventory.Contracts;
+using Application.Inventory.Contracts;
 using Domain.Brand.ValueObjects;
 using Domain.Category.ValueObjects;
 using Domain.Inventory.Aggregates;
@@ -53,7 +53,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         return (product, variant, inventory);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdAsync_NonExistent_ReturnsNull()
     {
         var result = await _sut.GetByVariantIdAsync(VariantId.NewId());
@@ -61,7 +61,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByVariantIdAsync_Existing_ReturnsMappedDto()
     {
         var (_, variant, _) = await SeedProductVariantAndInventoryAsync(stock: 25);
@@ -72,7 +72,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result!.VariantId.ShouldBe(variant.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBatchAvailabilityAsync_EmptyInput_ReturnsEmpty()
     {
         var result = await _sut.GetBatchAvailabilityAsync(new List<VariantId>());
@@ -81,7 +81,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetBatchAvailabilityAsync_MixedInventories_ReturnsCorrectStates()
     {
         var (_, inStockVariant, _) = await SeedProductVariantAndInventoryAsync(stock: 20, sku: "SKU-IN");
@@ -106,7 +106,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         unlimited.IsUnlimited.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTransactionsPagedAsync_NoEntries_ReturnsEmptyPagedResult()
     {
         var result = await _sut.GetTransactionsPagedAsync(
@@ -118,7 +118,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Items.Count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTransactionsPagedAsync_WithEntries_FilteredByVariantId()
     {
         var (_, v1, _) = await SeedProductVariantAndInventoryAsync(stock: 100, sku: "SKU-V1");
@@ -148,7 +148,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Items.ShouldAllBe(t => t.VariantId == v1.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetTransactionsPagedAsync_Pagination_ReturnsCorrectSubset()
     {
         var (_, variant, _) = await SeedProductVariantAndInventoryAsync(stock: 100, sku: "SKU-PG");
@@ -175,7 +175,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.PageSize.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLowStockProductsAsync_NoLowStock_ReturnsEmpty()
     {
         await SeedProductVariantAndInventoryAsync(stock: 100, sku: "SKU-HIGH");
@@ -186,7 +186,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Count().ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLowStockProductsAsync_WithLowStockItems_ReturnsThem()
     {
         await SeedProductVariantAndInventoryAsync(stock: 100, sku: "SKU-HIGH");
@@ -201,7 +201,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         list.Select(x => x.VariantId).ShouldContain(low2.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLowStockProductsAsync_UnlimitedInventory_NotIncluded()
     {
         await SeedProductVariantAndInventoryAsync(stock: 0, isUnlimited: true, sku: "SKU-UNL");
@@ -211,7 +211,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Count().ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOutOfStockProductsAsync_NoOutOfStock_ReturnsEmpty()
     {
         await SeedProductVariantAndInventoryAsync(stock: 20, sku: "SKU-IN");
@@ -221,7 +221,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Count().ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOutOfStockProductsAsync_WithOutOfStockItems_ReturnsThem()
     {
         await SeedProductVariantAndInventoryAsync(stock: 20, sku: "SKU-IN");
@@ -236,7 +236,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         list.Select(x => x.VariantId).ShouldContain(out2.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOutOfStockProductsAsync_UnlimitedInventory_NotIncluded()
     {
         await SeedProductVariantAndInventoryAsync(stock: 0, isUnlimited: true, sku: "SKU-UNL");
@@ -246,7 +246,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Count().ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStatisticsAsync_EmptyDatabase_ReturnsNull()
     {
         var result = await _sut.GetStatisticsAsync();
@@ -254,7 +254,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStatisticsAsync_WithMixedInventories_ReturnsCorrectCounts()
     {
         await SeedProductVariantAndInventoryAsync(stock: 50, sku: "SKU-A");
@@ -272,7 +272,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.UnlimitedVariants.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetInventoryStatusAsync_NonExistent_ReturnsNull()
     {
         var result = await _sut.GetInventoryStatusAsync(VariantId.NewId());
@@ -280,7 +280,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetInventoryStatusAsync_Existing_ReturnsMappedStatus()
     {
         var (_, variant, _) = await SeedProductVariantAndInventoryAsync(stock: 25);
@@ -296,7 +296,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.IsUnlimited.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetInventoryStatusAsync_UnlimitedInventory_ReturnsUnlimitedTrue()
     {
         var (_, variant, _) = await SeedProductVariantAndInventoryAsync(stock: 0, isUnlimited: true);
@@ -308,7 +308,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.IsInStock.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetInventoryStatusesByProductAsync_NoVariantsForProduct_ReturnsEmpty()
     {
         var result = await _sut.GetInventoryStatusesByProductAsync(ProductId.NewId());
@@ -316,7 +316,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Count.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetInventoryStatusesByProductAsync_MultipleVariants_ReturnsForEachVariant()
     {
         var product = new ProductBuilder()
@@ -343,7 +343,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Select(r => r.VariantId).ShouldContain(v2.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetWarehouseStockByVariantAsync_NonExistent_ReturnsEmpty()
     {
         var result = await _sut.GetWarehouseStockByVariantAsync(VariantId.NewId());
@@ -352,7 +352,7 @@ public class InventoryQueryServiceTests(PostgresContainerFixture fixture) : Inte
         result.Count().ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetWarehouseStockByVariantAsync_ExistingWithNoLedger_FallsBackToDefaultWarehouse()
     {
         var (_, variant, _) = await SeedProductVariantAndInventoryAsync(stock: 30);

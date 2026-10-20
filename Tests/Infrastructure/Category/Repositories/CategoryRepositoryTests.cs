@@ -30,7 +30,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_ExistingCategory_ReturnsAggregate()
     {
         var category = await new CategoryBuilder()
@@ -55,7 +55,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.IsActive.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_NonExistentCategory_ReturnsNull()
     {
         var result = await _sut.GetByIdAsync(CategoryId.NewId());
@@ -63,7 +63,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameAsync_NameExists_ReturnsTrue()
     {
         var category = await new CategoryBuilder()
@@ -80,7 +80,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameAsync_NameDoesNotExist_ReturnsFalse()
     {
         var exists = await _sut.ExistsByNameAsync(CategoryName.Create("Absent Category"));
@@ -88,7 +88,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByNameAsync_NameExistsButExcluded_ReturnsFalse()
     {
         var category = await new CategoryBuilder()
@@ -105,7 +105,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_SlugExists_ReturnsTrue()
     {
         var category = await new CategoryBuilder()
@@ -122,7 +122,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_SlugDoesNotExist_ReturnsFalse()
     {
         var exists = await _sut.ExistsBySlugAsync(CategorySlug.Create("absent-slug-xyz"));
@@ -130,7 +130,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsBySlugAsync_SlugExistsButExcluded_ReturnsFalse()
     {
         var category = await new CategoryBuilder()
@@ -147,7 +147,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task AddAsync_PersistsCategoryAndAllowsRetrievalByRepository()
     {
         var category = await new CategoryBuilder()
@@ -167,7 +167,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         reloaded.Slug.Value.ShouldBe("transmission-add");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_WithStaleRowVersion_ThrowsDbUpdateConcurrencyException()
     {
         var category = await new CategoryBuilder()
@@ -214,7 +214,7 @@ public class CategoryRepositoryTests(PostgresContainerFixture fixture) : IAsyncL
         await Should.ThrowAsync<DbUpdateConcurrencyException>(() => _context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_WithCurrentRowVersion_PersistsChanges()
     {
         var category = await new CategoryBuilder()

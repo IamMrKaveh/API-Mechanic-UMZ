@@ -16,7 +16,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         return user;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_NewUser_RoundTripsAllScalarProperties()
     {
         var email = $"roundtrip-{Guid.NewGuid():N}@example.com";
@@ -47,7 +47,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         reloaded.CreatedAt.ShouldNotBe(default);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicateEmail_ThrowsDbUpdateException()
     {
         var email = $"dup-{Guid.NewGuid():N}@example.com";
@@ -61,7 +61,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_DuplicatePhoneNumber_ThrowsDbUpdateException()
     {
         await PersistAsync(new UserBuilder().WithPhoneNumber(PhoneNumber.Create("09121112233")).Build());
@@ -74,7 +74,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         await Should.ThrowAsync<DbUpdateException>(() => Context.SaveChangesAsync());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_TwoUsersWithNullPhoneNumber_BothPersist()
     {
         await PersistAsync(new UserBuilder().WithPhoneNumber(null).Build());
@@ -84,7 +84,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         count.ShouldBe(2);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task QueryFilter_DeactivatedUser_IsExcludedFromDefaultQuery()
     {
         var user = await PersistAsync(new UserBuilder().Build());
@@ -99,7 +99,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         visible.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task IgnoreQueryFilters_DeactivatedUser_IsReturned()
     {
         var user = await PersistAsync(new UserBuilder().Build());
@@ -116,7 +116,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         loaded!.IsActive.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SaveChanges_PromoteToAdminAndVerifyEmail_PersistFlags()
     {
         var user = await PersistAsync(new UserBuilder().Build());
@@ -132,7 +132,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         reloaded.IsEmailVerified.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PrimaryKey_IsIdProperty()
     {
         var entityType = Context.Model.FindEntityType(typeof(Users));
@@ -144,7 +144,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         primaryKey.Properties[0].Name.ShouldBe(nameof(Users.Id));
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_FullName_IsRequiredOwnedTypeWithMaxLengths()
     {
         var entityType = Context.Model.FindEntityType(typeof(Users));
@@ -168,7 +168,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         lastName.GetColumnName().ShouldBe("LastName");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_Email_IsRequiredWithMaxLength256AndUniqueIndex()
     {
         var entityType = Context.Model.FindEntityType(typeof(Users));
@@ -189,7 +189,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         index!.IsUnique.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PhoneNumber_HasFilteredUniqueIndex()
     {
         var entityType = Context.Model.FindEntityType(typeof(Users));
@@ -210,7 +210,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         index.GetFilter()!.ShouldContain("PhoneNumber");
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_PasswordHash_HasMaxLength500AndIsOptional()
     {
         var property = Context.Model.FindEntityType(typeof(Users))!.FindProperty(nameof(Users.PasswordHash));
@@ -219,7 +219,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         property.GetMaxLength().ShouldBe(500);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_DefaultAddressId_IsOptional()
     {
         var property = Context.Model.FindEntityType(typeof(Users))!.FindProperty(nameof(Users.DefaultAddressId));
@@ -228,7 +228,7 @@ public class UserConfigurationTests(PostgresContainerFixture fixture) : Integrat
         property.GetValueConverter().ShouldNotBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public void Model_HasActiveQueryFilter()
     {
         var entityType = Context.Model.FindEntityType(typeof(Users));

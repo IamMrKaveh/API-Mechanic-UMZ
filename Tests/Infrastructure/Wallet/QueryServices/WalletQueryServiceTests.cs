@@ -79,7 +79,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         await _context.SaveChangesAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLedgerPageAsync_WhenNoEntries_ReturnsEmpty()
     {
         var (user, _) = await SeedUserAndWalletAsync();
@@ -91,7 +91,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.ShouldBeEmpty();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLedgerPageAsync_WithMultipleEntries_ReturnsMappedDtosOrderedByOccurredAtDescending()
     {
         var (user, wallet) = await SeedUserAndWalletAsync();
@@ -110,7 +110,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[2].Description.ShouldBe("first");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLedgerPageAsync_WithTransactionTypeFilterCredit_ReturnsOnlyCreditEntries()
     {
         var (user, wallet) = await SeedUserAndWalletAsync();
@@ -126,7 +126,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].TransactionType.ShouldBe(nameof(WalletTransactionType.Credit));
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLedgerPageAsync_WithMinAmountFilter_ExcludesEntriesBelowThreshold()
     {
         var (user, wallet) = await SeedUserAndWalletAsync();
@@ -143,7 +143,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.ShouldNotContain(i => i.AmountDelta == 10_000m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLedgerPageAsync_WithSearchTermFilter_ReturnsEntriesWithMatchingDescription()
     {
         var (user, wallet) = await SeedUserAndWalletAsync();
@@ -159,7 +159,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].Description!.ShouldContain("xyz");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLedgerPageAsync_ReturnsOnlyEntriesForRequestedUser()
     {
         var (userA, walletA) = await SeedUserAndWalletAsync(phone: "09121110001");
@@ -175,7 +175,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].UserId.ShouldBe(userA.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLedgerPageAsync_WhenOwnerDeactivatedAndIncludeInactiveFalse_ReturnsEmpty()
     {
         var (user, wallet) = await SeedUserAndWalletAsync();
@@ -191,7 +191,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.TotalCount.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLedgerPageAsync_WhenOwnerDeactivatedAndIncludeInactiveTrue_ReturnsEntries()
     {
         var (user, wallet) = await SeedUserAndWalletAsync();
@@ -207,7 +207,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.TotalCount.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetLedgerPageAsync_FlagsAdminAdjustmentBasedOnDescriptionPrefix()
     {
         var (user, wallet) = await SeedUserAndWalletAsync();
@@ -223,7 +223,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         regular.IsAdminAdjustment.ShouldBeFalse();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 0, 1, 10)]
     [InlineData(-1, -1, 1, 10)]
     [InlineData(1, 500, 1, 200)]
@@ -238,7 +238,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.PageSize.ShouldBe(expectedPageSize);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExportLedgerAsync_ReturnsAllEntriesMatchingFilterWithoutPagination()
     {
         var (user, wallet) = await SeedUserAndWalletAsync();
@@ -253,7 +253,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Count.ShouldBe(25);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderPaymentLedgerEntryAsync_WhenDescriptionContainsOrderId_ReturnsEntry()
     {
         var (user, wallet) = await SeedUserAndWalletAsync();
@@ -267,7 +267,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Description!.ShouldContain(orderId.Value.ToString());
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOrderPaymentLedgerEntryAsync_WhenNoMatchingEntry_ReturnsNull()
     {
         var (user, _) = await SeedUserAndWalletAsync();
@@ -278,7 +278,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOverviewPageAsync_ReturnsUserWalletsWithBalancesReservationsAndFullName()
     {
         var (user, wallet) = await SeedUserAndWalletAsync("Reza", "Kazemi", "09121213000", initialCredit: 500_000m);
@@ -301,7 +301,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         dto.IsActive.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOverviewPageAsync_WithSearchFilterOnFirstName_ReturnsMatchingWallets()
     {
         var (targetUser, _) = await SeedUserAndWalletAsync("Mohammad", "Bagheri", "09121214001");
@@ -316,7 +316,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].UserId.ShouldBe(targetUser.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOverviewPageAsync_WithMinBalanceFilter_ReturnsWalletsAboveThreshold()
     {
         await SeedUserAndWalletAsync(phone: "09121215001", initialCredit: 10_000m);
@@ -331,7 +331,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].CurrentBalance.ShouldBe(500_000m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOverviewPageAsync_WithSortByBalanceDesc_ReturnsWalletsOrderedByBalanceDescending()
     {
         await SeedUserAndWalletAsync(phone: "09121216001", initialCredit: 100_000m);
@@ -348,7 +348,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[2].CurrentBalance.ShouldBe(100_000m);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetOverviewPageAsync_WithIsFrozenFilter_ReturnsOnlyFrozenWallets()
     {
         var (activeUser, _) = await SeedUserAndWalletAsync(phone: "09121217001");
@@ -368,7 +368,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].FreezeReason.ShouldBe("suspicious");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStatisticsAsync_WhenNoWalletsExist_ReturnsZeroedStatistics()
     {
         var result = await _sut.GetStatisticsAsync(CancellationToken.None);
@@ -381,7 +381,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.PendingWithdrawalsCount.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStatisticsAsync_AggregatesBalancesActiveAndFrozenCounts()
     {
         var (_, wallet1) = await SeedUserAndWalletAsync(phone: "09121218001", initialCredit: 100_000m);
@@ -400,7 +400,7 @@ public class WalletQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.FrozenWalletsCount.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStatisticsAsync_CountsOpenFraudAlerts()
     {
         var (user, wallet) = await SeedUserAndWalletAsync(phone: "09121219001");

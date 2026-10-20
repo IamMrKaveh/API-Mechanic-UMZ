@@ -112,7 +112,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         await _context.SaveChangesAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetApprovedProductReviewsAsync_WithNoReviews_ReturnsEmpty()
     {
         var result = await _sut.GetApprovedProductReviewsAsync(
@@ -123,7 +123,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.TotalCount.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetApprovedProductReviewsAsync_ReturnsOnlyApprovedReviewsForActiveUsers()
     {
         var product = await SeedProductAsync();
@@ -143,7 +143,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.ShouldAllBe(r => r.Status == "Approved");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetApprovedProductReviewsAsync_FiltersByMinRating()
     {
         var product = await SeedProductAsync();
@@ -161,7 +161,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.ShouldAllBe(r => r.Rating >= 3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetApprovedProductReviewsAsync_VerifiedOnly_FiltersOutUnverified()
     {
         var product = await SeedProductAsync();
@@ -176,7 +176,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].IsVerifiedPurchase.ShouldBeTrue();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("HighestRated")]
     [InlineData("LowestRated")]
     [InlineData("Newest")]
@@ -212,7 +212,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetApprovedProductReviewsAsync_WithCurrentUserVote_PopulatesUserVoteField()
     {
         var product = await SeedProductAsync();
@@ -230,7 +230,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].UserVote.ShouldBe("Like");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetApprovedProductReviewsAsync_WithoutCurrentUser_LeavesUserVoteNull()
     {
         var product = await SeedProductAsync();
@@ -245,7 +245,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].UserVote.ShouldBeNull();
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 10)]
     [InlineData(-1, -5)]
     public async Task GetApprovedProductReviewsAsync_NormalizesInvalidPaginationValues(int page, int pageSize)
@@ -261,7 +261,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.PageSize.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductReviewSummaryAsync_WithNoApprovedReviews_ReturnsNull()
     {
         var product = await SeedProductAsync();
@@ -271,7 +271,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetProductReviewSummaryAsync_ReturnsCorrectStatsAndDistribution()
     {
         var product = await SeedProductAsync();
@@ -301,7 +301,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.RatingDistribution[1].ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetReviewsByStatusAsync_WithStatusAll_ReturnsAllNonDeletedReviews()
     {
         var product = await SeedProductAsync();
@@ -318,7 +318,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.TotalCount.ShouldBe(3);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetReviewsByStatusAsync_FiltersByStatus()
     {
         var product = await SeedProductAsync();
@@ -336,7 +336,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.ShouldAllBe(r => r.Status == "Approved");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetReviewsByStatusAsync_FiltersByProductId()
     {
         var productA = await SeedProductAsync();
@@ -354,7 +354,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].ProductId.ShouldBe(productA.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetReviewsByStatusAsync_FiltersByMinRating()
     {
         var product = await SeedProductAsync();
@@ -372,7 +372,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.ShouldAllBe(r => r.Rating >= 4);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetReviewsByStatusAsync_FiltersByDateRange()
     {
         var product = await SeedProductAsync();
@@ -394,7 +394,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].Id.ShouldBe(mid.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetReviewsByStatusAsync_OrdersByCreatedAtDescending()
     {
         var product = await SeedProductAsync();
@@ -414,7 +414,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
             .ShouldBe(new[] { r3.Id.Value, r2.Id.Value, r1.Id.Value });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetReviewsByStatusAsync_ExcludesDeletedReviews()
     {
         var product = await SeedProductAsync();
@@ -433,7 +433,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].Id.ShouldBe(kept.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminReviewStatsAsync_WithNoReviews_ReturnsZerosForAll()
     {
         var result = await _sut.GetAdminReviewStatsAsync(CancellationToken.None);
@@ -445,7 +445,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Total.ShouldBe(0);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminReviewStatsAsync_CountsReviewsByEachStatus()
     {
         var product = await SeedProductAsync();
@@ -462,7 +462,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Total.ShouldBe(4);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetAdminReviewStatsAsync_ExcludesDeletedReviews()
     {
         var product = await SeedProductAsync();
@@ -477,7 +477,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Total.ShouldBe(1);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WithUnknownId_ReturnsNull()
     {
         var result = await _sut.GetByIdAsync(ReviewId.NewId(), currentUserId: null, CancellationToken.None);
@@ -485,7 +485,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WithDeletedReview_ReturnsNull()
     {
         var product = await SeedProductAsync();
@@ -498,7 +498,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WithExistingReview_ReturnsDto()
     {
         var product = await SeedProductAsync();
@@ -515,7 +515,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Status.ShouldBe("Approved");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetByIdAsync_WithCurrentUserVote_ReturnsUserVoteInDto()
     {
         var product = await SeedProductAsync();
@@ -530,7 +530,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.UserVote.ShouldBe("Dislike");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserReviewsAsync_ReturnsOnlyReviewsBelongingToUser()
     {
         var product = await SeedProductAsync();
@@ -546,7 +546,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.ShouldAllBe(r => r.UserId == userA.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserReviewsAsync_ExcludesDeletedReviews()
     {
         var product = await SeedProductAsync();
@@ -562,7 +562,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items[0].Id.ShouldBe(kept.Id.Value);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetUserReviewsAsync_OrdersByCreatedAtDescending()
     {
         var product = await SeedProductAsync();
@@ -576,7 +576,7 @@ public class ReviewQueryServiceTests(PostgresContainerFixture fixture) : IAsyncL
         result.Items.Select(x => x.Id).ToList().ShouldBe(new[] { r2.Id.Value, r1.Id.Value });
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 5)]
     [InlineData(-2, 0)]
     public async Task GetUserReviewsAsync_NormalizesInvalidPagination(int page, int pageSize)

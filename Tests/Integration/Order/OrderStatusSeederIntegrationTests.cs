@@ -35,7 +35,7 @@ public class OrderStatusSeederIntegrationTests(PostgresContainerFixture fixture)
         await _fixture.ResetAsync();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task StartAsync_InsertsAllTwelveStatuses_WhenDatabaseEmpty()
     {
         await _sut.StartAsync(CancellationToken.None);
@@ -58,7 +58,7 @@ public class OrderStatusSeederIntegrationTests(PostgresContainerFixture fixture)
         names.ShouldContain("Expired");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task StartAsync_MarksCreatedAsDefaultAndActive()
     {
         await _sut.StartAsync(CancellationToken.None);
@@ -69,7 +69,7 @@ public class OrderStatusSeederIntegrationTests(PostgresContainerFixture fixture)
         created.IsActive.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task StartAsync_MarksNonDefaultsAsActiveAndNotDefault()
     {
         await _sut.StartAsync(CancellationToken.None);
@@ -80,7 +80,7 @@ public class OrderStatusSeederIntegrationTests(PostgresContainerFixture fixture)
         reserved.IsDefault.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task StartAsync_IsIdempotent_DoesNotDuplicateExistingStatuses()
     {
         await _sut.StartAsync(CancellationToken.None);

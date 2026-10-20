@@ -110,7 +110,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         return transaction;
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Add_ValidOrder_PersistsAcrossContexts()
     {
         var user = await PersistUserAsync();
@@ -131,7 +131,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.Status.ShouldBe(OrderStatusValue.Created);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByIdAsync_WhenOrderDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.FindByIdAsync(OrderId.NewId());
@@ -139,7 +139,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByIdAsync_WhenOrderIsSoftDeleted_ReturnsNullDueToQueryFilter()
     {
         var user = await PersistUserAsync();
@@ -163,7 +163,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByIdempotencyKeyAsync_WhenKeyExists_ReturnsTrue()
     {
         var user = await PersistUserAsync();
@@ -180,7 +180,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExistsByIdempotencyKeyAsync_WhenKeyDoesNotExist_ReturnsFalse()
     {
         var exists = await _sut.ExistsByIdempotencyKeyAsync(Guid.NewGuid());
@@ -188,7 +188,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindPendingExpiredAsync_ReturnsOrdersInExpirableStatusesOlderThanThirtyMinutes()
     {
         var user = await PersistUserAsync();
@@ -218,7 +218,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         results.ShouldNotContain(o => o.Id == freshOrder.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByOrderItemIdAsync_WhenItemExists_ReturnsParentOrder()
     {
         var user = await PersistUserAsync();
@@ -238,7 +238,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.OrderItems.ShouldContain(i => i.Id == itemId);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task FindByOrderItemIdAsync_WhenItemDoesNotExist_ReturnsNull()
     {
         var loaded = await _sut.FindByOrderItemIdAsync(OrderItemId.NewId());
@@ -246,7 +246,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         loaded.ShouldBeNull();
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Update_AfterStatusTransition_PersistsNewStatus()
     {
         var user = await PersistUserAsync();
@@ -282,7 +282,7 @@ public class OrderRepositoryTests(PostgresContainerFixture fixture) : IAsyncLife
         final!.Status.ShouldBe(OrderStatusValue.Processing);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Add_DuplicateIdempotencyKey_ThrowsOnSaveDueToUniqueIndex()
     {
         var user = await PersistUserAsync();
