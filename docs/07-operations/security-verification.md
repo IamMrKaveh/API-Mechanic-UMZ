@@ -47,7 +47,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/security/verify-secu
 | کل تست‌ها | PASS — ۱۱٬۵۹۹ تست (۱۰٬۰۶۸ پاس + ۱٬۵۳۱ اسکیپ دیتابیسی بدون Docker؛ در CI با Docker همه اجرا می‌شوند) |
 | بسته‌های آسیب‌پذیر | PASS (هیچ بستهٔ آسیب‌پذیری در ۷ گزارش پروژه) |
 | `gitleaks dir` (کد فعلی) | PASS (۰ یافته در فایل‌های قابل commit) |
-| `gitleaks git` (تاریخچه) | **PENDING** — ۱۴۱ یافتهٔ تاریخی مربوط به پیش از فاز ۰ (حذف `otp.json`، `appsettings.Production.json`، `MainApi/.env` و مقادیر داخل appsettings قدیمی) |
+| `gitleaks git` (تاریخچه) | **PENDING** — ۱۵۰ یافتهٔ تاریخی مربوط به پیش از فاز ۰ (حذف `otp.json`، `appsettings.Production.json`، `MainApi/.env` و مقادیر داخل appsettings قدیمی) |
 
 ## ۲) سه لایهٔ اجرای اسکن اسرار
 

@@ -123,8 +123,12 @@ path = '''(?i)(^|/)otp\.json$'''
 tags = ["file", "log", "mechanic"]
 
 # Global allowlists. Only non-secret locations and documented placeholders belong
-# here; real findings are tracked in `.gitleaksignore` (historical leaks that are
-# removed by the Git history rewrite, see docs/07-operations/security-verification.md).
+# here. Historical leaks are deliberately NOT allowlisted: they are reported as
+# findings so the SEC-01 Git history rewrite removes them
+# (see docs/07-operations/security-verification.md). The local, gitignored .env is
+# excluded from working-tree scans by scanning only commit-candidate files
+# (scripts/security/verify-security.ps1), not by an allowlist here - otherwise a
+# committed .env would go undetected.
 [[allowlists]]
 description = "Build output, vendored docs, local runtime artifacts"
 paths = [
@@ -138,9 +142,6 @@ paths = [
   '''(^|/)Logs?/''',
   '''(^|/)keys/''',
   '''(^|/)TestResults/''',
-  # The real .env is gitignored and never committed; a force-added .env is still
-  # caught by the `git` scans because it becomes part of a commit's tree.
-  '''(^|/)\.env$''',
 ]
 
 [[allowlists]]
