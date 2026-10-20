@@ -1,26 +1,26 @@
 # استراتژی تست
 
 پروژه `Tests` به ازای هر لایه پوشه اختصاصی دارد و روی xUnit با الگوی «تست واحد بدون وابستگی شبکه +
-تست یکپارچه روی PostgreSQL واقعی با Testcontainers» کار می‌کند. این سند ساختار، زیرساخت مشترک
+تست یکپارچه روی PostgreSQL واقعی با Testcontainers» کار می‌کند. موتور کانتینر تست، **Podman** است
+(با سازگاری Docker) و به‌صورت خودکار شناسایی می‌شود. این سند ساختار، زیرساخت مشترک
 (`TestInfrastructure`)، آمار واقعی فایل‌ها و نحوه اجرای تست‌ها را مستند می‌کند.
 
 ## ساختار و آمار
 
-شمارش با `git ls-files Tests` انجام شده (bin/obj ردیابی نمی‌شوند) و با شمارش فایل‌سیستم تقاطع‌سنجی شده است:
+شمارش با شمارش فایل‌سیستم (بدون bin/obj) انجام شده است:
 
 | پوشه | تعداد فایل .cs | از این تعداد `*Tests.cs` |
 |---|---|---|
-| `Tests/Application` | ۴۵۷ | ۴۵۷ |
-| `Tests/Infrastructure` | ۲۹۲ | ۲۹۱ (+ ۱ فایل کمکی `SkippableTheoryAttribute.cs`) |
+| `Tests/Application` | ۵۳۰ | ۵۳۰ |
+| `Tests/Infrastructure` | ۲۵۴ | ۲۵۳ (+ ۱ فایل کمکی `SkippableTheoryAttribute.cs`) |
 | `Tests/Domain` | ۱۹۰ | ۱۹۰ |
-| `Tests/TestInfrastructure` | ۶۲ | ۰ (زیرساخت، نه تست) |
-| `Tests/Presentation` | ۴۱ | ۴۱ |
-| `Tests/SharedKernel` | ۳۱ | ۳۱ |
+| `Tests/Presentation` | ۱۵۲ | ۱۵۲ |
+| `Tests/TestInfrastructure` | ۷۲ | ۲ (تست‌های `ContainerEngine`) |
+| `Tests/SharedKernel` | ۳۲ | ۳۲ |
 | `Tests/Integration` | ۱۱ | ۱۱ |
 | ریشه Tests (`Imports.cs`) | ۱ | ۰ |
-| **جمع** | **۱٬۰۸۵** | **۱٬۰۲۱** |
+| **جمع** | **۱٬۲۴۲** | **۱٬۱۷۰** |
 
-شمارش attributeها روی کل پروژه: **۷٬۳۰۶ [Fact]** و **۶۸۱ [Theory]** (مجموعاً حدود ۷٬۹۸۷ testcase تعریف‌شده).
 بزرگ‌ترین نواحی تست Application به ترتیب: Wallet (۷۴)، Review (۴۶)، Order (۳۸)، Inventory (۳۵)، Payment (۲۵)، Product (۲۴)، Auth (۲۱).
 
 ## فریم‌ورک‌ها و پکیج‌ها
@@ -31,11 +31,11 @@
 | `Shouldly` | 4.3.0 | Assertion (بدون FluentAssertions) |
 | `NSubstitute` | 6.0.0 | Mock و Stub |
 | `Bogus` | 35.6.5 | تولید داده تستی |
-| `Testcontainers.PostgreSql` | 4.13.0 | کانتینر PostgreSQL واقعی |
+| `Testcontainers.PostgreSql` | 4.16.0 | کانتینر PostgreSQL واقعی روی Podman/Docker |
 | `Respawn` | 7.0.0 | ریست دیتابیس بین تست‌ها |
-| `Xunit.SkippableFact` | 1.5.61 | Skip پویا وقتی Docker در دسترس نیست |
-| `coverlet.collector` | 6.0.2 | پوشش کد |
-| `Microsoft.AspNetCore.Mvc.Testing` | 9.0.18 | ارجاع شده اما استفاده نمی‌شود — هیچ `WebApplicationFactory` یا تست HTTP در ریپو وجود ندارد |
+| `Xunit.SkippableFact` | 1.5.61 | ساخت Skip پویا (جزئیات در بخش نکات) |
+| `coverlet.collector` | 10.1.0 | پوشش کد |
+| `Microsoft.AspNetCore.Mvc.Testing` | 10.0.13 | ارجاع شده اما استفاده نمی‌شود — هیچ `WebApplicationFactory` یا تست HTTP در ریپو وجود ندارد |
 
 ## تست واحد به تفکیک لایه
 
@@ -44,8 +44,9 @@
 | Domain | رفتار Aggregateها و ValueObjectها | `Tests/Domain/Brand/Aggregates/BrandTests.cs` — تست `Brand.Create` با `BrandBuilder` و `StubBrandUniquenessChecker` (کنترل `CallCount`) |
 | Application | هندلرها و Validatorها | `Tests/Application/Brand/Features/Commands/CreateBrand/CreateBrandHandlerTests.cs` — Mockهای NSubstitute از `IBrandRepository` و ... و کنترل مسیرهای NotFound/Conflict با `ShouldFailWith` |
 | Infrastructure | ریپازیتوری‌ها و سرویس‌ها (واحد) | تست‌های `Tests/Infrastructure` روی کلاس‌های ایزوله |
-| Presentation | Middleware، فیلترها، ProblemDetails، Swagger | ۴۱ فایل تست واحد با NSubstitute |
-| SharedKernel | Guard، Result، Specification و ابزارها | ۳۱ فایل |
+| Presentation | Middleware، فیلترها، ProblemDetails، Swagger | ۱۵۲ فایل تست واحد با NSubstitute |
+| SharedKernel | Guard، Result، Specification و ابزارها | ۳۲ فایل |
+| TestInfrastructure | منطق موتور کانتینر (تشخیص Podman، endpoint، Ryuk) | `Tests/TestInfrastructure/ContainerEngine/ContainerEngineResolverTests.cs` و `PodmanProbeTests.cs` |
 
 الگوی رایج: به ازای هر Feature دو فایل `*HandlerTests` و `*ValidatorTests` وجود دارد.
 
@@ -55,7 +56,7 @@
 
 | پوشه | محتوا |
 |---|---|
-| `Base/` | `IntegrationTestBase` — پایه `IAsyncLifetime` که `PostgresContainerFixture` را می‌گیرد، با `Skip.IfNot(Fixture.IsDockerAvailable)` بدون Docker رد می‌شود، `DBContext` واقعی می‌سازد و Seed helperهای `SeedCategoryAsync`/`SeedBrandAsync`/`SeedUserAsync` دارد. بعضی تست‌های یکپارچه به‌جای ارث‌بری، خودشان `IAsyncLifetime` را پیاده می‌کنند |
+| `Base/` | `IntegrationTestBase` — پایه `IAsyncLifetime` که `PostgresContainerFixture` را می‌گیرد، بدون موتور کانتینر `Skip.IfNot` می‌زند، `DBContext` واقعی می‌سازد و Seed helperهای `SeedCategoryAsync`/`SeedBrandAsync`/`SeedUserAsync` دارد |
 | `Builders/` | ۴۹ فایل Builder روان برای Aggregate و VO: `BrandBuilder`، `CategoryBuilder`، `ProductBuilder`، `OrderBuilder`، `WalletBuilder` و ... |
 | `Fakes/` | Fakeهای رفتاری: `FakeElasticsearchServer` (سرور جعلی TCP با Router پاسخ)، `FakeHttpMessageHandler` (HttpClient اسکریپت‌پذیر)، `FakeLockHandle`، `FakeOrderPaymentContext` |
 | `Stubs/` | Stubهای دستی با شمارش فراخوانی: `StubBrandUniquenessChecker`، `StubCategoryUniquenessChecker`، `StubAttributeTypeUniquenessChecker` |
@@ -63,7 +64,8 @@
 | `Fixtures/` | `AutoMapperFixture` — نامش میراثی است؛ در واقع `TypeAdapterConfig` مپستر را Scan و `IMapper` می‌سازد |
 | `Mapping/` | `MapsterConfigFixture` برای تست‌های نگاشت |
 | `Helpers/` | `CatalogSeeder` — Seed دسته/برند/محصول واقعی در `DBContext` |
-| `Database/` | `PostgresContainerFixture` (Testcontainers با `postgres:16-alpine`، کاربر/پایگاه `mechanic/mechanic_tests`) و `DatabaseCollection` — **توجه:** این پوشه با قاعده عام `Database/` در `.gitignore` افتاده و در git ردیابی نمی‌شود |
+| `Database/` | `PostgresContainerFixture` (Testcontainers با `postgres:16-alpine`، کاربر/پایگاه `mechanic/mechanic_tests`) و `DatabaseCollection` |
+| `ContainerEngine/` | `ContainerEngineBootstrap` (تشخیص خودکار Podman در زمان لود اسمبلی)، `ContainerEngineResolver` (انتخاب endpoint)، `PodmanProbe` (خواندن `podman machine inspect`/`podman info`/`system connection list`) |
 
 ## تست یکپارچه
 
@@ -72,25 +74,99 @@
 - کانتینر PostgreSQL (`postgres:16-alpine`) به ازای هر اجرا یک بار بالا می‌آید
   (`[Collection(nameof(DatabaseCollection))]`) و بعد از هر تست با Respawn (اسکیمای `public`) ریست می‌شود.
 - الگوی مشخصه: `[Trait("Category", "Integration")]`؛ نمونه: `Tests/Integration/Order/OrderStatusRepositoryIntegrationTests.cs`.
-- بدون Docker، این تست‌ها **Skip** می‌شوند نه Fail (`Xunit.SkippableFact`).
+- بدون هیچ موتور کانتینری، این تست‌ها اجرا نمی‌شوند: فیکسچر پیام `No container engine reachable...` می‌سازد
+  (شامل موتور обнаружен‌شده) و `verify-security.ps1` این موارد را به‌صورت **اسکیپ محیطی** می‌شمارد.
+
+## موتور کانتینر تست (Podman)
+
+Testcontainers با API سازگار Docker صحبت می‌کند؛ Podman همین API را از طریق **named pipe** (ویندوز) یا
+**unix socket** (لینوکس/مک) ارائه می‌دهد. `ContainerEngineBootstrap` یک `[ModuleInitializer]` است که پیش از
+هر مصرف Testcontainers اجرا می‌شود و در صورت نبود `DOCKER_HOST`، Podman را کشف و پیکربندی می‌کند.
+
+| حالت | endpoint | نکته |
+|---|---|---|
+| ویندوز + `podman machine` در حال اجرا | `npipe://./pipe/<machine>` (از `podman machine inspect`) | rootless ⇒ `TESTCONTAINERS_RYUK_DISABLED=true` |
+| ویندوز در محیط محدود (lockfile قابل نوشتن نیست) | همان pipe از نام default در `podman system connection list` | فallback طراحی‌شده؛ `DOCKER_HOST` ست می‌شود |
+| لینوکس/مک با machine | `unix://<PodmanSocket.Path>` | — |
+| Podman بومی لینوکس (بدون machine) | `unix://<remoteSocket.path>` از `podman info` | rootless ⇒ Ryuk خاموش |
+| Docker (یا Podman در دسترس نیست) | رفتار پیش‌فرض Testcontainers | بدون تغییر |
+
+### متغیرهای محیطی
+
+| متغیر | پیش‌فرض | کاربرد |
+|---|---|---|
+| `MECHANIC_CONTAINER_ENGINE` | `auto` | `podman` = فقط Podman (اسکریپت `run-tests.ps1` در نبودش خطا می‌دهد؛ تشخیص خودکار تست‌ها در نبود endpoint به Docker برمی‌گردد)، `docker` = نادیده‌گرفتن Podman |
+| `PODMAN_PATH` | PATH / `%ProgramFiles%\RedHat\Podman\podman.exe` | مسیر صریح اجرایی Podman |
+| `DOCKER_HOST` | — | اگر ست باشد، تشخیص خودکار **هرگز** آن را بازنویسی نمی‌کند (برای CI/remote) |
+| `TESTCONTAINERS_RYUK_DISABLED` | برای rootless خودکار `true` | Ryuk با Podman rootless نیاز به mount سوکت دارد |
+| `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` | — | فقط اگر می‌خواهید Ryuk با socket غیراستاندارد فعال بماند (مثلاً `/run/podman/podman.sock` در CI) |
+
+### اجرا
+
+```powershell
+# اسکریپت پروژه: موتور را صریح pin می‌کند (پیش‌فرض auto)
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/testing/run-tests.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/testing/run-tests.ps1 -Engine podman -Filter "FullyQualifiedName~Wallet"
+
+# dotnet test معمولی هم Podman را خودکار تشخیص می‌دهد
+dotnet test
+dotnet test --filter Category=Integration
+```
+
+پیش‌نیاز Podman:
+
+```powershell
+podman machine init      # فقط بار اول
+podman machine start     # باید running باشد
+podman version
+```
+
+### CI
+
+job `build-test` در `.github/workflows/ci.yml` روی runner اوبونتو Podman را نصب و سرویس rootful را
+روشن می‌کند:
+
+```yaml
+env:
+  DOCKER_HOST: unix:///run/podman/podman.sock
+  TESTCONTAINERS_RYUK_DISABLED: 'true'
+  MECHANIC_CONTAINER_ENGINE: podman
+steps:
+  - run: |
+      sudo apt-get update && sudo apt-get install -y podman
+      sudo systemctl enable --now podman.socket
+      sudo chmod 666 /run/podman/podman.sock
+      sudo podman pull postgres:16-alpine
+```
+
+سوکت rootful است تا محدودیت‌های user-namespace و Ryuk وجود نداشته باشد؛ Ryuk به‌دلیل تفاوت مسیر سوکت
+داخل کانتینر خاموش است.
+
+### رفع اشکال
+
+| نشانه | علت | راه‌حل |
+|---|---|---|
+| `Access to the path is denied` هنگام اتصال به `npipe://./pipe/podman-machine-default` | پروسه تست اجازهٔ بازکردن named pipe را ندارد (محیط sandbox/سیاست امنیتی) | تست را در محیط عادی اجرا کنید یا `DOCKER_HOST` را به سوکت `unix://` بدهید؛ در CI از سوکت rootful استفاده می‌شود |
+| `creating lockfile for VM: ... access denied` از `podman machine inspect` | پروسه اجازهٔ نوشتن در `%USERPROFILE%\.config\containers` را ندارد | fallback خودکار روی `podman system connection list` انجام می‌شود؛ یا `PODMAN_PATH`/`DOCKER_HOST` را صریح بدهید |
+| `podman machine start` خطا می‌دهد | WSL/machine نصب یا healthy نیست | `podman machine init`، سپس `podman machine start`؛ در لینوکس `systemctl --user enable --now podman.socket` |
+| تست‌ها با پیام «No running Podman» اسکیپ می‌شوند | machine خاموش است یا Podman پیدا نشد | `podman machine start`؛ در صورت نصب غیراستاندارد `-PodmanPath` |
+| `image pull` کند/مسدود | دسترسی registry | `podman pull postgres:16-alpine` را قبل از تست اجرا کنید (CI همین کار را می‌کند) |
 
 ## اجرای تست‌ها
 
 ```bash
-dotnet test                                     # همه تست‌ها
-dotnet test --filter Category=Integration       # فقط تست‌های یکپارچه (نیازمند Docker)
+dotnet test                                     # همه تست‌ها (Podman خودکار)
+dotnet test --filter Category=Integration       # فقط تست‌های یکپارچه (نیازمند Podman/Docker)
 dotnet test --collect:"XPlat Code Coverage"     # پوشش با coverlet
 ```
 
-پیش‌نیاز خاصی جز Docker (فقط برای Integration) وجود ندارد؛ فایل appsettings یا runner config جداگانه‌ای
-برای تست‌ها نیست و پوشش کد آستانه (Threshold) الزام‌آور ندارد.
+پیش‌نیاز خاصی جز Podman (فقط برای تست‌های دیتابیسی) وجود ندارد؛ فایل appsettings یا runner config
+جداگانه‌ای برای تست‌ها نیست و پوشش کد آستانه (Threshold) الزام‌آور ندارد.
 
 ## نکات و ناهماهنگی‌های فعلی
 
 | مورد | توضیح |
 |---|---|
-| `ci.yml` نامعتبر | فایل `.github/workflows/ci.yml` در واقع یک باینری XLSX (zip) اشتباهی commit شده و هیچ workflow معتبری وجود ندارد |
-| `Tests/TestInfrastructure/Database/` گم‌شده | به دلیل قاعده عام `Database/` در `.gitignore`، فیکسچر کانتینر PostgreSQL در گیت نیست |
-| `Tests.csproj.Backup.tmp` | فایل بکاپ commit شده در ریشه Tests |
-| `SkippableTestFrameworkSetup.cs` | ارثیه پکیج قدیمی `Xunit.RequiresDockerFact`؛ csproj الان `Xunit.SkippableFact` دارد. اسکریپت ریشه `fix-docker-skip-attributes.ps1` هم `[RequiresDockerFact]`ها را به `[Fact]` بازنویسی می‌کند |
+| `Tests.csproj.Backup.tmp` | فایل بکاپ قدیمی در ریشه Tests باقی مانده و بخشی از build نیست |
+| `SkippableTestFrameworkSetup.cs` | ارثیه پکیج قدیمی `Xunit.RequiresDockerFact`؛ پکیج فعلی `Xunit.SkippableFact` است و `Skip.IfNot` داخل `IAsyncLifetime` توسط xUnit ساده به skip تبدیل نمی‌شود (به‌صورت failure با پیام «No container engine» گزارش می‌شود؛ `verify-security.ps1` آن را اسکیپ می‌شمارد) |
 | نبود Fake زمان | فیکه مثل `FakeDateTimeProvider` وجود ندارد؛ تست‌های وابسته به زمان از Builder/Seed استفاده می‌کنند |

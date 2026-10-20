@@ -107,11 +107,35 @@ jobs:
           gitleaks git --config .gitleaks.toml --redact --verbose --no-banner --log-opts=--all .
 
   build-test:
-    name: Build and test
+    name: Build and test (Podman)
     runs-on: ubuntu-latest
+    # Testcontainers talks to Podman's Docker-compatible API. The rootful socket
+    # is used so the rootless user-namespace/Ryuk limitations do not apply;
+    # Ryuk is still disabled because the socket path inside the reaper container
+    # differs from /var/run/docker.sock.
+    env:
+      DOCKER_HOST: unix:///run/podman/podman.sock
+      TESTCONTAINERS_RYUK_DISABLED: 'true'
+      MECHANIC_CONTAINER_ENGINE: podman
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install and start Podman
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y podman
+          sudo systemctl enable --now podman.socket
+          sudo chmod 666 /run/podman/podman.sock
+          test -S /run/podman/podman.sock
+          sudo podman version
+          curl -sSf --unix-socket /run/podman/podman.sock http://127.0.0.1/v1.41/version
+          echo
+          curl -sSf --unix-socket /run/podman/podman.sock http://127.0.0.1/v1.41/info > /dev/null
+
+      - name: Pull test database image
+        run: sudo podman pull postgres:16-alpine
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4

@@ -4,6 +4,7 @@ using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
 using SharedKernel.Abstractions.Interfaces;
 using Testcontainers.PostgreSql;
+using Tests.TestInfrastructure.ContainerEngine;
 
 namespace Tests.TestInfrastructure.Database;
 
@@ -52,7 +53,9 @@ public sealed class PostgresContainerFixture : IAsyncLifetime
         {
             IsDockerAvailable = false;
             UnavailabilityReason =
-                "No Docker-API-compatible engine reachable (Docker Desktop, Podman, Rancher Desktop, Colima, or a remote DOCKER_HOST). "
+                "No container engine reachable. "
+                + ContainerEngineBootstrap.DescribeConfiguration()
+                + " Start Podman ('podman machine start') or Docker Desktop, or set DOCKER_HOST. "
                 + $"Underlying error: {ex.GetBaseException().Message}";
             return;
         }

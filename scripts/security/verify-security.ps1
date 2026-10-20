@@ -438,9 +438,9 @@ else {
             $summary = ($test.Output -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -Last 1)
         }
 
-        # The database-backed tests need Docker. Without an engine they report a
-        # Docker-unavailable failure; count those as environment skips, but keep
-        # every other failed test a hard failure.
+        # The database-backed tests need a container engine (Podman by default, Docker
+        # as fallback). Without a reachable engine they report an engine-unavailable
+        # failure; count those as environment skips, but keep every other failure hard.
         $trxPath = Join-Path $resultsDirectory 'results.trx'
         $dockerSkipped = 0
         $realFailures = @()
@@ -456,7 +456,9 @@ else {
                     $message = [string]$result.Output.ErrorInfo.Message
                 }
 
-                if ($message -match 'No Docker-API-compatible engine reachable' -or $message -match 'DockerUnavailableException') {
+                if ($message -match 'No container engine reachable' -or
+                    $message -match 'No Docker-API-compatible engine reachable' -or
+                    $message -match 'DockerUnavailableException') {
                     $dockerSkipped++
                 }
                 else {
@@ -477,7 +479,7 @@ else {
         }
 
         if ($dockerSkipped -gt 0) {
-            return ("{0} (skipped {1} Docker-dependent database test(s): no Docker engine)" -f $summary.Trim(), $dockerSkipped)
+            return ("{0} (skipped {1} container-engine-dependent database test(s): no reachable Podman/Docker engine)" -f $summary.Trim(), $dockerSkipped)
         }
 
         $summary.Trim()
