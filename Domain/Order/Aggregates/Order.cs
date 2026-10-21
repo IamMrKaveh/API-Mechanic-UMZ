@@ -199,6 +199,33 @@ public sealed class Order : AggregateRoot<OrderId>
 
     public bool CanBeModified() => Status.CanBeEdited();
 
+    /// <summary>
+    /// Removes a line item from an order that has not been paid yet.
+    /// An order always keeps at least one item, and the totals are recalculated so
+    /// that the removed value is no longer part of the amount due.
+    /// </summary>
+    public void RemoveItem(OrderItemId orderItemId)
+    {
+        ArgumentNullException.ThrowIfNull(orderItemId);
+
+        if (!CanBeModified())
+            throw new InvalidOrderTransitionException(Status, Status);
+
+        var item = _orderItems.FirstOrDefault(i => i.Id == orderItemId)
+            ?? throw new OrderItemNotFoundException(orderItemId);
+
+        if (_orderItems.Count == 1)
+            throw new EmptyOrderException();
+
+        _orderItems.Remove(item);
+        RecalculateTotals();
+        UpdatedAt = TruncateToMicroseconds(DateTime.UtcNow);
+
+        RaiseDomainEvent(new OrderItemRemovedEvent(
+            Id, OrderNumber, UserId, orderItemId, item.TotalPrice.Amount));
+    }
+
+
     public void MarkAsDeleted()
     {
         IsDeleted = true;

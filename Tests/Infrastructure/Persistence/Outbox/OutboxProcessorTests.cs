@@ -1,7 +1,7 @@
-using System.Text.Encodings.Web;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json;
 using Application.Audit.Contracts;
-using Application.Common.Events;
+using Application.Common.Contracts;
+using Domain.Common.Abstractions;
 using Domain.Order.Events;
 using Domain.Order.ValueObjects;
 using Infrastructure.Persistence.Context;
@@ -15,16 +15,9 @@ namespace Tests.Infrastructure.Persistence.Outbox;
 [Collection(nameof(DatabaseCollection))]
 public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLifetime
 {
-    private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private OutboxEventTypeRegistry _registry = null!; private IPublisher _publisher = null!; private IAuditService _auditService = null!; private OutboxProcessor _sut = null!;
+    private readonly PostgresContainerFixture _fixture = fixture; private DBContext _context = null!; private OutboxEventTypeRegistry _registry = null!; private IDomainEventDispatcher _dispatcher = null!; private IAuditService _auditService = null!; private OutboxProcessor _sut = null!;
 
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        ReferenceHandler = ReferenceHandler.IgnoreCycles,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
-    };
+    private static readonly JsonSerializerOptions SerializerOptions = DomainEventJson.Options;
 
     public Task InitializeAsync()
     {
@@ -32,9 +25,9 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
 
         _context = CreateContext();
         _registry = new OutboxEventTypeRegistry();
-        _publisher = Substitute.For<IPublisher>();
+        _dispatcher = Substitute.For<IDomainEventDispatcher>();
         _auditService = Substitute.For<IAuditService>();
-        _sut = new OutboxProcessor(_context, _publisher, _registry, _auditService);
+        _sut = new OutboxProcessor(_context, _dispatcher, _registry, _auditService);
         return Task.CompletedTask;
     }
 
@@ -63,15 +56,15 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         => OutboxMessage.Create(type, payload, DateTime.UtcNow);
 
     [SkippableFact]
-    public async Task ProcessAsync_WithNoPendingMessages_DoesNotInvokePublisher()
+    public async Task ProcessAsync_WithNoPendingMessages_DoesNotDispatch()
     {
         await _sut.ProcessAsync();
 
-        await _publisher.DidNotReceiveWithAnyArgs().Publish(default!, Arg.Any<CancellationToken>());
+        await _dispatcher.DidNotReceiveWithAnyArgs().DispatchAsync(default!, default);
     }
 
     [SkippableFact]
-    public async Task ProcessAsync_WithPendingMessageForKnownType_PublishesNotificationAndMarksProcessed()
+    public async Task ProcessAsync_WithPendingMessageForKnownType_DispatchesEventAndMarksProcessed()
     {
         var domainEvent = new OrderExpiredEvent(OrderId.NewId());
         var typeName = _registry.GetTypeName(domainEvent.GetType());
@@ -83,8 +76,8 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
 
         await _sut.ProcessAsync();
 
-        await _publisher.Received(1).Publish(
-            Arg.Is<object>(o => o is DomainEventNotification<OrderExpiredEvent>),
+        await _dispatcher.Received(1).DispatchAsync(
+            Arg.Is<IEnumerable<IDomainEvent>>(events => events!.Single() is OrderExpiredEvent),
             Arg.Any<CancellationToken>());
 
         await using var verifyContext = CreateContext();
@@ -113,7 +106,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
     }
 
     [SkippableFact]
-    public async Task ProcessAsync_WhenPublisherThrows_IncrementsRetryCountAndRecordsError()
+    public async Task ProcessAsync_WhenDispatchThrows_IncrementsRetryCountAndRecordsError()
     {
         var domainEvent = new OrderExpiredEvent(OrderId.NewId());
         var typeName = _registry.GetTypeName(domainEvent.GetType());
@@ -123,9 +116,9 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         _context.OutboxMessages.Add(message);
         await _context.SaveChangesAsync();
 
-        _publisher
-            .When(p => p.Publish(Arg.Any<object>(), Arg.Any<CancellationToken>()))
-            .Do(_ => throw new InvalidOperationException("publish failure"));
+        _dispatcher
+            .When(d => d.DispatchAsync(Arg.Any<IEnumerable<IDomainEvent>>(), Arg.Any<CancellationToken>()))
+            .Do(_ => throw new InvalidOperationException("dispatch failure"));
 
         await _sut.ProcessAsync();
 
@@ -134,12 +127,12 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         persisted.ProcessedAt.ShouldBeNull();
         persisted.RetryCount.ShouldBe(1);
         persisted.IsPoisoned.ShouldBeFalse();
-        persisted.Error.ShouldBe("publish failure");
+        persisted.Error.ShouldBe("dispatch failure");
         await _auditService.Received().LogErrorAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [SkippableFact]
-    public async Task ProcessAsync_WhenPublisherFailsAndRetryCountReachesMax_MarksMessageAsPoisoned()
+    public async Task ProcessAsync_WhenDispatchFailsAndRetryCountReachesMax_MarksMessageAsPoisoned()
     {
         var domainEvent = new OrderExpiredEvent(OrderId.NewId());
         var typeName = _registry.GetTypeName(domainEvent.GetType());
@@ -152,8 +145,8 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         _context.OutboxMessages.Add(message);
         await _context.SaveChangesAsync();
 
-        _publisher
-            .When(p => p.Publish(Arg.Any<object>(), Arg.Any<CancellationToken>()))
+        _dispatcher
+            .When(d => d.DispatchAsync(Arg.Any<IEnumerable<IDomainEvent>>(), Arg.Any<CancellationToken>()))
             .Do(_ => throw new InvalidOperationException("still failing"));
 
         await _sut.ProcessAsync();
@@ -180,7 +173,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
 
         await _sut.ProcessAsync();
 
-        await _publisher.DidNotReceiveWithAnyArgs().Publish(default!, Arg.Any<CancellationToken>());
+        await _dispatcher.DidNotReceiveWithAnyArgs().DispatchAsync(default!, default);
     }
 
     [SkippableFact]
@@ -197,7 +190,7 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
 
         await _sut.ProcessAsync();
 
-        await _publisher.DidNotReceiveWithAnyArgs().Publish(default!, Arg.Any<CancellationToken>());
+        await _dispatcher.DidNotReceiveWithAnyArgs().DispatchAsync(default!, default);
     }
 
     [SkippableFact]
@@ -214,8 +207,8 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
 
         await _sut.ProcessAsync(batchSize: 2);
 
-        await _publisher.Received(2).Publish(
-            Arg.Is<object>(o => o is DomainEventNotification<OrderExpiredEvent>),
+        await _dispatcher.Received(2).DispatchAsync(
+            Arg.Is<IEnumerable<IDomainEvent>>(events => events!.Single() is OrderExpiredEvent),
             Arg.Any<CancellationToken>());
 
         await using var verifyContext = CreateContext();

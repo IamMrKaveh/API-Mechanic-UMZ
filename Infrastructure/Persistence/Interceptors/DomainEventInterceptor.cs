@@ -1,6 +1,5 @@
 using System.Diagnostics;
-using System.Text.Encodings.Web;
-using System.Text.Json.Serialization;
+using System.Text.Json;
 using Domain.Common.Abstractions;
 using Infrastructure.Persistence.Outbox;
 
@@ -9,14 +8,7 @@ namespace Infrastructure.Persistence.Interceptors;
 public sealed class DomainEventInterceptor(
     IOutboxEventTypeRegistry typeRegistry) : SaveChangesInterceptor
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        ReferenceHandler = ReferenceHandler.IgnoreCycles,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
-    };
+    private static readonly JsonSerializerOptions SerializerOptions = DomainEventJson.Options;
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,

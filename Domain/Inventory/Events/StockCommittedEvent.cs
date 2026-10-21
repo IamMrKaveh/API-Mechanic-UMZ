@@ -7,5 +7,5 @@ namespace Domain.Inventory.Events;
 public sealed record StockCommittedEvent(
     InventoryId InventoryId,
     VariantId VariantId,
-    OrderItemId OrderItemId,
+    OrderItemId? OrderItemId,
     int Quantity) : DomainEvent;

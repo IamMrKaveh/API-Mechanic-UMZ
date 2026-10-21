@@ -1,4 +1,4 @@
-using Amazon.S3;
+﻿using Amazon.S3;
 using Application.Common.Contracts;
 using Application.Common.Interfaces;
 using Application.Localization.Contracts;
@@ -80,7 +80,7 @@ public class InfrastructureServiceExtensionsTests
         services.AddInfrastructure(BuildConfig(ValidConfig()));
 
         ShouldContain(services, typeof(ICacheService), typeof(InMemoryCacheService), ServiceLifetime.Scoped);
-        ShouldContain(services, typeof(IDistributedLock), typeof(NoOpDistributedLock), ServiceLifetime.Singleton);
+        ShouldContain(services, typeof(IDistributedLock), typeof(NoOpDistributedLock), ServiceLifetime.Scoped);
         ShouldContain(services, typeof(IRateLimitService), typeof(InMemoryRateLimitService), ServiceLifetime.Scoped);
         ShouldContain(services, typeof(IIdempotencyService), typeof(CacheIdempotencyService), ServiceLifetime.Scoped);
     }
@@ -224,7 +224,7 @@ public class InfrastructureServiceExtensionsTests
         services.ShouldContain(s => s.ServiceType == typeof(IDistributedLock));
         var cacheDescriptor = services.First(s => s.ServiceType == typeof(ICacheService));
         cacheDescriptor.ImplementationFactory.ShouldNotBeNull();
-        ShouldContain(services, typeof(IDistributedLock), typeof(DistributedLockService), ServiceLifetime.Singleton);
+        ShouldContain(services, typeof(IDistributedLock), typeof(DistributedLockService), ServiceLifetime.Scoped);
     }
 
     [Fact]

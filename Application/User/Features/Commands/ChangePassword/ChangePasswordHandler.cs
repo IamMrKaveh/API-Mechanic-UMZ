@@ -1,3 +1,4 @@
+using Application.Auth.Contracts;
 using Application.Security.Contracts;
 using Domain.User.Interfaces;
 using Domain.User.ValueObjects;
@@ -7,6 +8,7 @@ namespace Application.User.Features.Commands.ChangePassword;
 public class ChangePasswordHandler(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
+    ISessionService sessionService,
     ICurrentUserService currentUser)
     : ICommandHandler<ChangePasswordCommand>
 {
@@ -25,6 +27,11 @@ public class ChangePasswordHandler(
         user.ChangePasswordHash(newHash);
 
         userRepository.Update(user);
+
+        // A password change invalidates every session that was opened with the old
+        // credential, so the tokens are revoked synchronously instead of waiting
+        // for a domain event to be processed.
+        await sessionService.RevokeAllSessionsAsync(userId, ct);
 
         return ServiceResult.Success();
     }

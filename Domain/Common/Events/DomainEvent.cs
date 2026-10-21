@@ -1,11 +1,22 @@
+using System.Text.Json.Serialization;
+
 namespace Domain.Common.Events;
 
 public abstract record DomainEvent : IDomainEvent
 {
-    public Guid EventId { get; } = Guid.NewGuid();
-    public DateTime OccurredAt { get; } = DateTime.UtcNow;
+    [JsonInclude]
+    public Guid EventId { get; private set; } = Guid.NewGuid();
+
+    [JsonInclude]
+    public DateTime OccurredAt { get; private set; } = DateTime.UtcNow;
+
+    [JsonInclude]
     public Guid CorrelationId { get; private set; } = Guid.NewGuid();
+
+    [JsonInclude]
     public Guid? CausationId { get; private set; }
+
+    [JsonInclude]
     public int EventVersion { get; protected init; } = 1;
 
     protected DomainEvent()

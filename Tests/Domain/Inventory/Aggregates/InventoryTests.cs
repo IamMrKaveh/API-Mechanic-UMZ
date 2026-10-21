@@ -1,6 +1,7 @@
 using Domain.Inventory.Enums;
 using Domain.Inventory.Events;
 using Domain.Inventory.ValueObjects;
+using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
@@ -524,6 +525,34 @@ public class InventoryTests
         evt.InventoryId.ShouldBe(sut.Id);
         evt.VariantId.ShouldBe(sut.VariantId);
         evt.Quantity.ShouldBe(4);
+    }
+
+    [Fact]
+    public void ConfirmReservation_WithOrderItemId_CarriesTheSameOrderItemIdInTheEvent()
+    {
+        var orderItemId = OrderItemId.NewId();
+        var sut = new InventoryBuilder().WithInitialStock(10).Build();
+        sut.ReserveStock(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
+        sut.ClearDomainEvents();
+
+        sut.ConfirmReservation(StockQuantity.Create(4), "REF", DateTime.UtcNow, orderItemId).ShouldBeSuccess();
+
+        var evt = sut.DomainEvents.OfType<StockCommittedEvent>().Single();
+        evt.OrderItemId.ShouldBe(orderItemId);
+        sut.LedgerEntries.Last().OrderItemId.ShouldBe(orderItemId);
+    }
+
+    [Fact]
+    public void ConfirmReservation_WithoutOrderItemId_LeavesEventOrderItemIdNull()
+    {
+        var sut = new InventoryBuilder().WithInitialStock(10).Build();
+        sut.ReserveStock(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
+        sut.ClearDomainEvents();
+
+        sut.ConfirmReservation(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
+
+        var evt = sut.DomainEvents.OfType<StockCommittedEvent>().Single();
+        evt.OrderItemId.ShouldBeNull();
     }
 
     [Fact]

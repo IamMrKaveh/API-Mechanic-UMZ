@@ -6,8 +6,12 @@ public static class ElasticClientFactory
 {
     public static ElasticsearchClient Create(ElasticsearchOptions options)
     {
+        var url = options.Urls.FirstOrDefault()
+            ?? (string.IsNullOrWhiteSpace(options.Url) ? "http://localhost:9200" : options.Url);
+
         var settings = new ElasticsearchClientSettings(
-            new Uri(options.Urls.FirstOrDefault() ?? "http://localhost:9200"))
+            new Uri(url))
+            .DefaultIndex(options.DefaultIndex)
             .RequestTimeout(TimeSpan.FromSeconds(options.TimeoutSeconds))
             .MaximumRetries(options.MaxRetries);
 

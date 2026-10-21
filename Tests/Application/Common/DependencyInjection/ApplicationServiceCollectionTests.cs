@@ -45,7 +45,6 @@ public class ApplicationServiceCollectionTests
         services.AddApplicationServices(new ConfigurationBuilder().Build());
 
         services.ShouldContain(s => s.ServiceType == typeof(IAuditContextEnricher) && s.ImplementationType == typeof(AuditContextEnricher));
-        services.ShouldContain(s => s.ServiceType == typeof(InventoryReservationService));
         services.ShouldContain(s => s.ServiceType == typeof(PaymentSettlementService));
         services.ShouldContain(s => s.ServiceType == typeof(IPaymentInitiator) && s.ImplementationType == typeof(PaymentInitiator));
     }

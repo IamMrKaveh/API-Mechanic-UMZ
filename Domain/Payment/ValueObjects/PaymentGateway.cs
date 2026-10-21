@@ -42,10 +42,17 @@ public sealed class PaymentGateway : ValueObject
     public static PaymentGateway Custom(string value, string? displayName = null)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new DomainException("نام درگاه پرداخت الزامی است.");
+            throw new DomainException("U+O Tactics. O_O�U_O��U� U_O�O_O�OrO� O�U,O�O�U.UO O�O�.");
 
         return new PaymentGateway(value.Trim(), displayName ?? value.Trim(), true);
     }
+
+    /// <summary>
+    /// True when the payment was funded from the customer's own wallet balance.
+    /// Such payments must never be credited back to the wallet.
+    /// </summary>
+    public bool IsWallet => string.Equals(Value, Wallet.Value, StringComparison.OrdinalIgnoreCase);
+
 
     protected override IEnumerable<object> GetEqualityComponents()
     {

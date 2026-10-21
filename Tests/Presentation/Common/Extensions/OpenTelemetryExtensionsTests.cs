@@ -18,15 +18,16 @@ public class OpenTelemetryExtensionsTests
     }
 
     [Fact]
-    public void AddApplicationObservability_RegistersBusinessMetricsAsSingleton()
+    public void AddApplicationObservability_DoesNotRegisterBusinessMetrics()
     {
+        // BusinessMetrics is owned by the Infrastructure layer, which registers the
+        // services that emit the metrics. Presentation only wires it to the meter.
         var services = new ServiceCollection();
         services.AddApplicationObservability(
             new ConfigurationBuilder().Build(),
             BuildEnvironment(Environments.Development));
 
-        var descriptor = services.Single(s => s.ServiceType == typeof(BusinessMetrics));
-        descriptor.Lifetime.ShouldBe(ServiceLifetime.Singleton);
+        services.ShouldNotContain(s => s.ServiceType == typeof(BusinessMetrics));
     }
 
     [Fact]

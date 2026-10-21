@@ -1,4 +1,4 @@
-using Application.Common.Events;
+﻿using Application.Common.Events;
 using Application.Inventory.Contracts;
 using Application.Inventory.Features.Commands.CommitStockForOrder;
 using Application.Order.Contracts;
@@ -119,7 +119,7 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
             .Returns(ServiceResult.Success());
 
         await _sut.Handle(new DomainEventNotification<PaymentSucceededEvent>(
-            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 123L, order.UserId, Money.Create(100m, "IRT"))),
+            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 123L, order.UserId, Money.Create(100m, "IRT"), PaymentGateway.Zarinpal)),
             CancellationToken.None);
 
         order.IsPaid.ShouldBeTrue();
@@ -138,7 +138,7 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
             .Returns((OrderAggregate?)null);
 
         await _sut.Handle(new DomainEventNotification<PaymentSucceededEvent>(
-            new PaymentSucceededEvent(PaymentTransactionId.NewId(), orderId, 1L, UserId.NewId(), Money.Create(10m, "IRT"))),
+            new PaymentSucceededEvent(PaymentTransactionId.NewId(), orderId, 1L, UserId.NewId(), Money.Create(10m, "IRT"), PaymentGateway.Zarinpal)),
             CancellationToken.None);
 
         state.Status.ShouldBe(ProcessStatusEnum.Failed);
@@ -158,7 +158,7 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
         await _stateRepository.AddAsync(Arg.Do<OrderProcessState>(s => added = s), Arg.Any<CancellationToken>());
 
         await _sut.Handle(new DomainEventNotification<PaymentSucceededEvent>(
-            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 1L, order.UserId, Money.Create(10m, "IRT"))),
+            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 1L, order.UserId, Money.Create(10m, "IRT"), PaymentGateway.Zarinpal)),
             CancellationToken.None);
 
         added.ShouldNotBeNull();
@@ -179,7 +179,7 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
             .Returns(ServiceResult.Success());
 
         await _sut.Handle(new DomainEventNotification<PaymentSucceededEvent>(
-            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 1L, order.UserId, Money.Create(10m, "IRT"))),
+            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 1L, order.UserId, Money.Create(10m, "IRT"), PaymentGateway.Zarinpal)),
             CancellationToken.None);
 
         state.CurrentStep.ShouldBe(ProcessStepEnum.Refunded);
@@ -198,7 +198,7 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
         _featureManager.IsEnabledAsync(Arg.Any<string>()).Returns(false);
 
         await _sut.Handle(new DomainEventNotification<PaymentSucceededEvent>(
-            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 1L, order.UserId, Money.Create(10m, "IRT"))),
+            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 1L, order.UserId, Money.Create(10m, "IRT"), PaymentGateway.Zarinpal)),
             CancellationToken.None);
 
         state.CurrentStep.ShouldBe(ProcessStepEnum.RequiresManualReconciliation);

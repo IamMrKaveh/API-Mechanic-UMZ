@@ -233,7 +233,7 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
             VariantId, quantity, StockQuantity, referenceNumber, now, orderItemId);
 
         _ledgerEntries.Add(entry);
-        RaiseDomainEvent(new StockCommittedEvent(Id, VariantId, OrderItemId.NewId(), quantity));
+        RaiseDomainEvent(new StockCommittedEvent(Id, VariantId, orderItemId, quantity));
 
         return ServiceResult.Success();
     }

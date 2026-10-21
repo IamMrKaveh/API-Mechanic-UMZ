@@ -1,3 +1,4 @@
+using Application.Auth.Contracts;
 using Application.Security.Contracts;
 using Application.User.Features.Commands.ChangePassword;
 using Domain.User.Interfaces;
@@ -10,12 +11,13 @@ public class ChangePasswordHandlerTests : HandlerTestBase
 {
     private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
     private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
+    private readonly ISessionService _sessionService = Substitute.For<ISessionService>();
     private readonly ChangePasswordHandler _sut;
     private readonly Guid _userGuid = Guid.NewGuid();
 
     public ChangePasswordHandlerTests()
     {
-        _sut = new ChangePasswordHandler(_userRepository, _passwordHasher, CurrentUserService);
+        _sut = new ChangePasswordHandler(_userRepository, _passwordHasher, _sessionService, CurrentUserService);
         CurrentUserService.UserId.Returns((Guid?)_userGuid);
     }
 
@@ -58,6 +60,33 @@ public class ChangePasswordHandlerTests : HandlerTestBase
         result.ShouldBeSuccess();
         user.PasswordHash.ShouldBe("new-hash");
         _userRepository.Received(1).Update(user);
+    }
+
+    [Fact]
+    public async Task Handle_WhenValid_RevokesEverySessionOfTheUser()
+    {
+        var user = new UserBuilder().WithPasswordHash("old-hash").Build();
+        _userRepository.GetByIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(user);
+        _passwordHasher.Verify("old-pass", "old-hash").Returns(true);
+        _passwordHasher.Hash("new-pass-123").Returns("new-hash");
+
+        await _sut.Handle(new ChangePasswordCommand("old-pass", "new-pass-123"), CancellationToken.None);
+
+        await _sessionService.Received(1).RevokeAllSessionsAsync(
+            Arg.Is<UserId>(u => u != null && u.Value == _userGuid),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenCurrentPasswordWrong_DoesNotRevokeSessions()
+    {
+        var user = new UserBuilder().WithPasswordHash("old-hash").Build();
+        _userRepository.GetByIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(user);
+        _passwordHasher.Verify("wrong", "old-hash").Returns(false);
+
+        await _sut.Handle(new ChangePasswordCommand("wrong", "new-pass-123"), CancellationToken.None);
+
+        await _sessionService.DidNotReceiveWithAnyArgs().RevokeAllSessionsAsync(default!, default);
     }
 
     [Fact]

@@ -29,7 +29,7 @@ public class PaymentEventsTests
         var userId = UserId.NewId();
         var amount = Money.Create(50_000m, "IRT");
 
-        var sut = new PaymentSucceededEvent(paymentTxId, orderId, RefId: 12345, userId, amount);
+        var sut = new PaymentSucceededEvent(paymentTxId, orderId, RefId: 12345, userId, amount, PaymentGateway.Zarinpal);
 
         sut.PaymentTransactionId.ShouldBe(paymentTxId);
         sut.OrderId.ShouldBe(orderId);
@@ -73,7 +73,7 @@ public class PaymentEventsTests
         var userId = UserId.NewId();
         var amount = Money.Create(50_000m, "IRT");
 
-        var sut = new PaymentRefundedEvent(paymentTxId, orderId, userId, amount, "customer request");
+        var sut = new PaymentRefundedEvent(paymentTxId, orderId, userId, amount, "customer request", PaymentGateway.Zarinpal);
 
         sut.PaymentTransactionId.ShouldBe(paymentTxId);
         sut.OrderId.ShouldBe(orderId);
@@ -87,7 +87,7 @@ public class PaymentEventsTests
     {
         var sut = new PaymentRefundedEvent(
             PaymentTransactionId.NewId(), OrderId.NewId(), UserId.NewId(),
-            Money.Create(1m, "IRT"), null);
+            Money.Create(1m, "IRT"), null, PaymentGateway.Zarinpal);
 
         sut.Reason.ShouldBeNull();
     }

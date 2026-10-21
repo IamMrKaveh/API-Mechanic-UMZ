@@ -1,5 +1,8 @@
+using Application.Common.Authorization;
+using Application.Common.Interfaces;
 using Application.Discount.Features.Shared;
 using Domain.Discount.Interfaces;
+using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
@@ -8,6 +11,7 @@ namespace Application.Discount.Features.Commands.ApplyDiscount;
 
 public class ApplyDiscountHandler(
     IDiscountRepository discountRepository,
+    IOrderRepository orderRepository,
     IUnitOfWork unitOfWork,
     IAuditService auditService,
     ICurrentUserService currentUserService,
@@ -36,6 +40,9 @@ public class ApplyDiscountHandler(
                 var userId = UserId.From(currentUserService.UserId!.Value);
                 var orderId = OrderId.From(request.OrderId);
 
+                var ownership = await EnsureOrderOwnershipAsync(orderId, userId, cancellationToken);
+                if (ownership.IsFailure) return ownership.Error;
+
                 discount.RecordUsage(userId, orderId, discountAmount, now);
                 discountRepository.Update(discount);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -61,5 +68,17 @@ public class ApplyDiscountHandler(
             await auditService.LogSystemEventAsync("ApplyDiscountError", ex.Message, ct);
             return ServiceResult<DiscountApplicationResult>.Failure("خطا در اعمال تخفیف");
         }
+    }
+
+    private async Task<ServiceResult> EnsureOrderOwnershipAsync(
+        OrderId orderId,
+        UserId userId,
+        CancellationToken ct)
+    {
+        var order = await orderRepository.FindByIdAsync(orderId, ct);
+        if (order is null)
+            return ServiceResult.NotFound("سفارش یافت نشد.");
+
+        return AuthorizationGuard.EnsureOwnerOrAdmin(currentUserService, order.UserId);
     }
 }

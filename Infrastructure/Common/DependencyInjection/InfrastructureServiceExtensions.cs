@@ -96,8 +96,38 @@ public static class InfrastructureServiceExtensions
         services.AddJwtAuthentication();
         services.AddLocalizationServices();
         services.AddCacheEncryption(configuration);
+        services.AddInfrastructureMediatRHandlers();
 
         return services;
+    }
+
+    /// <summary>
+    /// MediatR is configured once, in the Application layer, and only scans the
+    /// Application assembly. Notification handlers that live in Infrastructure
+    /// (payment notifications, search index synchronisation) therefore have to be
+    /// registered explicitly, otherwise they are never invoked.
+    /// </summary>
+    private static void AddInfrastructureMediatRHandlers(this IServiceCollection services)
+    {
+        var handlerInterface = typeof(INotificationHandler<>);
+        var assembly = typeof(InfrastructureServiceExtensions).Assembly;
+
+        foreach (var type in assembly.GetTypes())
+        {
+            if (type.IsAbstract || type.IsInterface)
+                continue;
+
+            if (!handlerInterface.IsAssignableFrom(type))
+                continue;
+
+            services.AddTransient(type);
+
+            foreach (var @interface in type.GetInterfaces()
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == handlerInterface))
+            {
+                services.AddTransient(@interface, type);
+            }
+        }
     }
 
     private static void AddCaching(this IServiceCollection services, IConfiguration configuration)
@@ -110,9 +140,13 @@ public static class InfrastructureServiceExtensions
         var cacheOptions = configuration.GetSection(CacheOptions.SectionName).Get<CacheOptions>()
             ?? new CacheOptions();
 
-        var redisConnectionString = configuration.GetConnectionString("Redis")
-            ?? configuration["Cache:RedisConnectionString"]
-            ?? "localhost:6379";
+        // An empty connection string counts as "not configured": the shipped
+        // appsettings.json declares "Redis": "" so the null-coalescing chain would
+        // never fall through to the configured fallback.
+        var redisConnectionString = FirstNonEmpty(
+            configuration.GetConnectionString("Redis"),
+            configuration["Cache:RedisConnectionString"],
+            "localhost:6379");
 
         services.AddMediatRResponseCache(configuration, cacheOptions, redisConnectionString);
 
@@ -139,10 +173,13 @@ public static class InfrastructureServiceExtensions
                 return new EncryptedRedisCacheService(inner, encryptionOptions, logger);
             });
 
-            services.AddSingleton<IDistributedLock, DistributedLockService>();
+            // Scoped: the lock audits its release through the scoped IAuditService.
+            services.AddScoped<IDistributedLock, DistributedLockService>();
             services.AddScoped<RateLimitService>();
             services.AddScoped<InMemoryRateLimitService>();
             services.AddScoped<ResilientRateLimitService>();
+            services.AddScoped<IRateLimitService>(sp =>
+                sp.GetRequiredService<ResilientRateLimitService>());
             services.AddScoped<IIdempotencyService, RedisIdempotencyService>();
         }
         else
@@ -150,7 +187,7 @@ public static class InfrastructureServiceExtensions
             services.AddMemoryCache();
             services.AddDistributedMemoryCache();
             services.AddScoped<ICacheService, InMemoryCacheService>();
-            services.AddSingleton<IDistributedLock, NoOpDistributedLock>();
+            services.AddScoped<IDistributedLock, NoOpDistributedLock>();
             services.AddScoped<IRateLimitService, InMemoryRateLimitService>();
             services.AddScoped<IIdempotencyService, CacheIdempotencyService>();
         }
@@ -161,6 +198,17 @@ public static class InfrastructureServiceExtensions
     {
         services.AddOptions<CacheEncryptionOptions>()
             .Bind(configuration.GetSection(CacheEncryptionOptions.SectionName));
+    }
+
+    private static string FirstNonEmpty(params string?[] candidates)
+    {
+        foreach (var candidate in candidates)
+        {
+            if (!string.IsNullOrWhiteSpace(candidate))
+                return candidate;
+        }
+
+        return string.Empty;
     }
 
     private static void AddLocalizationServices(this IServiceCollection services)
@@ -449,23 +497,27 @@ public static class InfrastructureServiceExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<ElasticsearchMetricsOptions>()
+            .Bind(elasticsearchSection.GetSection("Metrics"));
+
         var options = elasticsearchSection.Get<ElasticsearchOptions>();
+
+            services.AddSingleton<ElasticsearchMetrics>();
+            services.AddScoped<ElasticsearchCircuitBreaker>();
+            services.AddScoped<IElasticDeadLetterQueue, ElasticDeadLetterQueue>();
+
 
         if (options is not null && options.IsEnabled)
         {
             services.AddSingleton<ElasticsearchClient>(sp =>
-            {
-                var settings = new ElasticsearchClientSettings(
-                    new Uri(options.Url))
-                    .DefaultIndex(options.DefaultIndex);
+                ElasticClientFactory.Create(sp.GetRequiredService<IOptions<ElasticsearchOptions>>()));
 
-                return new ElasticsearchClient(settings);
-            });
-
+            services.AddScoped<ElasticsearchService>();
             services.AddScoped<IElasticsearchIndexer, ElasticsearchIndexer>();
-
             services.AddScoped<ISearchService, ResilientElasticSearchService>();
             services.AddScoped<IElasticIndexManager, ElasticIndexManager>();
+            services.AddScoped<IElasticBulkService, ElasticBulkService>();
+            services.AddScoped<ISearchStatsService, ElasticsearchStatsService>();
             services.AddScoped<ISearchDatabaseSyncService, ElasticsearchDatabaseSyncService>();
         }
         else
@@ -473,6 +525,8 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IElasticsearchIndexer, NoOpElasticsearchIndexer>();
             services.AddScoped<ISearchService, NoOpSearchService>();
             services.AddScoped<IElasticIndexManager, NoOpElasticIndexManager>();
+            services.AddScoped<IElasticBulkService, NoOpElasticBulkService>();
+            services.AddScoped<ISearchStatsService, NoOpSearchStatsService>();
             services.AddScoped<ISearchDatabaseSyncService, NoOpSearchDatabaseSyncService>();
         }
     }
@@ -600,6 +654,7 @@ public static class InfrastructureServiceExtensions
     {
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IUrlResolverService, UrlResolverService>();
+        services.AddSingleton<SharedContracts.Diagnostics.BusinessMetrics>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton<IOutboxEventTypeRegistry,
             OutboxEventTypeRegistry>();

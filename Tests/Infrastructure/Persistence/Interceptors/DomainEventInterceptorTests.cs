@@ -3,6 +3,8 @@ using System.Runtime.CompilerServices;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Domain.Order.Entities;
+using Domain.Order.Events;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -124,7 +126,7 @@ public class DomainEventInterceptorTests
     }
 
     [Fact]
-    public void Model_NoMappedEntityImplementsDormantDomainEventContract()
+    public void Model_MapsAggregatesThatImplementTheDomainEventContract()
     {
         using var context = CreateContext(Substitute.For<IOutboxEventTypeRegistry>());
 
@@ -133,7 +135,23 @@ public class DomainEventInterceptorTests
             .Select(e => e.ClrType.FullName)
             .ToList();
 
-        implementors.ShouldBeEmpty();
+        implementors.ShouldNotBeEmpty();
+    }
+
+    [Fact]
+    public void AggregateRoots_ExposeTheirDomainEventsAsAnOrderedList()
+    {
+        using var context = CreateContext(Substitute.For<IOutboxEventTypeRegistry>());
+
+        var aggregateType = typeof(global::Domain.Common.Abstractions.AggregateRoot<>);
+
+        var nonConforming = context.Model.GetEntityTypes()
+            .Where(e => aggregateType.IsAssignableFrom(e.ClrType))
+            .Where(e => !typeof(global::Domain.Common.Abstractions.IHasDomainEvents).IsAssignableFrom(e.ClrType))
+            .Select(e => e.ClrType.FullName)
+            .ToList();
+
+        nonConforming.ShouldBeEmpty();
     }
 
     [Fact]
@@ -150,6 +168,42 @@ public class DomainEventInterceptorTests
         options.ReferenceHandler.ShouldBe(ReferenceHandler.IgnoreCycles);
         options.WriteIndented.ShouldBeFalse();
         options.Encoder.ShouldBe(JavaScriptEncoder.UnsafeRelaxedJsonEscaping);
+        options.PropertyNameCaseInsensitive.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task SavingChangesAsync_WithTrackedAggregateThatRaisedEvents_AddsAnOutboxRowPerEvent()
+    {
+        var registry = new OutboxEventTypeRegistry();
+        var sut = new DomainEventInterceptor(registry);
+        using var context = CreateContext(registry);
+
+        var status = OrderStatus.Create("Pending", "در انتظار بررسی", sortOrder: 2);
+        context.OrderStatuses.Add(status);
+
+        await sut.SavingChangesAsync(EventData(context), new InterceptionResult<int>());
+
+        var messages = context.ChangeTracker.Entries<OutboxMessage>().ToList();
+
+        messages.Count.ShouldBe(1);
+        messages[0].Entity.Type.ShouldContain(nameof(OrderStatusCreatedDomainEvent));
+        messages[0].Entity.ProcessedAt.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task SavingChangesAsync_WithTrackedAggregateWhoseEventsWereCleared_AddsNoOutboxRow()
+    {
+        var registry = new OutboxEventTypeRegistry();
+        var sut = new DomainEventInterceptor(registry);
+        using var context = CreateContext(registry);
+
+        var status = OrderStatus.Create("Pending", "در انتظار بررسی", sortOrder: 2);
+        status.ClearDomainEvents();
+        context.OrderStatuses.Add(status);
+
+        await sut.SavingChangesAsync(EventData(context), new InterceptionResult<int>());
+
+        context.ChangeTracker.Entries<OutboxMessage>().ShouldBeEmpty();
     }
 
     [Fact]

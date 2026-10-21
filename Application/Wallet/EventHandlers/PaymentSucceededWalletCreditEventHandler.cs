@@ -4,6 +4,12 @@ using Domain.Wallet.Enums;
 
 namespace Application.Wallet.EventHandlers;
 
+/// <summary>
+/// Credits the customer's wallet after an inbound gateway payment.
+///
+/// Wallet-funded payments are deliberately skipped: the wallet was already debited
+/// when the order was paid, so crediting it again would make the order free.
+/// </summary>
 public class PaymentSucceededWalletCreditEventHandler(
     IMediator mediator,
     IAuditService auditService) : INotificationHandler<DomainEventNotification<PaymentSucceededEvent>>
@@ -13,6 +19,9 @@ public class PaymentSucceededWalletCreditEventHandler(
         var domainEvent = notification.DomainEvent;
 
         if (domainEvent.OrderId is null)
+            return;
+
+        if (domainEvent.Gateway.IsWallet)
             return;
 
         try

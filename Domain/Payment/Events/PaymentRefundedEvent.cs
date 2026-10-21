@@ -9,4 +9,5 @@ public sealed record PaymentRefundedEvent(
     OrderId OrderId,
     UserId UserId,
     Money Amount,
-    string? Reason) : DomainEvent;
+    string? Reason,
+    PaymentGateway Gateway) : DomainEvent;

@@ -179,7 +179,12 @@ public class PaymentTransactionTests
     public void MarkAsSuccess_RaisesPaymentSucceededEventWithDeterministicFields()
     {
         var orderId = OrderId.NewId();
-        var sut = new PaymentTransactionBuilder().WithOrderId(orderId).WithAmount(50_000m).Build();
+        var userId = UserId.NewId();
+        var sut = new PaymentTransactionBuilder()
+            .WithOrderId(orderId)
+            .WithUserId(userId)
+            .WithAmount(50_000m)
+            .Build();
         sut.ClearDomainEvents();
 
         sut.MarkAsSuccess(refId: 7777, DateTime.UtcNow);
@@ -189,7 +194,19 @@ public class PaymentTransactionTests
         evt.OrderId.ShouldBe(orderId);
         evt.RefId.ShouldBe(7777L);
         evt.Amount.Amount.ShouldBe(50_000m);
-        evt.UserId.ShouldNotBeNull();
+        evt.UserId.ShouldBe(userId);
+    }
+
+    [Fact]
+    public void MarkAsSuccess_RaisesPaymentSucceededEventCarryingTheTransactionOwner()
+    {
+        var sut = new PaymentTransactionBuilder().Build();
+        sut.ClearDomainEvents();
+
+        sut.MarkAsSuccess(refId: 1, DateTime.UtcNow);
+
+        var evt = sut.DomainEvents.Single().ShouldBeOfType<PaymentSucceededEvent>();
+        evt.UserId.ShouldBe(sut.UserId);
     }
 
     [Fact]
@@ -315,7 +332,12 @@ public class PaymentTransactionTests
     public void Refund_FromSuccess_TransitionsToRefundedAndRaisesEvent()
     {
         var orderId = OrderId.NewId();
-        var sut = new PaymentTransactionBuilder().WithOrderId(orderId).WithAmount(50_000m).Build();
+        var userId = UserId.NewId();
+        var sut = new PaymentTransactionBuilder()
+            .WithOrderId(orderId)
+            .WithUserId(userId)
+            .WithAmount(50_000m)
+            .Build();
         sut.MarkAsSuccess(refId: 12345, DateTime.UtcNow);
         sut.ClearDomainEvents();
         var now = DateTime.UtcNow;
@@ -331,7 +353,7 @@ public class PaymentTransactionTests
         evt.OrderId.ShouldBe(orderId);
         evt.Amount.Amount.ShouldBe(50_000m);
         evt.Reason.ShouldBe("customer request");
-        evt.UserId.ShouldNotBeNull();
+        evt.UserId.ShouldBe(userId);
     }
 
     [Fact]

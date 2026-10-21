@@ -1,11 +1,13 @@
 using System.Diagnostics;
+using Application.Common.Contracts;
+using Domain.Common.Abstractions;
 using SharedContracts.Diagnostics;
 
 namespace Infrastructure.Persistence.Outbox;
 
 public sealed class OutboxProcessor(
     DBContext context,
-    IPublisher publisher,
+    IDomainEventDispatcher dispatcher,
     IOutboxEventTypeRegistry typeRegistry,
     IAuditService auditService) : IOutboxProcessor
 {
@@ -79,7 +81,7 @@ public sealed class OutboxProcessor(
                 return;
             }
 
-            var @event = JsonSerializer.Deserialize(message.Payload, type);
+            var @event = JsonSerializer.Deserialize(message.Payload, type, DomainEventJson.Options);
 
             if (@event is null)
             {
@@ -88,12 +90,7 @@ public sealed class OutboxProcessor(
                 return;
             }
 
-            var notificationType =
-                typeof(DomainEventNotification<>).MakeGenericType(type);
-
-            var notification = Activator.CreateInstance(notificationType, @event)!;
-
-            await publisher.Publish(notification, ct);
+            await dispatcher.DispatchAsync([(IDomainEvent)@event], ct);
 
             message.MarkProcessed(DateTime.UtcNow);
             activity?.SetStatus(ActivityStatusCode.Ok);

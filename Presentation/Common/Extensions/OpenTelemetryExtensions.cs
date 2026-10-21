@@ -12,8 +12,8 @@ public static class OpenTelemetryExtensions
         IConfiguration configuration,
         IHostEnvironment environment)
     {
-        services.AddSingleton<BusinessMetrics>();
-
+        // BusinessMetrics is registered by the Infrastructure layer, which owns the
+        // services that emit the metrics; it is only wired to the meter here.
         var samplingRatio = environment.IsProduction() ? 0.1 : 1.0;
 
         var otlpEndpoint = configuration["OpenTelemetry:OtlpEndpoint"];

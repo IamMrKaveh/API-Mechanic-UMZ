@@ -23,7 +23,8 @@ public class PaymentSucceededWalletCreditEventHandlerTests : HandlerTestBase
         OrderId.NewId(),
         RefId: 987654321,
         UserId.NewId(),
-        Money.Create(150_000m, "IRT"));
+        Money.Create(150_000m, "IRT"),
+        PaymentGateway.Zarinpal);
 
     [Fact]
     public async Task Handle_DispatchesCreditWalletCommandOnce()
@@ -37,6 +38,18 @@ public class PaymentSucceededWalletCreditEventHandlerTests : HandlerTestBase
         await _sut.Handle(notification, CancellationToken.None);
 
         await _mediator.Received(1).Send(Arg.Any<CreditWalletCommand>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenPaymentWasFundedByTheWallet_DoesNotCreditTheWallet()
+    {
+        var evt = BuildEvent() with { Gateway = PaymentGateway.Wallet };
+
+        await _sut.Handle(
+            new DomainEventNotification<PaymentSucceededEvent>(evt),
+            CancellationToken.None);
+
+        await _mediator.DidNotReceiveWithAnyArgs().Send(default!, default);
     }
 
     [Fact]

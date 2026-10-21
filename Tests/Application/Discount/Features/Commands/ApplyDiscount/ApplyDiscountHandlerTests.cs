@@ -3,23 +3,28 @@ using Application.Discount.Features.Shared;
 using Domain.Discount.Aggregates;
 using Domain.Discount.Interfaces;
 using Domain.Discount.ValueObjects;
+using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
+using Tests.TestInfrastructure.Builders;
+using Orders = Domain.Order.Aggregates.Order;
 
 namespace Tests.Application.Discount.Features.Commands.ApplyDiscount;
 
 public class ApplyDiscountHandlerTests : HandlerTestBase
 {
     private readonly IDiscountRepository _repository = Substitute.For<IDiscountRepository>();
+    private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly ApplyDiscountHandler _sut;
     private readonly DateTime _now = new(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc);
     private readonly Guid _userGuid = Guid.NewGuid();
 
     public ApplyDiscountHandlerTests()
     {
-        _sut = new ApplyDiscountHandler(_repository, UnitOfWork, AuditService, CurrentUserService, DateTimeProvider);
+        _sut = new ApplyDiscountHandler(
+            _repository, _orderRepository, UnitOfWork, AuditService, CurrentUserService, DateTimeProvider);
         SetUtcNow(_now);
-        CurrentUserService.UserId.Returns((Guid?)_userGuid);
+        AuthenticateAs(_userGuid);
         UnitOfWork
             .ExecuteStrategyAsync(
                 Arg.Any<Func<CancellationToken, Task<ServiceResult>>>(),
@@ -33,6 +38,13 @@ public class ApplyDiscountHandlerTests : HandlerTestBase
 
     private DiscountCode RedeemableCode(string code = "SAVE10")
         => new DiscountCodeBuilder().WithCode(code).WithValue(DiscountValue.Percentage(10m)).Build();
+
+    private Orders OwnedOrder()
+    {
+        var order = new OrderBuilder().WithUserId(UserId.From(_userGuid)).Build();
+        _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
+        return order;
+    }
 
     [Fact]
     public async Task Handle_WhenCodeNotFound_ReturnsNotFound()
@@ -65,13 +77,44 @@ public class ApplyDiscountHandlerTests : HandlerTestBase
     }
 
     [Fact]
+    public async Task Handle_WhenOrderNotFound_ReturnsNotFoundWithoutRecordingUsage()
+    {
+        var discount = RedeemableCode("SAVE10");
+        _repository.GetByCodeAsync("SAVE10", Arg.Any<CancellationToken>()).Returns(discount);
+        _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns((Orders?)null);
+
+        var result = await _sut.Handle(new ApplyDiscountCommand("SAVE10", 200_000m, Guid.NewGuid()), CancellationToken.None);
+
+        result.ShouldFailWithType(ErrorType.NotFound);
+        discount.UsageCount.ShouldBe(0);
+        _repository.DidNotReceiveWithAnyArgs().Update(default!);
+    }
+
+    [Fact]
+    public async Task Handle_WhenOrderBelongsToAnotherUser_ReturnsForbiddenWithoutRecordingUsage()
+    {
+        var discount = RedeemableCode("SAVE10");
+        _repository.GetByCodeAsync("SAVE10", Arg.Any<CancellationToken>()).Returns(discount);
+        _orderRepository
+            .FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>())
+            .Returns(new OrderBuilder().WithUserId(UserId.NewId()).Build());
+
+        var result = await _sut.Handle(new ApplyDiscountCommand("SAVE10", 200_000m, Guid.NewGuid()), CancellationToken.None);
+
+        result.ShouldFailWithType(ErrorType.Forbidden);
+        discount.UsageCount.ShouldBe(0);
+        _repository.DidNotReceiveWithAnyArgs().Update(default!);
+    }
+
+    [Fact]
     public async Task Handle_WhenValid_RecordsUsageUpdatesAndAuditsOrderEvent()
     {
         var discount = RedeemableCode("SAVE10");
-        var orderId = Guid.NewGuid();
+        var order = OwnedOrder();
         _repository.GetByCodeAsync("SAVE10", Arg.Any<CancellationToken>()).Returns(discount);
 
-        var result = await _sut.Handle(new ApplyDiscountCommand("SAVE10", 200_000m, orderId), CancellationToken.None);
+        var result = await _sut.Handle(
+            new ApplyDiscountCommand("SAVE10", 200_000m, order.Id.Value), CancellationToken.None);
 
         result.ShouldBeSuccess();
         var typed = (ServiceResult<DiscountApplicationResult>)result;
@@ -82,7 +125,7 @@ public class ApplyDiscountHandlerTests : HandlerTestBase
         _repository.Received(1).Update(discount);
         await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         await AuditService.Received(1).LogOrderEventAsync(
-            Arg.Is<OrderId>(o => o != null && o!.Value == orderId),
+            Arg.Is<OrderId>(o => o != null && o!.Value == order.Id.Value),
             "DiscountApplied",
             Arg.Any<IpAddress>(),
             Arg.Is<UserId>(u => u != null && u!.Value == _userGuid),
@@ -118,4 +161,3 @@ public class ApplyDiscountHandlerTests : HandlerTestBase
             cts.Token);
     }
 }
-

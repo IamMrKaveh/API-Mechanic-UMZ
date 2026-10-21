@@ -24,7 +24,8 @@ public class PaymentSucceededNotificationEventHandlerTests
             OrderId.NewId(),
             refId,
             userId ?? UserId.NewId(),
-            Money.Create(250_000m, "IRT"));
+            Money.Create(250_000m, "IRT"),
+            PaymentGateway.Zarinpal);
 
     private static DomainEventNotification<PaymentSucceededEvent> Wrap(PaymentSucceededEvent evt) => new(evt);
 

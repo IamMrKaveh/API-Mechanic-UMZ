@@ -148,6 +148,26 @@ jobs:
       - name: Build (warnings are errors)
         run: dotnet build API.sln -c Release --no-restore -warnaserror
 
+      - name: Migration model drift
+        env:
+          # The drift check only builds the model and compares it with the
+          # migration snapshot; it never opens a connection.
+          ConnectionStrings__MigrationConnection: 'Host=localhost;Port=5432;Database=ledka;Username=postgres'
+        run: |
+          set -euo pipefail
+          dotnet tool restore
+          output="$(dotnet ef migrations has-pending-model-changes \
+            --project Infrastructure \
+            --startup-project Presentation \
+            --context DBContext \
+            --no-connect 2>&1)" || { echo "$output"; exit 1; }
+          echo "$output"
+          if ! echo "$output" | grep -qi "No changes have been made to the model"; then
+            echo "::error::The EF Core model drifted away from the migration snapshot. Add a migration."
+            exit 1
+          fi
+          echo "The EF Core model matches the migration snapshot."
+
       - name: Test
         run: >
           dotnet test Tests/Tests.csproj -c Release --no-build

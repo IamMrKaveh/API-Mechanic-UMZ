@@ -9,4 +9,5 @@ public sealed record PaymentSucceededEvent(
     OrderId OrderId,
     long RefId,
     UserId UserId,
-    Money Amount) : DomainEvent;
+    Money Amount,
+    PaymentGateway Gateway) : DomainEvent;

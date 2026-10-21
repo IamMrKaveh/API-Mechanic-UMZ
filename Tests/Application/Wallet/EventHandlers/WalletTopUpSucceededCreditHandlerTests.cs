@@ -1,8 +1,6 @@
 using Application.Common.Events;
 using Application.Wallet.EventHandlers;
-using Application.Wallet.Features.Commands.CreditWallet;
 using Domain.User.ValueObjects;
-using Domain.Wallet.Enums;
 using Domain.Wallet.Events;
 using Domain.Wallet.ValueObjects;
 
@@ -10,12 +8,11 @@ namespace Tests.Application.Wallet.EventHandlers;
 
 public sealed class WalletTopUpSucceededCreditHandlerTests : HandlerTestBase
 {
-    private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly WalletTopUpSucceededCreditHandler _sut;
 
     public WalletTopUpSucceededCreditHandlerTests()
     {
-        _sut = new WalletTopUpSucceededCreditHandler(_mediator, AuditService);
+        _sut = new WalletTopUpSucceededCreditHandler(AuditService);
     }
 
     private static WalletTopUpSucceededEvent BuildEvent(
@@ -34,17 +31,14 @@ public sealed class WalletTopUpSucceededCreditHandlerTests : HandlerTestBase
     private static DomainEventNotification<WalletTopUpSucceededEvent> Wrap(WalletTopUpSucceededEvent evt) => new(evt);
 
     [Fact]
-    public async Task Handle_WhenMediatorSucceeds_LogsInformation()
+    public async Task Handle_RecordsTheTopUpWithoutCreditingTheWalletAgain()
     {
         var evt = BuildEvent(amount: 500_000m, gatewayRefId: "GW-OK-1");
-        _mediator
-            .Send(Arg.Any<CreditWalletCommand>(), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult<Unit>.Success(Unit.Value));
 
         await _sut.Handle(Wrap(evt), CancellationToken.None);
 
         await AuditService.Received(1).LogInformationAsync(
-            Arg.Is<string>(s => s!.Contains("Wallet credited from top-up")
+            Arg.Is<string>(s => s!.Contains("Wallet top-up succeeded")
                              && s!.Contains("500000")
                              && s!.Contains("GW-OK-1")),
             Arg.Any<CancellationToken>());
@@ -52,61 +46,13 @@ public sealed class WalletTopUpSucceededCreditHandlerTests : HandlerTestBase
     }
 
     [Fact]
-    public async Task Handle_WhenMediatorFails_LogsError()
-    {
-        var evt = BuildEvent(gatewayRefId: "GW-FAIL-1");
-        _mediator
-            .Send(Arg.Any<CreditWalletCommand>(), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult<Unit>.Failure(
-                new Error("CREDIT_FAIL", "credit failed", ErrorType.Failure)));
-
-        await _sut.Handle(Wrap(evt), CancellationToken.None);
-
-        await AuditService.Received(1).LogErrorAsync(
-            Arg.Is<string>(s => s!.Contains("WalletTopUp credit application failed")
-                             && s!.Contains("GW-FAIL-1")),
-            Arg.Any<CancellationToken>());
-        await AuditService.DidNotReceiveWithAnyArgs().LogInformationAsync(default!, default);
-    }
-
-    [Fact]
-    public async Task Handle_WhenInvoked_SendsCreditWalletCommandWithExpectedPayload()
-    {
-        var topUpGuid = Guid.NewGuid();
-        var userGuid = Guid.NewGuid();
-        var evt = BuildEvent(topUpGuid: topUpGuid, userGuid: userGuid, amount: 250_000m, gatewayRefId: "GW-XYZ");
-        _mediator
-            .Send(Arg.Any<CreditWalletCommand>(), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult<Unit>.Success(Unit.Value));
-
-        await _sut.Handle(Wrap(evt), CancellationToken.None);
-
-        await _mediator.Received(1).Send(
-            Arg.Is<CreditWalletCommand>(c =>
-                c!.UserId == userGuid
-                && c!.Amount == 250_000m
-                && c!.TransactionType == WalletTransactionType.Credit
-                && c!.ReferenceType == WalletReferenceType.TopUp
-                && c!.ReferenceId == topUpGuid.ToString()
-                && c!.IdempotencyKey == $"topup-credit:{topUpGuid}"
-                && c!.CorrelationId == "GW-XYZ"
-                && c!.Description != null
-                && c!.Description.Contains("GW-XYZ")),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Handle_PassesCancellationTokenToMediatorAndAudit()
+    public async Task Handle_PassesCancellationTokenToAudit()
     {
         using var cts = new CancellationTokenSource();
         var evt = BuildEvent();
-        _mediator
-            .Send(Arg.Any<CreditWalletCommand>(), cts.Token)
-            .Returns(ServiceResult<Unit>.Success(Unit.Value));
 
         await _sut.Handle(Wrap(evt), cts.Token);
 
-        await _mediator.Received(1).Send(Arg.Any<CreditWalletCommand>(), cts.Token);
         await AuditService.Received(1).LogInformationAsync(Arg.Any<string>(), cts.Token);
     }
 }

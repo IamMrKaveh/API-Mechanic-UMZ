@@ -141,7 +141,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         UpdatedAt = now;
         IsVerificationInProgress = false;
 
-        RaiseDomainEvent(new PaymentSucceededEvent(Id, OrderId, refId, UserId: UserId.NewId(), Amount));
+        RaiseDomainEvent(new PaymentSucceededEvent(Id, OrderId, refId, UserId, Amount, Gateway));
     }
 
     public void MarkAsFailed(DateTime now, string? errorMessage = null)
@@ -175,7 +175,7 @@ public sealed class PaymentTransaction : AggregateRoot<PaymentTransactionId>, IA
         ErrorMessage = reason ?? "بازگشت وجه";
         UpdatedAt = now;
 
-        RaiseDomainEvent(new PaymentRefundedEvent(Id, OrderId, UserId.NewId(), Amount, ErrorMessage));
+        RaiseDomainEvent(new PaymentRefundedEvent(Id, OrderId, UserId, Amount, ErrorMessage, Gateway));
     }
 
     public bool IsExpired(DateTime now) => now > ExpiresAt && Status == PaymentStatus.Pending;
