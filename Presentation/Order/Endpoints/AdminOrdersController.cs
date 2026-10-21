@@ -1,4 +1,6 @@
 using Application.Order.Features.Commands.DeleteOrder;
+using Application.Order.Features.Commands.UpdateOrder;
+using Application.Order.Features.Shared;
 using Application.Order.Features.Commands.ExpireOrders;
 using Application.Order.Features.Commands.MarkOrderAsShipped;
 using Application.Order.Features.Commands.UpdateOrderStatus;
@@ -85,6 +87,27 @@ public class AdminOrdersController(
         var result = await Mediator.Send(command, ct);
         return ToActionResult(result);
     }
+
+    [HttpPatch("{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status412PreconditionFailed)]
+    public async Task<IActionResult> UpdateOrder(
+        Guid id,
+        [FromBody] UpdateOrderByIdRequest request,
+        [FromHeader(Name = IfMatchHeader)] string? ifMatch,
+        CancellationToken ct)
+    {
+        var command = new UpdateOrderCommand(
+            id,
+            new UpdateOrderDto { ShippingId = request.ShippingId },
+            StripQuotes(ifMatch));
+
+        var result = await Mediator.Send(command, ct);
+        return ToActionResult(result);
+    }
+
 
     [HttpPatch("{id:guid}/ship")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]

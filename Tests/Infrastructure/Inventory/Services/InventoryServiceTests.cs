@@ -1,4 +1,4 @@
-﻿using Domain.Inventory.Aggregates;
+using Domain.Inventory.Aggregates;
 using Domain.Inventory.Interfaces;
 using Domain.Inventory.ValueObjects;
 using Domain.Order.Interfaces;
@@ -65,7 +65,7 @@ public class InventoryServiceTests : HandlerTestBase
         var result = await _sut.ReserveStockAsync(
             inventory.VariantId, StockQuantity.Create(5), "ORDER-1", ct: CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith("StockQuantity.Insufficient");
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
         await UnitOfWork.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
     }

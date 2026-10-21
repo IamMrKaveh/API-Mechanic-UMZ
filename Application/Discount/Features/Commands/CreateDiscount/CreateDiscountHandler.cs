@@ -36,7 +36,7 @@ public class CreateDiscountHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<DiscountDto>.Failure(ex.Message);
+            return ServiceResult<DiscountDto>.Failure(ex.Message, ErrorType.BusinessRule);
         }
 
         Money? maxDiscount = request.MaximumDiscountAmount.HasValue
@@ -62,7 +62,7 @@ public class CreateDiscountHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<DiscountDto>.Failure(ex.Message);
+            return ServiceResult<DiscountDto>.Failure(ex.Message, ErrorType.BusinessRule);
         }
 
         await discountRepository.AddAsync(discount, ct);

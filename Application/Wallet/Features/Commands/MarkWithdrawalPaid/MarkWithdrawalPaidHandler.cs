@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
@@ -88,7 +88,7 @@ public sealed class MarkWithdrawalPaidHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<Unit>.Failure(ex.Message);
+            return ServiceResult<Unit>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

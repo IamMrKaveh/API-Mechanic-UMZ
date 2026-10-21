@@ -25,7 +25,7 @@ public class DeleteUserAddressHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

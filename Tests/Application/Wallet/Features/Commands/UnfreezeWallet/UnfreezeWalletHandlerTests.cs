@@ -110,7 +110,7 @@ public class UnfreezeWalletHandlerTests : HandlerTestBase
 
         var result = await _sut.Handle(ValidCommand(), CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.BusinessRule);
         result.Error.Message.ShouldBe("unfreeze-domain-error");
     }
 }

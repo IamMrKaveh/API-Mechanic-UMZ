@@ -1,4 +1,4 @@
-﻿using Domain.Payment.Interfaces;
+using Domain.Payment.Interfaces;
 using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
 
@@ -29,7 +29,7 @@ public sealed class DeletePaymentMethodHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

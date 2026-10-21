@@ -27,7 +27,7 @@ public class ReconcileStockHandler(
         var result = InventoryDomainService.Reconcile(inventory, stock, userId, dateTimeProvider.UtcNow);
 
         if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
+            return ServiceResult.Failure(result.Error);
 
         inventoryRepository.Update(inventory);
 

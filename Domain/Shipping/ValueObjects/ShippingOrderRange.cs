@@ -36,13 +36,13 @@ public sealed class ShippingOrderRange : ValueObject
     {
         if (HasMinimum && MinOrderAmount!.IsGreaterThan(orderTotal))
             return ServiceResult.Failure(new Error(
-                "400",
+                "ShippingOrderRange.BelowMinimum",
                 $"حداقل مبلغ سفارش برای این روش ارسال {MinOrderAmount.ToTomanString()} است.",
                 ErrorType.Validation));
 
         if (HasMaximum && orderTotal.IsGreaterThan(MaxOrderAmount!))
             return ServiceResult.Failure(new Error(
-                "400",
+                "ShippingOrderRange.AboveMaximum",
                 $"حداکثر مبلغ سفارش برای این روش ارسال {MaxOrderAmount!.ToTomanString()} است.",
                 ErrorType.Validation));
 

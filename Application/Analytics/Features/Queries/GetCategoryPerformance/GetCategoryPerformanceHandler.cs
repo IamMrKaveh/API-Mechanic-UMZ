@@ -11,7 +11,7 @@ public sealed class GetCategoryPerformanceHandler(
         CancellationToken ct)
     {
         var result = await analyticsQuery.GetCategoryPerformanceAsync(
-            request.FromDate, request.ToDate, ct);
+            request.FromDate, request.ToDate, request.Page, request.PageSize, ct);
 
         return ServiceResult<PaginatedResult<CategoryPerformanceDto>>.Success(result);
     }

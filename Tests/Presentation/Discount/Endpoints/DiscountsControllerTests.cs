@@ -123,7 +123,7 @@ public class DiscountsControllerTests
 
         // Assert
         var failure = result.ShouldBeOfType<ObjectResult>();
-        failure.StatusCode.ShouldBe(StatusCodes.Status500InternalServerError);
+        failure.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
     }
 
     [Fact]

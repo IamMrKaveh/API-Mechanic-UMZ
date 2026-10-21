@@ -38,7 +38,7 @@ public class GetSearchIndexStatsHandlerTests
 
         var result = await _sut.Handle(new GetSearchIndexStatsQuery(), CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.ExternalService);
         result.Error.Message.ShouldBe("اطلاعات آماری جستجو در دسترس نیست.");
     }
 

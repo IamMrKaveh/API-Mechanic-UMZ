@@ -122,7 +122,9 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         var result = await _sut.GetTopSellingProductsAsync(
             count: 10,
             fromDate: null,
-            toDate: null);
+            toDate: null,
+            page: 1,
+            pageSize: 10);
 
         result.ShouldNotBeNull();
         result.TotalCount.ShouldBe(0);
@@ -134,7 +136,7 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
     [SkippableFact]
     public async Task GetCategoryPerformanceAsync_NoOrders_ReturnsEmptyResult()
     {
-        var result = await _sut.GetCategoryPerformanceAsync(null, null);
+        var result = await _sut.GetCategoryPerformanceAsync(null, null, 1, 10);
 
         result.ShouldNotBeNull();
         result.TotalCount.ShouldBe(0);
@@ -147,7 +149,9 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         var result = await _sut.GetSalesChartDataAsync(
             fromDate: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             toDate: new DateTime(2026, 12, 31, 0, 0, 0, DateTimeKind.Utc),
-            groupBy: "day");
+            groupBy: "day",
+            page: 1,
+            pageSize: 10);
 
         result.ShouldNotBeNull();
         result.Items.Count.ShouldBe(0);
@@ -163,7 +167,9 @@ public class AnalyticsQueryServiceTests(PostgresContainerFixture fixture) : Inte
         var result = await _sut.GetSalesChartDataAsync(
             fromDate: DateTime.UtcNow.AddDays(-30),
             toDate: DateTime.UtcNow,
-            groupBy: groupBy);
+            groupBy: groupBy,
+            page: 1,
+            pageSize: 10);
 
         result.Items.Count.ShouldBe(0);
     }

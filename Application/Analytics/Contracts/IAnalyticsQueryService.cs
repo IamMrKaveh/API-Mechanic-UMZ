@@ -13,17 +13,23 @@ public interface IAnalyticsQueryService
         DateTime fromDate,
         DateTime toDate,
         string groupBy,
+        int page,
+        int pageSize,
         CancellationToken ct = default);
 
     Task<PaginatedResult<TopSellingProductDto>> GetTopSellingProductsAsync(
         int count,
         DateTime? fromDate,
         DateTime? toDate,
+        int page,
+        int pageSize,
         CancellationToken ct = default);
 
     Task<PaginatedResult<CategoryPerformanceDto>> GetCategoryPerformanceAsync(
         DateTime? fromDate,
         DateTime? toDate,
+        int page,
+        int pageSize,
         CancellationToken ct = default);
 
     Task<RevenueReportDto> GetRevenueReportAsync(

@@ -32,7 +32,7 @@ public class AddStockHandler(
             userId);
 
         if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
+            return ServiceResult.Failure(result.Error);
 
         inventoryRepository.Update(inventory);
 

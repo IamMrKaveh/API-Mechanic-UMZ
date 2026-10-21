@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Application.Wallet.Features.Shared;
 using Domain.Security.ValueObjects;
 using Domain.User.Interfaces;
@@ -20,7 +21,7 @@ public sealed class ConfirmWalletTransferHandler(
     IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService,
     IDistributedLock distributedLock)
-    : IRequestHandler<ConfirmWalletTransferCommand, ServiceResult<ConfirmWalletTransferResultDto>>
+    : ICommandHandler<ConfirmWalletTransferCommand, ConfirmWalletTransferResultDto>
 {
     private static readonly TimeSpan TransferLockExpiry = TimeSpan.FromSeconds(15);
 
@@ -106,7 +107,7 @@ public sealed class ConfirmWalletTransferHandler(
                 transfer.MarkFailed("کیف پول فرستنده یافت نشد.", now);
                 transferRepository.Update(transfer);
                 await unitOfWork.SaveChangesAsync(ct);
-                return ServiceResult<ConfirmWalletTransferResultDto>.Failure("کیف پول فرستنده یافت نشد.");
+                return ServiceResult<ConfirmWalletTransferResultDto>.NotFound("کیف پول فرستنده یافت نشد.");
             }
 
             var recipientWallet = await walletRepository.GetByUserIdForUpdateAsync(transfer.ToUserId, ct);
@@ -190,7 +191,7 @@ public sealed class ConfirmWalletTransferHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<ConfirmWalletTransferResultDto>.Failure(ex.Message);
+            return ServiceResult<ConfirmWalletTransferResultDto>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 

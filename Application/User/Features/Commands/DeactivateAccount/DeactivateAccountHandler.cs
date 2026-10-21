@@ -37,7 +37,7 @@ public class DeactivateAccountHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

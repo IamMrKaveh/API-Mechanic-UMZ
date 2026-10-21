@@ -225,7 +225,7 @@ public class CreditWalletHandlerTests : HandlerTestBase
 
         var result = await _sut.Handle(command, CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.BusinessRule);
         result.Error.Message.ShouldBe("domain-error-message");
     }
 

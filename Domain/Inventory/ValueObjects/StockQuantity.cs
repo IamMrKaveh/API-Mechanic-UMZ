@@ -49,13 +49,13 @@ public sealed class StockQuantity : ValueObject, IComparable<StockQuantity>
     {
         if (quantity < 0)
             return ServiceResult<StockQuantity>.Failure(new Error(
-                "400",
+                "StockQuantity.Negative",
                 "مقدار کاهش نمی‌تواند منفی باشد.",
                 ErrorType.Validation));
 
         if (Value < quantity)
             return ServiceResult<StockQuantity>.Failure(new Error(
-                "400",
+                "StockQuantity.Insufficient",
                 $"موجودی کافی نیست. موجودی فعلی: {Value}، کمبود: {quantity - Value}",
                 ErrorType.Validation));
 

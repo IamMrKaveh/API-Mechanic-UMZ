@@ -124,7 +124,7 @@ public class ReplyToTicketHandlerTests : HandlerTestBase
 
         var result = await _sut.Handle(command, CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.BusinessRule);
         ticket.Messages.ShouldBeEmpty();
         _ticketRepository.DidNotReceive().Update(Arg.Any<Ticket>());
     }

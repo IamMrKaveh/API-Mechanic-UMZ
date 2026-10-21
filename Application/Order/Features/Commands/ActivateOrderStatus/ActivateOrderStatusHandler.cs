@@ -1,4 +1,4 @@
-﻿using Application.Cache.Contracts;
+using Application.Cache.Contracts;
 using Domain.Order.Interfaces;
 using Domain.Order.ValueObjects;
 
@@ -26,7 +26,7 @@ public class ActivateOrderStatusHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
 
         orderStatusRepository.Update(status);

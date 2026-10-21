@@ -23,7 +23,7 @@ public class CancelOrderHandler(
             return ServiceResult.Forbidden("دسترسی ممنوع.");
 
         if (!order.CanBeCancelled())
-            return ServiceResult.Failure("این سفارش قابل لغو نیست.");
+            return ServiceResult.BusinessRule("Order.NotCancellable", "این سفارش قابل لغو نیست.");
 
         byte[]? rowVersion = null;
         if (!string.IsNullOrEmpty(request.RowVersion))
@@ -46,7 +46,7 @@ public class CancelOrderHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
         catch (ConcurrencyException)
         {

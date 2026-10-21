@@ -19,7 +19,7 @@ public class AtomicRefundPaymentHandler(
         var order = orderResult.Value;
 
         if (!order.IsPaid)
-            return ServiceResult.Failure("سفارش پرداخت نشده است.");
+            return ServiceResult.Conflict("سفارش پرداخت نشده است.");
 
         var paymentResult = await (paymentRepository.GetVerifiedByOrderIdAsync(orderId, ct)).OrNotFoundAsync("تراکنش پرداخت یافت نشد.");
         if (paymentResult.IsFailure) return paymentResult.Error;

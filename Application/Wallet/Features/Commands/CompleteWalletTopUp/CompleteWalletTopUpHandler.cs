@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+using Application.Common.Interfaces;
+using System.Globalization;
 using Application.Payment.Features.Shared;
 using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
@@ -12,7 +13,7 @@ public sealed class CompleteWalletTopUpHandler(
     IPaymentGatewayFactory gatewayFactory,
     IDateTimeProvider dateTimeProvider,
     IAuditService auditService)
-    : IRequestHandler<CompleteWalletTopUpCommand, ServiceResult<CompleteWalletTopUpResult>>
+    : ICommandHandler<CompleteWalletTopUpCommand, CompleteWalletTopUpResult>
 {
     public async Task<ServiceResult<CompleteWalletTopUpResult>> Handle(
         CompleteWalletTopUpCommand request,
@@ -119,7 +120,7 @@ public sealed class CompleteWalletTopUpHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<CompleteWalletTopUpResult>.Failure(ex.Message);
+            return ServiceResult<CompleteWalletTopUpResult>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

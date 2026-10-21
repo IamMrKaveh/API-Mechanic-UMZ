@@ -23,7 +23,7 @@ public class ChangePhoneNumberHandler(
 
         var result = PhoneNumber.TryCreate(request.NewPhoneNumber);
         if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
+            return ServiceResult.Failure(result.Error);
 
         var phoneNumber = result.Value;
 
@@ -38,7 +38,7 @@ public class ChangePhoneNumberHandler(
 
         var otp = await otpRepository.GetLatestActiveByUserIdAsync(userId, OtpPurpose.PhoneVerification, ct);
         if (otp is null)
-            return ServiceResult.Failure("کد OTP فعالی یافت نشد.");
+            return ServiceResult.NotFound("کد OTP فعالی یافت نشد.");
 
         var now = dateTimeProvider.UtcNow;
         try
@@ -48,7 +48,7 @@ public class ChangePhoneNumberHandler(
         catch (DomainException ex)
         {
             otpRepository.Update(otp);
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
 
         otpRepository.Update(otp);
@@ -70,7 +70,7 @@ public class ChangePhoneNumberHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

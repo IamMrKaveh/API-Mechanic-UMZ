@@ -127,8 +127,8 @@ public class AdminSendNotificationHandlerTests
 
         var result = await _sut.Handle(command, CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
-        result.ShouldFailWithType(ErrorType.Failure);
+        result.ShouldFailWith(ErrorCode.Validation);
+        result.ShouldFailWithType(ErrorType.Validation);
         result.Error.Message.ShouldBe("شناسه کاربر الزامی است.");
 
         await _notificationService.DidNotReceiveWithAnyArgs().CreateNotificationAsync(

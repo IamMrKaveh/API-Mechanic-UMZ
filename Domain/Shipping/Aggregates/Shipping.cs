@@ -138,7 +138,7 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
     {
         if (!IsActive)
             return ServiceResult.Failure(new Error(
-                "400",
+                "Shipping.Inactive",
                 "روش ارسال غیرفعال است.",
                 ErrorType.Validation));
 
@@ -167,7 +167,12 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         if (IsDefault)
             throw new DefaultShippingCannotBeDeletedException(Id);
 
+        if (IsDeleted) return;
+
         IsActive = false;
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+        DeletedBy = deletedBy?.Value;
         UpdatedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new ShippingDeletedEvent(Id, deletedBy));
@@ -188,6 +193,9 @@ public sealed class Shipping : AggregateRoot<ShippingId>, IActivatable, IAuditab
         if (IsActive) return;
 
         IsActive = true;
+        IsDeleted = false;
+        DeletedAt = null;
+        DeletedBy = null;
         UpdatedAt = DateTime.UtcNow;
     }
 }

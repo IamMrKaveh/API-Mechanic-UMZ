@@ -87,7 +87,7 @@ public class VerifyPaymentHandlerTests : HandlerTestBase
 
         var result = await _sut.Handle(new VerifyPaymentCommand("A123", "OK"), CancellationToken.None);
 
-        result.ShouldFailWithType(ErrorType.Failure);
+        result.ShouldFailWithType(ErrorType.BusinessRule);
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public class VerifyPaymentHandlerTests : HandlerTestBase
 
         var result = await _sut.Handle(new VerifyPaymentCommand("A123", "OK"), CancellationToken.None);
 
-        result.ShouldFailWithType(ErrorType.Failure);
+        result.ShouldFailWithType(ErrorType.ExternalService);
     }
 
     [Fact]

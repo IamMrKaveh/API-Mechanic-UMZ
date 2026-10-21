@@ -8,6 +8,8 @@ internal sealed class ShippingConfiguration : IEntityTypeConfiguration<Domain.Sh
     {
         builder.HasKey(e => e.Id);
 
+        builder.HasQueryFilter(e => !e.IsDeleted);
+
         builder.Property(e => e.Id);
 
         builder.Property(e => e.Name)

@@ -47,7 +47,7 @@ public class UpdateOrderStatusHandlerTests
 
         var result = await _sut.Handle(new UpdateOrderStatusCommand(order.Id.Value, "NotAStatus", "AA=="), CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.Validation);
     }
 
     [Fact]

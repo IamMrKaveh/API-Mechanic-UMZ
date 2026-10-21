@@ -58,7 +58,7 @@ public class CheckoutShippingValidatorServiceTests
         var result = await _sut.ValidateAndCalculateCostAsync(
             shipping.Id.Value, 500_000m, [], CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith("Shipping.Inactive");
     }
 
     [Fact]

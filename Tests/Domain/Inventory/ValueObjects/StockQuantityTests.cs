@@ -122,7 +122,7 @@ public class StockQuantityTests
 
         var result = sut.TrySubtract(-1);
 
-        result.ShouldFailWith("400");
+        result.ShouldFailWith("StockQuantity.Negative");
         result.ShouldFailWithType(ErrorType.Validation);
         result.Error.Message.ShouldBe("مقدار کاهش نمی‌تواند منفی باشد.");
     }
@@ -134,7 +134,7 @@ public class StockQuantityTests
 
         var result = sut.TrySubtract(10);
 
-        result.ShouldFailWith("400");
+        result.ShouldFailWith("StockQuantity.Insufficient");
         result.ShouldFailWithType(ErrorType.Validation);
         result.Error.Message.ShouldContain("موجودی کافی نیست");
     }

@@ -78,7 +78,7 @@ public class DeleteShippingHandlerTests : HandlerTestBase
 
         var result = await _sut.Handle(new DeleteShippingCommand(shipping.Id.Value), CancellationToken.None);
 
-        result.ShouldFailWithType(ErrorType.Failure);
+        result.ShouldFailWithType(ErrorType.BusinessRule);
         shipping.IsActive.ShouldBeTrue();
         shipping.IsDefault.ShouldBeTrue();
         _shippingRepository.DidNotReceiveWithAnyArgs().Update(default!);

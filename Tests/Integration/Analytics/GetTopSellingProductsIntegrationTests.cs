@@ -34,7 +34,7 @@ public class GetTopSellingProductsIntegrationTests(PostgresContainerFixture fixt
         var from = DateTime.UtcNow.AddDays(-30);
         var to = DateTime.UtcNow;
 
-        var result = await _sut.GetTopSellingProductsAsync(10, from, to, CancellationToken.None);
+        var result = await _sut.GetTopSellingProductsAsync(10, from, to, 1, 10, CancellationToken.None);
 
         result.ShouldNotBeNull();
         result.Items.ShouldNotBeNull();
@@ -47,7 +47,7 @@ public class GetTopSellingProductsIntegrationTests(PostgresContainerFixture fixt
     [SkippableFact]
     public async Task GetTopSellingProductsAsync_NullDateRangeOnEmptyDatabase_ReturnsEmptyPaginatedResult()
     {
-        var result = await _sut.GetTopSellingProductsAsync(5, fromDate: null, toDate: null, CancellationToken.None);
+        var result = await _sut.GetTopSellingProductsAsync(5, fromDate: null, toDate: null, 1, 10, CancellationToken.None);
 
         result.ShouldNotBeNull();
         result.Items.ShouldBeEmpty();

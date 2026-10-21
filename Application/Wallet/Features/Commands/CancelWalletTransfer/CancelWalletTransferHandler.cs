@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Exceptions;
 using Domain.Wallet.Interfaces;
@@ -10,7 +11,7 @@ public sealed class CancelWalletTransferHandler(
     IWalletTransferRepository transferRepository,
     IDateTimeProvider dateTimeProvider,
     ICurrentUserService currentUserService)
-    : IRequestHandler<CancelWalletTransferCommand, ServiceResult<Unit>>
+    : ICommandHandler<CancelWalletTransferCommand, Unit>
 {
     public async Task<ServiceResult<Unit>> Handle(
         CancelWalletTransferCommand request,
@@ -39,7 +40,7 @@ public sealed class CancelWalletTransferHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<Unit>.Failure(ex.Message);
+            return ServiceResult<Unit>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Application.Wallet.Features.Shared;
 using Application.Wallet.Options;
 using Domain.Security.Enums;
@@ -21,7 +22,7 @@ public sealed class InitiateWalletTransferHandler(
     IDateTimeProvider dateTimeProvider,
     IOptions<WalletTransferOptions> options,
     ICurrentUserService currentUserService)
-    : IRequestHandler<InitiateWalletTransferCommand, ServiceResult<InitiateWalletTransferResultDto>>
+    : ICommandHandler<InitiateWalletTransferCommand, InitiateWalletTransferResultDto>
 {
     private readonly WalletTransferOptions _options = options.Value;
 
@@ -131,7 +132,7 @@ public sealed class InitiateWalletTransferHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<InitiateWalletTransferResultDto>.Failure(ex.Message);
+            return ServiceResult<InitiateWalletTransferResultDto>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 

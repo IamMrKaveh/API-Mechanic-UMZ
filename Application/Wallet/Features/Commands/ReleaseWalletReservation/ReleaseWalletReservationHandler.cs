@@ -1,4 +1,4 @@
-﻿using Domain.User.ValueObjects;
+using Domain.User.ValueObjects;
 using Domain.Wallet.Interfaces;
 using Domain.Wallet.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
@@ -39,7 +39,7 @@ public class ReleaseWalletReservationHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<Unit>.Failure(ex.Message);
+            return ServiceResult<Unit>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

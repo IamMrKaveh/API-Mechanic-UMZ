@@ -1,5 +1,6 @@
 using Application.Shipping.Features.Commands.CreateShipping;
 using Application.Shipping.Features.Commands.DeleteShipping;
+using Application.Shipping.Features.Commands.SetDefaultShipping;
 using Application.Shipping.Features.Commands.RestoreShipping;
 using Application.Shipping.Features.Commands.UpdateShipping;
 using Application.Shipping.Features.Queries.GetShipping;
@@ -66,5 +67,13 @@ public sealed class AdminShippingsController(IMediator mediator, IMapper mapper)
     public async Task<IActionResult> DeleteShipping(Guid id, CancellationToken ct)
     {
         return await Send(new DeleteShippingCommand(id), ct);
+    }
+
+    [HttpPatch("{id:guid}/default")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetDefaultShipping(Guid id, CancellationToken ct)
+    {
+        return await Send(new SetDefaultShippingCommand(id), ct);
     }
 }

@@ -49,7 +49,7 @@ public class PreviewWalletTransferHandlerTests : HandlerTestBase
             new PreviewWalletTransferQuery("not-a-phone", 20_000m),
             CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.BusinessRule);
         result.Error.Message.ShouldNotBeNullOrWhiteSpace();
         await _userRepository.DidNotReceiveWithAnyArgs()
             .GetByPhoneNumberAsync(default!, default);

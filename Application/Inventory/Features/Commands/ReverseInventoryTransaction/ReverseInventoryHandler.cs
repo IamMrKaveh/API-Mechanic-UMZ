@@ -24,7 +24,7 @@ public class ReverseInventoryHandler(
         var result = inventory.ReverseStockChange(request.IdempotencyKey, request.Reason, userId, dateTimeProvider.UtcNow);
 
         if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
+            return ServiceResult.Failure(result.Error);
 
         inventoryRepository.Update(inventory);
 

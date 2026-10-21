@@ -24,7 +24,7 @@ public class GetTopSellingProductsHandlerTests
         var fresh = new PaginatedResult<TopSellingProductDto>(
             [new TopSellingProductDto { ProductId = Guid.NewGuid(), ProductName = "Alpha" }], 1, 1, 10);
 
-        _analytics.GetTopSellingProductsAsync(count, from, to, Arg.Any<CancellationToken>())
+        _analytics.GetTopSellingProductsAsync(count, from, to, 1, 10, Arg.Any<CancellationToken>())
                   .Returns(fresh);
 
         var query = new GetTopSellingProductsQuery(count, from, to);
@@ -35,7 +35,7 @@ public class GetTopSellingProductsHandlerTests
         result.Value.ShouldBeSameAs(fresh);
 
         await _analytics.Received(1).GetTopSellingProductsAsync(
-            count, from, to, Arg.Any<CancellationToken>());
+            count, from, to, 1, 10, Arg.Any<CancellationToken>());
     }
 
 }

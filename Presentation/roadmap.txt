@@ -4,6 +4,23 @@
 
 ---
 
+### فاز ۲ — وضعیت: ✅ تکمیل شد
+
+| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
+|---|---|---|
+| **D-05** | `ErrorType.Failure` دیگر ۵۰۰ نیست (۴۰۰) و `ExternalService` ۵۰۲ شد؛ ۴۷ نقطهٔ catch در هندلرها اکنون `ErrorType.BusinessRule` برمی‌گردانند (هم‌راستا با `DomainExceptionBehavior`)؛ ۶ هندلر Inventory و ۳ هندلر Infrastructure دیگر نوع خطا را دور نمی‌ریزند؛ کدهای عددی `"400"` در دامنه با کدهای معنادار (`StockQuantity.Negative`، `Shipping.Inactive`، …) جایگزین شدند | `Presentation/Common/Mappers/HttpResultMapper.cs` · `Application/**` · `Infrastructure/**` · `Domain/Inventory/ValueObjects/StockQuantity.cs` · `Domain/Shipping/**` |
+| **C-01** | ۶۴ validator برای commandهای بدون اعتبارسنجی نوشته شد (Attribute، Auth، Brand، Cart، Category، Discount، Inventory، Media، Notification، Order، Payment، Product، Review، Shipping، User، Variant، Wallet، Wishlist)؛ یک دروازهٔ تست (`CommandValidatorCoverageTests`) تضمین می‌کند هر command دارای ورودی، validator داشته باشد | `Application/**/*Validator.cs` · `Tests/Architecture/CommandValidatorCoverageTests.cs` |
+| **C-02** | `PaginationBehavior` سراسری اضافه شد (سقف ۱۰۰ برای هر درخواست صفحه‌دار، حتی بدون validator)؛ صفحه‌بندی جعلی در `GetAllAttributeTypes` و `GetStates` واقعی شد؛ صفحه‌بندی اعلام‌نشده در سه query تحلیلی به سرویس منتقل شد | `Application/Common/Behaviors/PaginationBehavior.cs` · `Application/Common/Validation/PaginationDefaults.cs` |
+| **C-06** | سه قابلیت ساخته‌شده ولی غیرقابل دسترس به محصول متصل شدند: `PATCH /admin/products/{variantId}/price` · `PATCH /admin/orders/{id}` · `PATCH /admin/shipping/{id}/default`. فیلد `UserId` بی‌استفاده از `ChangePriceCommand` حذف شد (کاربر از `ICurrentUserService` می‌آید) | `Presentation/Product/Endpoints/AdminProductsController.cs` · `Presentation/Order/Endpoints/AdminOrdersController.cs` · `Presentation/Shipping/Endpoints/AdminShippingController.cs` |
+| **D-12** | گزارش‌های تحلیلی محدود و در SQL تجمیع شدند: بازهٔ گزارش به ۷۳۰ روز کلمپ می‌شود، تجمیع به‌جای materialize کردن در حافظه انجام می‌شود، نمودار فروش در SQL bucket می‌شود و فقط صفحهٔ خواسته‌شده منتقل می‌شود، و `GetTopSellingProducts` فیلتر بازهٔ تاریخ را که قبلاً نادیده می‌گرفت اکنون اعمال می‌کند | `Infrastructure/Analytics/QueryServices/AnalyticsQueryService.cs` · `Application/Analytics/Contracts/IAnalyticsQueryService.cs` |
+| **C-05** | `Shipping.RequestDeletion` اکنون وضعیت soft-delete را ثبت می‌کند و `Restore` آن را پاک می‌کند؛ فیلتر سراسری `!e.IsDeleted` به پیکربندی Shipping اضافه شد | `Domain/Shipping/Aggregates/Shipping.cs` · `Infrastructure/Shipping/Configurations/ShippingConfiguration.cs` |
+| **C-03** | هشت feature بدون dispatch حذف شد: `CreateOrderCommand` (مسیر دوم و بدون ذخیره‌سازی موجودی/پرداخت — یک تله)، `ReserveWalletCommand`، `AddToWishlistCommand` و پنج query خواندنی (`GetBrands`، `GetCategories`، `GetVariants`، `GetInventory`، `GetTicket`) | پوشه‌های `Application/**` و `Tests/**` مربوطه |
+| **C-04** | ۹ هندلر Wallet که `IRequestHandler` خام MediatR را مستقیم پیاده می‌کردند به `ICommandHandler`/`IQueryHandler` پروژه منتقل شدند تا قرارداد `ServiceResult`، تراکنش و audit را رعایت کنند | `Application/Wallet/**` |
+
+**وضعیت:** `dotnet build` بدون warning · `dotnet test` → ۱۰٬۰۵۹ پاس · ۱٬۵۳۶ skip · ۲۲ خطای پیش‌فرض محیط (دسترسی به پوشه temp) که پیش از این فاز نیز وجود داشت.
+
+---
+
 ## بخش ۰ — گزارش اجرا
 
 ### فاز ۱ — وضعیت: ✅ تکمیل شد
@@ -515,20 +532,20 @@ Infrastructure → Application → Domain
 
 ---
 
-### **فاز ۲ — توسعه‌های پربازده** (۲ تا ۳ هفته)
+### **فاز ۲ — توسعه‌های پربازده** (۲ تا ۳ هفته) — ✅ **تکمیل شد**
 
 **هدف:** اصلاح کیفیت قرارداد API و تکمیل سطوح حذف‌شده.
 
-| ترتیب | قابلیت | پیش‌نیاز | اجزا | خروجی | معیار اتمام | تست |
-|---|---|---|---|---|---|---|
-| 1 | **D-05** | تصمیم محصول | `HttpResultMapper.cs:46-56` + بازبینی ۷۷ فراخوانی | کدهای صحیح | هر ErrorType یک کد؛ هیچ `Failure` پیش‌فرض در cmdهای business | Unit theory کامل + snapshot سازگاری API |
-| 2 | **C-01** | — | ۱۲۳ validator جدید در ۴ ماژول صفر-validator + cmdهای پرخطر | پوشش ۱۰۰٪ cmdهای تغییر وضعیت | هیچ cmd مالی/privilege بدون validator | Application |
-| 3 | **C-02** | — | ۵ handler صفحه‌بندی + `PaginatedQuery` مشترک + سقف pageSize | صفحه‌بندی واقعی | `pageSize` نادیده گرفته نشود؛ سقف سراسری | Application + API |
-| 4 | **C-06** | تصمیم محصول | `ChangePriceCommand` + `UpdateOrderCommand` + `SetDefaultShippingCommand` → endpoint | ویرایش در دسترس | هر سه endpoint فعال با validator و سند | API + Regression |
-| 5 | **D-12** | داده واقعی | `AnalyticsQueryService.cs` | پرس‌وجوی محدود و SQL-محور | سقف بازه + `Take` + aggregation در SQL | Integration + Performance |
-| 6 | **C-05** | — | `Shipping.cs:165-192` · `OrderStatus.cs:137-140` | soft-delete یکدست | `IsDeleted`/`DeletedAt` ست شوند | Domain |
-| 7 | **C-03** | — | ۱۱ فیچر مرده | حذف یا wiring | هیچ feature بدون dispatch باقی نماند | — |
-| 8 | **C-04** | — | ۹ هندلر Wallet | قرارداد یکدست | همه `ICommandHandler`/`IQueryHandler` | Application |
+| ترتیب | قابلیت | پیش‌نیاز | اجزا | خروجی | معیار اتمام | تست | وضعیت |
+|---|---|---|---|---|---|---|---|
+| 1 | **D-05** | تصمیم محصول | `HttpResultMapper.cs:46-56` + بازبینی ۷۷ فراخوانی | کدهای صحیح | هر ErrorType یک کد؛ هیچ `Failure` پیش‌فرض در cmdهای business | Unit theory کامل + snapshot سازگاری API | ✅ |
+| 2 | **C-01** | — | ۱۲۳ validator جدید در ۴ ماژول صفر-validator + cmdهای پرخطر | پوشش ۱۰۰٪ cmdهای تغییر وضعیت | هیچ cmd مالی/privilege بدون validator | Application | ✅ |
+| 3 | **C-02** | — | ۵ handler صفحه‌بندی + `PaginatedQuery` مشترک + سقف pageSize | صفحه‌بندی واقعی | `pageSize` نادیده گرفته نشود؛ سقف سراسری | Application + API | ✅ |
+| 4 | **C-06** | تصمیم محصول | `ChangePriceCommand` + `UpdateOrderCommand` + `SetDefaultShippingCommand` → endpoint | ویرایش در دسترس | هر سه endpoint فعال با validator و سند | API + Regression | ✅ |
+| 5 | **D-12** | داده واقعی | `AnalyticsQueryService.cs` | پرس‌وجوی محدود و SQL-محور | سقف بازه + `Take` + aggregation در SQL | Integration + Performance | ✅ |
+| 6 | **C-05** | — | `Shipping.cs:165-192` · `OrderStatus.cs:137-140` | soft-delete یکدست | `IsDeleted`/`DeletedAt` ست شوند | Domain | ✅ |
+| 7 | **C-03** | — | ۱۱ فیچر مرده | حذف یا wiring | هیچ feature بدون dispatch باقی نماند | — | ✅ |
+| 8 | **C-04** | — | ۹ هندلر Wallet | قرارداد یکدست | همه `ICommandHandler`/`IQueryHandler` | Application | ✅ |
 
 ---
 

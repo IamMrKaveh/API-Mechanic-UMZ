@@ -1,9 +1,10 @@
+using Application.Common.Interfaces;
 ﻿using Application.Wallet.Features.Shared;
 
 namespace Application.Wallet.Features.Queries.GetFraudAlertById;
 
 public sealed class GetFraudAlertByIdHandler(IWalletFraudAlertQueryService queryService)
-    : IRequestHandler<GetFraudAlertByIdQuery, ServiceResult<WalletFraudAlertDto>>
+    : IQueryHandler<GetFraudAlertByIdQuery, WalletFraudAlertDto>
 {
     public async Task<ServiceResult<WalletFraudAlertDto>> Handle(
         GetFraudAlertByIdQuery request,

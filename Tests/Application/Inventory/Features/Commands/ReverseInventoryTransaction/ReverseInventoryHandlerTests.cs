@@ -48,7 +48,7 @@ public class ReverseInventoryHandlerTests : HandlerTestBase
             new ReverseInventoryCommand(inventory.VariantId.Value, "unknown-key", "reason"),
             CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith("Inventory.NotFound");
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
         await AuditService.DidNotReceiveWithAnyArgs().LogInventoryEventAsync(default!, default!, default!, default);
     }
@@ -65,7 +65,7 @@ public class ReverseInventoryHandlerTests : HandlerTestBase
             new ReverseInventoryCommand(inventory.VariantId.Value, "any", "reason"),
             CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith("Inventory.NotApplicable");
     }
 }
 

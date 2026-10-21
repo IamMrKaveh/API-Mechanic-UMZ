@@ -1,4 +1,4 @@
-﻿using Application.Common.Exceptions;
+using Application.Common.Exceptions;
 using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Order.Features.Shared;
 using Domain.Order.Interfaces;
@@ -59,7 +59,7 @@ public sealed class WalletCheckoutPaymentStrategy(
         }
         catch (InsufficientWalletBalanceException ex)
         {
-            return ServiceResult<CheckoutResultDto>.Failure(ex.Message);
+            return ServiceResult<CheckoutResultDto>.Failure(ex.Message, ErrorType.BusinessRule);
         }
         catch (WalletInactiveException)
         {
@@ -74,7 +74,7 @@ public sealed class WalletCheckoutPaymentStrategy(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<CheckoutResultDto>.Failure(ex.Message);
+            return ServiceResult<CheckoutResultDto>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 

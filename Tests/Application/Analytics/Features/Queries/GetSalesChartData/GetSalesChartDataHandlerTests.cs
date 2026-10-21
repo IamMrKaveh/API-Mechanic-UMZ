@@ -24,7 +24,7 @@ public class GetSalesChartDataHandlerTests
         var fresh = new PaginatedResult<SalesChartDataPointDto>(
             [new SalesChartDataPointDto { Label = "W23", OrderCount = 5 }], 1, 1, 10);
 
-        _analytics.GetSalesChartDataAsync(from, to, groupBy, Arg.Any<CancellationToken>())
+        _analytics.GetSalesChartDataAsync(from, to, groupBy, 1, 10, Arg.Any<CancellationToken>())
                   .Returns(fresh);
 
         var query = new GetSalesChartDataQuery(from, to, groupBy);
@@ -35,7 +35,7 @@ public class GetSalesChartDataHandlerTests
         result.Value.ShouldBeSameAs(fresh);
 
         await _analytics.Received(1).GetSalesChartDataAsync(
-            from, to, groupBy, Arg.Any<CancellationToken>());
+            from, to, groupBy, 1, 10, Arg.Any<CancellationToken>());
     }
 
 }

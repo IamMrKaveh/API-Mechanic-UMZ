@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Application.Common.Options;
 using Application.Payment.Features.Shared;
 using Application.Wallet.Features.Shared;
@@ -19,7 +20,7 @@ public sealed class InitiateWalletTopUpHandler(
     IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider,
     IOptions<ApiBaseUrlOptions> apiOptions)
-    : IRequestHandler<InitiateWalletTopUpCommand, ServiceResult<InitiateTopUpResultDto>>
+    : ICommandHandler<InitiateWalletTopUpCommand, InitiateTopUpResultDto>
 {
     private static readonly TimeSpan LockExpiry = TimeSpan.FromSeconds(30);
     private readonly ApiBaseUrlOptions _apiOptions = apiOptions.Value;
@@ -97,7 +98,7 @@ public sealed class InitiateWalletTopUpHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<InitiateTopUpResultDto>.Failure(ex.Message);
+            return ServiceResult<InitiateTopUpResultDto>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 

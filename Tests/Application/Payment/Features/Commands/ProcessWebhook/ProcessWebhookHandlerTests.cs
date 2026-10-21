@@ -48,7 +48,7 @@ public class ProcessWebhookHandlerTests
 
         var result = await _sut.Handle(new ProcessWebhookCommand("A123", "OK", null), CancellationToken.None);
 
-        result.ShouldFailWithType(ErrorType.Failure);
+        result.ShouldFailWithType(ErrorType.ExternalService);
     }
 
     [Fact]
@@ -60,6 +60,6 @@ public class ProcessWebhookHandlerTests
 
         var result = await _sut.Handle(new ProcessWebhookCommand("A123", "OK", null), CancellationToken.None);
 
-        result.ShouldFailWithType(ErrorType.Failure);
+        result.ShouldFailWithType(ErrorType.BusinessRule);
     }
 }

@@ -320,7 +320,7 @@ public class ShippingTests
         var sut = new ShippingBuilder().AsDeleted().Build();
 
         sut.ValidateForOrder(Money.FromDecimal(1_000_000m))
-            .ShouldFailWith("400");
+            .ShouldFailWith("Shipping.Inactive");
     }
 
     [Fact]
@@ -393,6 +393,33 @@ public class ShippingTests
         var evt = sut.DomainEvents.Single().ShouldBeOfType<ShippingDeletedEvent>();
         evt.ShippingId.ShouldBe(sut.Id);
         evt.DeletedBy.ShouldBe(deletedBy);
+    }
+
+    [Fact]
+    public void RequestDeletion_RecordsTheSoftDeleteState()
+    {
+        var deletedBy = UserId.NewId();
+        var sut = new ShippingBuilder().ClearEventsAfterBuild().Build();
+
+        sut.RequestDeletion(deletedBy);
+
+        sut.IsDeleted.ShouldBeTrue();
+        sut.DeletedAt.ShouldNotBeNull();
+        sut.DeletedBy.ShouldBe(deletedBy.Value);
+    }
+
+    [Fact]
+    public void Restore_ClearsTheSoftDeleteState()
+    {
+        var sut = new ShippingBuilder().ClearEventsAfterBuild().Build();
+        sut.RequestDeletion(UserId.NewId());
+
+        sut.Restore();
+
+        sut.IsActive.ShouldBeTrue();
+        sut.IsDeleted.ShouldBeFalse();
+        sut.DeletedAt.ShouldBeNull();
+        sut.DeletedBy.ShouldBeNull();
     }
 
     [Fact]

@@ -71,7 +71,7 @@ public class AdjustStockHandlerTests : HandlerTestBase
             new AdjustStockCommand(inventory.VariantId.Value, 3, "reason"),
             CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith("Inventory.NotApplicable");
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
         await AuditService.DidNotReceiveWithAnyArgs().LogInventoryEventAsync(default!, default!, default!, default);
     }

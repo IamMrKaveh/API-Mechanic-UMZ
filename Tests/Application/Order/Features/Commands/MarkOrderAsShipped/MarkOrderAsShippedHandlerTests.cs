@@ -58,7 +58,7 @@ public class MarkOrderAsShippedHandlerTests
 
         var result = await _sut.Handle(new MarkOrderAsShippedCommand(order.Id.Value, null), CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.BusinessRule);
         _orderRepository.DidNotReceive().Update(Arg.Any<Orders>(), Arg.Any<byte[]?>());
     }
 

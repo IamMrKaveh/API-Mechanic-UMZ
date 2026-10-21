@@ -1,4 +1,4 @@
-﻿using Domain.Shipping.Interfaces;
+using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
 
 namespace Application.Shipping.Features.Commands.SetDefaultShipping;
@@ -30,7 +30,7 @@ public class SetDefaultShippingHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

@@ -7,7 +7,7 @@ namespace Application.Wallet.Features.Queries.GetFraudAlerts;
 public sealed class GetFraudAlertsHandler(
     IWalletFraudAlertQueryService queryService,
     ICurrentUserService currentUserService)
-    : IRequestHandler<GetFraudAlertsQuery, ServiceResult<PaginatedResult<WalletFraudAlertDto>>>
+    : IQueryHandler<GetFraudAlertsQuery, PaginatedResult<WalletFraudAlertDto>>
 {
     public async Task<ServiceResult<PaginatedResult<WalletFraudAlertDto>>> Handle(
         GetFraudAlertsQuery request,

@@ -29,7 +29,7 @@ public class AdminSendNotificationHandler(
         }
 
         if (request.UserId is null)
-            return ServiceResult.Failure("شناسه کاربر الزامی است.");
+            return ServiceResult.Validation("شناسه کاربر الزامی است.");
 
         var userId = UserId.From(request.UserId.Value);
         await notificationService.CreateNotificationAsync(

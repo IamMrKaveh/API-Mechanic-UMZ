@@ -50,7 +50,7 @@ public class AtomicRefundPaymentHandlerTests
             new AtomicRefundPaymentCommand(order.Id.Value, "customer request"),
             CancellationToken.None);
 
-        result.ShouldFailWithType(ErrorType.Failure);
+        result.ShouldFailWithType(ErrorType.Conflict);
         await _paymentRepository.DidNotReceiveWithAnyArgs().GetVerifiedByOrderIdAsync(default!, default);
         _orderRepository.DidNotReceive().Update(Arg.Any<Orders>(), Arg.Any<byte[]?>());
         _paymentRepository.DidNotReceive().Update(Arg.Any<PaymentTransactions>());

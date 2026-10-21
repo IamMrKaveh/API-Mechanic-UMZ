@@ -107,7 +107,7 @@ public class SetDefaultShippingHandlerTests
 
         var result = await _sut.Handle(new SetDefaultShippingCommand(shipping.Id.Value), CancellationToken.None);
 
-        result.ShouldFailWithType(ErrorType.Failure);
+        result.ShouldFailWithType(ErrorType.BusinessRule);
         shipping.IsDefault.ShouldBeFalse();
         _shippingRepository.DidNotReceive().Update(shipping);
     }

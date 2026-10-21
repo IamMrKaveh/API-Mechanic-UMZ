@@ -94,7 +94,7 @@ public class ConfirmDeliveryHandlerTests : HandlerTestBase
 
         var result = await _sut.Handle(new ConfirmDeliveryCommand(order.Id.Value, null), CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.BusinessRule);
         _orderRepository.DidNotReceive().Update(Arg.Any<Orders>(), Arg.Any<byte[]?>());
     }
 

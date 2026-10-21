@@ -45,7 +45,7 @@ public class ConfirmDeliveryHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
         catch (ConcurrencyException)
         {

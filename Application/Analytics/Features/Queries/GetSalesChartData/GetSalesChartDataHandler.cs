@@ -11,7 +11,7 @@ public sealed class GetSalesChartDataHandler(
         CancellationToken ct)
     {
         var result = await analyticsQuery.GetSalesChartDataAsync(
-            request.FromDate, request.ToDate, request.GroupBy, ct);
+            request.FromDate, request.ToDate, request.GroupBy, request.Page, request.PageSize, ct);
 
         return ServiceResult<PaginatedResult<SalesChartDataPointDto>>.Success(result);
     }

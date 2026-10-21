@@ -95,7 +95,7 @@ public class CancelOrderHandlerTests : HandlerTestBase
 
         var result = await _sut.Handle(new CancelOrderCommand(order.Id.Value, "reason", null), CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith("Order.NotCancellable");
         _orderRepository.DidNotReceive().Update(Arg.Any<Orders>(), Arg.Any<byte[]?>());
     }
 

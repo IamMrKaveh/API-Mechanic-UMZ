@@ -294,7 +294,7 @@ public class InventoryTests
 
         var result = sut.DecreaseStock(10, "sold", DateTime.UtcNow);
 
-        result.ShouldFailWith("400");
+        result.ShouldFailWith("StockQuantity.Insufficient");
         result.ShouldFailWithType(ErrorType.Validation);
         sut.StockQuantity.Value.ShouldBe(5);
     }
@@ -386,7 +386,7 @@ public class InventoryTests
 
         var result = sut.ReserveStock(StockQuantity.Create(10), "REF", DateTime.UtcNow);
 
-        result.ShouldFailWith("400");
+        result.ShouldFailWith("StockQuantity.Insufficient");
         sut.ReservedQuantity.Value.ShouldBe(0);
     }
 

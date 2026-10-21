@@ -54,3 +54,8 @@ public record UpdateProductDetailsRequest(
 
 public record BulkUpdatePricesRequest(
     ICollection<VariantPriceUpdateInput> Updates);
+
+public record ChangePriceRequest(
+    Guid ProductId,
+    decimal SellingPrice,
+    decimal OriginalPrice);

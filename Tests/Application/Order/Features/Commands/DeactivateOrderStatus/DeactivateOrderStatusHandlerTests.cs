@@ -63,7 +63,7 @@ public class DeactivateOrderStatusHandlerTests
 
         var result = await _sut.Handle(new DeactivateOrderStatusCommand(status.Id.Value), CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.BusinessRule);
         _repository.DidNotReceive().Update(Arg.Any<OrderStatus>(), Arg.Any<byte[]?>());
     }
 }

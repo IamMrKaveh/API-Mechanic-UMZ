@@ -11,7 +11,7 @@ public sealed class GetTopSellingProductsHandler(
         CancellationToken ct)
     {
         var result = await analyticsQuery.GetTopSellingProductsAsync(
-            request.Count, request.FromDate, request.ToDate, ct);
+            request.Count, request.FromDate, request.ToDate, request.Page, request.PageSize, ct);
 
         return ServiceResult<PaginatedResult<TopSellingProductDto>>.Success(result);
     }

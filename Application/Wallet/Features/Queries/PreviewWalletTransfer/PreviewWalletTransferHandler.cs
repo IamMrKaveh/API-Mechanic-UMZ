@@ -1,3 +1,4 @@
+using Application.Common.Interfaces;
 using Application.Wallet.Features.Shared;
 using Application.Wallet.Options;
 using Domain.User.Interfaces;
@@ -13,7 +14,7 @@ public sealed class PreviewWalletTransferHandler(
     IWalletTransferRepository transferRepository,
     IOptions<WalletTransferOptions> options,
     ICurrentUserService currentUserService)
-    : IRequestHandler<PreviewWalletTransferQuery, ServiceResult<WalletTransferPreviewDto>>
+    : IQueryHandler<PreviewWalletTransferQuery, WalletTransferPreviewDto>
 {
     private readonly WalletTransferOptions _options = options.Value;
 
@@ -30,7 +31,7 @@ public sealed class PreviewWalletTransferHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<WalletTransferPreviewDto>.Failure(ex.Message);
+            return ServiceResult<WalletTransferPreviewDto>.Failure(ex.Message, ErrorType.BusinessRule);
         }
 
         var recipientResult = await (userRepository.GetByPhoneNumberAsync(recipientPhone, ct)).OrNotFoundAsync("کاربری با این شماره یافت نشد.");

@@ -33,7 +33,7 @@ public class RemoveStockHandler(
         var result = InventoryDomainService.DecreaseStock(inventory, stock, request.Notes, dateTimeProvider.UtcNow, userId);
 
         if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
+            return ServiceResult.Failure(result.Error);
 
         inventoryRepository.Update(inventory);
 

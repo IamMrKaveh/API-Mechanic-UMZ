@@ -28,9 +28,9 @@ public class HttpResultMapperTests
     [InlineData(ErrorType.Conflict, 409)]
     [InlineData(ErrorType.RateLimitExceeded, 429)]
     [InlineData(ErrorType.BusinessRule, 422)]
-    [InlineData(ErrorType.Failure, 500)]
+    [InlineData(ErrorType.Failure, 400)]
     [InlineData(ErrorType.Infrastructure, 500)]
-    [InlineData(ErrorType.ExternalService, 500)]
+    [InlineData(ErrorType.ExternalService, 502)]
     [InlineData(ErrorType.Unexpected, 500)]
     public void Map_Failure_ReturnsExpectedStatusCode(ErrorType type, int expectedStatus)
     {

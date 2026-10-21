@@ -43,12 +43,12 @@ public class GetAllAttributeTypesHandlerTests
         result.Value.Items.Count.ShouldBe(2);
         result.Value.TotalCount.ShouldBe(2);
         result.Value.Page.ShouldBe(1);
-        result.Value.PageSize.ShouldBe(2);
+        result.Value.PageSize.ShouldBe(10);
         await _repository.Received(1).GetAllAttributeTypesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_WhenRepositoryReturnsNoItems_ReturnsSuccessWithZeroTotalAndPageSizeOne()
+    public async Task Handle_WhenRepositoryReturnsNoItems_ReturnsSuccessWithZeroTotal()
     {
         _repository
             .GetAllAttributeTypesAsync(Arg.Any<CancellationToken>())
@@ -62,6 +62,6 @@ public class GetAllAttributeTypesHandlerTests
         result.Value.Items.ShouldBeEmpty();
         result.Value.TotalCount.ShouldBe(0);
         result.Value.Page.ShouldBe(1);
-        result.Value.PageSize.ShouldBe(1);
+        result.Value.PageSize.ShouldBe(10);
     }
 }

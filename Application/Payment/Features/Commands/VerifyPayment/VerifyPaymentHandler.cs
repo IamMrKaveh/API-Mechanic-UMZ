@@ -38,11 +38,11 @@ public class VerifyPaymentHandler(
         }
         catch (PaymentNotVerifiableException ex)
         {
-            return ServiceResult<PaymentVerificationResult>.Failure(ex.Message);
+            return ServiceResult<PaymentVerificationResult>.Failure(ex.Message, ErrorType.BusinessRule);
         }
         catch (ExternalServiceException ex)
         {
-            return ServiceResult<PaymentVerificationResult>.Failure(ex.Message);
+            return ServiceResult<PaymentVerificationResult>.Failure(ex.Message, ErrorType.ExternalService);
         }
 
         if (result.TransactionId.HasValue)

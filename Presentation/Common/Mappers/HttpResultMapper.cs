@@ -46,12 +46,18 @@ public sealed class HttpResultMapper : IHttpResultMapper
     private static int MapStatusCode(ErrorType type) => type switch
     {
         ErrorType.Validation => StatusCodes.Status400BadRequest,
+        // A generic failure is a rejected business request, not a server fault.
+        // Handlers that mean "not found" or "conflict" say so explicitly.
+        ErrorType.Failure => StatusCodes.Status400BadRequest,
         ErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
         ErrorType.Forbidden => StatusCodes.Status403Forbidden,
         ErrorType.NotFound => StatusCodes.Status404NotFound,
         ErrorType.Conflict => StatusCodes.Status409Conflict,
         ErrorType.RateLimitExceeded => StatusCodes.Status429TooManyRequests,
         ErrorType.BusinessRule => StatusCodes.Status422UnprocessableEntity,
+        ErrorType.Infrastructure => StatusCodes.Status500InternalServerError,
+        ErrorType.ExternalService => StatusCodes.Status502BadGateway,
+        ErrorType.Unexpected => StatusCodes.Status500InternalServerError,
         _ => StatusCodes.Status500InternalServerError
     };
 

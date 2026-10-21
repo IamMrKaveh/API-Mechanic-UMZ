@@ -47,7 +47,7 @@ public class RecordDamageHandlerTests : HandlerTestBase
             new RecordDamageCommand(inventory.VariantId.Value, 1, "broken"),
             CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith("Inventory.NotApplicable");
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
     }
 

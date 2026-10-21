@@ -37,7 +37,7 @@ public class UpdateOrderStatusHandler(
         }
         catch (DomainException)
         {
-            return ServiceResult.Failure("وضعیت سفارش نامعتبر است.");
+            return ServiceResult.Validation("وضعیت سفارش نامعتبر است.");
         }
 
         if (!order.Status.CanTransitionTo(newStatus))
@@ -64,7 +64,7 @@ public class UpdateOrderStatusHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
 
         orderRepository.Update(order, rowVersion);

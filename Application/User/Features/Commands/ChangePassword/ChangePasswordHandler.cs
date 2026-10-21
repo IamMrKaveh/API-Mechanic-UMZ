@@ -21,7 +21,7 @@ public class ChangePasswordHandler(
         var user = userResult.Value;
 
         if (!passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
-            return ServiceResult.Failure("رمز عبور فعلی نادرست است.");
+            return ServiceResult.Validation("رمز عبور فعلی نادرست است.");
 
         var newHash = passwordHasher.Hash(request.NewPassword);
         user.ChangePasswordHash(newHash);

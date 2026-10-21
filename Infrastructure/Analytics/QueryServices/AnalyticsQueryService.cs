@@ -1,12 +1,19 @@
 using System.Globalization;
 using Application.Analytics.Contracts;
 using Application.Analytics.Features.Shared;
+using Application.Common.Validation;
 
 namespace Infrastructure.Analytics.QueryServices;
 
 public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQueryService
 {
     private const int LowStockDefaultThreshold = 5;
+
+    /// <summary>
+    /// The longest period a report may cover. A wider range has to be narrowed
+    /// by the caller, otherwise the report has to read the whole table.
+    /// </summary>
+    private const int MaxReportRangeDays = 730;
 
     public async Task<DashboardStatisticsDto> GetDashboardStatisticsAsync(
         DateTime? from,
@@ -44,43 +51,46 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
         DateTime to,
         CancellationToken ct = default)
     {
-        var rows = await context.Orders
+        var (fromDate, toDate) = ClampRange(from, to);
+
+        var totals = await context.Orders
             .AsNoTracking()
-            .Where(o => o.CreatedAt >= from && o.CreatedAt <= to)
-            .Select(o => new
+            .Where(o => o.CreatedAt >= fromDate && o.CreatedAt <= toDate)
+            .GroupBy(_ => 1)
+            .Select(g => new
             {
-                FinalAmount = o.FinalAmount.Amount,
-                DiscountAmount = o.DiscountAmount.Amount,
-                ShippingCost = o.ShippingCost.Amount,
-                o.Status
+                GrossRevenue = g.Sum(o => o.FinalAmount.Amount),
+                TotalDiscounts = g.Sum(o => o.DiscountAmount.Amount),
+                TotalShipping = g.Sum(o => o.ShippingCost.Amount),
+                TotalOrders = g.Count()
+            })
+            .FirstOrDefaultAsync(ct);
+
+        var byStatus = await context.Orders
+            .AsNoTracking()
+            .Where(o => o.CreatedAt >= fromDate && o.CreatedAt <= toDate)
+            .GroupBy(o => o.Status)
+            .Select(g => new RevenueByStatusDto
+            {
+                Status = g.Key.ToString(),
+                Count = g.Count(),
+                Amount = g.Sum(o => o.FinalAmount.Amount)
             })
             .ToListAsync(ct);
 
-        var grossRevenue = rows.Sum(o => o.FinalAmount);
-        var totalDiscounts = rows.Sum(o => o.DiscountAmount);
-        var totalShipping = rows.Sum(o => o.ShippingCost);
-        var netRevenue = grossRevenue - totalDiscounts;
-        var totalOrders = rows.Count;
+        var grossRevenue = totals?.GrossRevenue ?? 0m;
+        var totalDiscounts = totals?.TotalDiscounts ?? 0m;
+        var totalOrders = totals?.TotalOrders ?? 0;
         var avgOrderValue = totalOrders > 0 ? grossRevenue / totalOrders : 0;
-
-        var byStatus = rows
-            .GroupBy(o => o.Status.ToString())
-            .Select(g => new RevenueByStatusDto
-            {
-                Status = g.Key,
-                Count = g.Count(),
-                Amount = g.Sum(o => o.FinalAmount)
-            })
-            .ToList();
 
         return new RevenueReportDto
         {
-            FromDate = from,
-            ToDate = to,
+            FromDate = fromDate,
+            ToDate = toDate,
             GrossRevenue = grossRevenue,
             TotalDiscounts = totalDiscounts,
-            TotalShippingIncome = totalShipping,
-            NetRevenue = netRevenue,
+            TotalShippingIncome = totals?.TotalShipping ?? 0m,
+            NetRevenue = grossRevenue - totalDiscounts,
             TotalOrders = totalOrders,
             AverageOrderValue = avgOrderValue,
             ByStatus = byStatus
@@ -121,9 +131,24 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
         int count,
         DateTime? fromDate,
         DateTime? toDate,
+        int page,
+        int pageSize,
         CancellationToken ct = default)
     {
-        var data = await context.OrderItems
+        var (from, to) = ClampRange(fromDate, toDate);
+        var size = Math.Clamp(pageSize, 1, PaginationDefaults.MaxPageSize);
+        var currentPage = Math.Max(1, page);
+
+        var query = context.OrderItems
+            .AsNoTracking()
+            .Where(oi => oi.Order.CreatedAt >= from && oi.Order.CreatedAt <= to);
+
+        var totalCount = await query
+            .GroupBy(oi => new { oi.ProductId, oi.ProductName, oi.Sku })
+            .Select(g => g.Key)
+            .CountAsync(ct);
+
+        var data = await query
             .GroupBy(oi => new { oi.ProductId, oi.ProductName, oi.Sku })
             .Select(g => new TopSellingProductDto
             {
@@ -135,26 +160,23 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
                 OrderCount = g.Count()
             })
             .OrderByDescending(x => x.TotalQuantitySold)
-            .Take(count)
-            .AsNoTracking()
+            .Skip((currentPage - 1) * size)
+            .Take(Math.Min(size, Math.Max(1, count)))
             .ToListAsync(ct);
 
-        return new PaginatedResult<TopSellingProductDto>
-        {
-            Items = data,
-            TotalCount = data.Count,
-            Page = 1,
-            PageSize = count
-        };
+        return PaginatedResult<TopSellingProductDto>.Create(data, totalCount, currentPage, size);
     }
 
     public async Task<PaginatedResult<CategoryPerformanceDto>> GetCategoryPerformanceAsync(
         DateTime? from,
         DateTime? to,
+        int page,
+        int pageSize,
         CancellationToken ct = default)
     {
-        var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
-        var toDate = to ?? DateTime.UtcNow;
+        var (fromDate, toDate) = ClampRange(from, to);
+        var size = Math.Clamp(pageSize, 1, PaginationDefaults.MaxPageSize);
+        var currentPage = Math.Max(1, page);
 
         var data = await context.OrderItems
             .Join(context.Products,
@@ -183,34 +205,58 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
                 OrderCount = g.Select(x => x.OrderId).Distinct().Count()
             })
             .OrderByDescending(x => x.TotalRevenue)
+            .Skip((currentPage - 1) * size)
+            .Take(size)
             .AsNoTracking()
             .ToListAsync(ct);
 
-        return new PaginatedResult<CategoryPerformanceDto>
-        {
-            Items = data,
-            TotalCount = data.Count,
-            Page = 1,
-            PageSize = data.Count
-        };
+        var totalCount = await context.OrderItems
+            .Join(context.Products,
+                oi => oi.ProductId,
+                p => p.Id,
+                (oi, p) => new { oi, p.Brand })
+            .Where(x => x.Brand != null)
+            .Join(context.Categories,
+                x => x.Brand!.CategoryId,
+                c => c.Id,
+                (x, c) => new
+                {
+                    CategoryId = c.Id,
+                    CategoryName = c.Name.Value,
+                    x.oi.OrderId,
+                    x.oi.Order.CreatedAt
+                })
+            .Where(x => x.CreatedAt >= fromDate && x.CreatedAt <= toDate)
+            .GroupBy(x => new { x.CategoryId, x.CategoryName })
+            .Select(g => g.Key)
+            .CountAsync(ct);
+
+        return PaginatedResult<CategoryPerformanceDto>.Create(data, totalCount, currentPage, size);
     }
 
     public async Task<PaginatedResult<SalesChartDataPointDto>> GetSalesChartDataAsync(
         DateTime fromDate,
         DateTime toDate,
         string groupBy,
+        int page,
+        int pageSize,
         CancellationToken ct = default)
     {
-        var orders = await context.Orders
-            .Where(o => o.CreatedAt >= fromDate && o.CreatedAt <= toDate)
+        var (from, to) = ClampRange(fromDate, toDate);
+        var size = Math.Clamp(pageSize, 1, PaginationDefaults.MaxPageSize);
+        var currentPage = Math.Max(1, page);
+
+        // The bucket is chosen in SQL, so only the requested page of buckets is
+        // transferred instead of every order in the range.
+        var orders = context.Orders
+            .AsNoTracking()
+            .Where(o => o.CreatedAt >= from && o.CreatedAt <= to)
             .Select(o => new
             {
                 o.CreatedAt,
                 Revenue = o.FinalAmount.Amount,
                 ItemCount = o.OrderItems.Sum(i => i.Quantity)
-            })
-            .AsNoTracking()
-            .ToListAsync(ct);
+            });
 
         var grouped = groupBy.ToLowerInvariant() switch
         {
@@ -219,24 +265,51 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
             _ => orders.GroupBy(o => o.CreatedAt.Date)
         };
 
-        var data = grouped
-            .Select(g => new SalesChartDataPointDto
+        var buckets = grouped
+            .Select(g => new
             {
                 Date = g.Key,
-                Label = g.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 OrderCount = g.Count(),
                 Revenue = g.Sum(x => x.Revenue),
                 ItemsSold = g.Sum(x => x.ItemCount)
             })
-            .OrderBy(x => x.Date)
-            .ToList();
+            .OrderBy(x => x.Date);
 
-        return new PaginatedResult<SalesChartDataPointDto>
-        {
-            Items = data,
-            TotalCount = data.Count,
-            Page = 1,
-            PageSize = data.Count
-        };
+        var totalCount = await buckets.CountAsync(ct);
+
+        var data = await buckets
+            .Skip((currentPage - 1) * size)
+            .Take(size)
+            .Select(x => new SalesChartDataPointDto
+            {
+                Date = x.Date,
+                Label = x.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                OrderCount = x.OrderCount,
+                Revenue = x.Revenue,
+                ItemsSold = x.ItemsSold
+            })
+            .ToListAsync(ct);
+
+        return PaginatedResult<SalesChartDataPointDto>.Create(data, totalCount, currentPage, size);
+    }
+
+    /// <summary>
+    /// Narrows a requested period to the widest range a report may cover, and
+    /// orders the bounds when the caller passed them the wrong way round.
+    /// </summary>
+    private static (DateTime From, DateTime To) ClampRange(DateTime? from, DateTime? to)
+    {
+        var toDate = to ?? DateTime.UtcNow;
+        var fromDate = from ?? toDate.AddDays(-30);
+
+        if (fromDate > toDate)
+            (fromDate, toDate) = (toDate, fromDate);
+
+        var maxRange = TimeSpan.FromDays(MaxReportRangeDays);
+
+        if (toDate - fromDate > maxRange)
+            fromDate = toDate - maxRange;
+
+        return (fromDate, toDate);
     }
 }

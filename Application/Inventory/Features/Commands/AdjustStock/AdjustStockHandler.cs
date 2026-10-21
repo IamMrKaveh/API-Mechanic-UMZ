@@ -24,7 +24,7 @@ public class AdjustStockHandler(
         var result = inventory.AdjustStock(request.QuantityChange, userId, request.Reason, dateTimeProvider.UtcNow);
 
         if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
+            return ServiceResult.Failure(result.Error);
 
         inventoryRepository.Update(inventory);
 

@@ -27,7 +27,7 @@ public sealed class CancelWithdrawalHandler(
             var withdrawal = withdrawalResult.Value;
 
             if (!withdrawal.UserId.Equals(userId))
-                return ServiceResult<Unit>.Failure("شما مجاز به لغو این درخواست نیستید.");
+                return ServiceResult<Unit>.Forbidden("شما مجاز به لغو این درخواست نیستید.");
 
             var walletResult = await (walletRepository.GetByUserIdForUpdateAsync(userId, ct)).OrNotFoundAsync("کیف پول یافت نشد.");
             if (walletResult.IsFailure) return walletResult.Error;
@@ -52,7 +52,7 @@ public sealed class CancelWithdrawalHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<Unit>.Failure(ex.Message);
+            return ServiceResult<Unit>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

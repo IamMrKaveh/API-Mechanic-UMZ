@@ -91,7 +91,7 @@ public class RequestReturnHandlerTests : HandlerTestBase
 
         var result = await _sut.Handle(new RequestReturnCommand(order.Id.Value, "reason", null), CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.BusinessRule);
         _orderRepository.DidNotReceive().Update(Arg.Any<Orders>(), Arg.Any<byte[]?>());
         await _notificationService.DidNotReceiveWithAnyArgs().SendOrderStatusNotificationAsync(default!, default!, default!, default!, default);
     }

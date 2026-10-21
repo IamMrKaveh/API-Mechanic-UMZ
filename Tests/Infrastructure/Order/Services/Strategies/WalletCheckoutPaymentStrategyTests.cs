@@ -141,7 +141,7 @@ public class WalletCheckoutPaymentStrategyTests : HandlerTestBase
             NewOrderResult(order.Id.Value), order.Id, userId, Money.FromDecimal(150_000m),
             "127.0.0.1", null, Guid.NewGuid(), CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith(ErrorCode.BusinessRule);
         order.IsPaid.ShouldBeFalse();
     }
 

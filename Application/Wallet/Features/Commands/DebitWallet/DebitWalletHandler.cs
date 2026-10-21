@@ -67,7 +67,7 @@ public class DebitWalletHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<Unit>.Failure(ex.Message);
+            return ServiceResult<Unit>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

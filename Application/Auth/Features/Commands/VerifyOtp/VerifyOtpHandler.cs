@@ -1,4 +1,4 @@
-﻿using Application.Auth.Features.Shared;
+using Application.Auth.Features.Shared;
 using Application.User.Features.Shared;
 using Domain.Security.Interfaces;
 using Domain.Security.ValueObjects;
@@ -63,7 +63,7 @@ public class VerifyOtpHandler(
                 _authOptions.MaxFailedLoginAttempts,
                 TimeSpan.FromMinutes(_authOptions.LockoutDurationMinutes));
             userRepository.Update(user);
-            return ServiceResult<AuthResult>.Failure(ex.Message);
+            return ServiceResult<AuthResult>.Failure(ex.Message, ErrorType.BusinessRule);
         }
 
         otpRepository.Update(otp);

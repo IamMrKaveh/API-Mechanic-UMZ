@@ -1,4 +1,4 @@
-﻿using Application.Audit.Contracts;
+using Application.Audit.Contracts;
 using Application.Common.Interfaces;
 using Application.Inventory.Features.Commands.RemoveStock;
 using Domain.Inventory.Interfaces;
@@ -106,7 +106,7 @@ public class RemoveStockHandlerTests : HandlerTestBase
             new RemoveStockCommand(variant.Id.Value, 5, "notes"),
             CancellationToken.None);
 
-        result.ShouldFailWith(ErrorCode.Failure);
+        result.ShouldFailWith("StockQuantity.Insufficient");
         _inventoryRepository.DidNotReceiveWithAnyArgs().Update(default!);
     }
 }

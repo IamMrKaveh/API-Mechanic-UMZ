@@ -48,7 +48,7 @@ public class RequestReturnHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult.Failure(ex.Message);
+            return ServiceResult.Failure(ex.Message, ErrorType.BusinessRule);
         }
 
         orderRepository.Update(order, rowVersion);

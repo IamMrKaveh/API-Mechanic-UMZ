@@ -30,7 +30,7 @@ public sealed class InventoryService(
 
         var result = inventory.ReserveStock(quantity, referenceNumber, dateTimeProvider.UtcNow, orderItemId);
         if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
+            return ServiceResult.Failure(result.Error);
 
         inventoryRepository.Update(inventory);
 
@@ -58,7 +58,7 @@ public sealed class InventoryService(
 
         var result = inventory.ReleaseReservation(quantity, referenceNumber, dateTimeProvider.UtcNow, reason);
         if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
+            return ServiceResult.Failure(result.Error);
 
         inventoryRepository.Update(inventory);
 
@@ -86,7 +86,7 @@ public sealed class InventoryService(
 
         var result = inventory.AdjustStock(quantityChange, userId, reason, dateTimeProvider.UtcNow);
         if (result.IsFailure)
-            return ServiceResult.Failure(result.Error.Message);
+            return ServiceResult.Failure(result.Error);
 
         inventoryRepository.Update(inventory);
 

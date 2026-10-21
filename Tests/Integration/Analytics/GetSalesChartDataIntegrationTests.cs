@@ -37,7 +37,7 @@ public class GetSalesChartDataIntegrationTests(PostgresContainerFixture fixture)
         var from = DateTime.UtcNow.AddDays(-30);
         var to = DateTime.UtcNow;
 
-        var result = await _sut.GetSalesChartDataAsync(from, to, groupBy, CancellationToken.None);
+        var result = await _sut.GetSalesChartDataAsync(from, to, groupBy, 1, 10, CancellationToken.None);
 
         result.ShouldNotBeNull();
         result.Items.ShouldNotBeNull();

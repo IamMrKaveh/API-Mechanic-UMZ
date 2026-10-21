@@ -28,7 +28,6 @@ public class ChangePriceHandlerTests
         var command = new ChangePriceCommand(
             Guid.NewGuid(),
             Guid.NewGuid(),
-            Guid.NewGuid(),
             100_000m,
             120_000m);
 
@@ -52,7 +51,6 @@ public class ChangePriceHandlerTests
         var command = new ChangePriceCommand(
             Guid.NewGuid(),
             variant.Id.Value,
-            Guid.NewGuid(),
             100_000m,
             120_000m);
 
@@ -79,7 +77,6 @@ public class ChangePriceHandlerTests
         var command = new ChangePriceCommand(
             productId.Value,
             variant.Id.Value,
-            Guid.NewGuid(),
             100_000m,
             120_000m);
 
@@ -107,7 +104,6 @@ public class ChangePriceHandlerTests
         var command = new ChangePriceCommand(
             productId.Value,
             variant.Id.Value,
-            Guid.NewGuid(),
             100_000m,
             100_000m);
 

@@ -66,7 +66,7 @@ public sealed class RequestWalletDebitHandler(
         }
         catch (DomainException ex)
         {
-            return ServiceResult<Guid>.Failure(ex.Message);
+            return ServiceResult<Guid>.Failure(ex.Message, ErrorType.BusinessRule);
         }
     }
 }

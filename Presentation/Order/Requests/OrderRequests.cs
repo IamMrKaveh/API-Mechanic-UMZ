@@ -37,6 +37,8 @@ public record MarkAsShippedRequest(string? TrackingNumber = null);
 
 public record UpdateOrderStatusByIdRequest(string NewStatus);
 
+public record UpdateOrderByIdRequest(Guid? ShippingId);
+
 public record AdminCreateOrderRequest(
     Guid UserId,
     Guid ShippingId,

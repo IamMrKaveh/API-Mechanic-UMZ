@@ -9,13 +9,11 @@ public class ChangePriceValidatorTests
     private static ChangePriceCommand ValidCommand(
         Guid? productId = null,
         Guid? variantId = null,
-        Guid? userId = null,
         decimal sellingPrice = 100_000m,
         decimal originalPrice = 120_000m)
         => new(
             productId ?? Guid.NewGuid(),
             variantId ?? Guid.NewGuid(),
-            userId ?? Guid.NewGuid(),
             sellingPrice,
             originalPrice);
 

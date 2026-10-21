@@ -1,4 +1,4 @@
-﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Domain.Order.ValueObjects;
 using Domain.Shipping.Interfaces;
 using Domain.Shipping.ValueObjects;
@@ -28,7 +28,7 @@ public class CheckoutShippingValidatorService(
         var validation = shipping.ValidateForOrder(orderTotal);
 
         if (!validation.IsSuccess)
-            return ServiceResult<Money>.Failure(validation.Error.Message);
+            return ServiceResult<Money>.Failure(validation.Error);
 
         if (items is null || items.Count == 0)
         {

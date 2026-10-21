@@ -1,5 +1,6 @@
 using Application.Product.Features.Commands.ActivateProduct;
 using Application.Product.Features.Commands.BulkUpdatePrices;
+using Application.Product.Features.Commands.ChangePrice;
 using Application.Product.Features.Commands.CreateProduct;
 using Application.Product.Features.Commands.DeactivateProduct;
 using Application.Product.Features.Commands.DeleteProduct;
@@ -111,6 +112,24 @@ public class AdminProductsController(
         var command = new BulkUpdatePricesCommand(
             request.Updates
         );
+
+        var result = await Mediator.Send(command);
+
+        return ToActionResult(result);
+    }
+
+    [HttpPatch("{variantId:guid}/price")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ChangePrice(
+        Guid variantId,
+        [FromBody] ChangePriceRequest request)
+    {
+        var command = new ChangePriceCommand(
+            request.ProductId,
+            variantId,
+            SellingPrice: request.SellingPrice,
+            OriginalPrice: request.OriginalPrice);
 
         var result = await Mediator.Send(command);
 

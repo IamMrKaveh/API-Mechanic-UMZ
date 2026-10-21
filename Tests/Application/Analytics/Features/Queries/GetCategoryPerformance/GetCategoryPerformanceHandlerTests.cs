@@ -23,7 +23,7 @@ public class GetCategoryPerformanceHandlerTests
         var fresh = new PaginatedResult<CategoryPerformanceDto>(
             [new CategoryPerformanceDto { CategoryName = "Books" }], 1, 1, 10);
 
-        _analytics.GetCategoryPerformanceAsync(from, to, Arg.Any<CancellationToken>())
+        _analytics.GetCategoryPerformanceAsync(from, to, 1, 10, Arg.Any<CancellationToken>())
                   .Returns(fresh);
 
         var query = new GetCategoryPerformanceQuery(from, to);
@@ -34,7 +34,7 @@ public class GetCategoryPerformanceHandlerTests
         result.Value.ShouldBeSameAs(fresh);
 
         await _analytics.Received(1).GetCategoryPerformanceAsync(
-            from, to, Arg.Any<CancellationToken>());
+            from, to, 1, 10, Arg.Any<CancellationToken>());
     }
 
 }

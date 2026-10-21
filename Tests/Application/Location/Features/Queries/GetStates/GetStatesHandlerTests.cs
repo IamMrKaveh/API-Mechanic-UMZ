@@ -36,28 +36,28 @@ public class GetStatesHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenServiceReturnsProvinces_SetsTotalCountAndPageSizeToItemCount()
+    public async Task Handle_WhenServiceReturnsProvinces_ReportsTheTotalCountAndTheRequestedPageSize()
     {
         var provinces = new List<ProvinceDto>
-    {
-        new(1, "A", "A"),
-        new(2, "B", "B"),
-        new(3, "C", "C"),
-        new(4, "D", "D")
-    };
+        {
+            new(1, "A", "A"),
+            new(2, "B", "B"),
+            new(3, "C", "C"),
+            new(4, "D", "D")
+        };
 
         _locationService
             .GetProvincesAsync(Arg.Any<CancellationToken>())
             .Returns(provinces);
 
-        var result = await _sut.Handle(new GetStatesQuery(), CancellationToken.None);
+        var result = await _sut.Handle(new GetStatesQuery(PageSize: 2), CancellationToken.None);
 
         result.ShouldBeSuccess();
         result.Value.TotalCount.ShouldBe(4);
         result.Value.Page.ShouldBe(1);
-        result.Value.PageSize.ShouldBe(4);
-        result.Value.TotalPages.ShouldBe(1);
-        result.Value.HasNextPage.ShouldBeFalse();
+        result.Value.PageSize.ShouldBe(2);
+        result.Value.TotalPages.ShouldBe(2);
+        result.Value.HasNextPage.ShouldBeTrue();
         result.Value.HasPreviousPage.ShouldBeFalse();
     }
 
@@ -77,20 +77,23 @@ public class GetStatesHandlerTests
         result.Value.Items[0].ShouldBe(provinces[0]);
         result.Value.TotalCount.ShouldBe(1);
         result.Value.Page.ShouldBe(1);
-        result.Value.PageSize.ShouldBe(1);
+        result.Value.PageSize.ShouldBe(50);
     }
 
     [Theory]
-    [InlineData(1, 50)]
-    [InlineData(2, 10)]
-    [InlineData(5, 100)]
-    public async Task Handle_ReturnsSinglePageOfAllProvinces_RegardlessOfRequestedPageAndPageSize(int requestedPage, int requestedPageSize)
+    [InlineData(1, 50, 2)]
+    [InlineData(2, 1, 1)]
+    [InlineData(5, 100, 0)]
+    public async Task Handle_PaginatesTheProvinces_AccordingToTheRequestedPageAndPageSize(
+        int requestedPage,
+        int requestedPageSize,
+        int expectedItemCount)
     {
         var provinces = new List<ProvinceDto>
-    {
-        new(1, "A", "A"),
-        new(2, "B", "B")
-    };
+        {
+            new(1, "A", "A"),
+            new(2, "B", "B")
+        };
 
         _locationService
             .GetProvincesAsync(Arg.Any<CancellationToken>())
@@ -99,10 +102,10 @@ public class GetStatesHandlerTests
         var result = await _sut.Handle(new GetStatesQuery(requestedPage, requestedPageSize), CancellationToken.None);
 
         result.ShouldBeSuccess();
-        result.Value.Page.ShouldBe(1);
-        result.Value.PageSize.ShouldBe(provinces.Count);
+        result.Value.Page.ShouldBe(requestedPage);
+        result.Value.PageSize.ShouldBe(requestedPageSize);
         result.Value.TotalCount.ShouldBe(provinces.Count);
-        result.Value.Items.Count.ShouldBe(provinces.Count);
+        result.Value.Items.Count.ShouldBe(expectedItemCount);
     }
 
     [Fact]
