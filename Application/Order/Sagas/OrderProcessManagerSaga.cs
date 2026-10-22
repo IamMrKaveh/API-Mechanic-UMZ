@@ -159,7 +159,8 @@ public sealed class OrderProcessManagerSaga(
         }
         else
         {
-            processState.MarkRequiresManualReconciliation("Auto-refund disabled.");
+            processState.MarkRequiresManualReconciliation(
+                "Auto-refund is switched off by the feature flag, so the order waits for a manual refund.");
         }
 
         await unitOfWork.SaveChangesAsync(ct);

@@ -8,7 +8,8 @@ namespace Tests.Application.Common.Behaviors;
 
 public class IdempotencyBehaviorTests
 {
-    private readonly IIdempotencyService _idempotency = Substitute.For<IIdempotencyService>(); private readonly IDistributedLock _lock = Substitute.For<IDistributedLock>(); private readonly IFeatureManager _features = Substitute.For<IFeatureManager>();
+    private readonly IIdempotencyService _idempotency = Substitute.For<IIdempotencyService>(); private readonly IDistributedLock _lock = Substitute.For<IDistributedLock>(); private readonly IFeatureManager _features = Substitute.For<IFeatureManager>(); private readonly ILogger<IdempotencyBehavior<IdempotentTestCommand, TestResponse>> _logger = Substitute.For<ILogger<IdempotencyBehavior<IdempotentTestCommand, TestResponse>>>();
+
 
     [Fact]
     public async Task Handle_WhenPreviouslyProcessed_ReturnsCachedResultAndSkipsNext()
@@ -21,7 +22,7 @@ public class IdempotencyBehaviorTests
             .Returns(Task.FromResult<string?>(JsonSerializer.Serialize(cached)));
 
         var sut = new IdempotencyBehavior<IdempotentTestCommand, TestResponse>(
-            _idempotency, _lock, _features);
+            _idempotency, _lock, _features, _logger);
 
         var invoked = false;
 
@@ -52,7 +53,7 @@ public class IdempotencyBehaviorTests
             .Returns(false);
 
         var sut = new IdempotencyBehavior<IdempotentTestCommand, TestResponse>(
-            _idempotency, _lock, _features);
+            _idempotency, _lock, _features, _logger);
 
         var result = await sut.Handle(
             request,
@@ -89,7 +90,7 @@ public class IdempotencyBehaviorTests
             .Returns(Task.FromResult<ILockHandle?>(handle));
 
         var sut = new IdempotencyBehavior<IdempotentTestCommand, TestResponse>(
-            _idempotency, _lock, _features);
+            _idempotency, _lock, _features, _logger);
 
         var result = await sut.Handle(
             request,
@@ -132,7 +133,7 @@ public class IdempotencyBehaviorTests
             .Returns(Task.FromResult<ILockHandle?>(handle));
 
         var sut = new IdempotencyBehavior<IdempotentTestCommand, TestResponse>(
-            _idempotency, _lock, _features);
+            _idempotency, _lock, _features, _logger);
 
         var invoked = false;
 
@@ -172,7 +173,7 @@ public class IdempotencyBehaviorTests
             .Returns(Task.FromResult<ILockHandle?>(handle));
 
         var sut = new IdempotencyBehavior<IdempotentTestCommand, TestResponse>(
-            _idempotency, _lock, _features);
+            _idempotency, _lock, _features, _logger);
 
         await Should.ThrowAsync<ConcurrencyException>(async () =>
             await sut.Handle(
@@ -210,7 +211,7 @@ public class IdempotencyBehaviorTests
             .Returns(Task.FromResult<ILockHandle?>(handle));
 
         var sut = new IdempotencyBehavior<IdempotentTestCommand, TestResponse>(
-            _idempotency, _lock, _features);
+            _idempotency, _lock, _features, _logger);
 
         var result = await sut.Handle(
             request,
@@ -220,8 +221,66 @@ public class IdempotencyBehaviorTests
         result.Value.ShouldBe("contention-cached");
     }
 
+    [Fact]
+    public async Task Handle_WhenTheLockServiceFails_ServesTheRequestWithoutTheLock()
+    {
+        var key = Guid.NewGuid();
+        var request = new IdempotentTestCommand(key);
+
+        _idempotency.GetResultAsync(key, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<string?>(null));
+
+        _features.IsEnabledAsync(FeatureFlags.IdempotencyDistributedLockEnabled)
+            .Returns(true);
+
+        _lock.AcquireAsync(
+                Arg.Any<string>(),
+                Arg.Any<TimeSpan>(),
+                Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("lock service is down"));
+
+        var sut = new IdempotencyBehavior<IdempotentTestCommand, TestResponse>(
+            _idempotency, _lock, _features, _logger);
+
+        var result = await sut.Handle(
+            request,
+            _ => Task.FromResult(new TestResponse("served-anyway")),
+            CancellationToken.None);
+
+        result.Value.ShouldBe("served-anyway");
+        await _idempotency.Received(1).MarkAsProcessedAsync(
+            key,
+            Arg.Is<string>(s => s!.Contains("served-anyway")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenTheLockIsDisabledByTheKillSwitch_ServesTheRequestWithoutTheLock()
+    {
+        var key = Guid.NewGuid();
+        var request = new IdempotentTestCommand(key);
+
+        _idempotency.GetResultAsync(key, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<string?>(null));
+
+        _features.IsEnabledAsync(FeatureFlags.IdempotencyDistributedLockEnabled)
+            .Returns(false);
+
+        var sut = new IdempotencyBehavior<IdempotentTestCommand, TestResponse>(
+            _idempotency, _lock, _features, _logger);
+
+        var result = await sut.Handle(
+            request,
+            _ => Task.FromResult(new TestResponse("served")),
+            CancellationToken.None);
+
+        result.Value.ShouldBe("served");
+        await _lock.DidNotReceiveWithAnyArgs().AcquireAsync(default!, default, default);
+    }
+
     public sealed record IdempotentTestCommand(Guid IdempotencyKey)
         : IRequest<TestResponse>, IIdempotentCommand;
+
 
     public sealed class TestResponse
     {

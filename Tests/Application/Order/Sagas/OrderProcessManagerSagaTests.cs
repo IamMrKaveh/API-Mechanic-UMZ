@@ -170,7 +170,8 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
         await _sut.Handle(Succeeded(order), CancellationToken.None);
 
         state.CurrentStep.ShouldBe(ProcessStepEnum.RequiresManualReconciliation);
-        state.FailureReason.ShouldBe("Auto-refund disabled.");
+        state.FailureReason.ShouldBe(
+            "Auto-refund is switched off by the feature flag, so the order waits for a manual refund.");
         await _paymentInitiator.DidNotReceiveWithAnyArgs().InitiateRefundAsync(default, default!, default);
     }
 

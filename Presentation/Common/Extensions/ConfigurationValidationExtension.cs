@@ -201,6 +201,25 @@ public static class ConfigurationValidationExtension
                 "Zarinpal:AllowedIps must list the payment gateway's official callback IPs in Production (SEC-06).");
         }
 
+        // The idempotency lock and the automatic refund protect money. They are
+        // on by default and stay a kill switch, but a production deployment
+        // must not run with them off.
+        foreach (var flag in new[]
+        {
+            FeatureFlags.IdempotencyDistributedLockEnabled,
+            FeatureFlags.SagaAutoRefundOnCommitFailure
+        })
+        {
+            var flagPath = $"{FeatureManagementExtensions.SectionName}:{flag}";
+
+            if (!IsEnabled(configuration, flagPath))
+            {
+                problems.Add(
+                    $"{flagPath} must be true in Production; it protects money from a duplicate request " +
+                    "and from a paid order whose stock was never committed.");
+            }
+        }
+
         if (problems.Count > 0)
         {
             throw new InvalidOperationException(

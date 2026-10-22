@@ -39,6 +39,8 @@ public class ConfigurationValidationExtensionTests
         values["AllowedHosts"] = "api.example.com";
         values["Auth:OtpPepper"] = "production-otp-pepper-value";
         values[$"FeatureManagement:{FeatureFlags.PaymentCallbackIpWhitelistRequired}"] = "true";
+        values[$"FeatureManagement:{FeatureFlags.IdempotencyDistributedLockEnabled}"] = "true";
+        values[$"FeatureManagement:{FeatureFlags.SagaAutoRefundOnCommitFailure}"] = "true";
         // A non-empty Zarinpal section makes ValidateExternalServices require the merchant id.
         values["ZarinPal:MerchantId"] = "11111111-1111-1111-1111-111111111111";
         values["Zarinpal:AllowedIps:0"] = "1.2.3.4";
@@ -340,6 +342,23 @@ public class ConfigurationValidationExtensionTests
             builder.ValidateRequiredConfiguration());
 
         ex.Message.ShouldContain("Zarinpal:AllowedIps");
+    }
+
+    [Theory]
+    [InlineData(FeatureFlags.IdempotencyDistributedLockEnabled)]
+    [InlineData(FeatureFlags.SagaAutoRefundOnCommitFailure)]
+    public void ValidateRequiredConfiguration_ProductionWithMoneyGuardOff_Throws(string flag)
+    {
+        // The lock and the auto refund protect money, so a production
+        // deployment must not start with either of them switched off.
+        var values = ProductionConfig();
+        values[$"FeatureManagement:{flag}"] = "false";
+        var builder = BuildBuilder(values, Environments.Production);
+
+        var ex = Should.Throw<InvalidOperationException>(() =>
+            builder.ValidateRequiredConfiguration());
+
+        ex.Message.ShouldContain(flag);
     }
 
     [Fact]

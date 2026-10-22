@@ -7,6 +7,14 @@ using SharedKernel.Abstractions.Interfaces;
 
 namespace Application.Inventory.Features.Commands.CommitStockForOrder;
 
+/// <summary>
+/// Turns the reserved stock of an order into a stock movement.
+///
+/// The command is idempotent on its own: the inventory aggregate checks its
+/// ledger and ignores a commit it already holds, so a republished outbox
+/// message never takes the stock out a second time. Nothing else has to
+/// guard the step against a duplicate.
+/// </summary>
 public class CommitStockForOrderHandler(
     IInventoryRepository inventoryRepository,
     IUnitOfWork unitOfWork,
