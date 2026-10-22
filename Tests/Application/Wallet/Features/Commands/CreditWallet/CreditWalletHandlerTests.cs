@@ -17,7 +17,8 @@ namespace Tests.Application.Wallet.Features.Commands.CreditWallet;
 
 public class CreditWalletHandlerTests : HandlerTestBase
 {
-    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly CreditWalletHandler _sut;
+    private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
+    private readonly IWalletLedgerRepository _ledgerRepository = Substitute.For<IWalletLedgerRepository>(); private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>(); private readonly ILockHandle _lockHandle = Substitute.For<ILockHandle>(); private readonly CreditWalletHandler _sut;
 
     public CreditWalletHandlerTests()
     {
@@ -32,6 +33,7 @@ public class CreditWalletHandlerTests : HandlerTestBase
 
         _sut = new CreditWalletHandler(
             _walletRepository,
+            _ledgerRepository,
             _distributedLock,
             AuditService,
             DateTimeProvider,

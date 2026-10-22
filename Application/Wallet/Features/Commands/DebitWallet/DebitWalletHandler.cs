@@ -7,6 +7,7 @@ namespace Application.Wallet.Features.Commands.DebitWallet;
 
 public class DebitWalletHandler(
     IWalletRepository walletRepository,
+    IWalletLedgerRepository ledgerRepository,
     IAuditService auditService,
     ICurrentUserService currentUserService,
     IDateTimeProvider dateTimeProvider,
@@ -42,7 +43,9 @@ public class DebitWalletHandler(
                 ? currentUserService.UserId!.Value.ToString()
                 : request.ReferenceId!;
 
-            wallet.Debit(
+            // The ledger entry is written in the same transaction as the
+            // balance change.
+            var ledgerEntry = wallet.DebitWithLedger(
                 amount,
                 request.Description ?? request.TransactionType.ToString(),
                 referenceId,
@@ -50,6 +53,7 @@ public class DebitWalletHandler(
                 request.IdempotencyKey);
 
             walletRepository.Update(wallet);
+            await ledgerRepository.AddAsync(ledgerEntry, ct);
 
             return ServiceResult<Unit>.Success(Unit.Value);
         }

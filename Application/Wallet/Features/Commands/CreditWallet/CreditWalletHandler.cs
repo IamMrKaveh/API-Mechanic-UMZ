@@ -6,6 +6,7 @@ namespace Application.Wallet.Features.Commands.CreditWallet;
 
 public class CreditWalletHandler(
     IWalletRepository walletRepository,
+    IWalletLedgerRepository ledgerRepository,
     IDistributedLock distributedLock,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
@@ -55,7 +56,10 @@ public class CreditWalletHandler(
             var amount = Money.Create(request.Amount, DefaultCurrency);
             var effectiveDescription = BuildEffectiveDescription(request);
 
-            wallet.Credit(
+            // The ledger entry is written in the same transaction as the
+            // balance change, so the idempotency guard reads a row that is
+            // already there and the ledger can never lag behind the balance.
+            var ledgerEntry = wallet.CreditWithLedger(
                 amount,
                 effectiveDescription,
                 request.ReferenceId,
@@ -64,6 +68,7 @@ public class CreditWalletHandler(
                 request.CorrelationId);
 
             walletRepository.Update(wallet);
+            await ledgerRepository.AddAsync(ledgerEntry, ct);
 
             if (autoUnfrozen && adminIdForUnfreeze is not null)
             {

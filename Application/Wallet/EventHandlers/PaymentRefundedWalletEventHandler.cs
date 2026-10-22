@@ -1,16 +1,16 @@
-﻿using Application.Wallet.Features.Commands.DebitWallet;
+﻿using Application.Wallet.Features.Commands.CreditWallet;
 using Domain.Payment.Events;
 using Domain.Wallet.Enums;
 
 namespace Application.Wallet.EventHandlers;
 
 /// <summary>
-/// Reverses the wallet credit that a successful gateway payment granted.
+/// Returns the money of a refunded payment to the customer's wallet.
 ///
-/// A payment made from the wallet is not touched here: the money was returned
-/// by the order cancellation path, which derives the exact amount from the
-/// wallet ledger and is idempotent per order. A payment made through a gateway
-/// did grant a wallet credit, so the refund has to take that credit back.
+/// Only a payment that was funded from the wallet is given back: a gateway
+/// payment never touched the wallet, so there is nothing to return. The key is the
+/// same one the order cancellation uses, so an order that is cancelled and then
+/// refunded is only ever paid back once.
 /// </summary>
 public class PaymentRefundedWalletEventHandler(
     IMediator mediator,
@@ -22,21 +22,22 @@ public class PaymentRefundedWalletEventHandler(
 
         try
         {
-            if (domainEvent.Gateway.IsWallet)
+            if (!domainEvent.Gateway.IsWallet)
             {
                 await auditService.LogSystemEventAsync(
                     "WalletPaymentRefunded",
-                    $"بازگشت وجه تراکنش {domainEvent.PaymentTransactionId.Value} از طریق کیف پول انجام شد و موجودی کیف پول در این مسیر تغییر نمی‌کند.");
+                    $"بازگشت وجه تراکنش {domainEvent.PaymentTransactionId.Value} از طریق درگاه پرداخت انجام شد و موجودی کیف پول تغییری نکرد.");
                 return;
             }
 
-            var command = new DebitWalletCommand(
+            var command = new CreditWalletCommand(
                 domainEvent.UserId.Value,
                 domainEvent.Amount.Amount,
                 WalletTransactionType.Refund,
-                WalletReferenceType.Payment,
-                $"refund-payment-{domainEvent.PaymentTransactionId.Value}",
-                Description: "برگشت اعتبار کیف پول از بازگشت وجه درگاه پرداخت");
+                WalletReferenceType.Order,
+                domainEvent.OrderId.Value.ToString(),
+                $"refund-order-{domainEvent.OrderId.Value}",
+                Description: "بازگشت وجه پرداخت کیف پول");
 
             var result = await mediator.Send(command, cancellationToken);
 
@@ -44,7 +45,7 @@ public class PaymentRefundedWalletEventHandler(
             {
                 await auditService.LogSystemEventAsync(
                     "WalletRefundFailed",
-                    $"برگشت اعتبار کیف پول برای تراکنش {domainEvent.PaymentTransactionId.Value} ناموفق بود: {result.Error}. مبلغ {domainEvent.Amount.Amount} برای مغایرت نیازمند بررسی دستی است.");
+                    $"بازگشت وجه کیف پول برای تراکنش {domainEvent.PaymentTransactionId.Value} ناموفق بود: {result.Error}. مبلغ {domainEvent.Amount.Amount} برای مغایرت نیازمند بررسی دستی است.");
             }
         }
         catch (Exception ex)

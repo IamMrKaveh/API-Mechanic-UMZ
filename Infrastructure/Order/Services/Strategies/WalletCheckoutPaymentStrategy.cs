@@ -14,6 +14,7 @@ namespace Infrastructure.Order.Services.Strategies;
 
 public sealed class WalletCheckoutPaymentStrategy(
     IWalletRepository walletRepository,
+    IWalletLedgerRepository ledgerRepository,
     IOrderRepository orderRepository,
     IPaymentTransactionRepository paymentTransactionRepository,
     IUnitOfWork unitOfWork,
@@ -46,13 +47,18 @@ public sealed class WalletCheckoutPaymentStrategy(
                 if (wallet is null)
                     return ServiceResult<CheckoutResultDto>.NotFound("کیف پول یافت نشد.");
 
-                wallet.Debit(
+                // The idempotency key makes the debit replayable: a repeated
+                // checkout with the same key is recognised instead of charged
+                // twice.
+                var ledgerEntry = wallet.DebitWithLedger(
                     finalAmount,
                     $"پرداخت سفارش {orderResult.OrderNumber}",
                     $"ORDER-{orderId.Value}",
-                    dateTimeProvider.UtcNow);
+                    dateTimeProvider.UtcNow,
+                    idempotencyKey.ToString("N"));
 
                 walletRepository.Update(wallet);
+                await ledgerRepository.AddAsync(ledgerEntry, ct);
             }
 
             return await SettlePaidOrderAsync(orderResult, orderId, userId, finalAmount, idempotencyKey, ct);

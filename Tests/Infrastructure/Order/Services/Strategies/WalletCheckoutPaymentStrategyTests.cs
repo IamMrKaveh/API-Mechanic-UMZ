@@ -7,6 +7,8 @@ using Domain.Payment.Interfaces;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Exceptions;
+using Domain.Wallet.Entities;
+using Domain.Wallet.Enums;
 using Domain.Wallet.Interfaces;
 using Infrastructure.Order.Services.Strategies;
 using SharedKernel.Abstractions.Interfaces;
@@ -20,6 +22,7 @@ namespace Tests.Infrastructure.Order.Services.Strategies;
 public class WalletCheckoutPaymentStrategyTests : HandlerTestBase
 {
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
+    private readonly IWalletLedgerRepository _ledgerRepository = Substitute.For<IWalletLedgerRepository>();
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly IPaymentTransactionRepository _paymentTransactionRepository = Substitute.For<IPaymentTransactionRepository>();
     private readonly WalletCheckoutPaymentStrategy _sut;
@@ -31,6 +34,7 @@ public class WalletCheckoutPaymentStrategyTests : HandlerTestBase
         DateTimeProvider.UtcNow.Returns(FixedNow);
         _sut = new WalletCheckoutPaymentStrategy(
             _walletRepository,
+            _ledgerRepository,
             _orderRepository,
             _paymentTransactionRepository,
             UnitOfWork,
@@ -198,6 +202,39 @@ public class WalletCheckoutPaymentStrategyTests : HandlerTestBase
         _walletRepository.Received(1).Update(wallet);
         _orderRepository.Received(1).Update(order);
         await UnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPaymentSucceeds_DebitsWalletWithTheIdempotencyKeyAndWritesTheLedger()
+    {
+        // The debit carries the checkout idempotency key, so a replayed checkout is
+        // recognised instead of charged twice, and the ledger entry is written in
+        // the same transaction as the balance change.
+        var userId = UserId.NewId();
+        var order = NewOrder(userId);
+        var orderResult = NewOrderResult(order.Id.Value);
+        var wallet = NewFundedWallet(userId);
+        var idempotencyKey = Guid.NewGuid();
+        _walletRepository.HasIdempotencyKeyAsync(Arg.Any<UserId>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+        _walletRepository.GetByUserIdForUpdateAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+            .Returns(wallet);
+        _orderRepository.FindByIdAsync(Arg.Any<OrderId>(), Arg.Any<CancellationToken>()).Returns(order);
+        await _paymentTransactionRepository.AddAsync(
+            Arg.Any<global::Domain.Payment.Aggregates.PaymentTransaction>(),
+            Arg.Any<CancellationToken>());
+
+        await _sut.ExecuteAsync(
+            orderResult, order.Id, userId, Money.FromDecimal(150_000m),
+            "127.0.0.1", null, idempotencyKey, CancellationToken.None);
+
+        await _ledgerRepository.Received(1).AddAsync(
+            Arg.Is<WalletLedgerEntry>(e =>
+                e != null
+                && e.IdempotencyKey == idempotencyKey.ToString("N")
+                && e.TransactionType == WalletTransactionType.Debit
+                && e.Amount.Amount == 150_000m),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

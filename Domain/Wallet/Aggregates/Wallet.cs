@@ -94,6 +94,34 @@ public sealed class Wallet : AggregateRoot<WalletId>
             Id, OwnerId, amount, Balance, description, referenceId, idempotencyKey, correlationId));
     }
 
+    /// <summary>
+    /// Credits the wallet and returns the ledger entry of the movement.
+    ///
+    /// The caller writes the entry in the same transaction as the balance
+    /// change, so the ledger can never lag behind the balance and the
+    /// idempotency guard reads a row that already exists.
+    /// </summary>
+    public WalletLedgerEntry CreditWithLedger(Money amount, string description, string referenceId,
+        DateTime now, string? idempotencyKey = null, string? correlationId = null)
+    {
+        Credit(amount, description, referenceId, now, idempotencyKey, correlationId);
+
+        return WalletLedgerEntry.NewCredit(
+            Id, OwnerId, amount, Balance, description, referenceId, now, idempotencyKey, correlationId);
+    }
+
+    /// <summary>
+    /// Debits the wallet and returns the ledger entry of the movement.
+    /// </summary>
+    public WalletLedgerEntry DebitWithLedger(Money amount, string description, string referenceId,
+        DateTime now, string? idempotencyKey = null, string? correlationId = null)
+    {
+        Debit(amount, description, referenceId, now, idempotencyKey, correlationId);
+
+        return WalletLedgerEntry.NewDebit(
+            Id, OwnerId, amount, Balance, description, referenceId, now, idempotencyKey, correlationId);
+    }
+
     public WalletDebitRequest CreateDebitRequest(WalletDebitRequestId requestId, Money amount,
         string reason, string? description, UserId requestedBy, TimeSpan expiryDuration, DateTime now)
     {

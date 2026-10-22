@@ -9,6 +9,7 @@ namespace Application.Wallet.Features.Commands.MarkWithdrawalPaid;
 public sealed class MarkWithdrawalPaidHandler(
     IWalletWithdrawalRepository withdrawalRepository,
     IWalletRepository walletRepository,
+    IWalletLedgerRepository ledgerRepository,
     IDistributedLock distributedLock,
     IAuditService auditService,
     IDateTimeProvider dateTimeProvider,
@@ -56,7 +57,7 @@ public sealed class MarkWithdrawalPaidHandler(
 
             var now = dateTimeProvider.UtcNow;
             wallet.ReleaseReservation(withdrawal.ReservationId, now);
-            wallet.Debit(
+            var ledgerEntry = wallet.DebitWithLedger(
                 withdrawal.Amount,
                 $"برداشت به شماره پیگیری {request.BankReferenceNumber}",
                 withdrawal.Id.Value.ToString(),
@@ -65,6 +66,7 @@ public sealed class MarkWithdrawalPaidHandler(
             withdrawal.MarkPaid(adminId, request.BankReferenceNumber, now);
 
             walletRepository.Update(wallet);
+            await ledgerRepository.AddAsync(ledgerEntry, ct);
             withdrawalRepository.Update(withdrawal);
 
             await auditService.LogSystemEventAsync(

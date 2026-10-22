@@ -65,6 +65,27 @@
 
 **تست‌های رگرسیون تازه:** «سفارش از قبل Paid + `PaymentSucceededEvent` → موجودی commit می‌شود» (شکل واقعی تولید که تست قبلی نداشت) · «سفارش از قبل Paid → به `Processing` می‌رود» · «commit دوباره برای یک `OrderItem` → یک‌بار کم می‌شود» · «checkout موجودی را رزرو می‌کند» · «checkout با موجودی ناکافی پرداخت نمی‌کند» · «نتیجهٔ ردشده → rollback».
 
+### فاز ۶ — چرخه مالی کیف پول (۱ فاز) — ✅ **تکمیل شد**
+
+| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
+|---|---|---|
+| **D5** | ردیف دفتر کیف پول **در همان تراکنش** نوشته می‌شود که موجودی تغییر می‌کند (به‌جای اینکه یک پیام Outbox بعدی آن را بنویسد) → گارد idempotency اتمی شد و پنجرهٔ ~۱۵ ثانیه‌ای credit دوگانه بسته شد. هندلرهای `PersistWalletLedgerOn*` که ردیف تکراری می‌ساختند حذف شدند | `Domain/Wallet/Aggregates/Wallet.cs` (`CreditWithLedger`/`DebitWithLedger`) · `Application/Wallet/Features/Commands/CreditWallet/*` · `DebitWallet/*` · `CompleteWalletTopUp/*` · `MarkWithdrawalPaid/*` |
+| **D4** | برداشت کیف پول در checkout اکنون **کلید idempotency** دارد → گارد تکرارپذیری و یکتایی دفتر واقعاً کار می‌کند | `Infrastructure/Order/Services/Strategies/WalletCheckoutPaymentStrategy.cs` |
+| **Q2** | کیف پول دیگر با **پرداخت سفارش** بستانکار نمی‌شود. مدل استاندارد: پول فقط از مسیرهای صریح ورود پول (شارژ، انتقال، تعدیل ادمین) وارد کیف پول می‌شود. در نتیجه هندلر `PaymentSucceededWalletCreditEventHandler` حذف شد | `Application/Wallet/EventHandlers/PaymentSucceededWalletCreditEventHandler.cs` (حذف‌شده) |
+| **Q2 (مربوط)** | بازگشت وجه فقط برای پرداخت‌های **کیف‌پولی** به کیف پول برمی‌گردد، با همان کلید `refund-order-{orderId}` که مسیر لغو سفارش استفاده می‌کند → لغو و سپس refund دوباره پول نمی‌دهد | `Application/Wallet/EventHandlers/PaymentRefundedWalletEventHandler.cs` |
+
+**قواعد نهایی چرخهٔ کیف پول:**
+
+| رخداد | اثر روی کیف پول |
+|---|---|
+| پرداخت سفارش با کیف پول | برداشت (همزمان، با کلید idempotency) |
+| پرداخت سفارش با درگاه | بدون تغییر |
+| شارژ کیف پول | بستانکار (همزمان) |
+| انتقال بین دو کاربر | برداشت مبدا / بستانکار مقصد |
+| لغو سفارشِ کیف‌پولی | بستانکار با کلید `refund-order-{orderId}` |
+| لغو سفارشِ درگاهی | بدون تغییر (پول به کارت برگشت) |
+| refund پرداختِ کیف‌پولی | بستانکار با همان کلید → بدون بازپرداخت دوباره |
+
 ---
 
 ## بخش ۰ — گزارش اجرا

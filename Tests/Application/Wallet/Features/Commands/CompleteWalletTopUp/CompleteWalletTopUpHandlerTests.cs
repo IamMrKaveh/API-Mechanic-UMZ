@@ -14,6 +14,7 @@ public sealed class CompleteWalletTopUpHandlerTests : HandlerTestBase
 {
     private readonly IWalletTopUpRepository _topUpRepository = Substitute.For<IWalletTopUpRepository>();
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
+    private readonly IWalletLedgerRepository _ledgerRepository = Substitute.For<IWalletLedgerRepository>();
     private readonly IPaymentGatewayFactory _gatewayFactory = Substitute.For<IPaymentGatewayFactory>();
     private readonly IPaymentGateway _gateway = Substitute.For<IPaymentGateway>();
 
@@ -23,7 +24,7 @@ public sealed class CompleteWalletTopUpHandlerTests : HandlerTestBase
     {
         _gatewayFactory.GetGateway(Arg.Any<string>()).Returns(_gateway);
 
-        _sut = new CompleteWalletTopUpHandler(_topUpRepository, _walletRepository, _gatewayFactory, DateTimeProvider, AuditService);
+        _sut = new CompleteWalletTopUpHandler(_topUpRepository, _walletRepository, _ledgerRepository, _gatewayFactory, DateTimeProvider, AuditService);
     }
 
     [Fact]

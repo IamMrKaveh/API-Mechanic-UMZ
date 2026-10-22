@@ -10,6 +10,7 @@ namespace Application.Wallet.Features.Commands.CompleteWalletTopUp;
 public sealed class CompleteWalletTopUpHandler(
     IWalletTopUpRepository topUpRepository,
     IWalletRepository walletRepository,
+    IWalletLedgerRepository ledgerRepository,
     IPaymentGatewayFactory gatewayFactory,
     IDateTimeProvider dateTimeProvider,
     IAuditService auditService)
@@ -95,11 +96,16 @@ public sealed class CompleteWalletTopUpHandler(
                 await walletRepository.AddAsync(wallet, ct);
             }
 
-            wallet.Credit(
+            // The ledger entry is written in the same transaction as the
+            // balance change.
+            var ledgerEntry = wallet.CreditWithLedger(
                 topUp.Amount,
                 $"شارژ کیف پول - شماره پیگیری: {refId}",
                 topUp.Id.Value.ToString(),
-                now);
+                now,
+                $"topup-credit:{topUp.Id.Value}");
+
+            await ledgerRepository.AddAsync(ledgerEntry, ct);
 
             topUpRepository.Update(topUp);
             walletRepository.Update(wallet);

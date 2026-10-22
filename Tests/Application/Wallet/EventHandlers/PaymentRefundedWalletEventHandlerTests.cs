@@ -1,6 +1,6 @@
 using Application.Common.Events;
 using Application.Wallet.EventHandlers;
-using Application.Wallet.Features.Commands.DebitWallet;
+using Application.Wallet.Features.Commands.CreditWallet;
 using Domain.Payment.Events;
 using Domain.Payment.ValueObjects;
 using Domain.User.ValueObjects;
@@ -31,32 +31,32 @@ public class PaymentRefundedWalletEventHandlerTests : HandlerTestBase
             gateway);
 
     [Fact]
-    public async Task Handle_WhenThePaymentCameFromAGateway_ReversesTheWalletCredit()
+    public async Task Handle_WhenThePaymentCameFromTheWallet_ReturnsTheMoneyToTheWallet()
     {
         _mediator
-            .Send(Arg.Any<DebitWalletCommand>(), Arg.Any<CancellationToken>())
+            .Send(Arg.Any<CreditWalletCommand>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<Unit>.Success(Unit.Value));
 
-        var evt = BuildEvent(PaymentGateway.Zarinpal);
+        var evt = BuildEvent(PaymentGateway.Wallet);
 
         await _sut.Handle(
             new DomainEventNotification<PaymentRefundedEvent>(evt),
             CancellationToken.None);
 
         await _mediator.Received(1).Send(
-            Arg.Is<DebitWalletCommand>(c =>
+            Arg.Is<CreditWalletCommand>(c =>
                 c!.UserId == evt.UserId.Value
                 && c.Amount == 75_000m
                 && c.TransactionType == WalletTransactionType.Refund
-                && c.ReferenceType == WalletReferenceType.Payment
-                && c.IdempotencyKey == $"refund-payment-{evt.PaymentTransactionId.Value}"),
+                && c.ReferenceType == WalletReferenceType.Order
+                && c.IdempotencyKey == $"refund-order-{evt.OrderId.Value}"),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_WhenThePaymentCameFromTheWallet_DoesNotTouchTheWalletAgain()
+    public async Task Handle_WhenThePaymentCameFromAGateway_DoesNotTouchTheWallet()
     {
-        var evt = BuildEvent(PaymentGateway.Wallet);
+        var evt = BuildEvent(PaymentGateway.Zarinpal);
 
         await _sut.Handle(
             new DomainEventNotification<PaymentRefundedEvent>(evt),
@@ -66,13 +66,13 @@ public class PaymentRefundedWalletEventHandlerTests : HandlerTestBase
     }
 
     [Fact]
-    public async Task Handle_WhenTheWalletHasNoBalance_LogsTheDiscrepancyForReconciliation()
+    public async Task Handle_WhenTheWalletHasNoRoomForTheRefund_LogsTheDiscrepancyForReconciliation()
     {
         _mediator
-            .Send(Arg.Any<DebitWalletCommand>(), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult<Unit>.Failure(Error.BusinessRule("WALLET_INSUFFICIENT", "not enough")));
+            .Send(Arg.Any<CreditWalletCommand>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<Unit>.Failure(Error.BusinessRule("WALLET_FROZEN", "frozen")));
 
-        var evt = BuildEvent(PaymentGateway.Zarinpal);
+        var evt = BuildEvent(PaymentGateway.Wallet);
 
         await _sut.Handle(
             new DomainEventNotification<PaymentRefundedEvent>(evt),

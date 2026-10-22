@@ -27,11 +27,8 @@ public class WalletLifecycleCoverageTests
     private static readonly (string Event, string Handler)[] SideEffects =
     [
         ("UserRegisteredEvent", "UserCreatedEventHandler"),
-        ("PaymentSucceededEvent", "PaymentSucceededWalletCreditEventHandler"),
         ("PaymentRefundedEvent", "PaymentRefundedWalletEventHandler"),
         ("OrderCancelledEvent", "OrderCancelledWalletReleaseEventHandler"),
-        ("WalletCreditedEvent", "PersistWalletLedgerOnCreditHandler"),
-        ("WalletDebitedEvent", "PersistWalletLedgerOnDebitHandler"),
         ("WalletFrozenEvent", "FraudAlertCriticalFreezeHandler"),
         ("WalletUnfrozenEvent", "SendWalletUnfreezeNotificationHandler")
     ];

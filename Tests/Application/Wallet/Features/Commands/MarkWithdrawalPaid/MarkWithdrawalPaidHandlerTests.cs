@@ -1,4 +1,4 @@
-﻿using Application.Wallet.Features.Commands.MarkWithdrawalPaid;
+using Application.Wallet.Features.Commands.MarkWithdrawalPaid;
 using Domain.User.ValueObjects;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Enums;
@@ -13,6 +13,7 @@ public sealed class MarkWithdrawalPaidHandlerTests : HandlerTestBase
 {
     private readonly IWalletWithdrawalRepository _withdrawalRepository = Substitute.For<IWalletWithdrawalRepository>();
     private readonly IWalletRepository _walletRepository = Substitute.For<IWalletRepository>();
+    private readonly IWalletLedgerRepository _ledgerRepository = Substitute.For<IWalletLedgerRepository>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
     private readonly MarkWithdrawalPaidHandler _sut;
 
@@ -24,7 +25,7 @@ public sealed class MarkWithdrawalPaidHandlerTests : HandlerTestBase
         CurrentUserService.IsAdmin.Returns(true);
 
         _sut = new MarkWithdrawalPaidHandler(
-            _withdrawalRepository, _walletRepository,
+            _withdrawalRepository, _walletRepository, _ledgerRepository,
             _distributedLock, AuditService, DateTimeProvider, CurrentUserService);
     }
 
