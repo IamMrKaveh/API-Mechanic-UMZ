@@ -12,8 +12,9 @@ public class TransactionBehaviorTests : HandlerTestBase
 {
     private void ConfigureUnitOfWorkPassThrough<TResp>()
     {
-        UnitOfWork.ExecuteStrategyAsync(
+        UnitOfWork.ExecuteTransactionAsync(
                 Arg.Any<Func<CancellationToken, Task<TResp>>>(),
+                Arg.Any<Func<TResp, bool>>(),
                 Arg.Any<CancellationToken>())
             .Returns(async ci =>
             {

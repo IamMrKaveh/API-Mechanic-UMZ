@@ -513,6 +513,36 @@ public class InventoryTests
     }
 
     [Fact]
+    public void ConfirmReservation_CalledTwiceForTheSameReservation_TakesTheStockOutOnlyOnce()
+    {
+        // The step is republished whenever the outbox retries it, so committing
+        // the same reservation twice must not take the stock out twice.
+        var sut = new InventoryBuilder().WithInitialStock(10).Build();
+        sut.ReserveStock(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
+
+        sut.ConfirmReservation(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
+        sut.ConfirmReservation(StockQuantity.Create(4), "REF", DateTime.UtcNow).ShouldBeSuccess();
+
+        sut.ReservedQuantity.Value.ShouldBe(0);
+        sut.StockQuantity.Value.ShouldBe(6);
+        sut.LedgerEntries.Count(e => e.EventType == StockEventType.ReservationCommit).ShouldBe(1);
+    }
+
+    [Fact]
+    public void ConfirmReservation_CalledTwiceForTheSameOrderItem_TakesTheStockOutOnlyOnce()
+    {
+        var orderItemId = OrderItemId.NewId();
+        var sut = new InventoryBuilder().WithInitialStock(10).Build();
+        sut.ReserveStock(StockQuantity.Create(4), "REF", DateTime.UtcNow, orderItemId).ShouldBeSuccess();
+
+        sut.ConfirmReservation(StockQuantity.Create(4), "REF", DateTime.UtcNow, orderItemId).ShouldBeSuccess();
+        sut.ConfirmReservation(StockQuantity.Create(4), "REF", DateTime.UtcNow, orderItemId).ShouldBeSuccess();
+
+        sut.StockQuantity.Value.ShouldBe(6);
+        sut.LedgerEntries.Count(e => e.EventType == StockEventType.ReservationCommit).ShouldBe(1);
+    }
+
+    [Fact]
     public void ConfirmReservation_RaisesStockCommittedEvent()
     {
         var sut = new InventoryBuilder().WithInitialStock(10).Build();

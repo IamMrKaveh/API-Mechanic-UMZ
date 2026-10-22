@@ -17,7 +17,7 @@ public sealed class TransactionBehavior<TRequest, TResponse>(
 
         try
         {
-            return await unitOfWork.ExecuteStrategyAsync(async cancellationToken =>
+            return await unitOfWork.ExecuteTransactionAsync(async cancellationToken =>
             {
                 var response = await next(cancellationToken);
 
@@ -26,8 +26,13 @@ public sealed class TransactionBehavior<TRequest, TResponse>(
 
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 return response;
-            }, ct);
+            },
+            // A rejected result must not leave the writes it produced behind: the
+            // transaction is rolled back so a failed command changes nothing.
+            response => response is not ServiceResult failure || !failure.IsFailure,
+            ct);
         }
+
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
             var constraintName = GetConstraintName(ex);

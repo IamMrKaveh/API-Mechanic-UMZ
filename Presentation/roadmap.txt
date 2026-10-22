@@ -50,6 +50,23 @@
 
 ---
 
+### فاز ۵ — اصلاح گردش کار پرداخت (۱ فاز) — ✅ **تکمیل شد**
+
+این فاز پس از بازبینی کامل اضافه شد: بازبینی نشان داد که با وجود احیای ستون فقرات event، **موجودی رزرو می‌شد ولی هرگز commit نمی‌شد** (D1) چون `PaymentService` سفارش را همزمان Paid می‌کرد و ساگا با پرچم `IsIdempotent` کل گردش کار را رد می‌کرد.
+
+| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
+|---|---|---|
+| **D1** | `ConfirmReservation` اکنون idempotent است: اگر دفتر موجودی قبلاً یک `ReservationCommit` برای همان قلم سفارش داشته باشد، no-op موفق برمی‌گرداند | `Domain/Inventory/Aggregates/Inventory.cs` |
+| **D1/Q1** | رزرو موجودی **هم‌زمان با ساخت سفارش** و در همان تراکنش انجام می‌شود (`ReserveStockForOrderAsync` با جبران خطای جزئی)؛ ساگا دیگر رزرو نمی‌کند | `Infrastructure/Inventory/Services/InventoryService.cs` · `Infrastructure/Order/Services/CheckoutOrchestrationService.cs` |
+| **D2/D3** | ساگا دیگر از `IsIdempotent` به‌عنوان «کل گردش کار تمام شد» استفاده نمی‌کند: سفارشِ از قبل Paid هم به `Processing` می‌رود و **commit موجودی همیشه اجرا می‌شود**؛ مسیر auto-refund و `RequiresManualReconciliation` دوباره در دسترس‌اند | `Application/Order/Sagas/OrderProcessManagerSaga.cs` |
+| **D8** | تراکنش تودرتو دیگر در Development throw نمی‌کند؛ عملیات با **savepoint** به تراکنش محیطی می‌پیوندد و در صورت شکست فقط نوشته‌های خودش برگردانده می‌شود | `Infrastructure/Persistence/UnitOfWork.cs` |
+| **D9** | تنها یک handler سطر `OrderProcessState` را می‌سازد (handler مربوط به `OrderCreatedEvent` حذف شد) → تضاد یکتایی `OrderProcessStates.OrderId` دیگر رخ نمی‌دهد | `Application/Order/Sagas/OrderProcessManagerSaga.cs` |
+| **D11** | نتیجهٔ ردشدهٔ یک command حالا **تراکنش را rollback می‌کند**؛ checkout ناموفق دیگر سفارش نیمه‌کاره commit نمی‌کند | `Application/Common/Behaviors/TransactionBehavior.cs` · `Application/Common/Interfaces/IUnitOfWork.cs` |
+
+**تست‌های رگرسیون تازه:** «سفارش از قبل Paid + `PaymentSucceededEvent` → موجودی commit می‌شود» (شکل واقعی تولید که تست قبلی نداشت) · «سفارش از قبل Paid → به `Processing` می‌رود» · «commit دوباره برای یک `OrderItem` → یک‌بار کم می‌شود» · «checkout موجودی را رزرو می‌کند» · «checkout با موجودی ناکافی پرداخت نمی‌کند» · «نتیجهٔ ردشده → rollback».
+
+---
+
 ## بخش ۰ — گزارش اجرا
 
 ### فاز ۱ — وضعیت: ✅ تکمیل شد

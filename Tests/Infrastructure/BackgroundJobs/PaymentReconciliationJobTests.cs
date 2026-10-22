@@ -44,8 +44,8 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
         provider.GetService(typeof(IUnitOfWork)).Returns(
             new UnitOfWork(
                 Context,
-                Substitute.For<ILogger<UnitOfWork>>(),
-                Substitute.For<IHostEnvironment>()));
+                Substitute.For<ILogger<UnitOfWork>>()));
+
         provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
         return new PaymentReconciliationJob(scopeFactory, _distributedLock, DateTimeProvider);

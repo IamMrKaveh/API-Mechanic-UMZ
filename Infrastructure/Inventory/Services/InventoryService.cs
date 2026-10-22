@@ -45,6 +45,73 @@ public sealed class InventoryService(
         }
     }
 
+    public async Task<ServiceResult> ReserveStockForOrderAsync(
+        IReadOnlyCollection<StockReservationRequest> items,
+        string referenceNumber,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+
+        var reserved = new List<StockReservationRequest>();
+
+        foreach (var item in items)
+        {
+            var inventory = await inventoryRepository.GetByVariantIdAsync(item.VariantId, ct);
+            if (inventory is null)
+            {
+                await ReleaseReservationsAsync(reserved, referenceNumber, ct);
+                return ServiceResult.NotFound($"موجودی واریانت {item.VariantId.Value} یافت نشد.");
+            }
+
+            var result = inventory.ReserveStock(
+                item.Quantity, referenceNumber, dateTimeProvider.UtcNow, item.OrderItemId);
+
+            if (result.IsFailure)
+            {
+                await ReleaseReservationsAsync(reserved, referenceNumber, ct);
+                return ServiceResult.Failure(result.Error);
+            }
+
+            inventoryRepository.Update(inventory);
+            reserved.Add(item);
+        }
+
+        try
+        {
+            await unitOfWork.SaveChangesAsync(ct);
+            return ServiceResult.Success();
+        }
+        catch (ConcurrencyException)
+        {
+            return ServiceResult.Failure("تداخل همزمانی - لطفاً دوباره تلاش کنید.");
+        }
+    }
+
+    /// <summary>
+    /// Releases the reservations that were already taken in this call, so a
+    /// partial reservation never survives a failed one.
+    /// </summary>
+    private async Task ReleaseReservationsAsync(
+        IReadOnlyCollection<StockReservationRequest> reserved,
+        string referenceNumber,
+        CancellationToken ct)
+    {
+        foreach (var item in reserved)
+        {
+            var inventory = await inventoryRepository.GetByVariantIdAsync(item.VariantId, ct);
+            if (inventory is null)
+                continue;
+
+            inventory.ReleaseReservation(
+                item.Quantity, referenceNumber, dateTimeProvider.UtcNow, "رزرو ناموفق سفارش");
+
+            inventoryRepository.Update(inventory);
+        }
+
+        if (reserved.Count > 0)
+            await unitOfWork.SaveChangesAsync(ct);
+    }
+
     public async Task<ServiceResult> ReleaseReservationAsync(
         VariantId variantId,
         StockQuantity quantity,

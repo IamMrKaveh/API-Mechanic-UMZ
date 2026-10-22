@@ -1,6 +1,7 @@
 using Application.Order.Features.Commands.CheckoutFromCart;
 using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Order.Features.Shared;
+using Application.Inventory.Contracts;
 using Domain.Cart.Aggregates;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
@@ -23,6 +24,7 @@ public class CheckoutOrchestrationServiceTests : HandlerTestBase
     private readonly ICheckoutPriceValidatorService _priceValidator = Substitute.For<ICheckoutPriceValidatorService>();
     private readonly ICheckoutOrderCreationService _orderCreation = Substitute.For<ICheckoutOrderCreationService>();
     private readonly ICheckoutPaymentStrategyResolver _strategyResolver = Substitute.For<ICheckoutPaymentStrategyResolver>();
+    private readonly IInventoryService _inventoryService = Substitute.For<IInventoryService>();
     private readonly ICartRepository _cartRepository = Substitute.For<ICartRepository>();
     private readonly ICheckoutPaymentStrategy _strategy = Substitute.For<ICheckoutPaymentStrategy>();
     private readonly CheckoutOrchestrationService _sut;
@@ -38,8 +40,15 @@ public class CheckoutOrchestrationServiceTests : HandlerTestBase
             _priceValidator,
             _orderCreation,
             _strategyResolver,
+            _inventoryService,
             _cartRepository,
             DateTimeProvider);
+
+        _inventoryService.ReserveStockForOrderAsync(
+                Arg.Any<IReadOnlyCollection<StockReservationRequest>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(ServiceResult.Success());
     }
 
     private static CheckoutFromCartCommand NewCommand(Guid? userId = null) =>
@@ -109,6 +118,43 @@ public class CheckoutOrchestrationServiceTests : HandlerTestBase
         new CartItemParametersBuilder().AddTo(cart);
         cart.ClearDomainEvents();
         return cart;
+    }
+
+    [Fact]
+    public async Task ProcessCheckoutAsync_ReservesTheStockForTheOrder()
+    {
+        // The stock is held in the same transaction as the order, so a customer
+        // can never pay for an order whose stock was not reserved for them.
+        var command = NewCommand();
+        var orderDto = new CheckoutResultDto { OrderId = Guid.NewGuid(), OrderNumber = "ON-1", FinalAmount = 150_000m };
+        StubHappyPath(command, orderDto);
+
+        var result = await _sut.ProcessCheckoutAsync(command, CancellationToken.None);
+
+        result.IsSuccess.ShouldBeTrue();
+        await _inventoryService.Received(1).ReserveStockForOrderAsync(
+            Arg.Is<IReadOnlyCollection<StockReservationRequest>>(items => items!.Count > 0),
+            $"ORDER-{orderDto.OrderId}",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessCheckoutAsync_WhenTheStockCannotBeReserved_DoesNotPay()
+    {
+        var command = NewCommand();
+        StubHappyPath(command);
+        _inventoryService
+            .ReserveStockForOrderAsync(
+                Arg.Any<IReadOnlyCollection<StockReservationRequest>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(ServiceResult.Failure("no stock"));
+
+        var result = await _sut.ProcessCheckoutAsync(command, CancellationToken.None);
+
+        result.IsFailure.ShouldBeTrue();
+        await _strategy.DidNotReceiveWithAnyArgs().ExecuteAsync(
+            default!, default!, default!, default!, default!, default!, default, default);
     }
 
     [Fact]

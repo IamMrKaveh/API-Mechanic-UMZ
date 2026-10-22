@@ -34,98 +34,74 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
         _sut = new OrderProcessManagerSaga(
             _orderRepository, _inventoryService, _stateRepository,
             UnitOfWork, _mediator, _featureManager, _paymentInitiator);
-        _inventoryService.ReserveStockAsync(
-                Arg.Any<VariantId>(), Arg.Any<StockQuantity>(), Arg.Any<string>(),
-                Arg.Any<OrderItemId?>(), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult.Success());
         _inventoryService.ReleaseReservationAsync(
                 Arg.Any<VariantId>(), Arg.Any<StockQuantity>(), Arg.Any<string>(),
                 Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
+        _mediator.Send(Arg.Any<CommitStockForOrderCommand>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult.Success());
     }
 
-    private static DomainEventNotification<OrderCreatedEvent> CreatedNotification(OrderAggregate order) =>
-        new(new OrderCreatedEvent(
-            order.Id, order.UserId, order.OrderNumber,
-            order.FinalAmount.Amount, "IRT", order.OrderItems.Count, Guid.NewGuid()));
-
-    [Fact]
-    public async Task Handle_OrderCreated_ReservesInventoryAndMarksReserved()
+    /// <summary>
+    /// The production shape: the payment service already marked the order as paid
+    /// before the outbox published the event.
+    /// </summary>
+    private static OrderAggregate PaidOrder()
     {
         var order = new OrderBuilder().Build();
+        order.MarkAsPaid(PaymentTransactionId.NewId());
+        return order;
+    }
+
+    private static DomainEventNotification<PaymentSucceededEvent> Succeeded(OrderAggregate order) =>
+        new(new PaymentSucceededEvent(
+            PaymentTransactionId.NewId(), order.Id, 1L, order.UserId,
+            Money.Create(10m, "IRT"), PaymentGateway.Zarinpal));
+
+    [Fact]
+    public async Task Handle_PaymentSucceeded_WhenTheOrderIsAlreadyPaid_StillCommitsTheInventory()
+    {
+        // The payment service marks the order paid synchronously, so the saga
+        // always sees an already paid order. The commit must still happen.
+        var order = PaidOrder();
+        var state = OrderProcessState.Create(order.Id);
+        _stateRepository.GetByOrderIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(state);
         _orderRepository.FindByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(order);
-        OrderProcessState? captured = null;
-        await _stateRepository.AddAsync(Arg.Do<OrderProcessState>(s => captured = s), Arg.Any<CancellationToken>());
 
-        await _sut.Handle(CreatedNotification(order), CancellationToken.None);
+        await _sut.Handle(Succeeded(order), CancellationToken.None);
 
-        captured.ShouldNotBeNull();
-        captured!.OrderId.ShouldBe(order.Id);
-        captured.CurrentStep.ShouldBe(ProcessStepEnum.InventoryReserved);
-        captured.Status.ShouldBe(ProcessStatusEnum.InProgress);
-        await _inventoryService.Received(order.OrderItems.Count).ReserveStockAsync(
-            Arg.Any<VariantId>(), Arg.Any<StockQuantity>(), $"ORDER-{order.Id.Value}",
-            Arg.Any<OrderItemId?>(), Arg.Any<CancellationToken>());
-        await UnitOfWork.Received().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _mediator.Received(1).Send(
+            Arg.Any<CommitStockForOrderCommand>(), Arg.Any<CancellationToken>());
+        state.CurrentStep.ShouldBe(ProcessStepEnum.Completed);
     }
 
     [Fact]
-    public async Task Handle_OrderCreated_WhenOrderMissing_MarksFailed()
+    public async Task Handle_PaymentSucceeded_WhenTheOrderIsAlreadyPaid_MovesTheOrderToProcessing()
     {
-        var order = new OrderBuilder().Build();
-        _orderRepository.FindByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns((OrderAggregate?)null);
-        OrderProcessState? captured = null;
-        await _stateRepository.AddAsync(Arg.Do<OrderProcessState>(s => captured = s), Arg.Any<CancellationToken>());
-
-        await _sut.Handle(CreatedNotification(order), CancellationToken.None);
-
-        captured.ShouldNotBeNull();
-        captured!.Status.ShouldBe(ProcessStatusEnum.Failed);
-        captured.FailureReason.ShouldBe("Order not found after creation.");
-        await _inventoryService.DidNotReceiveWithAnyArgs().ReserveStockAsync(
-            default!, default!, default!, default!, default);
-    }
-
-    [Fact]
-    public async Task Handle_OrderCreated_WhenReserveFails_CompensatesAndMarksFailed()
-    {
-        var order = new OrderBuilder().Build();
+        var order = PaidOrder();
+        var state = OrderProcessState.Create(order.Id);
+        _stateRepository.GetByOrderIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(state);
         _orderRepository.FindByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(order);
-        _inventoryService.ReserveStockAsync(
-                Arg.Any<VariantId>(), Arg.Any<StockQuantity>(), Arg.Any<string>(),
-                Arg.Any<OrderItemId?>(), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult.Failure("no stock"));
-        OrderProcessState? captured = null;
-        await _stateRepository.AddAsync(Arg.Do<OrderProcessState>(s => captured = s), Arg.Any<CancellationToken>());
 
-        await _sut.Handle(CreatedNotification(order), CancellationToken.None);
+        await _sut.Handle(Succeeded(order), CancellationToken.None);
 
-        captured.ShouldNotBeNull();
-        captured!.Status.ShouldBe(ProcessStatusEnum.Failed);
-        await _inventoryService.Received().ReleaseReservationAsync(
-            Arg.Any<VariantId>(), Arg.Any<StockQuantity>(), Arg.Any<string>(),
-            Arg.Any<string?>(), Arg.Any<CancellationToken>());
-        _orderRepository.Received(1).Update(order, Arg.Any<byte[]?>());
+        order.Status.ShouldBe(OrderStatusValue.Processing);
     }
 
     [Fact]
-    public async Task Handle_PaymentSucceeded_CommitsInventoryAndCompletes()
+    public async Task Handle_PaymentSucceeded_WhenTheOrderIsNotPaidYet_SettlesAndCommitsTheInventory()
     {
         var order = new OrderBuilder().Build();
         var state = OrderProcessState.Create(order.Id);
         _stateRepository.GetByOrderIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(state);
         _orderRepository.FindByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(order);
-        _mediator.Send(Arg.Any<CommitStockForOrderCommand>(), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult.Success());
 
-        await _sut.Handle(new DomainEventNotification<PaymentSucceededEvent>(
-            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 123L, order.UserId, Money.Create(100m, "IRT"), PaymentGateway.Zarinpal)),
-            CancellationToken.None);
+        await _sut.Handle(Succeeded(order), CancellationToken.None);
 
         order.IsPaid.ShouldBeTrue();
+        await _mediator.Received(1).Send(
+            Arg.Any<CommitStockForOrderCommand>(), Arg.Any<CancellationToken>());
         state.CurrentStep.ShouldBe(ProcessStepEnum.Completed);
-        state.Status.ShouldBe(ProcessStatusEnum.Completed);
-        _orderRepository.Received(1).Update(order, Arg.Any<byte[]?>());
     }
 
     [Fact]
@@ -152,14 +128,10 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
         _stateRepository.GetByOrderIdAsync(order.Id, Arg.Any<CancellationToken>())
             .Returns((OrderProcessState?)null);
         _orderRepository.FindByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(order);
-        _mediator.Send(Arg.Any<CommitStockForOrderCommand>(), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult.Success());
         OrderProcessState? added = null;
         await _stateRepository.AddAsync(Arg.Do<OrderProcessState>(s => added = s), Arg.Any<CancellationToken>());
 
-        await _sut.Handle(new DomainEventNotification<PaymentSucceededEvent>(
-            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 1L, order.UserId, Money.Create(10m, "IRT"), PaymentGateway.Zarinpal)),
-            CancellationToken.None);
+        await _sut.Handle(Succeeded(order), CancellationToken.None);
 
         added.ShouldNotBeNull();
         added!.OrderId.ShouldBe(order.Id);
@@ -168,7 +140,7 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
     [Fact]
     public async Task Handle_PaymentSucceeded_WhenCommitFailsAndAutoRefundOn_Refunds()
     {
-        var order = new OrderBuilder().Build();
+        var order = PaidOrder();
         var state = OrderProcessState.Create(order.Id);
         _stateRepository.GetByOrderIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(state);
         _orderRepository.FindByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(order);
@@ -178,9 +150,7 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
         _paymentInitiator.InitiateRefundAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        await _sut.Handle(new DomainEventNotification<PaymentSucceededEvent>(
-            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 1L, order.UserId, Money.Create(10m, "IRT"), PaymentGateway.Zarinpal)),
-            CancellationToken.None);
+        await _sut.Handle(Succeeded(order), CancellationToken.None);
 
         state.CurrentStep.ShouldBe(ProcessStepEnum.Refunded);
         await _paymentInitiator.Received(1).InitiateRefundAsync(order.Id.Value, Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -189,7 +159,7 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
     [Fact]
     public async Task Handle_PaymentSucceeded_WhenCommitFailsAndAutoRefundOff_RequiresManualReconciliation()
     {
-        var order = new OrderBuilder().Build();
+        var order = PaidOrder();
         var state = OrderProcessState.Create(order.Id);
         _stateRepository.GetByOrderIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(state);
         _orderRepository.FindByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(order);
@@ -197,9 +167,7 @@ public class OrderProcessManagerSagaTests : HandlerTestBase
             .Returns(ServiceResult.Failure("commit failed"));
         _featureManager.IsEnabledAsync(Arg.Any<string>()).Returns(false);
 
-        await _sut.Handle(new DomainEventNotification<PaymentSucceededEvent>(
-            new PaymentSucceededEvent(PaymentTransactionId.NewId(), order.Id, 1L, order.UserId, Money.Create(10m, "IRT"), PaymentGateway.Zarinpal)),
-            CancellationToken.None);
+        await _sut.Handle(Succeeded(order), CancellationToken.None);
 
         state.CurrentStep.ShouldBe(ProcessStepEnum.RequiresManualReconciliation);
         state.FailureReason.ShouldBe("Auto-refund disabled.");

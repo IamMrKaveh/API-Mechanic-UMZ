@@ -20,56 +20,11 @@ public sealed class OrderProcessManagerSaga(
     ISender mediator,
     IFeatureManager featureManager,
     IPaymentInitiator paymentInitiator) :
-    INotificationHandler<DomainEventNotification<OrderCreatedEvent>>,
     INotificationHandler<DomainEventNotification<PaymentSucceededEvent>>,
     INotificationHandler<DomainEventNotification<PaymentFailedEvent>>,
     INotificationHandler<DomainEventNotification<OrderCancelledEvent>>,
     INotificationHandler<DomainEventNotification<OrderExpiredEvent>>
 {
-    public async Task Handle(DomainEventNotification<OrderCreatedEvent> notification, CancellationToken ct)
-    {
-        var domainEvent = notification.DomainEvent;
-
-        var processState = OrderProcessState.Create(
-            domainEvent.OrderId,
-            correlationId: domainEvent.OrderId.ToString());
-
-        await processStateRepository.AddAsync(processState, ct);
-        processState.TransitionTo(ProcessStepEnum.InventoryReserving);
-        await unitOfWork.SaveChangesAsync(ct);
-
-        var order = await orderRepository.FindByIdAsync(domainEvent.OrderId, ct);
-        if (order is null)
-        {
-            processState.MarkFailed("Order not found after creation.");
-            await unitOfWork.SaveChangesAsync(ct);
-            return;
-        }
-
-        var referenceNumber = $"ORDER-{order.Id.Value}";
-
-        foreach (var item in order.OrderItems)
-        {
-            var result = await inventoryService.ReserveStockAsync(
-                item.VariantId,
-                Domain.Inventory.ValueObjects.StockQuantity.Create(item.Quantity),
-                referenceNumber,
-                item.Id,
-                ct);
-
-            if (!result.IsSuccess)
-            {
-                processState.MarkCompensating();
-                await unitOfWork.SaveChangesAsync(ct);
-                await CompensateOrderAsync(order, $"موجودی کافی نیست: {result.Error}", processState, ct);
-                return;
-            }
-        }
-
-        processState.TransitionTo(ProcessStepEnum.InventoryReserved);
-        await unitOfWork.SaveChangesAsync(ct);
-    }
-
     public async Task Handle(DomainEventNotification<PaymentSucceededEvent> notification, CancellationToken ct)
     {
         var domainEvent = notification.DomainEvent;
@@ -90,21 +45,25 @@ public sealed class OrderProcessManagerSaga(
         }
 
         var paymentTransactionId = Domain.Payment.ValueObjects.PaymentTransactionId.From(domainEvent.PaymentTransactionId.Value);
-        var settlementResult = PaymentSettlementService.ProcessPaymentSuccess(
-            new OrderPaymentContextAdapter(order), paymentTransactionId);
 
-        if (!settlementResult.IsSuccess)
+        // The payment service already marked the order as paid. Settling it again
+        // would be a no-op, but the workflow still has to continue: the order
+        // moves on to processing and the reserved stock is committed.
+        if (!order.IsPaid)
         {
-            processState.MarkFailed($"Settlement failed: {settlementResult.Error}");
-            await unitOfWork.SaveChangesAsync(ct);
-            return;
+            var settlementResult = PaymentSettlementService.ProcessPaymentSuccess(
+                new OrderPaymentContextAdapter(order), paymentTransactionId);
+
+            if (!settlementResult.IsSuccess)
+            {
+                processState.MarkFailed($"Settlement failed: {settlementResult.Error}");
+                await unitOfWork.SaveChangesAsync(ct);
+                return;
+            }
         }
-
-        if (settlementResult.IsIdempotent)
+        else if (order.Status == OrderStatusValue.Paid)
         {
-            processState.MarkCompleted();
-            await unitOfWork.SaveChangesAsync(ct);
-            return;
+            order.StartProcessing();
         }
 
         orderRepository.Update(order);

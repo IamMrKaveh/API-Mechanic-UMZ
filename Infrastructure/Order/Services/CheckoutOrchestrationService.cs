@@ -1,8 +1,10 @@
 ﻿using Application.Order.Features.Commands.CheckoutFromCart;
 using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Application.Order.Features.Shared;
+using Application.Inventory.Contracts;
 using Domain.Cart.Interfaces;
 using Domain.Cart.ValueObjects;
+using Domain.Inventory.ValueObjects;
 using Domain.Order.ValueObjects;
 using Domain.User.ValueObjects;
 using SharedKernel.Abstractions.Interfaces;
@@ -18,6 +20,7 @@ public class CheckoutOrchestrationService(
     ICheckoutPriceValidatorService priceValidator,
     ICheckoutOrderCreationService orderCreation,
     ICheckoutPaymentStrategyResolver paymentStrategyResolver,
+    IInventoryService inventoryService,
     ICartRepository cartRepository,
     IDateTimeProvider dateTimeProvider) : ICheckoutOrchestrationService
 {
@@ -79,6 +82,23 @@ public class CheckoutOrchestrationService(
 
         var orderDto = orderResult.Value!;
         var strategy = strategyResult.Value!;
+
+        // The stock is reserved in the same transaction as the order, so a
+        // customer can never pay for an order whose stock was not held for them.
+        var reservationNumber = $"ORDER-{orderDto.OrderId}";
+
+        var reserveResult = await inventoryService.ReserveStockForOrderAsync(
+            cartItemsResult.Value!.Items
+                .Select(item => new StockReservationRequest(
+                    item.VariantId,
+                    StockQuantity.Create(item.Quantity),
+                    null))
+                .ToList(),
+            reservationNumber,
+            ct);
+
+        if (!reserveResult.IsSuccess)
+            return ServiceResult<CheckoutResultDto>.Failure(reserveResult.Error!);
 
         var paymentOutcome = await strategy.ExecuteAsync(
             orderDto,

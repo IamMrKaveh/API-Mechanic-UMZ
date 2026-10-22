@@ -50,7 +50,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
         var message = OutboxMessage.Create("SampleEvent", "{}", DateTime.UtcNow);
         _context.OutboxMessages.Add(message);
 
-        var sut = new UnitOfWork(_context, _logger, _environment);
+        var sut = new UnitOfWork(_context, _logger);
 
         await sut.SaveChangesAsync();
 
@@ -63,7 +63,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
     [SkippableFact]
     public async Task ExecuteStrategyAsync_WhenOperationSucceeds_CommitsChanges()
     {
-        var sut = new UnitOfWork(_context, _logger, _environment);
+        var sut = new UnitOfWork(_context, _logger);
         var message = OutboxMessage.Create("SampleEvent", "{}", DateTime.UtcNow);
 
         var result = await sut.ExecuteStrategyAsync(async ct =>
@@ -83,7 +83,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
     [SkippableFact]
     public async Task ExecuteStrategyAsync_WhenOperationThrows_RollsBackChangesAndRethrows()
     {
-        var sut = new UnitOfWork(_context, _logger, _environment);
+        var sut = new UnitOfWork(_context, _logger);
         var message = OutboxMessage.Create("SampleEvent", "{}", DateTime.UtcNow);
 
         await Should.ThrowAsync<InvalidOperationException>(async () =>
@@ -100,24 +100,9 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
     }
 
     [SkippableFact]
-    public async Task ExecuteStrategyAsync_WithActiveTransactionInDevelopment_ThrowsInvalidOperationException()
+    public async Task ExecuteStrategyAsync_WithActiveTransaction_JoinsTheAmbientTransaction()
     {
-        _environment.EnvironmentName = Environments.Development;
-        var sut = new UnitOfWork(_context, _logger, _environment);
-
-        await using var outer = await _context.Database.BeginTransactionAsync();
-
-        await Should.ThrowAsync<InvalidOperationException>(async () =>
-            await sut.ExecuteStrategyAsync<int>(_ => Task.FromResult(1)));
-
-        await outer.RollbackAsync();
-    }
-
-    [SkippableFact]
-    public async Task ExecuteStrategyAsync_WithActiveTransactionInProduction_ExecutesOperationWithoutRetryWrapper()
-    {
-        _environment.EnvironmentName = Environments.Production;
-        var sut = new UnitOfWork(_context, _logger, _environment);
+        var sut = new UnitOfWork(_context, _logger);
 
         await using var outer = await _context.Database.BeginTransactionAsync();
 
@@ -136,9 +121,78 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task ExecuteStrategyAsync_WithActiveTransactionAndFailingOperation_RollsBackToTheSavepoint()
+    {
+        var sut = new UnitOfWork(_context, _logger);
+        var message = OutboxMessage.Create("SavepointEvent", "{}", DateTime.UtcNow);
+
+        await using var outer = await _context.Database.BeginTransactionAsync();
+
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
+            await sut.ExecuteStrategyAsync<int>(async ct =>
+            {
+                _context.OutboxMessages.Add(message);
+                await _context.SaveChangesAsync(ct);
+                throw new InvalidOperationException("intentional");
+            }));
+
+        // The savepoint rolled the failed operation back, so its row is gone even
+        // though the ambient transaction is still open.
+        await using var verifyContext = CreateFreshContext();
+        var persisted = await verifyContext.OutboxMessages.FirstOrDefaultAsync(m => m.Id == message.Id);
+        persisted.ShouldBeNull();
+
+        await outer.RollbackAsync();
+    }
+
+    [SkippableFact]
+    public async Task ExecuteTransactionAsync_WhenTheResultIsRejected_RollsBackTheChanges()
+    {
+        var sut = new UnitOfWork(_context, _logger);
+        var message = OutboxMessage.Create("RejectedEvent", "{}", DateTime.UtcNow);
+
+        var result = await sut.ExecuteTransactionAsync<string>(
+            async ct =>
+            {
+                _context.OutboxMessages.Add(message);
+                await _context.SaveChangesAsync(ct);
+                return "rejected";
+            },
+            _ => false);
+
+        result.ShouldBe("rejected");
+
+        await using var verifyContext = CreateFreshContext();
+        var persisted = await verifyContext.OutboxMessages.FirstOrDefaultAsync(m => m.Id == message.Id);
+        persisted.ShouldBeNull();
+    }
+
+    [SkippableFact]
+    public async Task ExecuteTransactionAsync_WhenTheResultIsAccepted_CommitsTheChanges()
+    {
+        var sut = new UnitOfWork(_context, _logger);
+        var message = OutboxMessage.Create("AcceptedEvent", "{}", DateTime.UtcNow);
+
+        var result = await sut.ExecuteTransactionAsync<string>(
+            async ct =>
+            {
+                _context.OutboxMessages.Add(message);
+                await _context.SaveChangesAsync(ct);
+                return "accepted";
+            },
+            _ => true);
+
+        result.ShouldBe("accepted");
+
+        await using var verifyContext = CreateFreshContext();
+        var persisted = await verifyContext.OutboxMessages.FirstOrDefaultAsync(m => m.Id == message.Id);
+        persisted.ShouldNotBeNull();
+    }
+
+    [SkippableFact]
     public async Task SaveChangesAsync_AfterDispose_ThrowsObjectDisposedException()
     {
-        var sut = new UnitOfWork(_context, _logger, _environment);
+        var sut = new UnitOfWork(_context, _logger);
         sut.Dispose();
 
         await Should.ThrowAsync<ObjectDisposedException>(async () => await sut.SaveChangesAsync());
@@ -147,7 +201,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
     [SkippableFact]
     public async Task ExecuteStrategyAsync_AfterDispose_ThrowsObjectDisposedException()
     {
-        var sut = new UnitOfWork(_context, _logger, _environment);
+        var sut = new UnitOfWork(_context, _logger);
         sut.Dispose();
 
         await Should.ThrowAsync<ObjectDisposedException>(async () =>
@@ -157,7 +211,7 @@ public class UnitOfWorkTests(PostgresContainerFixture fixture) : IAsyncLifetime
     [SkippableFact]
     public async Task DisposeAsync_IsIdempotent()
     {
-        var sut = new UnitOfWork(_context, _logger, _environment);
+        var sut = new UnitOfWork(_context, _logger);
 
         await sut.DisposeAsync();
         await sut.DisposeAsync();

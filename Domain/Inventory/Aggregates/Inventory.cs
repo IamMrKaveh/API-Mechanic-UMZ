@@ -1,4 +1,5 @@
 using Domain.Inventory.Entities;
+using Domain.Inventory.Enums;
 using Domain.Inventory.Events;
 using Domain.Inventory.ValueObjects;
 using Domain.Order.ValueObjects;
@@ -220,6 +221,12 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
         if (quantity <= 0) return ServiceResult.Failure(new Error("Inventory.InvalidQuantity", "مقدار باید بزرگتر از صفر باشد."));
         if (IsUnlimited) return ServiceResult.Success();
 
+        // Committing the same reservation twice must not take the stock out a
+        // second time. The step is retried whenever the outbox republishes it,
+        // so it has to be idempotent on its own.
+        if (IsAlreadyCommitted(referenceNumber, orderItemId))
+            return ServiceResult.Success();
+
         if (ReservedQuantity < quantity)
             return ServiceResult.Failure(new Error("Inventory.InsufficientReservation", $"موجودی رزرو شده کافی نیست. رزرو شده: {ReservedQuantity}، درخواستی: {quantity}"));
 
@@ -237,6 +244,18 @@ public sealed class Inventory : AggregateRoot<InventoryId>, ISoftDeletable
 
         return ServiceResult.Success();
     }
+
+    /// <summary>
+    /// True when this reservation was already turned into a stock movement, which
+    /// is the case when the ledger already holds a commit for the order line or
+    /// for the reference of the order.
+    /// </summary>
+    private bool IsAlreadyCommitted(string referenceNumber, OrderItemId? orderItemId)
+        => _ledgerEntries.Any(entry =>
+            entry.EventType == StockEventType.ReservationCommit
+            && (orderItemId is not null
+                ? entry.OrderItemId == orderItemId
+                : string.Equals(entry.ReferenceNumber, referenceNumber, StringComparison.Ordinal)));
 
     public ServiceResult ReverseStockChange(
         string idempotencyKey,

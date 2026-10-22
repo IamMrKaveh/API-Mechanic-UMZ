@@ -1,9 +1,11 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace Infrastructure.Persistence;
 
 public sealed class UnitOfWork(
     DBContext context,
-    ILogger<UnitOfWork> logger,
-    IHostEnvironment environment) : IUnitOfWork
+    ILogger<UnitOfWork> logger) : IUnitOfWork
 {
     private bool disposed;
 
@@ -16,21 +18,20 @@ public sealed class UnitOfWork(
     public async Task<T> ExecuteStrategyAsync<T>(
         Func<CancellationToken, Task<T>> operation,
         CancellationToken ct = default)
+        => await ExecuteTransactionAsync(operation, _ => true, ct);
+
+    public async Task<T> ExecuteTransactionAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        Func<T, bool> shouldCommit,
+        CancellationToken ct = default)
     {
         ThrowIfDisposed();
 
         if (context.Database.CurrentTransaction is not null)
         {
-            if (environment.IsDevelopment())
-                throw new InvalidOperationException(
-                    "ExecuteStrategyAsync was called while a transaction is already active. " +
-                    "Wrap the entire transactional block (including BeginTransaction) inside the strategy.");
-
-            logger.LogWarning(
-                "ExecuteStrategyAsync invoked while a transaction is already active. " +
-                "Operation is running without retry semantics inside the outer transaction.");
-
-            return await operation(ct);
+            // A transaction is already running: the operation joins it through a
+            // savepoint, so a failure inside it rolls back only its own writes.
+            return await ExecuteInSavepointAsync(operation, ct);
         }
 
         var strategy = context.Database.CreateExecutionStrategy();
@@ -41,6 +42,15 @@ public sealed class UnitOfWork(
             try
             {
                 var result = await operation(ct);
+
+                if (!shouldCommit(result))
+                {
+                    logger.LogWarning(
+                        "Transaction rolled back because the operation reported a rejected result.");
+                    await efTransaction.RollbackAsync(CancellationToken.None);
+                    return result;
+                }
+
                 await efTransaction.CommitAsync(ct);
                 return result;
             }
@@ -51,6 +61,40 @@ public sealed class UnitOfWork(
                 throw;
             }
         });
+    }
+
+    private async Task<T> ExecuteInSavepointAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        CancellationToken ct)
+    {
+        var transaction = context.Database.CurrentTransaction;
+
+        // Savepoints are a relational concept; without one the operation simply
+        // joins the ambient transaction.
+        if (transaction is not RelationalTransaction relationalTransaction)
+        {
+            logger.LogWarning(
+                "The ambient transaction does not support savepoints; the operation joins it directly.");
+            return await operation(ct);
+        }
+
+        var savepoint = $"sp_{Guid.NewGuid():N}";
+
+        await relationalTransaction.CreateSavepointAsync(savepoint, ct);
+
+        try
+        {
+            return await operation(ct);
+        }
+        catch
+        {
+            logger.LogWarning(
+                "Operation failed inside an ambient transaction; rolling back to savepoint {Savepoint}.",
+                savepoint);
+
+            await relationalTransaction.RollbackToSavepointAsync(savepoint, ct);
+            throw;
+        }
     }
 
     public void Dispose()
