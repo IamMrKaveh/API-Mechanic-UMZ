@@ -2649,6 +2649,10 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("retry_count");
 
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
                     b.Property<string>("TraceParent")
                         .HasMaxLength(55)
                         .HasColumnType("character varying(55)")
@@ -2673,7 +2677,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ProcessedAt");
 
-                    b.HasIndex("ProcessedAt", "IsPoisoned", "RetryCount", "CreatedAt")
+                    b.HasIndex("ProcessedAt", "IsPoisoned", "RetryCount", "CreatedAt", "Sequence")
                         .HasDatabaseName("IX_OutboxMessages_Dispatch");
 
                     b.ToTable("OutboxMessages", (string)null);

@@ -2,6 +2,7 @@
 using Application.Audit.Contracts;
 using Application.Common.Contracts;
 using Domain.Common.Abstractions;
+using Domain.Order.Entities;
 using Domain.Order.Events;
 using Domain.Order.ValueObjects;
 using Infrastructure.Persistence.Context;
@@ -214,5 +215,97 @@ public class OutboxProcessorTests(PostgresContainerFixture fixture) : IAsyncLife
         await using var verifyContext = CreateContext();
         var processedCount = await verifyContext.OutboxMessages.CountAsync(m => m.ProcessedAt != null);
         processedCount.ShouldBe(2);
+    }
+
+    [SkippableFact]
+    public async Task ProcessAsync_WithMessagesOfTheSameTimestamp_DispatchesThemInSequenceOrder()
+    {
+        var firstEvent = new OrderExpiredEvent(OrderId.NewId());
+        var secondEvent = new OrderExpiredEvent(OrderId.NewId());
+        var typeName = _registry.GetTypeName(firstEvent.GetType());
+        var firstPayload = JsonSerializer.Serialize(firstEvent, firstEvent.GetType(), SerializerOptions);
+        var secondPayload = JsonSerializer.Serialize(secondEvent, secondEvent.GetType(), SerializerOptions);
+
+        var createdAt = DateTime.UtcNow;
+
+        // The second message is written first, but the sequence keeps the order
+        // in which the events were raised.
+        var second = OutboxMessage.Create(typeName, secondPayload, createdAt, sequence: 1);
+        var first = OutboxMessage.Create(typeName, firstPayload, createdAt, sequence: 0);
+
+        _context.OutboxMessages.Add(second);
+        _context.OutboxMessages.Add(first);
+        await _context.SaveChangesAsync();
+
+        var dispatchedOrderIds = new List<Guid>();
+
+        _dispatcher
+            .When(d => d.DispatchAsync(Arg.Any<IEnumerable<IDomainEvent>>(), Arg.Any<CancellationToken>()))
+            .Do(callInfo =>
+            {
+                var events = callInfo.Arg<IEnumerable<IDomainEvent>>();
+                var expired = (OrderExpiredEvent)events!.Single();
+                dispatchedOrderIds.Add(expired.OrderId.Value);
+            });
+
+        await _sut.ProcessAsync();
+
+        dispatchedOrderIds.Count.ShouldBe(2);
+        dispatchedOrderIds[0].ShouldBe(firstEvent.OrderId.Value);
+        dispatchedOrderIds[1].ShouldBe(secondEvent.OrderId.Value);
+    }
+
+    [SkippableFact]
+    public async Task ProcessAsync_WhenHandlerWritesAndFails_RollsBackItsWritesAndKeepsProcessing()
+    {
+        var failingEvent = new OrderExpiredEvent(OrderId.NewId());
+        var succeedingEvent = new OrderExpiredEvent(OrderId.NewId());
+        var typeName = _registry.GetTypeName(failingEvent.GetType());
+        var failingPayload = JsonSerializer.Serialize(failingEvent, failingEvent.GetType(), SerializerOptions);
+        var succeedingPayload = JsonSerializer.Serialize(succeedingEvent, succeedingEvent.GetType(), SerializerOptions);
+
+        var createdAt = DateTime.UtcNow;
+        var failing = OutboxMessage.Create(typeName, failingPayload, createdAt, sequence: 0);
+        var succeeding = OutboxMessage.Create(typeName, succeedingPayload, createdAt, sequence: 1);
+
+        _context.OutboxMessages.Add(failing);
+        _context.OutboxMessages.Add(succeeding);
+        await _context.SaveChangesAsync();
+
+        _dispatcher
+            .When(d => d.DispatchAsync(Arg.Any<IEnumerable<IDomainEvent>>(), Arg.Any<CancellationToken>()))
+            .Do(callInfo =>
+            {
+                var events = callInfo.Arg<IEnumerable<IDomainEvent>>();
+                var expired = (OrderExpiredEvent)events!.Single();
+
+                if (expired.OrderId.Value != failingEvent.OrderId.Value)
+                    return;
+
+                // The handler writes, and only then it fails.
+                var status = OrderStatus.Create("Pending", "در انتظار بررسی", sortOrder: 2);
+                _context.OrderStatuses.Add(status);
+                _context.SaveChanges();
+
+                throw new InvalidOperationException("handler failure after write");
+            });
+
+        await _sut.ProcessAsync();
+
+        await using var verifyContext = CreateContext();
+
+        // The write of the failed handler is gone.
+        (await verifyContext.OrderStatuses.CountAsync()).ShouldBe(0);
+
+        var failedMessage = await verifyContext.OutboxMessages.FirstAsync(m => m.Id == failing.Id);
+        failedMessage.RetryCount.ShouldBe(1);
+        failedMessage.ProcessedAt.ShouldBeNull();
+        failedMessage.IsPoisoned.ShouldBeFalse();
+        failedMessage.Error.ShouldNotBeNull();
+
+        // The message after the failed one is still processed.
+        var processedMessage = await verifyContext.OutboxMessages.FirstAsync(m => m.Id == succeeding.Id);
+        processedMessage.ProcessedAt.ShouldNotBeNull();
+        processedMessage.RetryCount.ShouldBe(0);
     }
 }

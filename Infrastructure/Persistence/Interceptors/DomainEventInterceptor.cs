@@ -41,6 +41,13 @@ public sealed class DomainEventInterceptor(
         var traceState = currentActivity?.TraceStateString;
 
         var outboxMessages = new List<OutboxMessage>(domainEvents.Count);
+
+        // All the messages of one transaction share the same timestamp, and the
+        // sequence keeps the order in which the events were raised, so the
+        // processor always publishes them in that order.
+        var createdAt = DateTime.UtcNow;
+        var sequence = 0;
+
         foreach (var domainEvent in domainEvents)
         {
             string typeName;
@@ -58,9 +65,10 @@ public sealed class DomainEventInterceptor(
             outboxMessages.Add(OutboxMessage.Create(
                 typeName,
                 payload,
-                DateTime.UtcNow,
+                createdAt,
                 traceParent,
-                traceState));
+                traceState,
+                sequence++));
         }
 
         if (outboxMessages.Count > 0)

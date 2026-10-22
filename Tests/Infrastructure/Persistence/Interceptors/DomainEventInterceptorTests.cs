@@ -191,6 +191,30 @@ public class DomainEventInterceptorTests
     }
 
     [Fact]
+    public async Task SavingChangesAsync_WithSeveralEvents_AssignsSameTimestampAndIncreasingSequence()
+    {
+        var registry = new OutboxEventTypeRegistry();
+        var sut = new DomainEventInterceptor(registry);
+        using var context = CreateContext(registry);
+
+        var first = OrderStatus.Create("Pending", "در انتظار بررسی", sortOrder: 2);
+        var second = OrderStatus.Create("Shipped", "ارسال شده", sortOrder: 3);
+        context.OrderStatuses.Add(first);
+        context.OrderStatuses.Add(second);
+
+        await sut.SavingChangesAsync(EventData(context), new InterceptionResult<int>());
+
+        var messages = context.ChangeTracker.Entries<OutboxMessage>()
+            .Select(e => e.Entity)
+            .ToList();
+
+        messages.Count.ShouldBe(2);
+        messages[0].CreatedAt.ShouldBe(messages[1].CreatedAt);
+        messages[0].Sequence.ShouldBe(0);
+        messages[1].Sequence.ShouldBe(1);
+    }
+
+    [Fact]
     public async Task SavingChangesAsync_WithTrackedAggregateWhoseEventsWereCleared_AddsNoOutboxRow()
     {
         var registry = new OutboxEventTypeRegistry();

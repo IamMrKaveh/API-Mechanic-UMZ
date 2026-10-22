@@ -137,6 +137,16 @@ public sealed class OutboxMessageConfigurationTests : IDisposable
     }
 
     [Fact]
+    public void Configure_Sequence_IsRequiredAndMappedToSequenceColumn()
+    {
+        var property = EntityType().FindProperty(nameof(OutboxMessage.Sequence));
+
+        property.ShouldNotBeNull();
+        property!.GetColumnName().ShouldBe("sequence");
+        property.IsNullable.ShouldBeFalse();
+    }
+
+    [Fact]
     public void Configure_PendingIndex_UsesExpectedNameAndFilter()
     {
         var index = EntityType()
@@ -161,7 +171,8 @@ public sealed class OutboxMessageConfigurationTests : IDisposable
             nameof(OutboxMessage.ProcessedAt),
             nameof(OutboxMessage.IsPoisoned),
             nameof(OutboxMessage.RetryCount),
-            nameof(OutboxMessage.CreatedAt)
+            nameof(OutboxMessage.CreatedAt),
+            nameof(OutboxMessage.Sequence)
         });
         index.GetFilter().ShouldBeNull();
     }

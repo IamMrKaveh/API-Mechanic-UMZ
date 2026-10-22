@@ -8,6 +8,13 @@ public sealed class OutboxMessage
     public string Type { get; private set; } = string.Empty;
     public string Payload { get; private set; } = string.Empty;
     public DateTime CreatedAt { get; private set; }
+
+    /// <summary>
+    /// The position of the message inside the transaction that produced it. It
+    /// makes the order of the messages of one transaction deterministic.
+    /// </summary>
+    public int Sequence { get; private set; }
+
     public DateTime? ProcessedAt { get; private set; }
     public string? Error { get; private set; }
     public int RetryCount { get; private set; }
@@ -23,7 +30,8 @@ public sealed class OutboxMessage
         string payload,
         DateTime createdAt,
         string? traceParent = null,
-        string? traceState = null)
+        string? traceState = null,
+        int sequence = 0)
     {
         if (string.IsNullOrWhiteSpace(type))
             throw new ArgumentException("Outbox message type must be provided.", nameof(type));
@@ -42,10 +50,12 @@ public sealed class OutboxMessage
             Type = type,
             Payload = payload,
             CreatedAt = createdAt,
+            Sequence = sequence,
             TraceParent = traceParent,
             TraceState = traceState
         };
     }
+
 
     public static OutboxMessage Rehydrate(
         OutboxMessageId id,
@@ -57,7 +67,8 @@ public sealed class OutboxMessage
         int retryCount,
         bool isPoisoned,
         string? traceParent,
-        string? traceState)
+        string? traceState,
+        int sequence = 0)
     {
         return new OutboxMessage
         {
@@ -70,9 +81,11 @@ public sealed class OutboxMessage
             RetryCount = retryCount,
             IsPoisoned = isPoisoned,
             TraceParent = traceParent,
-            TraceState = traceState
+            TraceState = traceState,
+            Sequence = sequence
         };
     }
+
 
     public void MarkProcessed(DateTime processedAt)
     {

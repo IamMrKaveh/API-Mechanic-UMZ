@@ -26,6 +26,10 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
             .HasColumnName("created_at")
             .IsRequired();
 
+        builder.Property(e => e.Sequence)
+            .HasColumnName("sequence")
+            .IsRequired();
+
         builder.Property(e => e.ProcessedAt)
             .HasColumnName("processed_at");
 
@@ -55,7 +59,7 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
             .HasFilter("\"processed_at\" IS NULL AND \"is_poisoned\" = false AND \"retry_count\" < 5")
             .HasDatabaseName("IX_OutboxMessages_Pending");
 
-        builder.HasIndex(e => new { e.ProcessedAt, e.IsPoisoned, e.RetryCount, e.CreatedAt })
+        builder.HasIndex(e => new { e.ProcessedAt, e.IsPoisoned, e.RetryCount, e.CreatedAt, e.Sequence })
             .HasDatabaseName("IX_OutboxMessages_Dispatch");
     }
 }

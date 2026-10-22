@@ -88,6 +88,23 @@
 
 ---
 
+### فاز ۷ — استحکام Outbox (۱ فاز) — ✅ **تکمیل شد**
+
+این فاز ادامهٔ کار اصلاحی پس از بازبینی کامل است. دو ایراد باقی‌ماندهٔ زیرساخت انتشار رویداد رفع شد.
+
+| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
+|---|---|---|
+| **D6** | **ترتیب انتشار قطعی شد.** همهٔ پیام‌های یک تراکنش اکنون یک `created_at` مشترک دارند و یک شمارهٔ ترتیب (`sequence`) می‌گیرند که اندیس رویداد در همان تراکنش است. پردازشگر Outbox با `ORDER BY "created_at", "sequence", "id"` می‌خواند، پس ترتیب رویدادهای یک تراکنش دیگر به شکل تصادفی (بر اساس UUID) نیست | `Infrastructure/Persistence/Outbox/OutboxMessage.cs` · `OutboxMessageConfiguration.cs` · `Infrastructure/Persistence/Interceptors/DomainEventInterceptor.cs` · `Infrastructure/Persistence/Outbox/OutboxProcessor.cs` · migration `AddOutboxMessageSequence` |
+| **D7** | **هر پیام Outbox ایزوله شد.** پیش از dispatch یک savepoint ساخته می‌شود؛ اگر هندلر شکست بخورد، نوشته‌های همان پیام به savepoint برگردانده می‌شود و change-tracker هم به وضعیت قبل بازمی‌گردد (افزوده‌ها `Detached`، تغییریافته‌ها به مقادیر قبل). بنابراین retry هرگز نوشتهٔ نیمه‌کاره را دوباره اعمال نمی‌کند و شکست یک پیام، پیام‌های بعدی صف را متوقف نمی‌کند | `Infrastructure/Persistence/Outbox/OutboxProcessor.cs` · `Infrastructure/Persistence/Outbox/TrackedEntities.cs` · `Infrastructure/Persistence/RelationalSavepointExtensions.cs` · `Infrastructure/Persistence/UnitOfWork.cs` |
+
+**نکتهٔ طراحی:** منطق savepoint یک‌بار در `RelationalSavepointExtensions` تعریف شده و هم `UnitOfWork` (تراکنش تودرتو) و هم پردازشگر Outbox از آن استفاده می‌کنند؛ پس رفتار «تراکنش تودرتو» و «ایزوله‌سازی هر پیام» یکسان و در یک نقطه تعریف شده‌اند. اگر تراکنش پشتیبان savepoint نداشته باشد، مسیر جایگزین صریح و بدون savepoint اجرا می‌شود (بدون از دست دادن شفافیت).
+
+**تست‌های تازه:** «دو رویداد در یک تراکنش → یک timestamp مشترک و `sequence` صعودی» · «نگاشت ستون `sequence`» · «دو پیام با timestamp یکسان → انتشار به ترتیب `sequence`» · «هندلری که می‌نویسد و سپس شکست می‌خورد → نوشته‌اش حذف می‌شود، پیام دوباره تلاش می‌شود، و پیام بعدی پردازش می‌شود».
+
+**وضعیت:** `dotnet build -c Release -warnaserror` → بدون خطا و بدون warning · `dotnet test` → ۱۰٬۰۶۹ پاس · ۱٬۵۴۰ skip · ۲۲ خطای پیش‌فرض محیط (دسترسی به پوشه temp) که پیش از این فاز نیز وجود داشت · `dotnet ef migrations has-pending-model-changes` پاک است.
+
+---
+
 ## بخش ۰ — گزارش اجرا
 
 ### فاز ۱ — وضعیت: ✅ تکمیل شد

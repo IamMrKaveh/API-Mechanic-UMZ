@@ -67,11 +67,7 @@ public sealed class UnitOfWork(
         Func<CancellationToken, Task<T>> operation,
         CancellationToken ct)
     {
-        var transaction = context.Database.CurrentTransaction;
-
-        // Savepoints are a relational concept; without one the operation simply
-        // joins the ambient transaction.
-        if (transaction is not RelationalTransaction relationalTransaction)
+        if (!context.Database.SupportsSavepoints())
         {
             logger.LogWarning(
                 "The ambient transaction does not support savepoints; the operation joins it directly.");
@@ -80,7 +76,7 @@ public sealed class UnitOfWork(
 
         var savepoint = $"sp_{Guid.NewGuid():N}";
 
-        await relationalTransaction.CreateSavepointAsync(savepoint, ct);
+        await context.Database.CreateSavepointAsync(savepoint, ct);
 
         try
         {
@@ -92,7 +88,7 @@ public sealed class UnitOfWork(
                 "Operation failed inside an ambient transaction; rolling back to savepoint {Savepoint}.",
                 savepoint);
 
-            await relationalTransaction.RollbackToSavepointAsync(savepoint, ct);
+            await context.Database.RollbackToSavepointAsync(savepoint, ct);
             throw;
         }
     }
