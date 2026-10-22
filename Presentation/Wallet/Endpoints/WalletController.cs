@@ -177,37 +177,6 @@ public class WalletController(
         return await Send(cmd, ct);
     }
 
-    [HttpPost("{id:guid}/reject")]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RejectWithdrawal(
-        Guid id,
-        [FromBody] RejectWithdrawalRequest request,
-        CancellationToken ct)
-    {
-        var cmd = new RejectWithdrawalCommand(id, request.Reason);
-        return await Send(cmd, ct);
-    }
-
-    [HttpPost("{id:guid}/mark-paid")]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> MarkWithdrawalPaid(
-        Guid id,
-        [FromBody] MarkWithdrawalPaidRequest request,
-        CancellationToken ct)
-    {
-        var cmd = new MarkWithdrawalPaidCommand(
-            id,
-            request.BankReferenceNumber);
-        return await Send(cmd, ct);
-    }
-
     [HttpPost("transfer/preview")]
     [ProducesResponseType(typeof(ApiResponse<WalletTransferPreviewDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]

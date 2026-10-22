@@ -7,7 +7,7 @@ namespace Application.Attribute.Features.Queries.GetAttributeTypeById;
 public class GetAttributeTypeByIdHandler(
     IAttributeRepository repository,
     IMapper mapper)
-    : ICommandHandler<GetAttributeTypeByIdQuery, AttributeTypeDto>
+    : IQueryHandler<GetAttributeTypeByIdQuery, AttributeTypeDto>
 {
     public async Task<ServiceResult<AttributeTypeDto>> Handle(
         GetAttributeTypeByIdQuery request,

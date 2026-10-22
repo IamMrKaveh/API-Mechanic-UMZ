@@ -47,6 +47,9 @@ public sealed class DBContext(
     public DbSet<Domain.Inventory.Aggregates.Inventory> Inventories => Set<Domain.Inventory.Aggregates.Inventory>();
     public DbSet<Domain.Media.Aggregates.Media> Medias => Set<Domain.Media.Aggregates.Media>();
     public DbSet<Domain.Notification.Aggregates.Notification> Notifications => Set<Domain.Notification.Aggregates.Notification>();
+
+    public DbSet<Domain.Notification.Aggregates.NotificationPreference> NotificationPreferences
+        => Set<Domain.Notification.Aggregates.NotificationPreference>();
     public DbSet<Domain.Order.Aggregates.Order> Orders => Set<Domain.Order.Aggregates.Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderStatus> OrderStatuses => Set<OrderStatus>();

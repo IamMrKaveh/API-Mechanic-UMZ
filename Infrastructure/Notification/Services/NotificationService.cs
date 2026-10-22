@@ -7,6 +7,7 @@ namespace Infrastructure.Notification.Services;
 
 public sealed class NotificationService(
     INotificationRepository notificationRepository,
+    INotificationPreferenceRepository preferenceRepository,
     IAuditService auditService,
     IUnitOfWork unitOfWork) : INotificationService
 {
@@ -21,6 +22,15 @@ public sealed class NotificationService(
         CancellationToken ct = default)
     {
         var notificationType = NotificationType.FromString(typeName);
+
+        if (!await IsEnabledAsync(userId, notificationType, ct))
+        {
+            await auditService.LogSystemEventAsync(
+                "NotificationSuppressed",
+                $"Notification '{typeName}' was not created for user {userId.Value} because the user disabled it.",
+                ct);
+            return;
+        }
 
         var notification = Domain.Notification.Aggregates.Notification.Create(
             NotificationId.NewId(),
@@ -39,6 +49,20 @@ public sealed class NotificationService(
         await auditService.LogSystemEventAsync(
             "NotificationCreated",
             $"Notification '{typeName}' created for user {userId.Value}", ct);
+    }
+
+    /// <summary>
+    /// A user without a preference record receives everything, so the lookup
+    /// only matters for the accounts that actually switched something off.
+    /// </summary>
+    private async Task<bool> IsEnabledAsync(
+        UserId userId,
+        NotificationType notificationType,
+        CancellationToken ct)
+    {
+        var preference = await preferenceRepository.GetByUserIdAsync(userId, ct);
+
+        return preference is null || preference.IsEnabled(notificationType);
     }
 
     public async Task MarkAsReadAsync(

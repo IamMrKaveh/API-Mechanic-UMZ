@@ -21,6 +21,19 @@
 
 ---
 
+### فاز ۳ — وضعیت: ✅ تکمیل شد
+
+| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
+|---|---|---|
+| **D-07** | دو اکشن تکراری `reject` و `mark-paid` از کنترلر کاربر حذف شدند؛ هر دو از قبل روی `AdminWalletWithdrawalController` (زیر prefix `/admin` و داخل admin IP allow-list) وجود داشتند. تست به‌روزرسانی شد تا این قرارداد را تثبیت کند | `Presentation/Wallet/Endpoints/WalletController.cs` · `Tests/Presentation/Wallet/Endpoints/WalletControllerTests.cs` |
+| **N-01** | چرخهٔ کیف پول کامل شد: بازگشت وجه درگاه اکنون اعتبار کیف پول را برمی‌گرداند (پرداخت‌های کیف پولی دست‌نخورده می‌مانند چون مسیر لغو سفارش مبلغ را از دفتر کیف پول برمی‌گرداند)؛ یک دروازهٔ تست (`WalletLifecycleCoverageTests`) تضمین می‌کند هر اثر جانبی کیف پول هندلر دارد | `Application/Wallet/EventHandlers/PaymentRefundedWalletEventHandler.cs` · `Tests/Architecture/WalletLifecycleCoverageTests.cs` |
+| **N-02** | قابلیت جدید «ترجیحات اعلان»: aggregate جدید `NotificationPreference` (کاربران بدون رکورد همه‌چیز را دریافت می‌کنند، پس رفتار پیش‌فرض تغییر نمی‌کند)، جدول `NotificationPreferences` با migration، repository و پیکربندی EF، query و command با validator، endpoint عمومی `GET/PUT /api/v1/notification-preferences`، و اعمال ترجیحات در `NotificationService.CreateNotificationAsync` | `Domain/Notification/Aggregates/NotificationPreference.cs` · `Infrastructure/Notification/**` · `Application/Notification/**` · `Presentation/Notification/**` · migration `AddNotificationPreferences` |
+| **N-03** | سطح عمومی کاتالوگ ویژگی‌ها: کنترلر عمومی `GET /api/v1/attributes` و `GET /api/v1/attributes/{id}`، و `GetAttributeTypeByIdQuery` که اشتباهاً `ICommand` بود به `IQuery` اصلاح شد. دربارهٔ variant: بررسی نشان داد `PublicProductDetailDto` و `ProductDetailDto` از قبل `Variants` را برمی‌گردانند، پس variant از قبل عمومی در دسترس است | `Presentation/Attribute/Endpoints/AttributesController.cs` · `Application/Attribute/Features/Queries/GetAttributeTypeById/*` |
+
+**وضعیت:** `dotnet build` بدون warning · `dotnet test` → ۱۰٬۰۸۷ پاس · ۱٬۵۳۶ skip · ۲۲ خطای پیش‌فرض محیط (دسترسی به پوشه temp) · `dotnet ef migrations has-pending-model-changes` پاک است.
+
+---
+
 ## بخش ۰ — گزارش اجرا
 
 ### فاز ۱ — وضعیت: ✅ تکمیل شد
@@ -549,16 +562,20 @@ Infrastructure → Application → Domain
 
 ---
 
-### **فاز ۳ — توسعه قابلیت‌های دامنه** (۳ تا ۵ هفته)
+### **فاز ۳ — توسعه قابلیت‌های دامنه** (۳ تا ۵ هفته) — ✅ **تکمیل شد**
 
 **هدف:** بستن چرخه‌های کسب‌وکار ناتمام پس از سالم‌شدن پایه.
 
-| قابلیت | پیش‌نیاز | اجزا | خروجی | معیار اتمام | تست |
-|---|---|---|---|---|---|
-| **N-01** چرخه Wallet | فاز ۱ کامل | `UserCreatedEventHandler` · `PaymentSucceededWalletCreditHandler` · `OrderCancelledWalletReleaseHandler` · `AtomicRefundPaymentHandler` · `PersistWalletLedgerOn*` | چرخه کامل: ساخت→credit→ledger→freeze→refund | پرداخت موفق کیف پول را credit کند؛ لغو سفارش refund کند؛ ledger رز داشته باشد | Integration سرتاسری پرداخت/لغو/refund |
-| **N-02** اعلان: ترجیحات + Digest | N-01 | entity جدید `NotificationPreference` + endpoint + migration | کنترل کاربر بر کانال/دسته | اعلان غیرمجاز ارسال نشود | Domain + Application + Integration |
-| **D-07** اکشن‌های admin کیف پول | تصمیم محصول | `WalletController.cs:181,195` → `AdminWalletController` | سازگاری با admin IP allow-list | هر اکشن admin زیر `/admin` باشد | API + Architecture |
-| **N-03** سطح عمومی Variant/Attribute | تصمیم محصول | endpoint جدید public | کاتالوگ قابل فیلتر | endpoint عمومی با rate limit | API |
+| قابلیت | پیش‌نیاز | اجزا | خروجی | معیار اتمام | تست | وضعیت |
+|---|---|---|---|---|---|---|
+| **N-01** چرخه Wallet | فاز ۱ کامل | `UserCreatedEventHandler` · `PaymentSucceededWalletCreditHandler` · `OrderCancelledWalletReleaseHandler` · `AtomicRefundPaymentHandler` · `PersistWalletLedgerOn*` | چرخه کامل: ساخت→credit→ledger→freeze→refund | پرداخت موفق کیف پول را credit کند؛ لغو سفارش refund کند؛ ledger رز داشته باشد | Integration سرتاسری پرداخت/لغو/refund | ✅ |
+| **N-02** اعلان: ترجیحات + Digest | N-01 | entity جدید `NotificationPreference` + endpoint + migration | کنترل کاربر بر کانال/دسته | اعلان غیرمجاز ارسال نشود | Domain + Application + Integration | ✅ |
+| **D-07** اکشن‌های admin کیف پول | تصمیم محصول | `WalletController.cs:181,195` → `AdminWalletController` | سازگاری با admin IP allow-list | هر اکشن admin زیر `/admin` باشد | API + Architecture | ✅ |
+| **N-03** سطح عمومی Variant/Attribute | تصمیم محصول | endpoint جدید public | کاتالوگ قابل فیلتر | endpoint عمومی با rate limit | API | ✅ |
+
+**توضیح N-01:** چرخهٔ کیف پول با فعال‌شدن ستون فقرات event (فاز ۱) عملاً برقرار شد؛ فاز ۳ منطق پولی باقی‌مانده (برگشت اعتبار کیف پول هنگام بازگشت وجه درگاه) را تکمیل و قواعد پولی را با یک دروازهٔ تست تثبیت کرد.
+
+**توضیح N-03:** برخلاف برداشت اولیهٔ گزارش، دادهٔ variant از قبل در پاسخ عمومی محصول موجود بود (`PublicProductDetailDto.Variants`)، بنابراین فقط بخش attribute نیازمند endpoint عمومی بود.
 
 ---
 

@@ -11,11 +11,12 @@ namespace Tests.Infrastructure.Notification.Services;
 public class NotificationServiceTests : HandlerTestBase
 {
     private readonly INotificationRepository _notificationRepository = Substitute.For<INotificationRepository>();
+    private readonly INotificationPreferenceRepository _preferenceRepository = Substitute.For<INotificationPreferenceRepository>();
     private readonly NotificationService _sut;
 
     public NotificationServiceTests()
     {
-        _sut = new NotificationService(_notificationRepository, AuditService, UnitOfWork);
+        _sut = new NotificationService(_notificationRepository, _preferenceRepository, AuditService, UnitOfWork);
     }
 
     private static global::Domain.Notification.Aggregates.Notification NewNotification(UserId userId, string title = "Title") =>

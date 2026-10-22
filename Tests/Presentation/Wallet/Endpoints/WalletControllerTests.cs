@@ -307,42 +307,14 @@ public class WalletControllerTests
     }
 
     [Fact]
-    public async Task RejectWithdrawal_WithReason_SendsCommand_AndReturnsOk()
+    public void AdminWithdrawalActions_LiveOnTheAdminController()
     {
-        // Arrange
-        var id = Guid.NewGuid();
-        var request = new RejectWithdrawalRequest("not owner");
-
-        _mediator.Send(Arg.Any<RejectWithdrawalCommand>(), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult<Unit>.Success(Unit.Value));
-
-        // Act
-        var result = await _controller.RejectWithdrawal(id, request, CancellationToken.None);
-
-        // Assert
-        var ok = result.ShouldBeOfType<OkObjectResult>();
-        ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
-        await _mediator.Received(1).Send(
-            Arg.Is<RejectWithdrawalCommand>(c => c!.WithdrawalId == id && c!.Reason == "not owner"),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task MarkWithdrawalPaid_WithReference_SendsCommand_AndReturnsOk()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var request = new MarkWithdrawalPaidRequest("REF1");
-
-        _mediator.Send(Arg.Any<MarkWithdrawalPaidCommand>(), Arg.Any<CancellationToken>())
-            .Returns(ServiceResult<Unit>.Success(Unit.Value));
-
-        // Act
-        var result = await _controller.MarkWithdrawalPaid(id, request, CancellationToken.None);
-
-        // Assert
-        var ok = result.ShouldBeOfType<OkObjectResult>();
-        ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
+        // The admin withdrawal finalisation moved to the admin controller so
+        // that it also passes the admin IP allow-list.
+        typeof(AdminWalletWithdrawalController).GetMethod("RejectWithdrawal")
+            .ShouldNotBeNull();
+        typeof(AdminWalletWithdrawalController).GetMethod("MarkWithdrawalPaid")
+            .ShouldNotBeNull();
     }
 
     [Fact]
@@ -515,21 +487,39 @@ public class WalletControllerTests
     }
 
     [Theory]
-    [InlineData(nameof(WalletController.RejectWithdrawal))]
-    [InlineData(nameof(WalletController.MarkWithdrawalPaid))]
-    public void AdminWithdrawalActions_RequireAdminRole(string methodName)
+    [InlineData("RejectWithdrawal")]
+    [InlineData("MarkWithdrawalPaid")]
+    public void WalletController_DoesNotExposeAdminWithdrawalActions(string methodName)
     {
-        // SEC-02: finalizing withdrawals must be admin-only even though the
-        // controller class only requires an authenticated user.
-        var method = typeof(WalletController).GetMethod(methodName);
-        method.ShouldNotBeNull();
+        // SEC-02: finalizing withdrawals must be admin-only. The actions live on
+        // the admin controller, so they also fall under the admin IP allow-list;
+        // keeping them on the user route would let any authenticated caller
+        // reach them from an arbitrary address.
+        typeof(WalletController).GetMethod(methodName).ShouldBeNull();
+    }
 
-        var authorize = method!.GetCustomAttributes(false)
+    [Theory]
+    [InlineData("RejectWithdrawal")]
+    [InlineData("MarkWithdrawalPaid")]
+    public void AdminWithdrawalController_ExposesTheActionsBehindTheAdminRoute(string methodName)
+    {
+        typeof(AdminWalletWithdrawalController).GetMethod(methodName).ShouldNotBeNull();
+
+        var authorize = typeof(AdminWalletWithdrawalController)
+            .GetCustomAttributes(typeof(AuthorizeAttribute), false)
             .OfType<AuthorizeAttribute>()
             .SingleOrDefault();
 
         authorize.ShouldNotBeNull();
         authorize!.Roles.ShouldBe("Admin");
+
+        var routeAttr = typeof(AdminWalletWithdrawalController)
+            .GetCustomAttributes(typeof(RouteAttribute), false)
+            .OfType<RouteAttribute>()
+            .SingleOrDefault();
+
+        routeAttr.ShouldNotBeNull();
+        routeAttr!.Template.ShouldContain("/admin/");
     }
 
     [Fact]

@@ -7,7 +7,6 @@ using Application.Order.Features.Commands.UpdateOrderStatus;
 using Application.Order.Features.Queries.GetAdminOrderById;
 using Application.Order.Features.Queries.GetAdminOrders;
 using Application.Order.Features.Queries.GetOrderStatistics;
-using Application.Order.Features.Shared;
 using Presentation.Order.Requests;
 
 namespace Presentation.Order.Endpoints;
