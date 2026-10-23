@@ -5,7 +5,6 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class WalletReservationExpiryJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(5);
@@ -18,6 +17,9 @@ public sealed class WalletReservationExpiryJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:wallet-reservation-expiry", LockExpiry, ct);
 

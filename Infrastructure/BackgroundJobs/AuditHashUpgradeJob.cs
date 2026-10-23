@@ -4,7 +4,6 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class AuditHashUpgradeJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private const int BatchSize = 500;
@@ -30,6 +29,9 @@ public sealed class AuditHashUpgradeJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:audit-hash-upgrade", LockExpiry, ct);
 

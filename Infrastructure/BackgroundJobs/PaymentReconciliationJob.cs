@@ -6,7 +6,6 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class PaymentReconciliationJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan ReconciliationInterval = TimeSpan.FromHours(6);
@@ -26,6 +25,9 @@ public sealed class PaymentReconciliationJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:payment-reconciliation", LockExpiry, ct);
 

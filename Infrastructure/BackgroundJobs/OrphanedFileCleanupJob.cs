@@ -2,7 +2,6 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class OrphanedFileCleanupJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private const int BatchSize = 100;
@@ -20,6 +19,9 @@ public sealed class OrphanedFileCleanupJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:orphaned-file-cleanup", LockExpiry, ct);
 

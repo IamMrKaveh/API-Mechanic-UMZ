@@ -4,7 +4,6 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class ExpiredSessionCleanupJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromHours(1);
@@ -16,6 +15,9 @@ public sealed class ExpiredSessionCleanupJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:expired-session-cleanup", LockExpiry, stoppingToken);
 

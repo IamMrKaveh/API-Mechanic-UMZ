@@ -4,7 +4,6 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class AuditRetentionJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
@@ -40,6 +39,9 @@ public sealed class AuditRetentionJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:audit-retention", LockExpiry, ct);
 

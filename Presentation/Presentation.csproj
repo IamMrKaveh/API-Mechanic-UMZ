@@ -52,7 +52,6 @@
 		<Folder Include="wwwroot\" />
 		<Folder Include="Notification\Mapping\" />
 		<Folder Include="Search\Mapping\" />
-		<Folder Include="wwwroot\" />
 	</ItemGroup>
 
 	<ItemGroup>

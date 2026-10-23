@@ -3,8 +3,7 @@
 namespace Infrastructure.BackgroundJobs;
 
 public sealed class ExpiredOrderCleanupJob(
-    IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock) : BackgroundService
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private readonly TimeSpan _interval = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(10);
@@ -15,6 +14,9 @@ public sealed class ExpiredOrderCleanupJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:expired-order-cleanup", LockExpiry, stoppingToken);
 

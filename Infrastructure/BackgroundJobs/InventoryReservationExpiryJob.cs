@@ -7,7 +7,6 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class InventoryReservationExpiryJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock,
     IOptions<ReservationExpiryOptions> options,
     IDateTimeProvider dateTimeProvider) : BackgroundService
 {
@@ -27,6 +26,9 @@ public sealed class InventoryReservationExpiryJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:inventory-reservation-expiry", LockExpiry, ct);
 

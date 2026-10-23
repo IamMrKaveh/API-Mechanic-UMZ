@@ -8,7 +8,6 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class FraudDetectionJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(15);
@@ -32,6 +31,9 @@ public sealed class FraudDetectionJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:fraud-detection", LockExpiry, ct);
 

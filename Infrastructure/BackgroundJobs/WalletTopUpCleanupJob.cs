@@ -4,7 +4,6 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class WalletTopUpCleanupJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock,
     ILogger<WalletTopUpCleanupJob> logger,
     IDateTimeProvider dateTimeProvider) : BackgroundService
 {
@@ -19,6 +18,9 @@ public sealed class WalletTopUpCleanupJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:wallet-topup-cleanup",
                     LockExpiry,

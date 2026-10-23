@@ -1,763 +1,521 @@
-﻿# تحلیل معماری و کشف قابلیت — Ledka-API
-
-**ورودی تحلیل (استخراج‌شده از کد):** PROJECT= Ledka-API · TARGET_SCOPE= EntireSolution · LAYER= AllRelevantLayers · ANALYSIS_DEPTH= Deep · OBJECTIVE= ArchitectureAndFeatureDiscovery + FullModuleAssessment · CONSTRAINTS= Unknown (در کد مستند نشده)
-
----
-
-### فاز ۲ — وضعیت: ✅ تکمیل شد
-
-| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
-|---|---|---|
-| **D-05** | `ErrorType.Failure` دیگر ۵۰۰ نیست (۴۰۰) و `ExternalService` ۵۰۲ شد؛ ۴۷ نقطهٔ catch در هندلرها اکنون `ErrorType.BusinessRule` برمی‌گردانند (هم‌راستا با `DomainExceptionBehavior`)؛ ۶ هندلر Inventory و ۳ هندلر Infrastructure دیگر نوع خطا را دور نمی‌ریزند؛ کدهای عددی `"400"` در دامنه با کدهای معنادار (`StockQuantity.Negative`، `Shipping.Inactive`، …) جایگزین شدند | `Presentation/Common/Mappers/HttpResultMapper.cs` · `Application/**` · `Infrastructure/**` · `Domain/Inventory/ValueObjects/StockQuantity.cs` · `Domain/Shipping/**` |
-| **C-01** | ۶۴ validator برای commandهای بدون اعتبارسنجی نوشته شد (Attribute، Auth، Brand، Cart، Category، Discount، Inventory، Media، Notification، Order، Payment، Product، Review، Shipping، User، Variant، Wallet، Wishlist)؛ یک دروازهٔ تست (`CommandValidatorCoverageTests`) تضمین می‌کند هر command دارای ورودی، validator داشته باشد | `Application/**/*Validator.cs` · `Tests/Architecture/CommandValidatorCoverageTests.cs` |
-| **C-02** | `PaginationBehavior` سراسری اضافه شد (سقف ۱۰۰ برای هر درخواست صفحه‌دار، حتی بدون validator)؛ صفحه‌بندی جعلی در `GetAllAttributeTypes` و `GetStates` واقعی شد؛ صفحه‌بندی اعلام‌نشده در سه query تحلیلی به سرویس منتقل شد | `Application/Common/Behaviors/PaginationBehavior.cs` · `Application/Common/Validation/PaginationDefaults.cs` |
-| **C-06** | سه قابلیت ساخته‌شده ولی غیرقابل دسترس به محصول متصل شدند: `PATCH /admin/products/{variantId}/price` · `PATCH /admin/orders/{id}` · `PATCH /admin/shipping/{id}/default`. فیلد `UserId` بی‌استفاده از `ChangePriceCommand` حذف شد (کاربر از `ICurrentUserService` می‌آید) | `Presentation/Product/Endpoints/AdminProductsController.cs` · `Presentation/Order/Endpoints/AdminOrdersController.cs` · `Presentation/Shipping/Endpoints/AdminShippingController.cs` |
-| **D-12** | گزارش‌های تحلیلی محدود و در SQL تجمیع شدند: بازهٔ گزارش به ۷۳۰ روز کلمپ می‌شود، تجمیع به‌جای materialize کردن در حافظه انجام می‌شود، نمودار فروش در SQL bucket می‌شود و فقط صفحهٔ خواسته‌شده منتقل می‌شود، و `GetTopSellingProducts` فیلتر بازهٔ تاریخ را که قبلاً نادیده می‌گرفت اکنون اعمال می‌کند | `Infrastructure/Analytics/QueryServices/AnalyticsQueryService.cs` · `Application/Analytics/Contracts/IAnalyticsQueryService.cs` |
-| **C-05** | `Shipping.RequestDeletion` اکنون وضعیت soft-delete را ثبت می‌کند و `Restore` آن را پاک می‌کند؛ فیلتر سراسری `!e.IsDeleted` به پیکربندی Shipping اضافه شد | `Domain/Shipping/Aggregates/Shipping.cs` · `Infrastructure/Shipping/Configurations/ShippingConfiguration.cs` |
-| **C-03** | هشت feature بدون dispatch حذف شد: `CreateOrderCommand` (مسیر دوم و بدون ذخیره‌سازی موجودی/پرداخت — یک تله)، `ReserveWalletCommand`، `AddToWishlistCommand` و پنج query خواندنی (`GetBrands`، `GetCategories`، `GetVariants`، `GetInventory`، `GetTicket`) | پوشه‌های `Application/**` و `Tests/**` مربوطه |
-| **C-04** | ۹ هندلر Wallet که `IRequestHandler` خام MediatR را مستقیم پیاده می‌کردند به `ICommandHandler`/`IQueryHandler` پروژه منتقل شدند تا قرارداد `ServiceResult`، تراکنش و audit را رعایت کنند | `Application/Wallet/**` |
-
-**وضعیت:** `dotnet build` بدون warning · `dotnet test` → ۱۰٬۰۵۹ پاس · ۱٬۵۳۶ skip · ۲۲ خطای پیش‌فرض محیط (دسترسی به پوشه temp) که پیش از این فاز نیز وجود داشت.
-
----
-
-### فاز ۳ — وضعیت: ✅ تکمیل شد
-
-| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
-|---|---|---|
-| **D-07** | دو اکشن تکراری `reject` و `mark-paid` از کنترلر کاربر حذف شدند؛ هر دو از قبل روی `AdminWalletWithdrawalController` (زیر prefix `/admin` و داخل admin IP allow-list) وجود داشتند. تست به‌روزرسانی شد تا این قرارداد را تثبیت کند | `Presentation/Wallet/Endpoints/WalletController.cs` · `Tests/Presentation/Wallet/Endpoints/WalletControllerTests.cs` |
-| **N-01** | چرخهٔ کیف پول کامل شد: بازگشت وجه درگاه اکنون اعتبار کیف پول را برمی‌گرداند (پرداخت‌های کیف پولی دست‌نخورده می‌مانند چون مسیر لغو سفارش مبلغ را از دفتر کیف پول برمی‌گرداند)؛ یک دروازهٔ تست (`WalletLifecycleCoverageTests`) تضمین می‌کند هر اثر جانبی کیف پول هندلر دارد | `Application/Wallet/EventHandlers/PaymentRefundedWalletEventHandler.cs` · `Tests/Architecture/WalletLifecycleCoverageTests.cs` |
-| **N-02** | قابلیت جدید «ترجیحات اعلان»: aggregate جدید `NotificationPreference` (کاربران بدون رکورد همه‌چیز را دریافت می‌کنند، پس رفتار پیش‌فرض تغییر نمی‌کند)، جدول `NotificationPreferences` با migration، repository و پیکربندی EF، query و command با validator، endpoint عمومی `GET/PUT /api/v1/notification-preferences`، و اعمال ترجیحات در `NotificationService.CreateNotificationAsync` | `Domain/Notification/Aggregates/NotificationPreference.cs` · `Infrastructure/Notification/**` · `Application/Notification/**` · `Presentation/Notification/**` · migration `AddNotificationPreferences` |
-| **N-03** | سطح عمومی کاتالوگ ویژگی‌ها: کنترلر عمومی `GET /api/v1/attributes` و `GET /api/v1/attributes/{id}`، و `GetAttributeTypeByIdQuery` که اشتباهاً `ICommand` بود به `IQuery` اصلاح شد. دربارهٔ variant: بررسی نشان داد `PublicProductDetailDto` و `ProductDetailDto` از قبل `Variants` را برمی‌گردانند، پس variant از قبل عمومی در دسترس است | `Presentation/Attribute/Endpoints/AttributesController.cs` · `Application/Attribute/Features/Queries/GetAttributeTypeById/*` |
-
-**وضعیت:** `dotnet build` بدون warning · `dotnet test` → ۱۰٬۰۸۷ پاس · ۱٬۵۳۶ skip · ۲۲ خطای پیش‌فرض محیط (دسترسی به پوشه temp) · `dotnet ef migrations has-pending-model-changes` پاک است.
-
----
-
-### وضعیت نهایی پس از اجرای هر سه فاز
-
-| فاز | وضعیت | commit |
-|---|---|---|
-| فاز ۱ — رفع موانع و تکمیل پایه | ✅ تکمیل شد | `e19509ed` |
-| فاز ۲ — توسعه‌های پربازده | ✅ تکمیل شد | `007f7be2` |
-| فاز ۳ — توسعه قابلیت‌های دامنه | ✅ تکمیل شد | `c7c160e4` |
-
-**آنچه تغییر کرد:** ستون فقرات Domain Event احیا شد (۳۸ هندلر بی‌اثر اکنون اجرا می‌شوند)؛ چهار باگ پولی پنهان که با فعال‌شدن آن آشکار می‌شدند اصلاح شد؛ دو ثبت DI ناقص که اجرای برنامه را در حالت Redis/Elasticsearch می‌شکستند کامل شد؛ قرارداد خطا و صفحه‌بندی بازنویسی شد؛ ۶۴ validator و ۵ دروازهٔ کیفیت (لایه‌ای، resolve کامل DI، drift مهاجرت، پوشش validator، سازگاری نوع خطا) اضافه شد؛ هشت feature مرده حذف شد؛ قابلیت «ترجیحات اعلان» و سطح عمومی کاتالوگ ویژگی‌ها ساخته شد.
-
-**وضعیت نهایی بیلد و تست:** `dotnet build -c Release -warnaserror` → بدون خطا و بدون warning · `dotnet test` → ۱۰٬۰۸۷ پاس · ۱٬۵۳۶ skip (بدون موتور کانتینر) · ۲۲ خطا که پیش از این کار نیز وجود داشت و ربطی به تغییرات ندارد (خطای دسترسی به پوشهٔ temp در این ماشین) · `dotnet ef migrations has-pending-model-changes` پاک است.
-
-**آنچه انجام نشد و چرا:** فاز ۴ (مقیاس‌پذیری راهبردی) اجرا نشد، چون برخلاف فازهای ۱ تا ۳ با شواهد کمّی (حجم واقعی داده، مشاهده اجرای همزمان jobها) فعال می‌شود و نه با حدس. موارد بخش G که نیازمند تصمیم محصول‌اند (کد وضعیت HTTP برای خطاهای کسب‌وکار — گزینهٔ «نگاشت صریح» انتخاب شد؛ حذف آیتم سفارش پس از پرداخت — گزینهٔ محافظه‌کارانه انتخاب شد؛ برگشت اعتبار کیف پول هنگام بازگشت وجه درگاه — پیاده‌سازی شد و فقط «مغایرت» گزارش می‌شود) همچنان در بخش G ثبت شده‌اند.
-
----
-
-### فاز ۵ — اصلاح گردش کار پرداخت (۱ فاز) — ✅ **تکمیل شد**
-
-این فاز پس از بازبینی کامل اضافه شد: بازبینی نشان داد که با وجود احیای ستون فقرات event، **موجودی رزرو می‌شد ولی هرگز commit نمی‌شد** (D1) چون `PaymentService` سفارش را همزمان Paid می‌کرد و ساگا با پرچم `IsIdempotent` کل گردش کار را رد می‌کرد.
-
-| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
-|---|---|---|
-| **D1** | `ConfirmReservation` اکنون idempotent است: اگر دفتر موجودی قبلاً یک `ReservationCommit` برای همان قلم سفارش داشته باشد، no-op موفق برمی‌گرداند | `Domain/Inventory/Aggregates/Inventory.cs` |
-| **D1/Q1** | رزرو موجودی **هم‌زمان با ساخت سفارش** و در همان تراکنش انجام می‌شود (`ReserveStockForOrderAsync` با جبران خطای جزئی)؛ ساگا دیگر رزرو نمی‌کند | `Infrastructure/Inventory/Services/InventoryService.cs` · `Infrastructure/Order/Services/CheckoutOrchestrationService.cs` |
-| **D2/D3** | ساگا دیگر از `IsIdempotent` به‌عنوان «کل گردش کار تمام شد» استفاده نمی‌کند: سفارشِ از قبل Paid هم به `Processing` می‌رود و **commit موجودی همیشه اجرا می‌شود**؛ مسیر auto-refund و `RequiresManualReconciliation` دوباره در دسترس‌اند | `Application/Order/Sagas/OrderProcessManagerSaga.cs` |
-| **D8** | تراکنش تودرتو دیگر در Development throw نمی‌کند؛ عملیات با **savepoint** به تراکنش محیطی می‌پیوندد و در صورت شکست فقط نوشته‌های خودش برگردانده می‌شود | `Infrastructure/Persistence/UnitOfWork.cs` |
-| **D9** | تنها یک handler سطر `OrderProcessState` را می‌سازد (handler مربوط به `OrderCreatedEvent` حذف شد) → تضاد یکتایی `OrderProcessStates.OrderId` دیگر رخ نمی‌دهد | `Application/Order/Sagas/OrderProcessManagerSaga.cs` |
-| **D11** | نتیجهٔ ردشدهٔ یک command حالا **تراکنش را rollback می‌کند**؛ checkout ناموفق دیگر سفارش نیمه‌کاره commit نمی‌کند | `Application/Common/Behaviors/TransactionBehavior.cs` · `Application/Common/Interfaces/IUnitOfWork.cs` |
-
-**تست‌های رگرسیون تازه:** «سفارش از قبل Paid + `PaymentSucceededEvent` → موجودی commit می‌شود» (شکل واقعی تولید که تست قبلی نداشت) · «سفارش از قبل Paid → به `Processing` می‌رود» · «commit دوباره برای یک `OrderItem` → یک‌بار کم می‌شود» · «checkout موجودی را رزرو می‌کند» · «checkout با موجودی ناکافی پرداخت نمی‌کند» · «نتیجهٔ ردشده → rollback».
-
-### فاز ۶ — چرخه مالی کیف پول (۱ فاز) — ✅ **تکمیل شد**
-
-| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
-|---|---|---|
-| **D5** | ردیف دفتر کیف پول **در همان تراکنش** نوشته می‌شود که موجودی تغییر می‌کند (به‌جای اینکه یک پیام Outbox بعدی آن را بنویسد) → گارد idempotency اتمی شد و پنجرهٔ ~۱۵ ثانیه‌ای credit دوگانه بسته شد. هندلرهای `PersistWalletLedgerOn*` که ردیف تکراری می‌ساختند حذف شدند | `Domain/Wallet/Aggregates/Wallet.cs` (`CreditWithLedger`/`DebitWithLedger`) · `Application/Wallet/Features/Commands/CreditWallet/*` · `DebitWallet/*` · `CompleteWalletTopUp/*` · `MarkWithdrawalPaid/*` |
-| **D4** | برداشت کیف پول در checkout اکنون **کلید idempotency** دارد → گارد تکرارپذیری و یکتایی دفتر واقعاً کار می‌کند | `Infrastructure/Order/Services/Strategies/WalletCheckoutPaymentStrategy.cs` |
-| **Q2** | کیف پول دیگر با **پرداخت سفارش** بستانکار نمی‌شود. مدل استاندارد: پول فقط از مسیرهای صریح ورود پول (شارژ، انتقال، تعدیل ادمین) وارد کیف پول می‌شود. در نتیجه هندلر `PaymentSucceededWalletCreditEventHandler` حذف شد | `Application/Wallet/EventHandlers/PaymentSucceededWalletCreditEventHandler.cs` (حذف‌شده) |
-| **Q2 (مربوط)** | بازگشت وجه فقط برای پرداخت‌های **کیف‌پولی** به کیف پول برمی‌گردد، با همان کلید `refund-order-{orderId}` که مسیر لغو سفارش استفاده می‌کند → لغو و سپس refund دوباره پول نمی‌دهد | `Application/Wallet/EventHandlers/PaymentRefundedWalletEventHandler.cs` |
-
-**قواعد نهایی چرخهٔ کیف پول:**
-
-| رخداد | اثر روی کیف پول |
-|---|---|
-| پرداخت سفارش با کیف پول | برداشت (همزمان، با کلید idempotency) |
-| پرداخت سفارش با درگاه | بدون تغییر |
-| شارژ کیف پول | بستانکار (همزمان) |
-| انتقال بین دو کاربر | برداشت مبدا / بستانکار مقصد |
-| لغو سفارشِ کیف‌پولی | بستانکار با کلید `refund-order-{orderId}` |
-| لغو سفارشِ درگاهی | بدون تغییر (پول به کارت برگشت) |
-| refund پرداختِ کیف‌پولی | بستانکار با همان کلید → بدون بازپرداخت دوباره |
-
----
-
-### فاز ۷ — استحکام Outbox (۱ فاز) — ✅ **تکمیل شد**
-
-این فاز ادامهٔ کار اصلاحی پس از بازبینی کامل است. دو ایراد باقی‌ماندهٔ زیرساخت انتشار رویداد رفع شد.
-
-| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
-|---|---|---|
-| **D6** | **ترتیب انتشار قطعی شد.** همهٔ پیام‌های یک تراکنش اکنون یک `created_at` مشترک دارند و یک شمارهٔ ترتیب (`sequence`) می‌گیرند که اندیس رویداد در همان تراکنش است. پردازشگر Outbox با `ORDER BY "created_at", "sequence", "id"` می‌خواند، پس ترتیب رویدادهای یک تراکنش دیگر به شکل تصادفی (بر اساس UUID) نیست | `Infrastructure/Persistence/Outbox/OutboxMessage.cs` · `OutboxMessageConfiguration.cs` · `Infrastructure/Persistence/Interceptors/DomainEventInterceptor.cs` · `Infrastructure/Persistence/Outbox/OutboxProcessor.cs` · migration `AddOutboxMessageSequence` |
-| **D7** | **هر پیام Outbox ایزوله شد.** پیش از dispatch یک savepoint ساخته می‌شود؛ اگر هندلر شکست بخورد، نوشته‌های همان پیام به savepoint برگردانده می‌شود و change-tracker هم به وضعیت قبل بازمی‌گردد (افزوده‌ها `Detached`، تغییریافته‌ها به مقادیر قبل). بنابراین retry هرگز نوشتهٔ نیمه‌کاره را دوباره اعمال نمی‌کند و شکست یک پیام، پیام‌های بعدی صف را متوقف نمی‌کند | `Infrastructure/Persistence/Outbox/OutboxProcessor.cs` · `Infrastructure/Persistence/Outbox/TrackedEntities.cs` · `Infrastructure/Persistence/RelationalSavepointExtensions.cs` · `Infrastructure/Persistence/UnitOfWork.cs` |
-
-**نکتهٔ طراحی:** منطق savepoint یک‌بار در `RelationalSavepointExtensions` تعریف شده و هم `UnitOfWork` (تراکنش تودرتو) و هم پردازشگر Outbox از آن استفاده می‌کنند؛ پس رفتار «تراکنش تودرتو» و «ایزوله‌سازی هر پیام» یکسان و در یک نقطه تعریف شده‌اند. اگر تراکنش پشتیبان savepoint نداشته باشد، مسیر جایگزین صریح و بدون savepoint اجرا می‌شود (بدون از دست دادن شفافیت).
-
-**تست‌های تازه:** «دو رویداد در یک تراکنش → یک timestamp مشترک و `sequence` صعودی» · «نگاشت ستون `sequence`» · «دو پیام با timestamp یکسان → انتشار به ترتیب `sequence`» · «هندلری که می‌نویسد و سپس شکست می‌خورد → نوشته‌اش حذف می‌شود، پیام دوباره تلاش می‌شود، و پیام بعدی پردازش می‌شود».
-
-**وضعیت:** `dotnet build -c Release -warnaserror` → بدون خطا و بدون warning · `dotnet test` → ۱۰٬۰۶۹ پاس · ۱٬۵۴۰ skip · ۲۲ خطای پیش‌فرض محیط (دسترسی به پوشه temp) که پیش از این فاز نیز وجود داشت · `dotnet ef migrations has-pending-model-changes` پاک است.
-
----
-
-### فاز ۸ — پیش‌فرض‌های ایمن و گارد تکرارپذیری (۱ فاز) — ✅ **تکمیل شد**
-
-دو پرچم (flag) که مسیرهای محافظتی را غیرفعال می‌کردند به‌صورت پیش‌فرض `false` در پیکربندی تحویل‌شده بودند. یعنی محافظت‌ها وجود داشتند ولی در هیچ محیطی فعال نبودند. این فاز پیش‌فرض‌ها را امن می‌کند و پرچم‌ها را به **کلید توقف اضطراری (kill switch)** تبدیل می‌کند.
-
-| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
-|---|---|---|
-| **Q3** | **قفل تکرارپذیری توزیع‌شده پیش‌فرضاً روشن شد.** `Idempotency.DistributedLock.Enabled` اکنون در `appsettings.json` برابر `true` است، پس دو درخواست همزمان با یک کلید یکتا دیگر هر دو اجرا نمی‌شوند. علاوه بر آن، اگر سرویس قفل در دسترس نباشد (Redis قطع باشد) درخواست **با پیام هشدار و بدون قفل** ادامه می‌یابد، چون قفل یک محافظ است نه یک پیش‌شرط؛ نتیجهٔ کلید همچنان قبل و بعد از اجرای هندلر بررسی می‌شود | `Application/Common/Behaviors/IdempotencyBehavior.cs` · `Presentation/appsettings.json` |
-| **Q4** | **بازپرداخت خودکار پیش‌فرضاً روشن شد.** `Saga.AutoRefundOnCommitFailure` اکنون `true` است: اگر commit موجودی شکست بخورد، پول مشتری خودکار برمی‌گردد و سفارش در «نیازمند بازبینی دستی» گیر نمی‌کند. پرچم به‌عنوان کلید توقف اضطراری باقی است | `Application/Order/Sagas/OrderProcessManagerSaga.cs` · `Presentation/appsettings.json` |
-| **D10** | commit موجودی **عملاً تکرارپذیر** است و این تضمین مستند شد: `Inventory` قبل از کم‌کردن موجودی، دفتر خود را برای `ReservationCommit` همان قلم سفارش بررسی می‌کند و commit تکراری را no-op برمی‌گرداند. تست‌های دامنه این رفتار را تثبیت کرده‌اند («commit دوباره برای یک `OrderItem` → یک‌بار کم می‌شود») | `Domain/Inventory/Aggregates/Inventory.cs` · `Application/Inventory/Features/Commands/CommitStockForOrder/CommitStockForOrderHandler.cs` · `Tests/Domain/Inventory/Aggregates/InventoryTests.cs` |
-
-**دروازهٔ محیط Production:** پیکربندی Production به‌عمد در مخزن نیست (`.gitignore` فقط `appsettings.json` را نگه می‌دارد)، پس تضمین پیش‌فرض امن در آن محیط با **دروازهٔ راه‌اندازی** انجام می‌شود: `ValidateProductionHardening` حالا اگر `Idempotency.DistributedLock.Enabled` یا `Saga.AutoRefundOnCommitFailure` خاموش باشد، هنگام بالا آمدن برنامه خطا می‌دهد. یعنی خاموش‌کردن محافظت‌های مالی در Production یک تصمیم آگاهانه و ثبت‌شده است، نه یک پیش‌فرض فراموش‌شده.
-
-**دروازهٔ تازه:** `Tests/Architecture/SafeDefaultsTests.cs` بررسی می‌کند که پیکربندی تحویل‌شده این دو پیش‌فرض امن را خاموش نکرده باشد.
-
-**تست‌های تازه:** «سرویس قفل از کار افتاد → درخواست بدون قفل اجرا می‌شود» · «پرچم غیرفعال → درخواست بدون قفل اجرا می‌شود» · «پیکربندی تحویل‌شده هر دو پیش‌فرض امن را روشن نگه می‌دارد» · «Production با محافظ مالی خاموش → برنامه بالا نمی‌آید».
-
-**وضعیت:** `dotnet build -c Release -warnaserror` → بدون خطا و بدون warning · `dotnet test` → ۱۰٬۰۷۵ پاس · ۱٬۵۴۰ skip · ۲۲ خطای پیش‌فرض محیط (دسترسی به پوشه temp) که پیش از این فاز نیز وجود داشت.
-
----
-
-## بخش ۰ — گزارش اجرا
-
-### فاز ۱ — وضعیت: ✅ تکمیل شد
-
-| شناسه | اقدام انجام‌شده | فایل‌های کلیدی |
-|---|---|---|
-| **D-10** | `PaymentSucceededEvent`/`PaymentRefundedEvent` شناسه واقعی کاربر را حمل می‌کنند؛ `StockCommittedEvent` شناسه واقعی `OrderItem` را می‌گیرد (nullable شد تا بدون order-item هم معتبر باشد) | `Domain/Payment/Aggregates/PaymentTransaction.cs` · `Domain/Inventory/Aggregates/Inventory.cs` · `Domain/Payment/Events/*` |
-| **D-01** | `AggregateRoot<TId>` اکنون `IHasDomainEvents` را پیاده‌سازی می‌کند؛ payload استخردادنگاه Outbox دیگر بی‌اثر نیست؛ ۳۸ هندلر رویداد فعال شدند | `Domain/Common/Abstractions/AggregateRoot.cs` · `Infrastructure/Persistence/Outbox/*` · `Infrastructure/Common/DependencyInjection/InfrastructureServiceExtensions.cs` |
-| **D-02** | `IRateLimitService` در شاخه Redis نیز به `ResilientRateLimitService` مقید شد | `InfrastructureServiceExtensions.cs` |
-| **D-03** | `ElasticsearchService`، `ElasticsearchCircuitBreaker`، `IElasticBulkService`، `ISearchStatsService`، `IElasticDeadLetterQueue` ثبت شدند؛ `ElasticClientFactory` جایگزین ساخت inline کلاینت شد تا نام کاربری/رمز واقعاً اعمال شود | `InfrastructureServiceExtensions.cs` · `Infrastructure/Search/ElasticClientFactory.cs` |
-| **D-04** | `Order.RemoveItem` به‌عنوان قاعده دامنه اضافه شد (فقط سفارش قابل ویرایش، حداقل یک قلم باقی می‌ماند، جمع‌ها بازمحاسبه می‌شود)؛ هندلر مالکیت را بررسی می‌کند و واقعاً آیتم را حذف می‌کند | `Domain/Order/Aggregates/Order.cs` · `Domain/Order/Events/OrderItemRemovedEvent.cs` · `Application/Order/Features/Commands/DeleteOrderItem/DeleteOrderItemHandler.cs` |
-| **D-06** | `ApplyDiscountHandler` مالکیت سفارش را قبل از ثبت مصرف تخفیف بررسی می‌کند | `Application/Discount/Features/Commands/ApplyDiscount/ApplyDiscountHandler.cs` |
-| **D-08** | تغییر رمز عبور نشست‌های کاربر را همزمان (مستقل از event) باطل می‌کند | `Application/User/Features/Commands/ChangePassword/ChangePasswordHandler.cs` |
-| **D-09** | فرضیه «۱۷ تغییر معلق مدل» **نادرست بود** و اصلاح شد (بخش I). دروازه `has-pending-model-changes` به CI اضافه شد و تست اجرای واقعی migration افزوده شد | `.github/workflows/ci.yml` · `Tests/Integration/Persistence/MigrationApplicationTests.cs` |
-| **D-11** | سرویس رزرو دسته‌ای که هیچ مصرف‌کننده‌ای نداشت و هیچ رزروی انجام نمی‌داد حذف شد؛ رزرو در Saga و `Inventory` aggregate باقی ماند | `Domain/Inventory/Services/*` · `Application/Common/DependencyInjection/ApplicationServiceCollection.cs` |
-| **N-04** | تست لایه‌ای، تست resolve کامل DI و دروازه drift مهاجرت اضافه شد | `Tests/Architecture/*` · `.github/workflows/ci.yml` |
-
-### نقشه پیامدهای مالی که همزمان با فعال‌سازی ستون فقرات event اصلاح شد
-
-فعال‌سازی D-01 سه باگ پولی را که پیش‌تر پنهان بودند فعال می‌کرد؛ همه اصلاح شدند:
-
-1. **شارژ دوباره کیف پول** — `PaymentSucceededWalletCreditEventHandler` برای سفارش‌های پرداخت‌شده از کیف پول هم اعتبار می‌داد (کیف پول در checkout بدهکار می‌شد و دوباره بستانکار → سفارش رایگان). اکنون `PaymentGateway` روی event حمل می‌شود و پرداخت‌های کیف پولی نادیده گرفته می‌شوند.
-2. **بازپرداخت دوباره** — `PaymentRefundedWalletEventHandler` کیف پول را دوباره اعتبار می‌داد درحالی‌که `OrderCancelledWalletReleaseEventHandler` همان مبلغ را از دفتر کیف پول برمی‌گرداند. اکنون این هندلر فقط audit می‌کند.
-3. **شارژ دوباره در top-up** — `WalletTopUpSucceededCreditHandler` علاوه بر اعتبار مستقیم در `CompleteWalletTopUpHandler` دوباره اعتبار می‌داد. اکنون فقط audit می‌کند.
-4. **کمیت دوگانه موجودی** — `PaymentSucceededInventoryCommitEventHandler` و `OrderProcessManagerSaga` هر دو موجودی را commit می‌کردند؛ شکست دومی باعث auto-refund اشتباه می‌شد. هندلر تکراری حذف و Saga به‌عنوان مالک واحد نگه داشته شد.
-
-### باگ‌های جدیدی که دروازه‌های فاز ۱ کشف کردند
-
-- `ElasticsearchCircuitBreaker` به‌صورت singleton ثبت شده بود ولی `IAuditService` (scoped) مصرف می‌کرد → captive dependency.
-- `IDistributedLock` (singleton) `IAuditService` (scoped) را در قفل آزادسازی audit می‌کرد → captive dependency و نشت scoped service.
-- `ConnectionStrings:Redis` در `appsettings.json` برابر رشته خالی است و زنجیره `??` هرگز به fallback نمی‌رسید → راه‌اندازی با Redis فعال شکست می‌خورد.
-- `BusinessMetrics` در Presentation ثبت می‌شد ولی Infrastructure (سرویس `ResilientRateLimitService`) به آن نیاز داشت → وابستگی معکوس بین لایه‌ها.
-
----
-
-## بخش A — خلاصه اجرایی
-
-**وضعیت کلی:** یک Modular Monolith با DDD واقعی — ۶ پروژه (Domain / Application / Infrastructure / Presentation / SharedKernel / SharedContracts)، ۲۱ Bounded Context، ۹٬۸۸۴ خط Domain، ۲۰٬۵۸۶ خط Application، ۲۹٬۴۸۰ خط Infrastructure، ۳۰۳ اکشن کنترلری و ~۹٬۱۰۰ تست. کیفیت کد بالاست: صفر `TODO`، صفر `NotImplementedException`، BCrypt work factor 12، HMAC-SHA256 برای OTP، hash کردن refresh token، AES-GCM برای cache، `AsNoTracking` در هر ۲۶ QueryService بدون N+1.
-
-**سطح تکمیل قابلیت‌ها:** حدود **۸۵٪**. سطح API گسترده و پوشش‌داده‌شده است. اما:
-
-> **یافته مرکزی: سطح پوششِ ظاهری بالا، پشتِ آن یک ستون فقرات خراب است.**
-> تمام ۳۸ هندلر `INotificationHandler<DomainEventNotification<T>>` — یعنی کل ارتباط بین‌ماژولی مبتنی بر Domain Event — **هرگز اجرا نمی‌شوند**.
-
-**مهم‌ترین شکاف‌ها:**
-
-| # | شکاف | شواهد |
-|---|---|---|
-| 1 | **Domain Event backbone مرده** | `IHasDomainEvents` هیچ implementer ندارد → `DomainEventInterceptor` بی‌اثر → Outbox خالی → ۳۸ هندلر هرگز fire نمی‌شوند |
-| 2 | **DI ناقص در مسیر Redis** | `IRateLimitService` فقط در شاخه non-Redis ثبت شده |
-| 3 | **DI ناقص در مسیر Elasticsearch** | `ResilientElasticSearchService` به سرویس‌های ثبت‌نشده نیاز دارد |
-| 4 | **Endpoint بدون کنترل مالکیت و بی‌اثر** | `DELETE /api/v1/order-items/{id}` |
-| 5 | **خطای کسب‌وکار به‌صورت HTTP 500** | `ErrorType.Failure` → `_ => 500`، در ۷۷ از ۸۴ فراخوانی |
-| 6 | **مهاجرت DB با مدل هم‌گام نیست** | Snapshot دستی‌patch شده؛ ۱۷ `HasQueryFilter` در مدل موجود ولی در snapshot نیست |
-
-**بیشترین فرصت‌های توسعه:** (۱) احیای Domain Event + تکمیل آن با identifier صحیح، (۲) بازگرداندن سطوح write حذف‌شده (ChangePrice، UpdateOrder، SetDefaultShipping)، (۳) اعتبارسنجی ۱۶۸ قابلیت بدون validator، (۴) تکمیل چرخه Wallet (auto-create + credit + refund)، (۵) دروازه‌های کیفیت CI (architecture test، DI resolution test، migration drift gate).
-
-**مهم‌ترین ریسک‌های معماری:**
-- **وابستگی دوری `Auth ↔ User`** در لایه Application.
-- **Application مستقیماً۳۰ interface مخزنِ Domain را مصرف می‌کند** (تنها پورت Application-owned: `Application/Order/Contracts/IOrderProcessStateRepository.cs:6`) — قاعده وابستگی معکوس.
-- **MediatR فقط اسمبلی Application را اسکن می‌کند** → ۳ هندلر Infrastructureاصلاً ثبت نشده‌اند (`Application/Common/DependencyInjection/ApplicationServiceCollection.cs:35-37`).
-- **دو `IEntityTypeConfiguration<OutboxMessage>`** در یک اسمبلی → مدل وابسته به ترتیب reflection.
-- **نبود کامل تست معماری** — هیچ قانون لایه‌ای اجرا نمی‌شود.
-
-**سه اقدام با بالاترین اولویت:**
-1. **D-01** — احیای Domain Event backbone (امتیاز ۹۷)
-2. **D-04** — اصلاح `DELETE /order-items/{id}` (بین‌کاربری + بی‌اثر)
-3. **D-02 + D-03** — تکمیل ثبت‌های DI که در کانفیگوریشن تولیدی می‌شکنند
-
----
-
-## بخش B — وضعیت معماری
-
-### مسئولیت ماژول
-هر Bounded Context پوشه‌ای در هر ۴ لایه دارد (`Domain/X`, `Application/X`, `Infrastructure/X`, `Presentation/X`). مالکیت داده در Infrastructure هر ماژول است؛ `Infrastructure/Persistence/Context/DBContext.cs:37-80` یک `DbContext` واحد با **۴۴ DbSet** دارد.
-
-### اجزای موجود
-| لایه | ساختار | شواهد |
-|---|---|---|
-| Domain | ۲۱ پوشه · AggregateRoot → `Entity<TId>` در SharedKernel · `ValueObject`/`StronglyTypedId` · `Guard`/`DomainGuard` · ۱۳۰+ Domain Event · ۴ قانون Fraud در Wallet | `Domain/Common/Abstractions/AggregateRoot.cs:3`، `SharedKernel/Guard/DomainGuard.cs` |
-| Application | CQRS روی MediatR با wrapper اختصاصی: `ICommand`/`ICommandHandler`/`IQuery`/`IQueryHandler`/`IPageQuery` → `ServiceResult` · ۹۱ Pipeline Behavior · ۲۹۱ فیچر (۱۶۵ cmd + ۱۲۶ qry) · ۱۲۳ Validator | `Application/Common/Interfaces/ICommand.cs:3`، `Application/Common/DependencyInjection/ApplicationServiceCollection.cs:35-48` |
-| Infrastructure | EF Core 10 + Npgsql · ۵۰ `IEntityTypeConfiguration` · ۱۶ BackgroundJob · Outbox · Redis cache + AES-GCM decorator · Lock توزیع‌شده · S3/MinIO · Elastic9.3 · ZarinPal · Kavenegar · ClamAV · OTel | `Infrastructure/Persistence/Context/DBContext.cs:32-35`، `Infrastructure/Common/DependencyInjection/InfrastructureServiceExtensions.cs` |
-| Presentation | ۵۶ Controller · ۳۰۳ اکشن · ۵ Minimal API · API versioning (`api/v{version}`) · Swagger + Annotations · Antiforgery · CORS · Rate limiting · Chaos middleware · OTel | `Presentation/Base/Endpoints/v1/BaseApiController.cs:6-8`، `Presentation/Program.cs` |
-| SharedKernel | `Entity`/`ValueObject`/`StronglyTypedId`/`Guard`/`Results`(`ServiceResult`+`Error`+`ErrorType`)/`Exceptions`/`Validation`/`Specifications` | `SharedKernel/Results/ErrorType.cs:5` |
-
-### ارتباط با لایه‌ها و جهت وابستگی
-```
-Presentation → Application → Domain
- ↓            ↑
- └→ SharedKernel ←┘
-Infrastructure → Application → Domain
-```
-**استثناهای شناسایی‌شده (نقض قاعده):**
-- `Application/Common/DependencyInjection/ApplicationServiceCollection.cs:1,3` → لایه پایه `Common` به `Application.Auth` و `Application.Payment` وابسته است.
-- `Application/Auth/Features/Shared/AuthDtos.cs:1` ↔ `Application/User/Contracts/IUserQueryService.cs:1` → **چرخه Auth↔User**.
-- ~۲۰۰ فایل Application مستقیماً `Domain.*.Interfaces.I*Repository` را using می‌کنند.
-
-### وابستگی‌های داخلی و خارجی
-| نوع | نمونه |
-|---|---|
-| داخلی | Order→Inventory,Order→Payment,Order→Shipping,Order→User · Wallet→Payment,Wallet→Notification · Product→Variant · Variant→Attribute,Variant→Shipping · Cart→Attribute · User→Auth,User→Review,User→Order |
-| خارجی | PostgreSQL (Npgsql 10.0.3) · Redis (StackExchange.Redis 2.10.14) · Elasticsearch 9.3.4 · AWS S3 SDK 4.0.20.2 (S3/AWS/Arvan/Liara/MinIO) · ZarinPal (raw HttpClient) · Kavenegar SMS · ClamAV (TCP) · Google OAuth · OTel OTLP |
-
-### محدودیت‌های معماری (مهم‌ترین‌ها)
-1. **MediatR فقط Application را اسکن می‌کند** → `PaymentSucceededInventoryCommitEventHandler`، `PaymentSucceededNotificationEventHandler`، `InventoryStockSearchSyncHandler` ثبت نشده‌اند.
-2. **Event backbone غیرفعال** (بخش D-01).
-3. **قواعد Authorization نام‌گذاری‌شده وجود ندارد** — فقط `[Authorize(Roles="Admin")]`؛ `FallbackPolicy` تعریف نشده.
-4. **۳ فرمت خطای همزمان روی wire**: `ApiResponse` / `PersianProblemDetails` / متن ساده.
-5. **لایه Presentation یک Query مالی Application را به‌عنوان body می‌گیرد**: `Presentation/Shipping/Endpoints/CheckoutShippingController.cs:52`.
-6. **مدل DB هم‌گام با snapshot نیست** (بخش D-09).
-
-### اطلاعاتی که هنوز تأیید نشده‌اند
-- `dotnet ef migrations has-pending-model-changes` اجرا نشد (ابزار local به‌علت Mark-of-the-Web مسدود). نتیجه‌گیری مهاجرت از مقایسه ایستای snapshot با ۱۷ کلاس config است.
-- کیفیت واقعی داده/حجم در Production نامعلوم است → کمی برآورد Performance مبتنی بر شواهد است، نه اندازه‌گیری.
-- هیچ ES واقعی در تست اجرا نمی‌شود (فقط `FakeElasticsearchServer` روی TcpListener).
-- هیچ `WebApplicationFactory` وجود ندارد → رفتار HTTP واقعی (ترتیب middleware، 401/403) تست نشده.
-
----
-
-## بخش C — ماتریس قابلیت‌ها
-
-| Capability | Status | Evidence | Gap | Opportunity |
-|---|---|---|---|---|
-| **Auth: OTP (ارسال/تایید)** | Implemented | `Application/Auth/Features/Commands/SendOtp`, `VerifyOtp` + HMAC pepper `Infrastructure/Auth/Services/OtpService.cs:33-50` | ندارد | — |
-| **Auth: Refresh token / Session** | Implemented | `Infrastructure/Auth/Services/SessionService.cs:43` + migration حذف ستون plaintext | ندارد | — |
-| **Auth: Password change → ابطال session** | **Defective** | `Application/User/Features/Commands/ChangePassword/ChangePasswordHandler.cs:24-29` هیچ session service صدا نمی‌زند؛ تنها مسیر، هندلر مرده است | نشست‌های فعال پس از تغییر رمز باقی می‌مانند | D-08 |
-| **Auth: Google OAuth** | Partially | `AuthenticationExtensions.cs:87-103` مشروط؛ کلیدها در appsettings نیست؛ endpoint هست | عملاً غیرفعال | G-03 |
-| **User: CRUD + Profile + Address** | Implemented | ۱۳ cmd، `MaxAddresses=10`، اعتبارسنجی مختصات `UserAddress.cs:148-155` | ۱۰ از ۱۳ cmd بدون validator | C-01 |
-| **User: Role/Status change** | Implemented | `AdminUserController.cs:99,110` | بدون validator (سطح privilege) | C-01 |
-| **Product: CRUD + catalog** | Implemented | ۹ cmd / ۷ qry، ۱۰۰٪ validator روی cmd | — | — |
-| **Product: تغییر قیمت** | **Missing (surface)** | `Application/Product/Features/Commands/ChangePrice/ChangePriceHandler.cs` کامل است ولی **هیچ endpoint ندارد** | قیمت فقط از مسیر Admin bulk قابل تغییر است | C-06 |
-| **Variant: CRUD + shipping/attribute** | Implemented | `AdminVariantController` (۵ اکشن) | **هیچ endpoint عمومی برای variant** | N-03 |
-| **Category: CRUD + tree + reorder** | Implemented | ۱۰ endpoint، `CategorySlug`/`CategoryName` | `_brands` در `Category.cs:19` هرگز پر نمی‌شود | C-08 |
-| **Brand: CRUD + move** | Implemented | ۸ endpoint | — | — |
-| **Attribute: CRUD + values** | Implemented | ۸ endpoint admin | صفر validator؛ `GetAttributeTypeByIdQuery` با `ICommand` تعریف شده | C-01, C-08 |
-| **Cart: guest + merge + price sync** | Implemented | ۹ endpoint، `CartMergeStrategy` ۴ حالت | `Cart.cs:139-140` exception با پیام خالی | C-08 |
-| **Discount: CRUD + apply + usage** | Partially | ۱۰ endpoint | `POST /discounts/application` مالکیت order را چک نمی‌کند؛ ۳ cmd بدون validator | D-06, C-01 |
-| **Shipping: CRUD + cost calc** | Implemented | ۱۱ endpoint، `ShippingDomainService` | `SetDefaultShippingCommand` مرده؛ `RequestDeletion` پرچم delete را ست نمی‌کند | C-05, C-08 |
-| **Inventory: stock ops + ledger + warehouse** | Partially | ۲۴ endpoint (بزرگ‌ترین سطح) | `InventoryReservationService` stub ثبت‌شده؛ ۷ cmd بدون validator | D-11, C-01 |
-| **Order: checkout + lifecycle** | **Defective** | `CheckoutOrchestrationService` order می‌سازد | رزرو/کمیت stock **فقط** در saga (مرده) → سفارش بدون حرکت stock | D-01, N-01 |
-| **Order: update order** | **Missing (surface)** | `UpdateOrderHandler.cs` فقط به تستارجاع دارد | — | C-06 |
-| **Order: refund/return** | Partially | `RequestReturnHandler` موجود | refund wallet وابسته به هندلر مرده | N-01 |
-| **Payment: gateway + verify + webhook** | Partially | ۱۷ endpoint، ZarinPal + circuit breaker | refund (`AtomicRefundPaymentHandler.cs:40`) کیف پول را برنمی‌گرداند | N-01 |
-| **Payment: method CRUD** | Implemented | `AdminPaymentMethodsController` | `MockPaymentGateway` ثبت‌نشده (خوب) | — |
-| **Wallet: balance + ledger** | **Defective** | ۴۳ endpoint (بزرگ‌ترین ماژول) | ledger فقط توسط ۲ هندلر مرده نوشته می‌شود → **جدول ledger خالی می‌ماند** | D-01 |
-| **Wallet: top-up / transfer** | Implemented | `CompleteWalletTopUpHandler.cs:97`، `ConfirmWalletTransferHandler.cs:134` مستقیم | ۹ handler از `ICommandHandler` دور زده‌اند | C-04 |
-| **Wallet: credit on payment** | **Defective** | `PaymentSucceededWalletCreditEventHandler.cs:20` (مرده) | **هیچ مسیر مستقیمی وجود ندارد** | D-01, N-01 |
-| **Wallet: withdrawal / debit request** | Implemented | approve/reject توسط admin + owner | approval توسط owner خودش (معکوس)؛ ۲ اکشن admin زیر prefix کاربر | D-07 |
-| **Wallet: fraud detection** | Partially | ۴ قانون + `FraudDetectionJob` | `FraudAlertCriticalFreezeHandler` مرده → freeze خودکار رخ نمی‌دهد | D-01 |
-| **Review: CRUD + vote + bulk** | Implemented | ۲۵ endpoint، ۱۰۰٪ validator | `Product.AverageRating/ReviewCount` هرگز به‌روز نمی‌شوند | D-01 |
-| **Support: ticket + reply** | Implemented | ۹ endpoint | `GetTicketQuery` مرده | C-06 |
-| **Notification: in-app** | Partially | ۸ endpoint | فقط مسیر admin کار می‌کند؛ پیام‌های رویدادی ساخته نمی‌شوند | D-01, N-02 |
-| **Search: ES index + sync** | Partially | ۷ endpoint + sync job ساعتی | **DI failure** در حالت ES فعال؛ on-change sync وجود ندارد | D-03, N-02 |
-| **Analytics: dashboard + reports** | Implemented | ۶ endpoint | ۳ پرس‌وجو بدون محدودیت؛ aggregation سمت کلاینت | D-12 |
-| **Audit: log + integrity + export** | Implemented | ۶ endpoint، hash v2، `VerifyIntegrity` | `AuditEventType` VO استفاده‌نشده | C-08 |
-| **Media: upload + primary + cleanup** | Implemented | ۸ endpoint، ClamAV + magic bytes | `MaxMediaPerEntity=20` اجرا نمی‌شود؛ `entityType` آزاد | C-08 |
-| **Location: states/cities** | Partially | ۲ endpoint | pagination جعلی؛ به API خارجی hard-coded | C-02 |
-| **Wishlist: toggle/remove/clear** | Partially | ۶ endpoint | `AddToWishlistCommand` مرده؛ صفر validator | C-06, C-01 |
-
----
-
-## بخش D — فهرست فرصت‌های توسعه
-
-### گروه ۱ — اصلاح نقص‌های بحرانی (P0)
-
----
-
-#### **D-01 · احیای Domain Event Backbone** — P0 · امتیاز **۹۷**
-
-**وضعیت فعلی:** `DomainEventInterceptor` (Infrastructure/Persistence/Interceptors/DomainEventInterceptor.cs:34-38) پرس‌وجو می‌کند `dbContext.ChangeTracker.Entries<IHasDomainEvents>()`. اما **هیچ نوعی `IHasDomainEvents` را پیاده‌سازی نمی‌کند** (`Domain/Common/Abstractions/AggregateRoot.cs:3` فقط `: Entity<TId>`). فیلتر runtime-type است → مجموعه خالی → `if (aggregates.Count == 0) return;` در خط ۴۰ → **هیچ OutboxMessage نوشته نمی‌شود**. `IDomainEventDispatcher` ثبت شده (`InfrastructureServiceExtensions.cs:601`) ولی **هرگز فراخوانی نمی‌شود**. تنها دو نقطه `IPublisher.Publish` در کل کد تولیدی: `DomainEventDispatcher.cs:13` (بی‌استفاده) و `OutboxProcessor.cs:96` (جدولی که خالی است).
-
-**مسئله:** تمام اثرات بین‌ماژولی که فقط به‌صورت Domain Event پیاده شده‌اند **بی‌صدا از کار افتاده‌اند**:
-
-| جریان | وضعیت | شواهد |
-|---|---|---|
-| رزرو و کمیت stock هنگام پرداخت | ❌ | تنها مسیر: `OrderProcessManagerSaga.cs:53` (مرده) + `PaymentSucceededInventoryCommitEventHandler.cs:30` (**در MediatR ثبت نشده**) |
-| Credit کیف پول پس از پرداخت موفق | ❌ | `PaymentSucceededWalletCreditEventHandler.cs:20` تنها مسیر |
-| نوشتن `WalletLedgerEntry` | ❌ | فقط `PersistWalletLedgerOn{Credit,Debit}Handler` |
-| آزادسازی رزرو کیف پول در لغو سفارش | ❌ | `OrderCancelledWalletReleaseEventHandler.cs:25` → **سفارش پرداخت‌شده با کیف پول هرگز refund نمی‌شود** |
-| ساخت کیف پول در ثبت‌نام | ❌ | `Application/Auth/EventHandlers/UserCreatedEventHandler.cs:35` → `WalletCheckoutPaymentStrategy.cs:45` → «کیف پول یافت نشد» |
-| ابطال session پس از تغییر رمز | ❌ | `UserPasswordChangedEventHandler.cs:32` |
-| بازمحاسبه آمار review محصول | ❌ | ۵ هندلر `UpdateProductStatsOnReview*` → `Product.AverageRating` همیشه صفر |
-| اعلان in-app (سفارش/پرداخت/تیکت/۸ رویداد کیف پول) | ❌ | فقط `AdminSendNotification` کار می‌کند |
-| جبران خودکار سفارش (auto-refund) | ❌ | `OrderProcessManagerSaga` |
-| ایندکس‌سازی on-change در جستجو | ❌ | `InventoryStockSearchSyncHandler` (در Infrastructure → ثبت‌نشده) |
-
-**ارزش مورد انتظار:** بازگرداندن رفتار صحیح مالی. بدون این اصلاح، **سفارش می‌تواند پرداخت شود بدون اینکه هرگز از موجودی کم شود** و **کیف پول پرداخت‌شده refund نمی‌شود**. این نقص مالی است، نه کیفیت کد.
-
-**شواهد:** `Domain/Common/Abstractions/AggregateRoot.cs:3` · `Infrastructure/Persistence/Interceptors/DomainEventInterceptor.cs:34-40` · `Infrastructure/Common/DependencyInjection/InfrastructureServiceExtensions.cs:601` · `Application/Common/DependencyInjection/ApplicationServiceCollection.cs:35-37` · `Tests/Infrastructure/Persistence/Interceptors/DomainEventInterceptorTests.cs:132` (تست، خاموشی مدل را **به‌عنوان وضعیت مطلوب** تثبیت کرده: `implementors.ShouldBeEmpty()`)
-
-**لایه‌های تحت تأثیر:** Domain (پیاده‌سازی `IHasDomainEvents`) · Application (`RegisterServicesFromAssembly` برای Infrastructure) · Infrastructure (رفع `UserId.NewId()`) · SharedKernel (اختیاری)
-
-**پیش‌نیازها:** D-10 (identifier fabrication) — تا D-10 حل نشود، فعال‌سازی backbone کیف پول تصادفی را credit می‌کند.
-
-**هزینه/ریسک:** متوسط / متوسط — ریسک اصلی «فعال‌سازی کد هرگز اجراشده» است؛ باید با تست end-to-end پوشش داده شود.
-
-**معیار پذیرش:**
-1. `AggregateRoot<TId>` پیاده‌سازی `IHasDomainEvents` کند و `DomainEvents` به `IReadOnlyList<IDomainEvent>` تغییر کند.
-2. `dotnet test` یک تست end-to-end: aggregate → outbox row → `OutboxProcessor` → publish → handler اجرا شود.
-3. `Entries<IHasDomainEvents>()` حداقل یک implementer mapped داشته باشد (تست فعلی معکوس شود).
-4. MediatR اسمبلی Infrastructure را نیز اسکن کند یا ۳ هندلر Infrastructure به Application منتقل شوند.
-5. `PaymentSucceededEvent`/`PaymentRefundedEvent` شناسه واقعی کاربر را حمل کنند.
-
-**استراتژی تست:** Unit (تبدیل event→outbox) · Integration (ساخت outbox row و پردازش آن با Postgres/Testcontainers) · Application (پیاده‌سازی یک handler کاملاً end-to-end) · Regression (جریان پرداخت→کمیت stock→credit کیف پول)
-
----
-
-#### **D-02 · ثبت `IRateLimitService` در شاخه Redis** — P0 · امتیاز **۷۴**
-
-**وضعیت:** `Infrastructure/Common/DependencyInjection/InfrastructureServiceExtensions.cs:143-146` در شاخه Redis فقط `RateLimitService`، `InMemoryRateLimitService` و `ResilientRateLimitService` را به‌عنوان کلاس concrete ثبت می‌کند؛ `services.AddScoped<IRateLimitService, InMemoryRateLimitService>()` فقط در خط **۱۵۴** (شاخه non-Redis) است.
-
-**مسئله:** با `Cache:UseRedis=true` (کانفیگوریشن تولیدی) هر درخواستِ rate-limited با `InvalidOperationException` می‌میرد — `Presentation/Common/Middleware/RateLimitMiddleware.cs:27`، `OtpRateLimitFilter.cs:10`، `ReviewRateLimitFilter.cs:24`، `PaymentRateLimitFilter.cs:17`. عملاً **کل rate limiting** (شامل OTP) از کار افتاده است. `ResilientRateLimitService` نیز ثبت‌شده ولی به interface مقید نیست — کد مرده.
-
-**ارزش:** فعال‌سازی محافظت در برابر abuse روی OTP/payment — بدون هزینه معماری (یک خط).
-
-**لایه‌ها:** Infrastructure فقط.
-
-**هزینه/ریسک:** کم / کم · **معیار پذیرش:** با `UseRedis=true`، `GET /api/v1/auth/otp` پاسخ 429 برگرداند؛ تست DI که هر سرویس ثبت‌شده قابل resolve باشد (→ N-04).
-
----
-
-#### **D-03 · تکمیل ثبت‌های DI مسیر Elasticsearch** — P0 · امتیاز **۵۹**
-
-**وضعیت:** `InfrastructureServiceExtensions.cs:467` می‌گوید `services.AddScoped<ISearchService, ResilientElasticSearchService>()` اما `ResilientElasticSearchService.cs:7-8` به `ElasticsearchService` و `ElasticsearchCircuitBreaker` نیاز دارد که **هیچ‌کدام ثبت نشده‌اند**. `IElasticBulkService` (نیازِ `ElasticsearchDatabaseSyncService.cs:11` که ثبت شده)، `ISearchStatsService` و `IElasticDeadLetterQueue` نیز ثبت نشده‌اند.
-
-**مسئله:** با `Elasticsearch:IsEnabled=true` → `InvalidOperationException` در اولین resolve. جستجو و outbox آن کاملاً از کار می‌افتند.
-
-**همبستگی‌های کشف‌شده:** `ElasticsearchOptions.Username/Password` هرگز روی کلاینت زنده اعمال نمی‌شوند (`ElasticClientFactory.cs:14-19` ساخته شده ولی استفاده نشده) · `IOptions<S3Options>` هرگز bind نمی‌شود → `S3AuditArchiveStorage` با `BucketName` خالی اجرا می‌شود.
-
-**هزینه/ریسک:** کم / کم · **معیار پذیرش:** با ES فعال، `POST /api/v1/admin/search/sync` بدون 500 پاسخ دهد و `GET /api/v1/search/products` نتیجه بدهد.
-
----
-
-#### **D-04 · اصلاح `DELETE /api/v1/order-items/{id}`** — P0 · امتیاز **۷۵**
-
-**وضعیت:** `Presentation/Order/Endpoints/OrderItemsController.cs:10` فقط `[Authorize]`. هندلر `Application/Order/Features/Commands/DeleteOrderItem/DeleteOrderItemHandler.cs`:
-- `ICurrentUserService` ندارد → **هیچ بررسی مالکیتی**
-- خط ۲۱: `order.OrderItems.FirstOrDefault(i => i.Id == orderItemId);` → نتیجه **دور ریخته می‌شود** و هیچ `RemoveItem` صدا زده نمی‌شود → **endpoint بدون اثر، ۲۰۰ برمی‌گرداند**
-- ناهماهنگی مسیر: endpoint `/order-items/{id}` ولی handler یک **Order** را با **order-item id** پیدا می‌کند.
-
-**مسئله:** (۱) هر کاربر احراز‌شده‌ای می‌تواند به order-item هر کاربر دیگری هدف بگیرد (IDOR)؛ (۲) endpoint عملاً بی‌اثر است. **این تنها endpointی است که هم از نظر مالکیت و هم از نظر اثر معیوب است.**
-
-**ارزش:** بستن یک مسیر بین‌کاربری + فعال‌سازی یک قابلیت (حذف آیتم سفارش) که عملاً وجود ندارد.
-
-**لایه‌ها:** Application (هندلر) + Presentation (attribute).
-
-**پیش‌نیازها:** تصمیم محصول — آیا حذف order-item پس از پرداخت مجاز است؟ (D-07/D-08 مرزها را مشخص می‌کنند)
-
-**هزینه/ریسک:** کم / کم · **معیار پذیرش:** درخواست با order-item کاربر دیگر → 403؛ مالکِ سفارش در وضعیت مجاز → آیتم واقعاً حذف شود و پاسخ 200 با state جدید.
-
----
-
-### گروه ۲ — اصلاح نقص‌های با اولویت بالا (P1)
-
----
-
-#### **D-05 · نگاشت `ErrorType` به کد وضعیت HTTP** — P1 · امتیاز **۷۲**
-
-**وضعیت:** `SharedKernel/Results/ErrorType.cs:5` → `Failure = 0` (پیش‌فرض `ServiceResult.Failure(string)`). `Presentation/Common/Mappers/HttpResultMapper.cs:46-56` نگاشت `_ => 500` دارد. **۷۷ از ۸۴** فراخوانی `ServiceResult.Failure(...)` در Application از پیش‌فرض استفاده می‌کنند.
-
-**مسئله:** خطاهای کسب‌وکار عادی به‌صورت HTTP 500 برمی‌گردند:
-- `AddItemToCartHandler.cs:28` «واریانت غیرفعال است» → 500 (باید 409)
-- `AddItemToCartHandler.cs:32` «موجودی کافی نیست» → 500 (باید 409)
-- `ChangePasswordHandler.cs:22` «رمز عبور فعلی نادرست است» → 500 (باید 400/401)
-- `DeleteCategoryHandler.cs:21` «دارای زیرمجموعه» → 500 (باید 409)
-- `DeleteWarehouseHandler.cs:18` → 500
-
-**بدتر:** ۶ هندلر نوع خطا را **دور می‌ریزند**: `AddStockHandler.cs:35`، `RemoveStockHandler.cs:36`، `ReconcileStockHandler.cs:30`، `AdjustStockHandler.cs:27`، `ReverseInventoryHandler.cs:27`، `ChangePhoneNumberHandler.cs:26` — یک `NotFound` به 500 تبدیل می‌شود.
-
-**ریسک جانبی:** alert روی 5xx زیاد → سیگنال خطای واقعی گم می‌شود. `ErrorType.Infrastructure` و `ErrorType.ExternalService` هم 500 می‌شوند که درست است، اما از `Failure` قابل تفکیک نیست.
-
-**هزینه/ریسک:** کم / کم — یک `ErrorType.Failure => 400` در نگاشت + بازبینی ۷۷ فراخوانی برای انتخاب نوع صحیح. **هشدار:** تغییر کد وضعیت، قرارداد عمومی API را تغییر می‌دهد → نیازمند تصمیم محصول (بخش G).
-
-**معیار پذیرش:** هر ۱۰ نوع `ErrorType` یک کد صحیح داشته باشد؛ هیچ handlerی بدون انتخاب صریح نوع خطا `Failure` برنگرداند؛ تست theory کامل برای نگاشت.
-
----
-
-#### **D-06 · بررسی مالکیت Order در `POST /api/v1/discounts/application`** — P1 · امتیاز **۶۶**
-
-**وضعیت:** `Presentation/Discount/Endpoints/DiscountsController.cs:38` → `Application/Discount/Features/Commands/ApplyDiscount/ApplyDiscountHandler.cs:37` `request.OrderId` را از body می‌گیرد و **بررسی نمی‌کند که order متعلق به caller است**؛ سپس `discount.RecordUsage(userId, orderId, ...)` روی order دلخواه ثبت می‌کند.
-
-**مسئله:** امکان ثبت مصرف کد تخفیف روی سفارش شخص دیگر → گزارش‌های مصرف تخفیف و سقف استفاده (`DiscountUsageRecord`) آلوده می‌شوند.
-
-**هزینه/ریسک:** کم / کم — یک بررسی مالکیت مشابه `AuthorizationGuard.EnsureOwnerOrAdmin`.
-
----
-
-#### **D-07 · انتقال اکشن‌های admin کیف پول به prefix `/admin`** — P1 · امتیاز **۵۳**
-
-**وضعیت:** `Presentation/Wallet/Endpoints/WalletController.cs:181` (`reject`) و `:195` (`mark-paid`) با `[Authorize(Roles="Admin")]` ولی **زیر prefix کاربر** `/api/v1/wallet/...`.
-
-**مسئله:** `Presentation/Common/Middleware/SecurityMiddleware.cs:37-52` فقط `/api/admin/**` و `/api/v{n}/admin/**` را به admin IP allow-list نگاشت می‌کند → **این دو اکشن از محدودیت IP ادمین فرار می‌کنند**، درحالی‌که `AdminWalletController` (approve/reject withdrawal) تحت کنترل IP است. ناسازگاری امنیتی بین دو مسیر هم‌معنا.
-
-**هزینه/ریسک:** کم / متوسط (تغییر route = **Breaking Change API** → نیازمند نسخه‌بندی)
-
----
-
-#### **D-08 · ابطال session پس از تغییر رمز (دفاع مستقل از event)** — P1 · امتیاز **۶۵**
-
-**وضعیت:** `Application/User/Features/Commands/ChangePassword/ChangePasswordHandler.cs:24-29` فقط `user.ChangePasswordHash(...)` + `Update`. هیچ `ISessionService` تزریق نشده. `Domain/User/Aggregates/User.cs:135-144` هیچ session ایجاد نمی‌کند. تنها مسیر ابطال، هندلر مرده است.
-
-**مسئله:** پس از تغییر رمز، JWT و refresh token نشست‌های قبلی همچنان معتبرند. `SessionRevocationReason.PasswordChanged` (Domain/Security/Enums) و `AllSessionsRevokedEvent` هر دو بی‌استفاده‌اند.
-
-**نکته معماری:** این باید **مستقل از D-01** اصلاح شود — تغییر رمز یک عملیات همزمان (synchronous) است و نباید به انتشار event وابسته باشد.
-
-**هزینه/ریسک:** کم / کم · **معیار پذیرش:** پس از تغییر رمز، refresh token قبلی `401` بدهد و نشست در `UserSession` revoked شود.
-
----
-
-#### **D-09 · هم‌گام‌سازی Migration Snapshot و افزودن دروازه drift** — P1 · امتیاز **۷۷**
-
-**وضعیت:** `Infrastructure/Persistence/Migrations/` فقط ۲ migration دارد. `DBContextModelSnapshot.cs` **۰ مورد `HasQueryFilter`** دارد، درحالی‌که **۱۷ کلاس config** فیلتر تعریف می‌کنند (AttributeType, AttributeValue, Media, Order, OrderItem, PaymentMethod, PaymentTransaction, User, UserAddress, Notification, Wishlist, Wallet, WalletLedgerEntry, WalletReservation, DiscountUsage, VariantAttribute). Snapshot دستی patch شده (`git diff` فقط۱۴ خط: نسخه 9.0.17→10.0.13 و `RefreshToken`→`RefreshTokenHash`).
-
-**اثر:** `dotnet ef migrations add` امروز ۱۷ عملیات `AlterTable` مربوط به فیلتر تولید می‌کند که در schema موجود نیست. **Soft-delete در سطح دیتابیس مستند نشده است** — یعنی رفتار soft-delete به‌طور کامل به کد اپلیکیشن وابسته است و با `IgnoreQueryFilters()` (تنها ۲ استفاده: `OrphanedFileCleanupJob.cs:66`، `PaymentMethodSeeder.cs:79`) ناسازگاری ایجاد می‌کند.
-
-**تشدید:** هیچ تستی migration را اجرا نمی‌کند — fixture از `EnsureCreatedAsync()` استفاده می‌کند (`Tests/TestInfrastructure/Database/PostgresContainerFixture.cs`) → **مدل و migration هرگز مقایسه نمی‌شوند**. `dotnet ef migrations has-pending-model-changes` در CI/pre-commit/verify-security اجرا نمی‌شود.
-
-**لایه‌ها:** Infrastructure (+ CI)
-
-**هزینه/ریسک:** متوسط / متوسط (ریسک: تولید migration با نام نامناسب؛ نیاز به بازبینی دستی) · **معیار پذیرش:** snapshot بازتولید شود، `has-pending-model-changes` پاک شود، و این دستور به gate اضافه شود.
-
----
-
-#### **D-10 · اصلاح شناسه‌های ساختگی در Domain Event** — P1 · امتیاز **۷۰**
-
-**وضعیت (دو مورد):**
-1. `Domain/Payment/Aggregates/PaymentTransaction.cs:144` → `RaiseDomainEvent(new PaymentSucceededEvent(Id, OrderId, refId, UserId: UserId.NewId(), Amount));` و خط۱۷۸ برای `PaymentRefundedEvent`. `UserId.NewId()` یک GUID تصادفی است، نه `UserId` تراکنش.
-2. `Domain/Inventory/Aggregates/Inventory.cs:236` → `RaiseDomainEvent(new StockCommittedEvent(Id, VariantId, OrderItemId.NewId(), quantity));` درحالی‌که `orderItemId` واقعی در `StockLedgerEntry` نوشته شده.
-
-**چرا بحرانی است:** اگر D-01 بدون D-10 فعال شود، `PaymentSucceededWalletCreditEventHandler` **کیف پول یک کاربر تصادفی** را credit می‌کند (۱۱ نقطه مصرف‌کننده `PaymentSucceededEvent`).
-
-**هزینه/ریسک:** کم / کم · **معیار پذیرش:** شناسه در event با شناسه تراکنش/آیتم برابر باشد؛ تست unit برای هر دو.
-
----
-
-#### **D-11 · تکمیل `InventoryReservationService`** — P1 · امتیاز **۶۴**
-
-**وضعیت:** `Domain/Inventory/Services/InventoryReservationService.cs` — `ReserveBatch` فقط validation را صدا می‌زند و `BatchReservationResult.Success()` برمی‌گرداند **بدون رزرو کردن چیزی**؛ `ReleaseBatch` هم `Success()` بدون آزادسازی. `ValidateBatchAvailability` فقط `quantity <= 0` را چک می‌کند و به موجودی اصلاً دست نمی‌زند. سرویس **در DI ثبت شده** (`ApplicationServiceCollection.cs`) و تست هم دارد.
-
-**مسئله:** یک API عمومی دامنه که وانمود می‌کند رزرو می‌کند ولی هیچ اثری ندارد — مصرف‌کننده می‌تواند به آن اعتماد کند.
-
-**هزینه/ریسک:** کم / کم (یا حذف کامل سرویس — تصمیم بخش G)
-
----
-
-#### **D-12 · محدودسازی و بهینه‌سازی پرس‌وجوهای Analytics** — P1 · امتیاز **۶۱**
-
-**وضعیت:** `Infrastructure/Analytics/QueryServices/AnalyticsQueryService.cs`:
-- `GetRevenueReportAsync:47-57` — `ToListAsync` **بدون Take/Skip**؛ بازه تاریخ کنترل‌نشده → کل سفارش‌های یک سال در حافظه API
-- `GetSalesChartDataAsync:204-211` — `o.OrderItems.Sum(i => i.Quantity)` = **زیرپرس‌وجوی همبسته به ازای هر ردیف** + `ToListAsync` بدون حد → گران‌ترین پرس‌وجوی کلاس
-- `GetCategoryPerformanceAsync:159-184` — join سه‌گانه + `Distinct().Count()` بدون حد
-- Aggregation در `GetRevenueReport` و `GetSalesChartData` سمت **کلاینت** انجام می‌شود (خطوط۵۹-۷۴ و ۲۱۵-۲۳۲) به‌جای SQL
-
-**ریسک همراه:** ۳ query از این ۶، `IPageQuery` اعلام می‌کنند ولی `Page`/`PageSize` **هرگز به سرویس منتقل نمی‌شود** (`IAnalyticsQueryService` اصلاً پارامتر صفحه ندارد) → کاربر فکر می‌کند صفحه‌بندی دارد ولی ندارد.
-
-**هزینه/ریسک:** متوسط / متوسط — نیازمند دانستن حجم واقعی داده (بخش G). معیار پذیرش: سقف بازه تاریخ + `Take` الزامی + aggregation در SQL + پاسخ زیر آستانه توافقی.
-
----
-
-### گروه ۳ — تکمیل قابلیت‌های موجود (P2)
-
-#### **C-01 · پوشش Validator برای ۱۶۸ قابلیت بدون اعتبارسنجی** — P2 · امتیاز **۷۱**
-**شواهد:** ۱۲۳ validator برای ۲۹۱ فیچر (۴۲٪). ماژول‌های **صفر validator**: Attribute (۶ cmd + ۲ qry)، Wishlist (۴+۲)، Notification (۵+۳)، Location (۲). پرخطرترین‌ها: `ChangeUserRole`، `ChangeUserStatus` (سطح privilege)، `ApplyDiscount`، `CancelDiscountUsage`، `AddStock`، `RemoveStock`، `BulkStockIn`، `AdminSendNotification`.
-**اثر:** اعتبارسنجی در MediatR pipeline انجام می‌شود (`ValidationBehavior`)، پس DTO خام به Command بدون قاعده می‌رسد.
-**هزینه/ریسک:** متوسط / کم · **معیار پذیرش:** ۱۰۰٪ validator برای cmdهای تغییر وضعیت و مالی.
-
-#### **C-02 · قرارداد صفحه‌بندی و سقف `pageSize`** — P2 · امتیاز **۶۳**
-**شواهد:** صفحه‌بندی جعلی در `GetAllAttributeTypesHandler.cs:18-20` و `GetStatesHandler.cs:15-16` (`pageSize = dtos.Count`)؛ صفحه‌بندی اعلام‌نشده در `GetCategoryPerformanceHandler`، `GetSalesChartDataHandler`، `GetTopSellingProductsHandler`؛ **هیچ سقف `pageSize` در کل API وجود ندارد** — مقدار خام از query string خوانده می‌شود. `AdminWalletController.cs:93` مقدار `request.MaxRows ?? 10_000` را می‌پذیرد.
-**هزینه/ریسک:** کم / کم
-
-#### **C-03 · فعال‌سازی یا حذف مسیرهای CQRS مرده** — P2 · امتیاز **۵۷**
-**شواهد (فقط self-reference یا تست):** `CreateOrderCommand` (مسیر واقعی: `Infrastructure/Order/Services/CheckoutOrderCreationService.cs:30` مستقیم `Order.Place()` را صدا می‌زند) · `ChangePriceCommand` · `UpdateOrderCommand` · `SetDefaultShippingCommand` · `AddToWishlistCommand` · `ReserveWalletCommand` · `GetBrandsQuery` · `GetCategoriesQuery` · `GetVariantsQuery` · `GetInventoryQuery` · `GetTicketQuery`.
-**نکته:** `CreateOrderCommand` خطرناک‌ترین است — دو مسیر برای ساخت سفارش، فقط یکی زنده. **دو مسیر زندهٔ هم‌معنا (command vs service)** = آزمون‌پذیری و consistency risk.
-**هزینه/ریسک:** کم / کم (حذف یا wiring) — `ChangePriceCommand` ارزش تجاری واقعی دارد (بخش C-06).
-
-#### **C-04 · یکسان‌سازی ۹ هندلر Wallet با قرارداد `ICommandHandler`** — P2 · امتیاز **۴۹**
-**شواهد:** `CancelWalletTransferHandler.cs:13`، `ConfirmWalletTransferHandler.cs:23`، `CompleteWalletTopUpHandler.cs:15`، `InitiateWalletTopUpHandler.cs:22`، `InitiateWalletTransferHandler.cs:24`، `GetFraudAlertsHandler.cs:10`، `GetFraudAlertByIdHandler.cs:6`، `GetOpenFraudAlertsCountHandler.cs:6`، `PreviewWalletTransferHandler.cs:16` — همه از `IRequestHandler<,>` خام MediatR استفاده می‌کنند و قراردادهای `ServiceResult`/transaction/audit را دور می‌زنند. تنها ۹ مورد در کل لایه Application.
-
-#### **C-05 · یکسان‌سازی وضعیت Soft-Delete** — P2 · امتیاز **۶۶**
-**شواهد:** `Domain/Shipping/Aggregates/Shipping.cs:165-174` — `RequestDeletion` فقط `IsActive=false` می‌کند؛ `IsDeleted`/`DeletedAt`/`DeletedBy` (که در `ISoftDeletable` اعلام شده) **همیشه null** می‌مانند. `Restore()` هم پاکشانی نمی‌کند. در مقابل `Brand.RequestDeletion` و `Product.MarkAsDeleted` این کار را می‌کنند. همچنین `Domain/Order/Entities/OrderStatus.cs:137-140` — `MarkAsDeleted()` هیچ state حذفی ثبت نمی‌کند.
-
-#### **C-06 · تکمیل سطح ویرایش: قیمت و سفارش** — P2 · امتیاز **۶۸**
-**شواهد:** `ChangePriceCommand` validator دارد ولی **هیچ endpoint ندارد** (`rg ChangePrice Presentation/` → خالی). `UpdateOrderCommand` و `SetDefaultShippingCommand` هم به‌همین شکل. سه قابلیت کاملاً پیاده‌شده و تست‌شده که **در محصول قابل دسترس نیستند**. قیمت فقط از مسیر `PATCH /api/v1/admin/products/prices/bulk` قابل تغییر است — تغییر تکی قیمت یک variant مقدار ندارد.
-**هزینه/ریسک:** کم / کم — wiring + سند API.
-
----
-
-### گروه ۴ — توسعه جدید (P2/P3)
-
-#### **N-01 · تکمیل چرخه حیات Wallet** — P2 · امتیاز **۸۷** *(پس از D-01 و D-10)*
-**نیاز:** Wallet بزرگ‌ترین ماژول (۱۳۱ فایل، ۴۳ endpoint) ولی **چرخه کامل ندارد**: کیف پول در ثبت‌نام ساخته نمی‌شود، پرداخت آن را credit نمی‌کند، لغو سفارش آن را refund نمی‌کند، refund gateway کیف پول را برنمی‌گرداند (`AtomicRefundPaymentHandler.cs:40`)، ledger خالی می‌ماند، freeze خودکار در fraud رخ نمی‌دهد.
-**شاهد:** `Application/Auth/EventHandlers/UserCreatedEventHandler.cs:35` · `Application/Wallet/EventHandlers/PaymentSucceededWalletCreditEventHandler.cs:20` · `OrderCancelledWalletReleaseEventHandler.cs:25` · `PersistWalletLedgerOnCreditHandler.cs:11`
-**وابستگی:** D-01 + D-10 + D-11 (رزرو موجودی)
-**هزینه/ریسک:** متوسط / متوسط — باید مشخص شود کدام رخداد **درون‌تراکنشی** (همزمان) و کدام **جبرانی** باشد.
-
-#### **N-02 · اعلان‌های کاربر: ترجیحات و Digest** — P2 · امتیاز **۶۳**
-**نیاز:** ماژول Notification نازک است (۵ cmd، ۳ qry، **صفر validator**، ۸ endpoint) ولی `NotificationType` (۱۲ نمونه) و `NotificationCategory` (۶ مقدار) و `NotificationPriority` (بدون استفاده) تعریف شده‌اند. پس از احیای D-01، حجم پیام‌ها چند برابر می‌شود — بدون ترجیح کاربر، اپ می‌شود اعلان‌نامه.
-**شاهد:** `Domain/Notification/ValueObjects/NotificationType.cs:5` (۱۲ static instance) · `Domain/Notification/Enums/NotificationCategory.cs:3` (۶ مقدار) · `Domain/Notification/ValueObjects/NotificationPriority.cs` (کاملاً استفاده‌نشده)
-**هزینه/ریسک:** متوسط / کم — نیازمند entity + endpoint + migration جدید (که باید با D-09 هم‌راستا شود).
-
-#### **N-03 · سطح عمومی برای Variant و Attribute** — P3 · امتیاز **۵۸**
-**نیاز:** `AdminVariantController` (۵ اکشن) و `AdminAttributesController` (۸ اکشن) تنها surface موجود هستند. کاتالوگ عمومی محصول (`ProductsController`) به DTO variant ارجاع می‌دهد (`ProductDtos.cs:1` → `ProductVariantViewDto`) ولی **endpoint عمومی variant/attribute وجود ندارد** — کلاینت برای فیلتر بر اساس ویژگی باید به پنل ادمین برود.
-**شاهد:** `Presentation/Variant/Endpoints/AdminVariantController.cs:12` (تنها کنترلر variant) · `Presentation/Attribute/Endpoints/AdminAttributesController.cs:15` (تنها کنترلر attribute)
-**هزینة:** کم / کم
-
-#### **N-04 · دروازه‌های کیفیت: تست معماری، resolve کامل DI، drift مهاجرت، آستانه پوشش** — P2 · امتیاز **۷۰**
-**نیاز (و شواهد نبود):**
-| دروازه | وضعیت فعلی | شواهد |
-|---|---|---|
-| تست معماری/لایه | ❌ **کاملاً غایب** | `rg "Architecture" Tests` → 0 نتیجه |
-| تست resolve کامل DI | ❌ غایب | `rg WebApplicationFactory` → 0؛ `ValidateOnBuild` → 0 |
-| اجرای migration در تست | ❌ غایب | fixture از `EnsureCreatedAsync()` استفاده می‌کند؛ `rg MigrateAsync Tests` → 0 |
-| `has-pending-model-changes` در CI | ❌ غایب | `rg` در `.github`/`.githooks`/`scripts` → 0 |
-| آستانه پوشش | ❌ غایب | `coverlet.collector` نصب است ولی `--collect:"XPlat Code Coverage"` اجرا نمی‌شود |
-| تست end-to-end جریان پرداخت | ❌ غایب | `OutboxProcessorTests` فقط نیمه‌ها را می‌آزماید |
-| assert بی‌معنا | ≈۰ | `rg "Assert\."` → 0؛ Shouldly/NSubstitute فراوان |
-| اسکت تست بدون موتور | **۱٬۴۱۵ تست** بی‌صدا skip می‌شوند | ۱٬۳۸۰ در `Tests/Infrastructure` |
-
-**نکته:** `Tests/Security/SourceHygieneInvariantsTests.cs` الگوی خوبی برای قاعده‌گذاری source-level است — می‌توان قاعده لایه‌ای را در همان سبک نوشت.
-**هزینه/ریسک:** متوسط / کم — بالاترین چگالی پیشگیری به ازای هزینه.
-
----
-
-### سایر موارد کشف‌شده (P3 — بهداشت کد)
-
-| مورد | شواهد |
-|---|---|
-| Exceptionهای مرده: `AttributeTypeNotFoundException`, `DuplicateAttributeValueException` (به‌جای آن `DuplicateAttributeException` استفاده می‌شود), `InvalidFileTypeException`, `ProductNotAvailableException` (۴ factory بلااستفاده) | `Domain/Attribute/Exceptions/`, `Domain/Media/Exceptions/`, `Domain/Product/Exceptions/` |
-| ValueObject/Enum مرده: `AuditEventType` (۱۲ constant)، `NotificationPriority`، `OtpRateLimitStatus`، `RefreshToken` (UserSession به‌جای آن `RefreshTokenHash` string دارد) | `Domain/Audit/ValueObjects/AuditEventType.cs` و… |
-| Eventهای هرگز-raised: `PriceChangedEvent`، `StockReleasedEvent`، `StockReturnedEvent` | `Domain/Product/Events/PriceChangedEvent.cs:6` |
-| `MediaDomainService.MaxMediaPerEntity = 20` تعریف شده ولی هرگز خوانده نمی‌شود | `Domain/Media/Services/MediaDomainService.cs:12` |
-| `TicketStatus.FromString` برای ورودی ناشناخته بی‌سروصدا `Open` برمی‌گرداند | `Domain/Support/ValueObjects/TicketStatus.cs:34-43` |
-| `LoginAttemptResult.IsAccountDeleted` هرگز true نمی‌شود | `Domain/User/Results/LoginAttemptResult.cs:10` |
-| پیام فارسی خراب‌شده (کاراکتر جایگزین) | `Domain/User/Entities/UserAddress.cs:119` |
-| `DistributedLockException` هرگز throw نمی‌شود؛ lock بدون renewal/fencing | `Infrastructure/Cache/Redis/Lock/DistributedLockException.cs` |
-| `WalletTopUpCleanupJob` expiry قفل ۴ دقیقه < بازه ۵ دقیقه | `Infrastructure/BackgroundJobs/WalletTopUpCleanupJob.cs:13` |
-| `Quartz 3.13.0` ارجاع شده ولی هیچ job ای از آن استفاده نمی‌کند | `Infrastructure/Infrastructure.csproj:40` |
-| ۱۴ از ۱۶ job الگوی lock/loop را تکرار می‌کنند؛ base class فقط ۲ job | `Infrastructure/BackgroundJobs/Common/DistributedLockedBackgroundService.cs` |
-| `ReservationExpiryOptions.ExpiryMinutes` bind می‌شود ولی خوانده نمی‌شود | `Infrastructure/BackgroundJobs/Options/ReservationExpiryOptions.cs` |
-| `ResilientRedisXmlRepository` از `KEYS` استفاده می‌کند (O(N)، مسدودکننده) و در خطای Redis کلید‌رینگ خالی برمی‌گرداند | `Infrastructure/DataProtection/Repositories/ResilientRedisXmlRepository.cs:17-25` |
-| `Cache:DefaultTtlMinutes` در appsettings با `DefaultExpirationMinutes` در `CacheOptions` ناهم‌خوان است → TTL مؤثر ۳۰ دقیقه نه ۵ | `Infrastructure/Cache/Options/CacheOptions.cs:14` |
-| `GetAttributeTypeByIdQuery` به‌جای `IQuery` با `ICommand` تعریف شده (تنها مورد) | `Application/Attribute/Features/Queries/GetAttributeTypeById/GetAttributeTypeByIdQuery.cs:5` |
-| `UserPasswordChangedEventHandler.cs.cs` — پسوند دوباره | `Application/Auth/EventHandlers/UserPasswordChangedEventHandler.cs.cs` |
-| `nswag.json` با `"runtime": "Net90"` باقی‌مانده از .NET 9 | `Presentation/nswag.json` |
-| پوشه‌های مرده در csproj + `roadmap.txt` صفر بایت | `Infrastructure/Infrastructure.csproj:72-78` |
-| `.githooks/pre-commit` (که اسکریپت رسمی نصب می‌کند) `dotnet format`/build/test را اجرا نمی‌کند؛ فقط `.pre-commit-config.yaml` این کار را می‌کند | `.githooks/pre-commit` در برابر `.pre-commit-config.yaml` |
-| ۷ endpoint کاملاً عمومی: ۴ جستجو، `GET /payments/verify`، `POST /payments/webhooks/{gateway}`، `GET /mock-gateway` | `Presentation/Search/Endpoints/SearchController.cs:14` و… |
-
----
-
-## بخش E — رتبه‌بندی نهایی
-
-| رتبه | ID | عنوان | امتیاز | P | هزینه | ریسک | وابستگی | دلیل جایگاه |
-|---|---|---|---|---|---|---|---|---|
-| ۱ | **D-01** | احیای Domain Event backbone | ۹۷ | P0 | متوسط | متوسط | D-10 | تنها نقص با **اثر مالی مستقیم**: سفارش پرداخت‌شده بدون کم‌شدن موجودی و بدون refund کیف پول. بیشترین سطح رفتار را باز می‌گرداند (۳۸ هندلر) |
-| ۲ | **D-09** | هم‌گام‌سازی Migration + دروازه drift | ۷۰ *(۷۷ → ۷۰ پس از تصحیح I-1)* | P1 | متوسط | متوسط | — | schema فعلی سالم است؛ آنچه واقعاً کم بود، نبود دروازه و نبود اجرای migration در تست بود. هر دو رفع شد |
-| ۳ | **D-04** | اصلاح `DELETE /order-items/{id}` | ۷۵ | P0 | کم | کم | — | تنها مورد هم‌زمان IDOR + بی‌اثر. کوچک‌ترین تغییر با بیشترین نسبت ارزش/هزینه |
-| ۴ | **D-02** | ثبت `IRateLimitService` در شاخه Redis | ۷۴ | P0 | کم | کم | — | یک خط؛ کل rate limiting (از جمله OTP) در کانفیگوریشن تولیدی از کار افتاده |
-| ۵ | **D-05** | نگاشت `ErrorType` → HTTP status | ۷۲ | P1 | کم | کم* | تصمیم محصول | ۷۷ خطای کسب‌وکار به‌صورت 500 → آلودگی سیگنال مانیتورینگ و قرارداد API مبهم (*Breaking change) |
-| ۶ | **C-01** | پوشش Validator (۱۶۸ فیچر) | ۷۱ | P2 | متوسط | کم | — | ۴۲٪ پوشش؛ شامل cmdهای privilege. عمدتاً کار مکانیکی و کم‌ریسک |
-| ۷ | **D-10** | شناسه‌های ساختگی در Event | ۷۰ | P1 | کم | کم | — | پیش‌نیز اجباری D-01؛ بدون آن فعال‌سازی D-01 کیف پول تصادفی را credit می‌کند |
-| ۸ | **N-04** | دروازه‌های کیفیت (arch/DI/migration/coverage) | ۷۰ | P2 | متوسط | کم | — | بالاترین چگالی پیشگیری؛ جلوگیری از تکرار تمام P0های بالا |
-| ۹ | **N-01** | چرخه حیات Wallet | ۸۷* | P2 | متوسط | متوسط | D-01, D-10, D-11 | *امتیاز بالا ولی **مسدود** — تا D-01 حل نشود قابل اجرا نیست |
-| ۱۰ | **D-06** | مالکیت Order در ApplyDiscount | ۶۶ | P1 | کم | کم | — | آلودگی داده مصرف تخفیف؛ ارزان و مشخص |
-| ۱۱ | **C-05** | یکسان‌سازی Soft-Delete | ۶۶ | P2 | کم | کم | — | ناسازگاری رفتار بین Brand/Product (درست) و Shipping/OrderStatus (ناقص) |
-| ۱۲ | **D-08** | ابطال session در تغییر رمز | ۶۵ | P1 | کم | کم | — | ریسک امنیتی مستقل از D-01 |
-| ۱۳ | **C-02** | قرارداد صفحه‌بندی + سقف pageSize | ۶۳ | P2 | کم | کم | — | ریسک DoS/حافظه؛۵ نقطه صفحه‌بندی جعلی |
-| ۱۴ | **N-02** | اعلان: ترجیحات و Digest | ۶۳ | P2 | متوسط | کم | D-01 | بدون آن، احیای D-01 موجب انفجار اعلان می‌شود |
-| ۱۵ | **D-11** | تکمیل `InventoryReservationService` | ۶۴ | P1 | کم | کم | — | سرویس ثبت‌شده ولی بی‌اثر |
-| ۱۶ | **D-12** | محدودسازی پرس‌وجوهای Analytics | ۶۱ | P1 | متوسط | متوسط | داده واقعی | ۳ پرس‌وجوی بدون حد + aggregation سمت کلاینت |
-| ۱۷ | **C-06** | تکمیل سطح ویرایش (قیمت/سفارش/shipping) | ۶۸* | P2 | کم | کم | تصمیم محصول | *امتیاز خوب ولی اولویت پایین‌تر چون ارزش تجاری آن **مشروط به تأیید محصول** است |
-| ۱۸ | **D-03** | ثبت‌های DI مسیر Elasticsearch | ۵۹ | P0 | کم | کم | — | P0 چون در حالت ES فعال کل جستجو از کار می‌افتد، ولی فقط اگر ES فعال باشد → **مشروط به کانفیگوریشن** |
-| ۱۹ | **D-07** | اکشن‌های admin کیف پول به `/admin` | ۵۳ | P1 | کم | متوسط | تصمیم محصول | ناسازگاری امنیتی؛ نیازمند تغییر route (Breaking) |
-| ۲۰ | **C-03** | فعال/حذف مسیرهای CQRS مرده | ۵۷ | P2 | کم | کم | — | بدهی نگهداشتی؛ دو مسیر زنده برای ساخت سفارش |
-| ۲۱ | **C-04** | یکسان‌سازی هندلرهای Wallet | ۴۹ | P3 | کم | کم | — | سازگاری، نه عملکرد |
-| ۲۲ | **N-03** | سطح عمومی Variant/Attribute | ۵۸ | P3 | کم | کم | تصمیم محصول | ارزش تجاری متوسط |
-| ۲۳ | — | بهداشت کد (استثناها/VO/Eventهای مرده، نام‌گذاری، config key) | ۴۰ | P3 | کم | کم | — | ارزش پایین؛ فقط وقتی فایل‌های مربوطه لمس می‌شوند |
-
-**مقایسه موارد با امتیاز مشابه:**
-- **D-09 (۷۰)** در برابر **D-04 (۷۵)**: D-09 اثر ساختاری دارد (schema) و ریسک بیشتری (تولید migration) → **اول D-04** چون مستقل و ارزان است.
-- **C-01 (۷۱)** در برابر **N-04 (۷۰)**: C-01 ارزش کاربردی فوری دارد، N-04 ارزش پیشگیرانه. **اول C-01** چون ریسک اجرایی را کم می‌کند، سپس N-04 که تکرار D-01/D-02/D-03 را مهار می‌کند.
-- **D-10 (۷۰)** در برابر **N-04 (۷۰)**: D-10 **الزامی** است (D-01 بدون آن خطرناک می‌شود) → مقدم.
-
-**وضعیت پس از هر سه فاز:** همهٔ موارد D-01 … D-12، C-01 … C-06 و N-01 … N-04 تکمیل شده‌اند (✅). فاز ۴ (مقیاس‌پذیری راهبردی) با شواهد کمّی فعال می‌شود و اجرا نشده است.
-
----
-
-## بخش F — نقشه راه اجرایی
-
-### **فاز ۱ — رفع موانع و تکمیل پایه** (۲ تا ۳ هفته) — ✅ **تکمیل شد**
-
-**هدف:** بازگرداندن صحت عملیاتی و امنیتی پیش از هر توسعه جدید.
-
-| ترتیب | قابلیت‌ها | پیش‌نیاز | اجزای تحت تأثیر | خروجی | معیار اتمام | تست لازم | وضعیت |
-|---|---|---|---|---|---|---|---|
-| 1 | **D-10** | — | `Domain/Payment/Aggregates/PaymentTransaction.cs:144,178` · `Domain/Inventory/Aggregates/Inventory.cs:236` | شناسه واقعی در event | event.UserId == transaction.UserId | Unit برای هر دو aggregate | ✅ |
-| 2 | **D-01** | D-10 | `Domain/Common/Abstractions/AggregateRoot.cs` · `Domain/Common/Abstractions/IHasDomainEvents.cs` · `DomainEventInterceptor.cs:34` · `ApplicationServiceCollection.cs:35-37` · `OutboxProcessor` | ستون فقرات event فعال | `Entries<IHasDomainEvents>()` ≥ ۱ implementer؛ end-to-end test سبز | Integration: aggregate→outbox→publish→handler + Regression پرداخت→stock→wallet | ✅ |
-| 3 | **D-02** | — | `InfrastructureServiceExtensions.cs:143-155` | rate limiting در حالت Redis | OTP/payment/review 429 بدهند | Integration با Redis + DI resolve test | ✅ |
-| 4 | **D-03** | — | `InfrastructureServiceExtensions.cs:454-477` | جستجوی ES | sync و search بدون 500 | Integration + DI resolve test | ✅ |
-| 5 | **D-04** | تصمیم محصول | `DeleteOrderItemHandler.cs` · `OrderItemsController.cs:10` | کنترل مالکیت + اثر واقعی | 403 برای مالک دیگر | Application + API | ✅ |
-| 6 | **D-06** | — | `ApplyDiscountHandler.cs:37` | مالکیت Order | 403 برای order دیگر | Application | ✅ |
-| 7 | **D-08** | — | `ChangePasswordHandler.cs` | ابطال session | refresh token قبلی 401 | Application + Integration | ✅ |
-| 8 | **D-09** | — | `DBContextModelSnapshot.cs` · CI | snapshot سالم + دروازه drift | `has-pending-model-changes` پاک + در CI | Integration (اجرای migration واقعی) | ✅ (با اصلاح فرضیه — بخش I) |
-| 9 | **D-11** | D-01 | `InventoryReservationService.cs` | رزرو واقعی یا حذف سرویس | رزرو موجودی را تغییر دهد | Unit + Integration | ✅ (حذف سرویس بلااستفاده) |
-| 10 | **N-04** | 2,3,4,8 | `Tests/Architecture/` (جدید) · `.github/workflows/ci.yml` | دروازه‌های کیفیت | DI کامل resolve شود؛ arch test سبز؛ drift در CI | خودِ دروازه | ✅ |
-
-**معیار پایان فاز ۱:** یک جریان end-to-end واقعی (checkout → pay → stock کم شود → wallet/ledger بنویسد → اعلان ساخته شود) با تست Integration پاسخ شود؛ `dotnet test` کامل سبز؛ CI دروازه‌های جدید را enforce کند.
-**وضعیت:** `dotnet build` بدون warning · `dotnet test` → ۱۰٬۱۰۶ پاس · ۱٬۵۳۶ skip (بدون موتور کانتینر) · ۲۲ خطای پیش‌فرض محیط (دسترسی به پوشه temp) که پیش از این فاز نیز وجود داشت.
-
----
-
-### **فاز ۲ — توسعه‌های پربازده** (۲ تا ۳ هفته) — ✅ **تکمیل شد**
-
-**هدف:** اصلاح کیفیت قرارداد API و تکمیل سطوح حذف‌شده.
-
-| ترتیب | قابلیت | پیش‌نیاز | اجزا | خروجی | معیار اتمام | تست | وضعیت |
-|---|---|---|---|---|---|---|---|
-| 1 | **D-05** | تصمیم محصول | `HttpResultMapper.cs:46-56` + بازبینی ۷۷ فراخوانی | کدهای صحیح | هر ErrorType یک کد؛ هیچ `Failure` پیش‌فرض در cmdهای business | Unit theory کامل + snapshot سازگاری API | ✅ |
-| 2 | **C-01** | — | ۱۲۳ validator جدید در ۴ ماژول صفر-validator + cmdهای پرخطر | پوشش ۱۰۰٪ cmdهای تغییر وضعیت | هیچ cmd مالی/privilege بدون validator | Application | ✅ |
-| 3 | **C-02** | — | ۵ handler صفحه‌بندی + `PaginatedQuery` مشترک + سقف pageSize | صفحه‌بندی واقعی | `pageSize` نادیده گرفته نشود؛ سقف سراسری | Application + API | ✅ |
-| 4 | **C-06** | تصمیم محصول | `ChangePriceCommand` + `UpdateOrderCommand` + `SetDefaultShippingCommand` → endpoint | ویرایش در دسترس | هر سه endpoint فعال با validator و سند | API + Regression | ✅ |
-| 5 | **D-12** | داده واقعی | `AnalyticsQueryService.cs` | پرس‌وجوی محدود و SQL-محور | سقف بازه + `Take` + aggregation در SQL | Integration + Performance | ✅ |
-| 6 | **C-05** | — | `Shipping.cs:165-192` · `OrderStatus.cs:137-140` | soft-delete یکدست | `IsDeleted`/`DeletedAt` ست شوند | Domain | ✅ |
-| 7 | **C-03** | — | ۱۱ فیچر مرده | حذف یا wiring | هیچ feature بدون dispatch باقی نماند | — | ✅ |
-| 8 | **C-04** | — | ۹ هندلر Wallet | قرارداد یکدست | همه `ICommandHandler`/`IQueryHandler` | Application | ✅ |
-
----
-
-### **فاز ۳ — توسعه قابلیت‌های دامنه** (۳ تا ۵ هفته) — ✅ **تکمیل شد**
-
-**هدف:** بستن چرخه‌های کسب‌وکار ناتمام پس از سالم‌شدن پایه.
-
-| قابلیت | پیش‌نیاز | اجزا | خروجی | معیار اتمام | تست | وضعیت |
-|---|---|---|---|---|---|---|
-| **N-01** چرخه Wallet | فاز ۱ کامل | `UserCreatedEventHandler` · `PaymentSucceededWalletCreditHandler` · `OrderCancelledWalletReleaseHandler` · `AtomicRefundPaymentHandler` · `PersistWalletLedgerOn*` | چرخه کامل: ساخت→credit→ledger→freeze→refund | پرداخت موفق کیف پول را credit کند؛ لغو سفارش refund کند؛ ledger رز داشته باشد | Integration سرتاسری پرداخت/لغو/refund | ✅ |
-| **N-02** اعلان: ترجیحات + Digest | N-01 | entity جدید `NotificationPreference` + endpoint + migration | کنترل کاربر بر کانال/دسته | اعلان غیرمجاز ارسال نشود | Domain + Application + Integration | ✅ |
-| **D-07** اکشن‌های admin کیف پول | تصمیم محصول | `WalletController.cs:181,195` → `AdminWalletController` | سازگاری با admin IP allow-list | هر اکشن admin زیر `/admin` باشد | API + Architecture | ✅ |
-| **N-03** سطح عمومی Variant/Attribute | تصمیم محصول | endpoint جدید public | کاتالوگ قابل فیلتر | endpoint عمومی با rate limit | API | ✅ |
-
-**توضیح N-01:** چرخهٔ کیف پول با فعال‌شدن ستون فقرات event (فاز ۱) عملاً برقرار شد؛ فاز ۳ منطق پولی باقی‌مانده (برگشت اعتبار کیف پول هنگام بازگشت وجه درگاه) را تکمیل و قواعد پولی را با یک دروازهٔ تست تثبیت کرد.
-
-**توضیح N-03:** برخلاف برداشت اولیهٔ گزارش، دادهٔ variant از قبل در پاسخ عمومی محصول موجود بود (`PublicProductDetailDto.Variants`)، بنابراین فقط بخش attribute نیازمند endpoint عمومی بود.
-
----
-
-### **فاز ۴ — مقیاس‌پذیری و بهینه‌سازی راهبردی** (بازه‌محور، با شواهد)
-
-| قابلیت | محرک | اجزا | معیار اتمام |
-|---|---|---|---|
-| **Read Model برای Analytics** | حجم واقعی سفارش از حد ۵۰۰k/year فراتر رفت | جدول projection + job + `IAnalyticsQueryService` جدید | پاسخ گزارش < ۲ ثانیه در حجم واقعی |
-| **Lock با fencing token** | مشاهده اجرای همزمان یک job | جایگزینی `DistributedLockService` با lease + fencing | تست concurrency روی ۲ نمونه |
-| **STJ Event Store بدون broker** | نیاز به replay/trace شد | فعلاً: فعال‌سازی outbox + archive + lag metric | outbox lag قابل مشاهده و alerted |
-| **محدودسازی `MaxRows` در همه queryهای admin** | مشاهده query سنگین | guard مشترک | هیچ query بدون سقف نماند |
-| **بهداشت کد** (جدول بخش D-3) | opportunistic | — | حذف artifactهای مرده در هر touch |
-
-**توجه:** Message Broker / Event Sourcing / Microservices **پیشنهاد نمی‌شوند** — نیاز واقعی و شواهدی برای آن‌ها در وضعیت فعلی وجود ندارد.
-
----
-
-## بخش G — پیشنهادهای نیازمند تصمیم
-
-| # | موضوع | چرا نیازمند تصمیم است | گزینه‌ها | اثر |
-|---|---|---|---|---|
-| **G-01** | **کد وضعیت HTTP برای خطاهای کسب‌وکار** (D-05) | تغییر قرارداد عمومی API؛ ۷۷ endpoint ممکن است کد عوض‌کننده بگیرند | (الف) `Failure → 400` سراسری · (ب) نگاشت صریح برای هر handler · (ج) نگه‌داشتن 500 و افزودن هدر تشخیصی | کلاینت‌های موبایل |
-| **G-02** | **آیا حذف order-item پس از پرداخت مجاز است؟** (D-04) | `OrderStatusValue.CanTransitionTo` وضعیت‌ها را تعیین می‌کند؛ حذف آیتم یک aggregate است | (الف) فقط قبل از پرداخت · (ب) با refund · (ج) غیرفعال | Domain/Order + UI |
-| **G-03** | **Google OAuth** | کلیدها در `appsettings*` نیست ولی endpoint هست → 500 در `/auth/google` | (الف) افزودن کلید + مستند · (ب) حذف endpoint | Auth UX |
-| **G-04** | **`InventoryReservationService`: تکمیل یا حذف؟** (D-11) | سرویس ثبت‌شده ولی بی‌اثر؛ دو مصرف‌کننده بالقوه | (الف) تکمیل با منطق رزرو · (ب) حذف و واگذاری به saga | Domain/Inventory |
-| **G-05** | **دو مسیر ساخت سفارش** (C-03) | `CreateOrderCommand` مرده ولی `CheckoutOrderCreationService` مستقیم `Order.Place()` را صدا می‌زند | (الف) فعال‌سازی command و حذف service · (ب) حذف command | Application/Order |
-| **G-06** | **مرز دامنه Inventory ↔ Order** | رزرو stock فقط در saga (رویدادمحور) بوده. پس از D-01، آیا رزرو همزمان (sync) باشد یا جبرانی؟ | (الف) sync در checkout · (ب) async با compensation · (ج) ترکیبی (رزرو sync، commit async) | Checkout SLA / oversell |
-| **G-07** | **سقف `pageSize` سراسری** (C-02) | عدد مناسب به حجم و کلاینت وابسته است | (الف) ۱۰۰ · (ب) ۲۵۰ · (ج) قابل تنظیم per-endpoint | UX و حافظه |
-| **G-08** | **آستانه پوشش کد** (N-04) | `coverlet` نصب است ولی آستانه‌ای اعمال نمی‌شود؛ نیاز به تصمیم مالی/تیمی | (الف) فقط خط (ب) فقط branch (ج) خط+branch با آستانه پایدار | CI runtime |
-| **G-09** | **آیا Elasticsearch در production است؟** (D-03) | اگر بله، D-03 P0 است؛ اگر نه، `IsEnabled=false` باید تضمین شود | بررسی کانفیگوریشن استقرار | اولویت فاز ۱ |
-| **G-10** | **تکلیف `UserId.NewId()` در event** (D-10) | اگر event باید user نداشته باشد، امضای `PaymentSucceededEvent` تغییر می‌کند (Breaking در event contract) | (الف) استفاده از `UserId` واقعی · (ب) حذف پارامتر | Domain/Payment + ۱۱ مصرف‌کننده |
-| **G-11** | **آیا پوشش عمومی Variant/Attribute لازم است؟** (N-03) | محصول؛ کاتالوگ فعلی از DTO داخلی استفاده می‌کند | (الف) endpoint جدید · (ب) گسترش DTO محصول | قرارداد API |
-
----
-
-## بخش H — نتیجه نهایی
-
-### کدام قابلیت بیشترین ارزش را ایجاد می‌کند؟
-**D-01 — احیای Domain Event backbone (امتیاز ۹۷).** این یک «قابلیت جدید» نیست؛ بازگرداندن **۳۸ رفتار پیاده‌سازی‌شده اما غیرفعال** است. بیشترین ارزش تجاری در کل پروژه اینجاست: بدون آن، فروشگاه می‌تواند سفارش بگیرد و پرداخت کند بدون کم‌شدن موجودی، کیف پول credit نمی‌شود، refund انجام نمی‌شود، و آمار review و اعلان‌های کاربر همیشه صفر/خالی می‌مانند. هیچ قابلیت جدیدی تا پیش از این، ارزش قابل اتکا تولید نمی‌کند.
-
-### کدام توسعه سریع‌تر و کم‌ریسک‌تر قابل اجرا است؟
-**D-02 — ثبت `IRateLimitService` در شاخه Redis.** یک خط در `InfrastructureServiceExtensions.cs:154` که باید در شاخه Redis هم قرارگیرد. اثر: فعال‌سازی کل rate limiting در کانفیگوریشن تولیدی. بعد از آن: **D-04** (کنترل مالکیت + اثر واقعی روی حذف order-item) و **D-06** (مالکیت Order در ApplyDiscount) — هر دو کوچک، مستقل و بدون شکست قرارداد API.
-
-### کدام شکاف باید قبل از افزودن قابلیت جدید رفع شود؟
-**D-01** — و به‌طور خاص **D-10** به‌عنوان پیش‌نیاز آن. دلیل: (۱) افزودن هر قابلیت eventمحور جدید روی زیرساختی که کار نمی‌کند، بی‌اثر خواهد بود؛ (۲) فعال‌سازی D-01 بدون D-10 کیف پول کاربر تصادفی را credit می‌کند — یعنی بدتر از وضعیت فعلی؛ (۳) افزودن رویدادهای جدید (مثلاً N-02) روی یک backbone خراب، بدهی فنی را بزرگ‌تر می‌کند. هم‌زمان **D-09** باید انجام شود تا افزودن entity جدید (N-02) روی schema ناهم‌گام، مشکل دوم نسازد.
-
-### کدام توسعه به بیشترین پیش‌نیاز یا تغییر معماری نیاز دارد؟
-**N-01 —چرخه حیات Wallet** (امتیاز ۸۷، بالاترین درگروه توسعه). سه پیش‌نیاز زنجیره‌ای (D-01 → D-10 → D-11) و نیاز به تصمیم معماری **G-06**: مرز همزمان/جبرانی بین Inventory و Order. این تصمیم بر تخصیص تراکنش، مدل的一致ی و تضمین عدم oversell اثر می‌گذارد. از نظر تغییر معماری، **C-01 + N-04 + بازطراحی پورت‌های Application** (D-19 در جدول C: ~۲۰۰ فایل که مستقیم مخزن‌های Domain را مصرف می‌کنند) گران‌ترین کار معماری است — اما **ضروری نیست** و باید به فاز ۴ منتقل شود.
-
-### بهترین ترتیب اجرای اقدامات چیست؟
-```
-فاز ۱ (۲-۳ هفته)  D-10 → D-01 → D-02 → D-03 → D-04 → D-06 → D-08 → D-09 → D-11 → N-04
-                    └─ D-10 پیش از D-01 الزامی است └─ N-04 در انتها، تا دروازه‌ها از همان ابتدا حفاظت کنند
-فاز ۲ (۲-۳ هفته)  D-05 → C-01 → C-02 → C-06 → D-12 → C-05 → C-03 → C-04
-فاز ۳ (۳-۵ هفته)  N-01 → N-02 → D-07 → N-03
-فاز ۴ (بازه‌محور)  Read Model Analytics · Lock fencing · outbox lag monitoring                    └─ با G-06 و G-08 به‌عنوان پیش‌شرط
-```
-
-**قاعده حاکم بر ترتیب:** اول **صحت** (D-01 + D-10)، بعد **امنیت و قرارداد** (D-04، D-05، D-06، D-08)، بعد **زیرساخت** (D-09، N-04)، و فقط بعد **قابلیت جدید**. هیچ‌کدام از فرصت‌های فاز ۳ نباید قبل از تکمیل فاز ۱ آغاز شود.
-
----
-
-## بخش I — اصلاحات و تصحیح‌های گزارش
-
-### I-1 · D-09 — فرضیه «۱۷ تغییر معلق مدل» نادرست بود
-
-**ادعای اولیه گزارش:** snapshot مهاجرت دستی patch شده و ۱۷ `HasQueryFilter` در مدل موجود است ولی در snapshot نیست، بنابراین ۱۷ تغییر معلق مدل وجود دارد.
-
-**واقعیت:** با اجرای ابزار EF Core 10.0.13:
-
-```
-dotnet ef migrations has-pending-model-changes --project Infrastructure --startup-project Presentation --context DBContext
-→ No changes have been made to the model since the last migration.
-```
-
-**علت:** `MigrationsModelDiffer` فیلترهای سراسری (global query filter) را در مقایسه مدل نادیده می‌گیرد، چون این فیلترها هیچ عملیات اسکیمایی تولید نمی‌کنند و فقط در زمان اجرا از مدل زنده اعمال می‌شوند. بنابراین نبود آن‌ها در snapshot **درام و بی‌خطر** است و نشانه drift نیست.
-
-**آنچه واقعاً در فاز ۱ انجام شد:**
-- دروازه `dotnet ef migrations has-pending-model-changes` به CI اضافه شد (اکنون وضعیت پایه «پاک» است و از این پس هر drift را مسدود می‌کند).
-- `Tests/Integration/Persistence/MigrationApplicationTests.cs` افزوده شد؛ تا پیش از آن **هیچ تستی اسکریپت‌های مهاجرت را اجرا نمی‌کرد** (fixture از `EnsureCreatedAsync` استفاده می‌کرد) و یک migration شکسته یا ناهماهنگ هرگز دیده نمی‌شد.
-
-**نتیجه:** امتیاز D-09 از ۷۷ به **۷۰** کاهش یافت (بخش باقی‌ماندهٔ آن — نبود دروازه و نبود اجرای migration در تست — همچنان معتبر و رفع شده است). رتبهٔ D-09 در بخش E از ۲ به ۸ منتقل می‌شود.
-
-### I-2 · D-04 — تصمیم G-02 در اجرا گرفته شد
-
-سؤال «آیا حذف آیتم سفارش پس از پرداخت مجاز است؟» در فاز ۱ به‌صورت **محدودکننده** پاسخ داده شد: `Order.RemoveItem` فقط روی سفارش‌هایی مجاز است که `Status.CanBeEdited()` داشته باشد (Created/Reserved/Pending) و سفارش هرگز به حالت خالی نمی‌رود. بنابراین رفتار پیش‌فرض محافظه‌کارانه انتخاب شد و برای حالت «حذف با refund» همچنان نیازمند تصمیم محصول است.
-
-### I-3 · D-11 — گزینه «حذف» در G-04 انتخاب شد
-
-`InventoryReservationService` هیچ مصرف‌کنندهٔ تولیدی نداشت و رزرو واقعی انجام نمی‌داد. با توجه به اینکه منطق رزرو در `Inventory` aggregate و `OrderProcessManagerSaga` حضور دارد، سرویس و کلاس‌های `BatchReservation*` حذف شدند تا یک مسیر موازی و بی‌اثر در دامنه باقی نماند.
-
-### I-4 · محدودیت محیطی اجرا
-
-تست‌های مبتنی بر کانتینر (PostgreSQL از طریق Testcontainers) در این ماشین اجرا نمی‌شوند: موتور Podman در دسترس است اما Docker.DotNet نتواند به نقطه پایانی آن متصل شود. این تست‌ها در CI (که Podman rootful را با `DOCKER_HOST=unix:///run/podman/podman.sock` راه‌اندازی می‌کند) اجرا خواهند شد. اثر: ۱٬۵۳۶ تست skip می‌شوند — دقیقاً همان رفتاری که پیش از این فاز وجود داشت.
+================================================================================
+گزارش راهبردی بهبود کارایی اجرای کوئری دیتابیس — لایه Infrastructure
+================================================================================
+تاریخ تهیه: 1405/08/01 (2026-10-23)
+دامنه بررسی: کل لایه Infrastructure پروژه API — بخش اجرای کوئری دیتابیس
+  (Persistence Core، QueryService ها، Repository ها، EF Configurations، Background Jobs)
+موتور دیتابیس: PostgreSQL (تأییدشده از روی کانفیگ‌ها: xmin tokens، ILike، FOR UPDATE SKIP LOCKED)
+هدف کلیدی: تضمین ثبات سرعت اجرای کوئری در زمان حجیم شدن دیتابیس و توان پردازش حجم بالای داده.
+محدوده تغییرات: این گزارش صرفاً سند پیشنهادی است؛ هیچ کدی تغییر نکرده است.
+راهنما: هر مورد شامل «مکان دقیق، مشکل فعلی، چرا با رشد داده بدتر می‌شود، اصلاح پیشنهادی» است.
+شماره خطوط ممکن است با تغییر آینده سورس جابه‌جا شود؛ مسیر فایل معیار اصلی است.
+
+--------------------------------------------------------------------------------
+خلاصه مدیریتی
+--------------------------------------------------------------------------------
+وضعیت کلی لایه Infrastructure خوب است (استفاده از AsNoTracking، پروجکشن به DTO،
+ایندکس‌های ترکیبی روی جداول دفتر کل، Outbox با SKIP LOCKED). اما ۳ دسته ضعف شناسایی شد
+که با رشد داده به‌صورت خطی یا مکعبی کند می‌شوند:
+  1) کوئری‌های بدون سقف (Unbounded) و پردازش تجمیعی در حافظه (In-Memory Aggregation)
+  2) ایندکس‌های نامناسب برای فیلتر/مرتب‌سازی پرتکرار و جستجوی %term% بدون ایندکس Trigram
+  3) الگوهای معماری: تراکنش طولانی در Outbox، OFFSET Pagination روی جداول Append-Only،
+     و Count(*) مجزا در هر صفحه.
+اصلاحات در ۴ فاز (۰ تا ۳) ارائه شده است. فاز ۰ تقریباً بدون ریسک است و می‌تواند
+بلافاصله اجرا شود.
+
+================================================================================
+فاز ۰ — اصلاحات فوری کم‌ریسک (Quick Wins)
+================================================================================
+
+0-1) حذف ثبت تکراری Interceptor ها
+  مکان: Infrastructure/Persistence/Context/DBContext.cs (خط 137)
+        Infrastructure/Common/DependencyInjection/InfrastructureServiceExtensions.cs (خطوط 254-256)
+  مشکل: AuditableEntityInterceptor و DomainEventInterceptor هم در OnConfiguring
+        (AddInterceptors) و هم در AddPersistence ثبت شده‌اند؛ لیست Interceptor ها
+        هر دو نسخه را دارد و هر SaveChanges کل ChangeTracker را ۲ بار پیمایش می‌کند و
+        رویدادهای دامنه ۲ بار Dispatch می‌شوند.
+  اثر با رشد داده: هزینه O(تعداد موجودیت‌های Track شده) × ۲ در هر Save؛ در سفارش‌های
+        حجیم (تعداد آیتم زیاد) دیده می‌شود.
+  اصلاح: فقط یک محل ثبت باقی بماند (ترجیحاً ثبت در AddPersistence و حذف AddInterceptors
+        از OnConfiguring).
+
+0-2) حذف کلاس تکراری OutboxMessageConfiguration
+  مکان: Infrastructure/Persistence/Outbox/OutboxMessageConfiguration.cs (خطوط 58-63)
+        و Infrastructure/Persistence/Configurations/OutboxMessageConfiguration.cs (خطوط 5-18)
+  مشکل: دو کلاس IEntityTypeConfiguration برای یک Entity وجود دارد و ApplyConfigurationsFromAssembly
+        هر دو را اعمال می‌کند (ترتیب اعمال قطعی نیست). نسخه دوم فقط HasIndex(ProcessedAt)
+        دارد و ایندکس Partial سفارشی «IX_OutboxMessages_Pending» (شرط: processed_at IS NULL
+        AND is_poisoned = false AND retry_count < 5) را نمی‌شناسد.
+  اثر با رشد داده: در صورت override شدن کانفیگ درست، کوئری Polling از ایندکس Partial محروم
+        می‌شود و با رشد تعداد رکوردهای Processed، کندی خطی می‌گیرد.
+  اصلاح: کلاس نسخه Configurations حذف شود (فقط نسخه Persistence/Outbox بماند) و وجود
+        IX_OutboxMessages_Pending در یک Migration تضمین شود.
+
+0-3) تجمیع امتیاز نظرات در حافظه به‌جای SQL
+  مکان: Infrastructure/Review/QueryServices/ReviewQueryService.cs (خطوط 72-92)
+  مشکل: متد GetProductReviewSummaryAsync ابتدا Select(r => r.Rating.Value).ToListAsync()
+        و سپس Average/Count را در C# محاسبه می‌کند؛ هر بار نمایش صفحه محصول، کل ردیف‌های
+        امتیاز آن محصول منتقل می‌شود.
+  اثر با رشد داده: محصولی با ۱۰۰هزار نظر = انتقال ۱۰۰هزار ردیف در هر درخواست؛ کندی خطی
+        با تعداد نظرات هر محصول.
+  اصلاح: GroupBy(r => r.Rating.Value).Select(g => new { g.Key, Count = g.Count() })
+        سمت SQL (حداکثر ۵ ردیف نتیجه) و محاسبه میانگین از روی شمارش‌ها. راه‌حل پایدارتر:
+        نگهداری رکورد denormalized «ReviewSummary» به‌ازای هر محصول (فاز ۳).
+
+0-4) N+1 در اعتبارسنجی موجودی موقع Checkout
+  مکان: Infrastructure/Order/Services/CheckoutStockValidatorService.cs (خطوط 15-28)
+  مشکل: داخل foreach به‌ازای هر آیتم سبد، یک کوئری مجزا:
+        await inventoryRepository.GetByVariantIdAsync(item.VariantId, ct)
+  اثر با رشد داده: تأخیر خطی با تعداد آیتم سبد + فشار روی Connection Pool با هر Checkout.
+        این مسیر روی Hot Path سفارش‌گذاری است.
+  اصلاح: استفاده از متد موجود GetByVariantIdsAsync (درون InventoryRepository —
+        Infrastructure/Inventory/Repositories/InventoryRepository.cs خط 21) با یک کوئری
+        WHERE VariantId IN (...) و اعتبارسنجی در حافظه.
+
+0-5) لغو دسته‌جمعی Session و OTP با بارگذاری موجودیت
+  مکان: Infrastructure/Auth/Repositories/SessionRepository.cs (خطوط 22-42)
+        Infrastructure/Auth/Repositories/OtpRepository.cs (خطوط 47-56)
+  مشکل: RevokeAll ابتدا تمام ردیف‌ها را ToListAsync می‌کند و سپس به‌ازای هر ردیف یک UPDATE
+        (با هدررفت Interceptor و Domain Event) اجرا می‌شود.
+  اثر با رشد داده: کاربری با صدها Session/OTP = صدها UPDATE تک‌تک؛ در تغییر رمز یا
+        بن‌کردن کاربر کند است.
+  اصلاح: یک دستور Set-Based با ExecuteUpdateAsync (تغییر IsRevoked/RevokedAt/RevocationReason
+        و Otp فعال → IsUsed). تعداد Round-Trip از N به 1 می‌رسد.
+
+0-6) بارگذاری کل تاریخچه Usage ها در مسیر Checkout تخفیف
+  مکان: Infrastructure/Discount/Repositories/DiscountRepository.cs (خطوط 19-27)
+  مشکل: GetByCodeAsync با Include(d => d.Usages) (و Restrictions) تمام رکوردهای استفاده از
+        کد تخفیف را (به‌صورت Tracked) لود می‌کند، در حالی که ستون denormalized
+        UsageCount (DiscountCodeConfiguration.cs خط 42) موجود است.
+  اثر با رشد داده: کد تخفیف پرطرفدار با هزاران Usage، در هر Checkout هزاران ردیف را
+        می‌کشد؛ کندی خطی با تعداد مصرف.
+  اصلاح: حذف Include(Usages) از GetByCodeAsync؛ کنترل سقف مصرف با UsageCount + rowversion
+        در نقطه Redemption. در GetUsageReportByIdAsync (DiscountQueryService.cs خطوط 168-173)
+        صفحه‌بندی روی Usages اعمال شود.
+
+0-7) آمار کیف پول با Materialize کردن کل جدول
+  مکان: Infrastructure/Wallet/QueryServices/WalletQueryService.cs (خطوط 216-223)
+  مشکل: GetStatisticsAsync همه Wallet ها را Select کرده و Sum/Count را در حافظه حساب می‌کند.
+  اثر با رشد داده: زمان و حافظه خطی با تعداد کاربران.
+  اصلاح: جابه‌جایی تجمیع به SQL — GroupBy(_ => 1) با Sum(w.Balance.Amount) و Count.
+        (بقیه متد درست نوشته شده؛ فقط این بلوک اصلاح شود.)
+
+0-8) نبود فیلتر تاریخ در گزارش عملکرد دسته‌بندی‌ها (اثر کارایی + صحت)
+  مکان: Infrastructure/Analytics/QueryServices/AnalyticsQueryService.cs (خطوط 181-211)
+  مشکل: کوئری داده GetCategoryPerformanceAsync بدون فیلتر CreatedAt کل OrderItems را با
+        Join به Products/Categories می‌خواند؛ در حالی که کوئری totalCount (خطوط 213-232)
+        فیلتر تاریخ دارد → نتیجه Page با Total هم‌خوان نیست (باگ صحت) و کوئری داده Full Scan است.
+  اثر با رشد داده: Full Table Scan + Join سه‌گانه در هر فراخوانی؛ با رشد سفارش‌ها به‌شدت کند.
+  اصلاح: افزودن Where روی Order.CreatedAt بین fromDate تا toDate به کوئری داده، و ادغام
+        دو کوئری در یک کوئری واحد (Page + Count).
+
+0-9) حلقه بی‌پایان در PaymentReconciliationJob
+  مکان: Infrastructure/BackgroundJobs/PaymentReconciliationJob.cs (خطوط 68-128)
+  مشکل: while(true) با کوئری مجدد Status == Pending بدون Cursor یا سقف تکرار؛ در catch
+        عمومی (خط 116) تراکنش skip نمی‌شود → همان ۱۰۰ تراکنش دوباره Select و Verify می‌شوند.
+  اثر با رشد داده/خطا: خطای پایدار Gateway = Storm بی‌نهایت Retry روی همان Batch و
+        فشار دائمی به Gateway و دیتابیس.
+  اصلاح: نگهداری HashSet از شناسه‌های پردازش‌شده/خطادار در طول Run و فیلتر آن‌ها در Select
+        بعدی (یا Keyset با CreatedAt)، سقف تکرار در هر Run، و ثبت دنباله دار retry برای
+        تراکنش‌های خطادار.
+
+0-10) کوئری‌های بدون سقف در Cleanup Job ها
+  مکان: Infrastructure/Order/Repositories/OrderRepository.cs (خطوط 33-47) → فراخوان در
+        Infrastructure/BackgroundJobs/ExpiredOrderCleanupJob.cs (خط 28)
+        Infrastructure/Auth/Repositories/SessionRepository.cs (خطوط 65-72) → فراخوان در
+        Infrastructure/BackgroundJobs/ExpiredSessionCleanupJob.cs (خط 30)
+  مشکل: هر دو متد تمام رکوردهای منقضی را بدون OrderBy و Take و (در Session) به‌صورت Tracked
+        برمی‌گردانند؛ Session های منقضی هرگز حذف نمی‌شوند و هر ساعت دوباره کامل لود می‌شوند.
+  اثر با رشد داده: رشد خطی حافظه و یک SaveChanges غول‌آسا؛ در صورت Backlog پاک‌سازی
+        هرگز جوابگو نیست.
+  اصلاح: افزودن پارامتر batchSize با OrderBy + Take (مثلاً 200 تا 1000) و حلقه تا تخلیه؛
+        حذف AsNoTracking از مسیری که موجودیت‌ها Update می‌شوند؛ افزودن ایندکس
+        (IsRevoked, ExpiresAt) روی UserSessions؛ حذف نهایی رکوردهای MarkExpired قدیمی‌تر از N روز.
+
+0-11) بارگذاری بدون سقف دفتر کل موجودی از طریق Include
+  مکان: Infrastructure/Inventory/Repositories/InventoryRepository.cs (خطوط 16-19 و 34-42)
+  مشکل: GetByVariantIdWithLedgerAsync کل StockLedgerEntry های همیشه-تاریخ Variant را لود
+        می‌کند؛ GetByReferenceNumberAsync همه Inventory ها را همراه کل Ledger شان لود می‌کند
+        (رشد فوق‌خطی).
+  اثر با رشد داده: هر حرکت موجودی، حجم داده قابل‌لودِ بعدی را یک ردیف بزرگ‌تر می‌کند.
+  اصلاح: کوئری مستقیم روی StockLedgerEntries (فیلتر ReferenceNumber یا آخرین N رکورد).
+        برای موجودی فعلی، خواندن BalanceAfter جدیدترین رکورد (پشتیبانی‌شده با ایندکس
+        (VariantId, CreatedAt DESC) موجود) به‌جای لود Aggregate.
+
+0-12) خروجی (Export) بدون سقف از دفتر کل کیف پول
+  مکان: Infrastructure/Wallet/QueryServices/WalletQueryService.cs (خطوط 56-86)
+  مشکل: ExportLedgerAsync هیچ Take یا سقف بازه زمانی ندارد و کل Ledger کاربر را
+        ToListAsync می‌کند.
+  اثر با رشد داده: کاربر قدیمی = Export چند صد هزار ردیف در یک درخواست HTTP.
+  اصلاح: الزام بازه تاریخ + سقف سخت (Hard Cap)، یا Streaming با AsAsyncEnumerable؛
+        برای حجم بالا، انتقال به Background Job و تولید فایل (فاز ۳).
+
+0-13) لود کل تاریخچه Reservations در هر خواندن کیف پول
+  مکان: Infrastructure/Wallet/Repositories/WalletRepository.cs (خطوط 9-30)
+  مشکل: GetByUserIdAsync و GetByUserIdForUpdateAsync با Include(w => w.Reservations) کل
+        تاریخچه رزرو (جدول در حال رشد) را لود می‌کنند؛ فراخوان‌ها فقط رزروهای Active را لازم دارند.
+  اصلاح: Filtered Include: .Include(w => w.Reservations.Where(r => r.Status == Active))
+        یا جداسازی کوئری رزروهای فعال.
+  نکته تکمیلی: GetByUserIdForUpdateAsync واقعاً FOR UPDATE نمی‌زند و فقط به xmin در
+        SaveChanges متکی است؛ در ترافیک بالا انتظار DbUpdateConcurrencyException و
+        Retry Storm روی ردیف Wallet را داشته باشید (بهبود در فاز ۳).
+
+0-14) لود بدون سقف درخواست‌های برداشت در Repository
+  مکان: Infrastructure/Wallet/Repositories/WalletDebitRequestRepository.cs (خطوط 12-33)
+  مشکل: هر دو متد کل تاریخچه درخواست‌های Owner را بدون Take برمی‌گردانند.
+  اصلاح: افزودن پارامتر page/pageSize یا حداقل .Take(N).
+
+0-15) حلقه Retry بدون محدودسازی در OutboxProcessor
+  مکان: Infrastructure/Persistence/Outbox/OutboxProcessor.cs (خطوط 22-54)
+  مشکل: Execution Strategy کل Batch ۵۰ تایی را در Retry دوباره اجرا می‌کند؛ پیام‌هایی که
+        Handler هایشان در تلاش قبلی اجرا شده ولی State ثبت نشده، دوباره Dispatch می‌شوند
+        (Side-Effect تکراری).
+  اصلاح: داخل Retry Delegate وضعیت پیام‌ها از دیتابیس مجدداً خوانده شود، یا فقط Commit نهایی
+        Retry شود؛ اصلاح ساختاری‌تر در فاز ۳ (بند 3-1).
+
+================================================================================
+فاز ۱ — اصلاح و تکمیل ایندکس‌ها (مهم‌ترین اهرم مقاوم‌سازی در برابر رشد داده)
+================================================================================
+توجه: تمام موارد زیر با Migration اعمال شوند. قبل از اعمال، با EXPLAIN ANALYZE وضعیت
+فعلی ثبت و بعد از اعمال مقایسه شود.
+
+1-1) ایندکس‌های ترکیبی برای مرتب‌سازی و فیلتر پیش‌فرض صفحات محصول
+  مکان: Infrastructure/Product/Configurations/ProductConfiguration.cs (خطوط 88-91)
+  مشکل: همه صفحات Admin/Catalog با OrderByDescending(p => p.CreatedAt) و Skip/Take
+        کار می‌کنند ولی ایندکس CreatedAt وجود ندارد → Sort کامل فیلترشده در هر صفحه.
+        ایندکس‌های تک‌ستونی IsActive و IsDeleted عملاً هیچ‌وقت انتخاب نمی‌شوند
+        (انتخابی‌بودن نزدیک صفر).
+  اصلاح: افزودن ایندکس‌های ترکیبی:
+        (IsDeleted, CreatedAt)، (IsActive, IsDeleted, CreatedAt)،
+        (CategoryId, CreatedAt)، (BrandId, CreatedAt)
+        و حذف ایندکس‌های تک‌ستونی IsActive و IsDeleted.
+
+1-2) ایندکس‌های ترکیبی برای فیلتر وضعیت + تاریخ روی جداول Transactioual
+  موارد:
+    - WalletTransfers: (FromUserId, CompletedAt) — مصرف در SumCompletedAmountForDayAsync
+      (Infrastructure/Wallet/Repositories/WalletTransferRepository.cs خطوط 37-52).
+      ایندکس‌های تک‌ستونی Status و CreatedAt حذف شوند (انتخابی‌بودن پایین).
+    - WalletTopUps: (Status, CreatedAt) — مصرف در GetPendingOlderThanAsync.
+    - WalletWithdrawalRequests: (Status, CreatedAt) — مصرف در GetByStatusAsync
+      (WalletWithdrawalQueryService.cs خطوط 50-68).
+    - PaymentTransactions: ایندکس Partial (Status, ExpiresAt) با فیلتر Status = 'Pending'
+      — مصرف در GetPendingExpiredTransactionsAsync (PaymentTransactionRepository.cs
+      خطوط 16-22). ایندکس Partial کوچک می‌ماند چون رکوردهای منقضی از وضعیت Pending خارج می‌شوند.
+    - UserSessions: (IsRevoked, ExpiresAt) — مصرف در Cleanup (بند 0-10).
+    - Tickets: (Status, CreatedAt) یا حداقل CreatedAt — صفحات Admin با
+      OrderByDescending(CreatedAt) و بدون ایندکس مرتب‌سازی
+      (Infrastructure/Support/QueryServices/TicketQueryService.cs خطوط 35-42، 136-141).
+    - Notifications: CreatedAt (یا (CreatedAt DESC, Id DESC)) — صفحه‌بندی Admin روی
+      CreatedAt با ایندکس‌های فعلی UserId و (UserId, IsRead) قابل سرویس نیست
+      (Infrastructure/Notification/Configurations/NotificationConfiguration.cs خطوط 41-42).
+    - Orders: CreatedAt (یا (IsDeleted, CreatedAt)) — گزارش‌های بازه تاریخی که بر اساس
+      Status فیلتر نمی‌شوند.
+    - StockLedgerEntries: (EventType, CreatedAt) و (ReferenceNumber) — مصرف در
+      InventoryReservationExpiryJob و GetByReferenceNumberAsync؛ ایندکس CreatedAt تک‌ستونی
+      برای فیلتر بازه تاریخی Admin (InventoryQueryService.cs خطوط 44-83).
+    - OrderItems: بررسی و در صورت نبود، افزودن ProductId — برای PurchaseVerificationService
+      (Infrastructure/Review/Services/PurchaseVerificationService.cs خطوط 18-24) و
+      AnalyticsQueryService؛ اگر نباشد هر بررسی خرید، Scan روی OrderItems می‌زند.
+    - WalletLedgerEntries: (OwnerId, ReferenceId) — مصرف در GetOrderPaymentLedgerEntryAsync
+      (بند 2-9) و Reconciliation.
+
+1-3) ایندکس‌های GIN Trigram برای جستجوی %term%
+  مشکل عمومی: الگوی ILike/Contains با Wildcard ابتدایی روی ستون‌های Name/Slug/Title/Comment
+  و Email سقف ایندکس B-Tree را می‌شکند و Full Scan می‌شود:
+    - Infrastructure/Product/QueryServices/ProductQueryService.cs (خطوط 157-160 و 345-351)
+    - Infrastructure/Brand/QueryServices/BrandQueryService.cs (خطوط 96-98)
+    - Infrastructure/Review/QueryServices/ReviewQueryService.cs (خطوط 156-165)
+    - Infrastructure/Category/QueryServices/CategoryQueryService.cs (خطوط 95-99 و 299-303)
+      (بدترین حالت: ToLower().Contains — دوبار غیرقابل استفاده برای ایندکس)
+    - Infrastructure/User/QueryServices/UserQueryService.cs (خطوط 92-100 و 142-150)
+    - Infrastructure/Audit/QueryServices/AuditQueryService.cs (خطوط 270-272) — روی
+      ستون Details از بزرگ‌ترین جدول سیستم
+  اصلاح (PostgreSQL):
+    a) حذف ToLower() و استفاده از EF.Functions.ILike (در PG مقایسه پیش‌فرض حساس به حروف
+       بزرگ/کوچک است و ToLower لازم نیست).
+    b) افزودن ایندکس GIN Trigram روی ستون‌های جستجو:
+       Npgsql: sb.HasIndex(x => x.Value).HasMethod("gin").HasOperators("gin_trgm_ops")
+       (نیازمند extension پرکاربرد pg_trgm — یک بار CREATE EXTENSION IF NOT EXISTS pg_trgm).
+       ستون‌ها: Products.Name و Products.Slug، Brands.Name، Reviews.Title و Reviews.Comment،
+       User.Email (یا استفاده از citext)، AuditLogs.Details.
+    c) جایگزین سبک‌تر برای جستجوی پیش‌فرض: محدودسازی جستجو به StartsWith (قابل سرویس با
+       B-Tree) برای مسیرهای پرترافیک؛ جستجوی %term% فقط در Admin.
+
+1-4) پاکسازی ایندکس‌های زائد (کاهش هزینه نوشتن)
+    - AuditLogs (Infrastructure/Audit/Configurations/AuditLogConfiguration.cs خطوط 47-51):
+      حذف ایندکس HashVersion و ایندکس تک‌ستونی EventType (انتخابی‌بودن پایین؛ توسط ایندکس
+      ترکیبی (CreatedAt, IsArchived, EventType) پوشش داده می‌شوند)؛ تبدیل IX_IsArchived به
+      Partial با فیلتر IsArchived = false. هر ایندکس زائد = به‌روزرسانی اضافه در هر Insert
+      روی جدول پرحجم Audit.
+    - ProductVariantAttributes (Infrastructure/Variant/Configurations/VariantAttributeConfiguration.cs
+      خطوط 54-63): حذف IX_VariantId (زائد — پوشش‌داده‌شده با IX_Variant_Value)؛ افزودن
+      ValueId و AttributeTypeId (هر دو FK با DeleteBehavior.Restrict؛ بدون ایندکس، هر حذف
+      AttributeType/Value اعتبارسنجی FK با Full Scan انجام می‌دهد).
+    - حذف کامل جدول RateLimitEntry (Infrastructure/Security/Configurations/RateLimitEntryConfiguration.cs):
+      هیچ کد Runtime از آن استفاده نمی‌کند (Rate Limiter واقعی Redis است). نگهداری جدول
+      مرده فقط هزینه Schema می‌آورد.
+
+1-5) هم‌راستاسازی دقت نوع ستون AuditLog.CreatedAt
+  مکان: Infrastructure/Audit/Configurations/AuditLogConfiguration.cs (خط 34) —
+  timestamp(6) with time zone در حالی که بقیه جداول timestamp with time zone پیش‌فرض دارند؛
+  ناهماهنگی دقت می‌تواند در مقایسه‌های بازه‌ای Jobs باعث ناسازگاری Plan شود. به پیش‌فرض
+  برگردانده شود. (اولویت پایین)
+
+================================================================================
+فاز ۲ — الگوهای دسترسی داده و صفحه‌بندی (رسیدگی به رشد خطی/مکعبی کوئری‌ها)
+================================================================================
+
+2-1) مهاجرت به Keyset Pagination روی جداول Append-Only
+  مشکل عمومی: Skip((page-1)*pageSize) هر بار همه ردیف‌های قبل را Walk و دور می‌ریزد؛ در
+  جدول‌های همیشه‌رو به رشد، صفحات عمیق به‌شدت کند می‌شوند. همچنین هر صفحه یک CountAsync
+  مجزا دارد که فیلتر سنگین را دوباره اجرا می‌کند.
+  مکان‌ها (نمونه‌های اصلی):
+    - WalletQueryService.cs (خطوط 32-37) + WalletTransferQueryService.cs (45-51) +
+      WalletDebitRequestQueryService.cs (49-55) + WalletFraudAlertQueryService.cs (51-57) +
+      WalletWithdrawalQueryService.cs (24-30)
+    - AuditQueryService.cs (خطوط 43-48 و 107-121)
+    - InventoryQueryService.cs (64-68) + StockLedgerQueryService.cs (19-24)
+    - PaymentQueryService.cs (59-63) + OrderQueryService.cs (خطوط 34 و 104-109)
+    - NotificationQueryService.cs (47-75)
+  اصلاح: برای این جداول، Keyset با شرط (OccurredAt/CreatedAt, Id) < (آخرین ردیف قبلی، Id)
+  و مرتب‌سازی متناظر (ایندکس‌های ترکیبی فاز ۱ این الگو را پشتیبانی می‌کنند). برای Grid های
+  Admin با عمق محدود، OFFSET باقی بماند ولی Count به‌صورت Cache کوتاه‌مدت (TTL چند ده
+  ثانیه) یا HasMore ارائه شود. سقف PageSize (موجود: 200) حفظ شود.
+
+2-2) تجمیع چند اسکن در یک کوئری
+    - AnalyticsQueryService.GetInventoryReportAsync (خطوط 100-128): چهار CountAsync روی
+      همان جدول → یک GroupBy(_ => 1) با Count شرطی.
+    - AnalyticsQueryService.GetDashboardStatisticsAsync (خطوط 26-37): ادغام Count+Sum سفارش‌ها
+      در یک GroupBy؛ توتال‌های Users/Products بدون فیلتر قابل Cache هستند.
+    - OrderQueryService.GetOrderStatisticsAsync (خطوط 344-384): ۵ CountAsync + SumAsync جدا →
+      یک GroupBy(o => o.Status) با Count و Sum.
+    - InventoryQueryService.GetStatisticsAsync (خطوط 142-174): Materialize کردن یک ردیف به‌ازای
+      هر Variant و شمارش در حافظه → سه CountAsync با Predicate در SQL.
+
+2-3) محاسبه موجودی انبار بدون Sum کردن کل تاریخچه
+  مکان: Infrastructure/Inventory/QueryServices/InventoryQueryService.cs (خطوط 247-257)
+  مشکل: Sum(QuantityDelta) روی تمام رکوردهای تاریخی Variant — هزینه با هر حرکت موجودی برای همیشه می‌ماند.
+  اصلاح کوتاه‌مدت: خواندن BalanceAfter جدیدترین رکورد هر Warehouse (DISTINCT ON در PG).
+  اصلاح پایدار (فاز ۳): نگهداری شمارنده موجودی per (Variant, Warehouse).
+
+2-4) محدودسازی پنجره محاسبات FraudDetectionJob
+  مکان: Infrastructure/BackgroundJobs/FraudDetectionJob.cs (خطوط 134-200 و 151-156)
+  مشکل: به‌ازای هر Wallet تا ۵۰ تایی، ۴+ کوئری مجزا و AverageAsync روی «کل» Ledger کاربر
+        (تمام عمر حساب) — هزینه خطی با طول عمر کاربر؛ حدود ۳۰۰ کوئری در هر Tick.
+  اصلاح: محدودسازی میانگین به پنجره Rolling (مثلاً ۹۰ روز)، ادغام شمارش‌های هر Wallet در
+        یک GroupBy، و OrderBy برای قطعیت Take(50) در خطوط 79-85.
+
+2-5) Keyset در WalletReconciliationJob و کاهش دامنه Aggregation
+  مکان: Infrastructure/BackgroundJobs/WalletReconciliationJob.cs (خطوط 49-91)
+  مشکل: Skip(offset).Take(200) الگوی O(n²) دارد؛ و در هر Run کل LedgerEntries برای کل
+        Wallet ها تجمیع می‌شود.
+  اصلاح: Keyset با (Where(w => w.Id > lastId).OrderBy(w => w.Id).Take(200))؛ و به‌صورت
+        بهینه: Reconciliation فقط برای Wallet هایی که از Run قبلی Ledger جدید دارند
+        (Watermark بر اساس OccurredAt).
+
+2-6) حلقه تخلیه در AuditRetentionJob
+  مکان: Infrastructure/BackgroundJobs/AuditRetentionJob.cs (خطوط 80-99)
+  مشکل: در هر چرخه ۲۴ ساعته فقط «یک» Batch حذف (۱۰۰۰) و Archive (۵۰۰) انجام می‌شود؛ اگر
+        حجم Audit روزانه بیش از این باشد جدول بی‌نهایت رشد می‌کند.
+  اصلاح: حلقه while (batch.Count == batchSize) با Budget زمانی (مثلاً ۱۰ دقیقه) تا پیش از
+        انقضای LockExpiry (۲ ساعت). کوئری Repository درست است؛ فقط حلقه اضافه شود.
+  مورد مکمل: Infrastructure/Audit/Repositories/AuditRepository.cs (خطوط 36-50) —
+        GetForArchiveAsync کل موجودیت‌ها با ستون Details (text حجیم) را Tracked لود می‌کند؛
+        اصلاح: Select فقط Id، سپس ExecuteDeleteAsync برای هر Batch (توجه: سازوکار Hash/Archive
+        پیش از حذف حفظ شود).
+
+2-7) Drain Loop در OutboxProcessingJob
+  مکان: Infrastructure/BackgroundJobs/OutboxProcessingJob.cs (خط 11) + OutboxProcessor.ProcessAsync
+  مشکل: سقف توان فعلی ~۲۰۰ پیام در دقیقه (۵۰ پیام در هر ۱۵ ثانیه). در Burst (مثل حراج)
+        Backlog مونوتونیک رشد می‌کند.
+  اصلاح: درون ExecuteInsideLockAsync حلقه تخلیه (فراخوانی مکرر ProcessAsync تا وقتی Batch
+        کامل برگردد) با Budget زمانی زیر LockExpiry؛ قابل‌تنظیم کردن batchSize از Options.
+
+2-8) انتقال محاسبه ترکیب Attribute به SQL
+  مکان: Infrastructure/Variant/Repositories/VariantRepository.cs (خطوط 122-139)
+  مشکل: ExistsByAttributeCombinationAsync همه Variant ها و لیست AttributeValue هایشان را لود
+        و در حافظه مقایسه می‌کند؛ در مسیر Write ایجاد/ویرایش Variant.
+  اصلاح: کوئری سمت SQL با Count و Count شرطی:
+        Select(v => new { Cnt = v.Attributes.Count(), Match = v.Attributes.Count(a => targetIds.Contains(a.ValueId)) })
+        و سپس AnyAsync(c => c.Cnt == targetCount && c.Match == targetCount).
+
+2-9) حذف Full Scan جستجوی متنی در دفتر کل کیف پول
+  مکان: Infrastructure/Wallet/QueryServices/WalletQueryService.cs (خطوط 194-199)
+  مشکل: e.Description.Contains(orderRef) → LIKE '%guid%' روی همه رکوردهای Ledger کاربر.
+  اصلاح: ستون ساخت‌یافته ReferenceId/OrderId روی WalletLedgerEntry (ستون ReferenceId موجود
+        ولی بدون ایندکس است — بند 1-2) و کوئری بر اساس آن.
+
+2-10) اصلاح فیلتر InStockOnly با زیرکوئری تو در تو
+  مکان: Infrastructure/Product/QueryServices/ProductQueryService.cs (خطوط 363-370)
+  مشکل: ساختار Contains داخل Any داخل Where سه لایه تولید می‌کند و برای هر محصول کاندید
+        تکرار می‌شود.
+  اصلاح: بازنویسی به EXISTS تک‌لایه:
+        p.Variants.Any(v => v.IsActive && !v.IsDeleted && Inventories.Any(i => i.VariantId == v.Id && (i.IsUnlimited || i.StockQuantity.Value > 0)))
+
+2-11) ProductCount دسته‌ای در لیست دسته‌بندی‌ها
+  مکان: Infrastructure/Category/QueryServices/CategoryQueryService.cs (خطوط 120-121)
+  مشکل: ProductCount به‌صورت زیرکوئری Correlated به‌ازای هر دسته (C بار Scan روی Products).
+  اصلاح: کوئری دسته‌ای با GroupBy(p => p.Brand.CategoryId) برای Id های صفحه (الگوی مشابه
+        کد موجود در ۲۰ خط بعدی همان فایل برای Media).
+
+2-12) یکسان‌سازی جستجوی کاربر و سقف صفحه‌بندی درست
+  مکان: Infrastructure/User/QueryServices/UserQueryService.cs
+    - خطوط 272-275: فیلتر MinTotalSpent بعد از Skip/Take در حافظه اعمال می‌شود → صفحات
+      ناقص/خالی و Total ناسازگار (شمارش از خط 170 بدون این فیلتر). اصلاح: انتقال Predicate
+      به SQL با زیرکوئری Sum روی Orders پیش از Skip/Take (ایندکس (UserId, Status) موجود است).
+    - خطوط 33-79: پروفایل داشبورد با ۶ Round-Trip مجزا → ادغام در یک کوئری با Projection
+      (الگوی درست در GetAdminUsersPagedAsync خطوط 196-236 موجود است).
+    - خطوط 92-100 و 142-150: ToLower().Contains روی Email و چند ستون (بند 1-3).
+
+2-13) حذف Count صفحه برای کوئری‌های سنگین Catalog
+  مکان: Infrastructure/Product/QueryServices/ProductQueryService.cs (خطوط 163 و 401)
+  مشکل: CountAsync همان فیلتر سنگین (شامل زیرکوئری‌های Variants) را علاوه بر خود صفحه،
+        دوباره اجرا می‌کند؛ به‌علاوه MinPrice/MaxPrice در Projection بار سوم را می‌سازند
+        (خطوط 416-424). مرتب‌سازی قیمتی هم با زیرکوئری Correlated Min روی Variants برای
+        هر محصول است (خطوط 389-394؛ مشابه در CategoryQueryService.cs خطوط 267-272).
+  اصلاح کوتاه‌مدت: فیلتر MinPrice از Projection حذف و مرتب‌سازی قیمتی با یک GroupBy
+        مشترک؛ اصلاح پایدار (فاز ۳): Denormalize کردن MinPrice/MaxPrice/HasDiscount روی
+        رکورد Product و ایندکس روی MinPrice.
+
+2-14) Broadcast اعلان‌ها بدون لیست کامل کاربران
+  مکان: Infrastructure/User/Repositories/UserRepository.cs (خطوط 45-50)
+  مشکل: GetAllActiveUserIdsAsync کل شناسه‌های کاربران فعال را در حافظه نگه می‌دارد و
+        downstream به‌ازای هر کاربر Insert می‌کند.
+  اصلاح: تبدیل به یک دستور SQL: INSERT INTO Notifications (...) SELECT ... FROM Users WHERE IsActive
+        (Set-Based)؛ در صورت لزوم، Streaming صفحه‌به‌صفحه.
+
+2-15) بقیه موارد ناهمگن کوچک
+    - OrderRepository.FindPendingExpiredAsync (خطوط 33-45): پوشش در بند 0-10.
+    - OrderStatusQueryService.GetByIdAsync (خطوط 38-62): دو کوئری مجزا برای Dto و RowVersion
+      → یک Projection واحد (کاهش Round-Trip).
+    - ElasticsearchOutboxJob (خطوط 78-82): به‌ازای هر پیام از ۱۰۰ پیام یک AnyAsync برای
+      بررسی Idempotency → یک کوئری دسته‌ای با Contains روی کلیدهای Batch؛ اطمینان از ایندکس
+      IdempotencyKey روی ElasticsearchOutboxMessages.
+    - PaymentCleanupJob (خط 60): پیام نتیجه Log بدون Interpolate شدن ($ نگذاشته) → برای
+      دیده‌شدن وضعیت تخلیه اصلاح شود (مربوط به مشاهده‌پذیری، نه کارایی).
+    - ProductQueryService جزئیات محصول (خطوط 37-38، 86، 281-282): ۳-۴ Round-Trip متوالی
+      (بدنه + تصویر اصلی + RowVersion) → ادغام در Projection اصلی.
+    - NotificationRepository.GetUnreadByUserIdAsync (خطوط 16-19): لود همه خواندنشده‌های
+      کاربر بدون Take → افزودن سقف (مثلاً 100) + پروجکشن.
+    - MediaQueryService/MediaRepository (Infrastructure/Media/Repositories/MediaRepository.cs
+      خطوط 48-57 و 37-46): GetAllFilePathsAsync کل مسیرها را لود می‌کند → صفحه‌بندی؛
+      بررسی وجود ایندکس روی Path برای GetByPathAsync.
+    - AttributeRepository (خطوط 14-58): سه متد خواندنی بدون AsNoTracking → افزودن
+      (مسیرهای Update از طریق FindAsync جدا هستند).
+
+================================================================================
+فاز ۳ — بهبودهای معماری و مقیاس‌پذیری (برای پردازش حجم بالای داده)
+================================================================================
+
+3-1) بازطراحی Outbox به الگوی دو فازی (Claim + Process)
+  مکان: Infrastructure/Persistence/Outbox/OutboxProcessor.cs (خطوط 24-54)
+  مشکل: یک تراکنش، ۵۰ پیام را Claim می‌کند و تا پایان اجرای همه Handler ها (از جمله
+        فراخوانی‌های HTTP خارجی مثل SMS/ZarinPal/Elasticsearch) قفل ردیف‌ها و Connection
+        باز می‌ماند؛ یک Handler کند (مثلاً Timeout سه‌مرحله‌ای SMS) کل Throughput را
+        متوقف می‌کند و Backlog فوق‌خطی رشد می‌کند.
+  اصلاح: فاز ۱ — تراکنش کوتاه Claim: UPDATE ... SET locked_at/locked_by WHERE ... FOR UPDATE
+        SKIP LOCKED و Commit؛ فاز ۲ — پردازش هر پیام در تراکنش مستقل خودش (سازوکار Savepoint
+        فعلی حفظ شود). اجرای موازی پیام‌های مستقل با Parallel.ForEachAsync روی DbContext های
+        مجزا (نه Scoped مشترک). فراخوانی‌های HTTP خارجی در افق بلندتر پشت Outbox/صف دوم
+        منتقل شوند.
+
+3-2) تغییر Query Splitting سراسری
+  مکان: Infrastructure/Common/DependencyInjection/InfrastructureServiceExtensions.cs (خط 243)
+  مشکل: UseQuerySplittingBehavior(SingleQuery) — هر Include دو Collection، Join حاصل‌ضربی
+        می‌سازد؛ حجم انتقال با رشد Collection های فرزند، چندبرابری رشد می‌کند.
+  اصلاح: تغییر سراسری به SplitQuery (یا AsSplitQuery روی کوئری‌های داغ دارای چند Collection
+        Include). مواردی که SingleQuery واقعاً لازم است، صریح باقیر بمانند.
+
+3-3) DbContext Pooling
+  مکان: Infrastructure/Common/DependencyInjection/InfrastructureServiceExtensions.cs (خط 236)
+  مشکل: AddDbContext بدون Pool — هر Request ساخت Context و در صورت churn شدن Cache Key مدل
+        (ثبت Interceptor های per-instance + بازتاب StronglyTypedId روی همه Assembly ها در
+        DBContext.ConfigureStronglyTypedIds، DBContext.cs خطوط 95-123) هزینه مدل‌سازی تکرار می‌شود.
+  اصلاح: مهاجرت به AddDbContextPool (هر دو Interceptor Singleton هستند و Pool-safe اند) و
+        محدودسازی بازتاب Id ها به Assembly های مشخص.
+
+3-4) Denormalization های هدفمند (کاهش وابستگی کوئری‌های داغ به حجم داده)
+    a) Product.MinPrice / MaxPrice / HasDiscount: ستون‌های نگهداری‌شده روی ردیف Product،
+       به‌روزرسانی هنگام ذخیره Variant؛ ایندکس روی MinPrice → فیلتر/مرتب‌سازی قیمت و
+       Count بدون زیرکوئری (رسیدگی به بندهای 2-13 و 2-10).
+    b) ReviewSummary per Product (میانگین، تعداد، توزیع ستاره‌ها): به‌روزرسانی هنگام
+       تایید نظر → رسیدگی ریشه‌ای به بند 0-3.
+    c) شمارنده موجودی per (Variant, Warehouse): به‌روزرسانی همراه هر StockLedgerEntry →
+       رسیدگی به بند 2-3؛ BalanceAfter همچنان به‌عنوان مبنای ممیزی حفظ شود.
+    d) WalletLedgerEntry.IsOwnerActive (Denormalized از User.IsActive): حذف Join دائمی به
+       Users از Global Query Filter روی بزرگ‌ترین جدول سیستم
+       (Infrastructure/Wallet/Configurations/WalletLedgerEntryConfiguration.cs خط 107).
+  هر یک از این موارد نیاز به مکانیزم هم‌سازی (رویداد یا SaveChanges Interceptor) دارد و
+  باید با تست هم‌سنجی اعمال شود.
+
+3-5) جابه‌جایی خروجی‌های حجیم به Background Job
+  دامنه: ExportLedgerAsync (بند 0-12)، گزارش‌های Analytics با بازه ۷۳۰ روزه، گزارش Usage
+  تخفیف (بند 0-6). الگوی پیشنهادی: درخواست خروجی → ثبت Job → تولید فایل در Storage (S3
+  موجود) → ارائه لینک. درخواست‌های HTTP هرگز نباید List کاملی از جدول‌های Append-Only بسازند.
+
+3-6) TagWith در تمام QueryService ها
+  مکان: همه QueryService ها (فعلاً هیچ‌جا استفاده نشده)
+  اصلاح: افزودن .TagWith("ServiceName.MethodName") به کوئری‌های نقطه ورود؛ برای ردیابی
+  کوئری‌های کند در لاگ PG (pg_stat_statements) به کد مبدأ. مکانیکی و بدون ریسک.
+
+3-7) Resiliency برای مسیرهای Raw ADO
+  مکان: Infrastructure/Persistence/SqlConnectionFactory.cs (خطوط 9-14)
+  مشکل: مسیرهای Raw SQL (که برای گزارش‌ها به‌درستی از Tracking دور نگه داشته شده‌اند) بدون
+        Retry است؛ در Failover، این مسیرها قبل از مسیرهای EF خطا می‌دهند.
+  اصلاح: Retry کوتاه هم‌تراز سیاست EF (۳ × ۵ ثانیه) یا مهاجرت به NpgsqlDataSource با
+        سازوکار Retry در سطح Pool.
+
+3-8) قفل توزیع‌شده با Budget/تمدید
+  مکان: Infrastructure/BackgroundJobs/Common/DistributedLockedBackgroundService.cs (خطوط 24-29)
+  مشکل: Lock یک بار گرفته می‌شود و تمدید نمی‌شود؛ اگر اجرا از LockExpiry طولانی‌تر شود
+        (مثلاً OrphanedFileCleanupJob با LockExpiry=2h) Instance دوم قفل را می‌گیرد و
+        پردازش موازی/تکراری رخ می‌دهد.
+  اصلاح: Budget زمانی داخلی در ExecuteInsideLockAsync (توقف پیش از انقضا) یا مکانیزم
+        Renewal دوره‌ای TTL قفل.
+
+3-9) دیتابیس به‌عنوان Fallback برای Rate Limit
+  مکان: Infrastructure/Security/Configurations/RateLimitEntryConfiguration.cs
+  نکته: جدول RateLimitEntry در Runtime استفاده نمی‌شود (Limiter واقعی Redis است — خوب).
+  اگر روزی فعال شود، جدولی با یک Write به‌ازای هر درخواست و بدون Cleanup و بدون ایندکس
+  ExpiresAt است. تصمیم: حذف Entity (بند 1-4) یا تضمین Cleanup + ایندکس ExpiresAt پیش از
+  هرگونه فعال‌سازی.
+
+3-10) زیرساخت پایش و اثبات بهبود
+    - فعال‌سازی pg_stat_statements در Production برای شناسایی Top Query ها پس از هر فاز.
+    - ثبت Baseline (EXPLAIN ANALYZE) برای ۲۰ کوئری داغ فعلی قبل از شروع فاز ۱ و مقایسه
+      پس از هر فاز.
+    - افزودن Health Check/Metric برای طول صف OutboxMessages و ElasticsearchOutboxMessages
+      (تعداد Pending و قدیمی‌ترین CreatedAt) تا رشد Backlog قبل از بحران دیده شود.
+    - تست Load با حجم شبیه‌سازی‌شده (مثلاً ۱۰ میلیون ردیف Ledger و ۱ میلیون سفارش) به‌عنوان
+      معیار پذیرش پایان فاز ۳.
+
+--------------------------------------------------------------------------------
+مواردی که اکنون درست هستند (در اصلاحات دستکاری نشوند)
+--------------------------------------------------------------------------------
+- Outbox با FOR UPDATE SKIP LOCKED + ایندکس Partial منطبق با Predicate و حالت Poison.
+- Savepoint-per-message و Snapshot/Restore ل ChangeTracker در OutboxProcessor.
+- ایندکس‌های Filtered/Composite دفتر کل: (OwnerId, OccurredAt DESC)، (WalletId, OccurredAt DESC)
+  و Unique IdempotencyKey.
+- استفاده نظام‌مند از AsNoTracking و Projection به DTO در QueryService ها.
+- الگوی Batch IN به‌جای N+1 در لود دسته‌ای (تصاویر، نام کاربران، Inventory ها، Votes).
+- سقف‌گذاری PageSize (حداکثر 200) و Clamp بازه گزارش Analytics به ۷۳۰ روز.
+- اجرای Execution Strategy دور تراکنش‌های Explicit (UnitOfWork و OutboxProcessor).
+- Rate Limiting با Redis (Lua) + Circuit Breaker و Fallback حافظه.
+- وجود OutboxArchiveMessage و OutboxArchiveJob برای محدودسازی جدول Hot Outbox.
+- اکثر Job ها الگوی OrderBy + Take درست دارند (بخش‌های معیوب در فاز ۰ مشخص شد).
+
+--------------------------------------------------------------------------------
+ترتیب اجرای پیشنهادی و معیار پذیرش
+--------------------------------------------------------------------------------
+  فاز ۰ (Quick Wins): حذف دوباره‌کاری‌ها و سقف‌گذاری کوئری‌های بدون سقف — بدون ریسک،
+    اثر فوری روی Hot Path ها (Checkout، صفحه محصول، کیف پول، Jobs).
+  فاز ۱ (ایندکس‌ها): با Migration و بازبینی EXPLAIN؛ بزرگ‌ترین اثر بر ثبات سرعت با
+    رشد داده (Sort های CreatedAt و جستجوها).
+  فاز ۲ (الگوهای دسترسی): Keyset Pagination و ادغام کوئری‌ها — به پشتوانه ایندکس‌های فاز ۱.
+  فاز ۳ (معماری): Outbox دو فازی، Splitting، Pooling، Denormalization، خروجی‌های Job-محور.
+معیار پذیرش نهایی: در تست Load با ۱۰ میلیون ردیف Ledger و ۱ میلیون سفارش، تفاوت P95
+  پاسخ‌دهی کوئری‌های داغ نسبت به حجم کم، کمتر از ۲ برابر باشد و هیچ کوئری‌ای در
+  pg_stat_statements با Scan کامل جدول‌های Append-Only در Top ۲۰ نباشد.
+================================================================================
+پایان گزارش
+================================================================================

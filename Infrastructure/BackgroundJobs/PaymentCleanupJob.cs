@@ -4,7 +4,6 @@ namespace Infrastructure.BackgroundJobs;
 
 public sealed class PaymentCleanupJob(
     IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock,
     IDateTimeProvider dateTimeProvider) : BackgroundService
 {
     private static readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
@@ -22,6 +21,9 @@ public sealed class PaymentCleanupJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:payment-cleanup", LockExpiry, ct);
 

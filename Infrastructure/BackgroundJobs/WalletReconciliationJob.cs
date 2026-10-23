@@ -1,8 +1,7 @@
 ﻿namespace Infrastructure.BackgroundJobs;
 
 public sealed class WalletReconciliationJob(
-    IServiceScopeFactory scopeFactory,
-    IDistributedLock distributedLock) : BackgroundService
+    IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(1);
     private static readonly TimeSpan LockExpiry = TimeSpan.FromMinutes(45);
@@ -14,6 +13,9 @@ public sealed class WalletReconciliationJob(
         {
             try
             {
+                using var lockScope = scopeFactory.CreateScope();
+                var distributedLock = lockScope.ServiceProvider.GetRequiredService<IDistributedLock>();
+                
                 await using var lockHandle = await distributedLock.AcquireAsync(
                     "jobs:wallet-reconciliation", LockExpiry, ct);
 
