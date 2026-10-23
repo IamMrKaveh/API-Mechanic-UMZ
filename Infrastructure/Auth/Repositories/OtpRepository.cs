@@ -43,15 +43,16 @@ public sealed class OtpRepository(DBContext context, IDateTimeProvider dateTimeP
         OtpPurpose purpose,
         CancellationToken ct = default)
     {
+        // Set-based invalidation: expiry is pushed forward to now for every active
+        // OTP of the user in a single statement. The previous load-then-MarkExpired
+        // loop was a no-op (MarkExpired only raises an event for already-expired OTPs).
         var now = dateTimeProvider.UtcNow;
-        var activeOtps = await Context.UserOtps
+        await Context.UserOtps
             .Where(o => o.UserId == userId
                      && o.Purpose == purpose
                      && !o.IsVerified
                      && o.ExpiresAt > now)
-            .ToListAsync(ct);
-
-        foreach (var otp in activeOtps)
-            otp.MarkExpired(now);
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(o => o.ExpiresAt, now), ct);
     }
 }

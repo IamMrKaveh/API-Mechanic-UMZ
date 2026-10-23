@@ -69,7 +69,7 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
         ProductId productId,
         CancellationToken ct = default)
     {
-        var ratings = await context.ProductReviews
+        var ratingCounts = await context.ProductReviews
             .AsNoTracking()
             .Where(r =>
                 r.ProductId == productId &&
@@ -77,19 +77,22 @@ public sealed class ReviewQueryService(DBContext context) : IReviewQueryService
                 r.User != null &&
                 r.User.IsActive &&
                 r.Status == ReviewStatus.Approved)
-            .Select(r => r.Rating.Value)
+            .GroupBy(r => r.Rating.Value)
+            .Select(g => new { Rating = g.Key, Count = g.Count() })
             .ToListAsync(ct);
 
-        if (ratings.Count == 0)
+        if (ratingCounts.Count == 0)
             return null;
 
-        var total = ratings.Count;
-        var avg = ratings.Average();
-        var five = ratings.Count(v => v == 5);
-        var four = ratings.Count(v => v == 4);
-        var three = ratings.Count(v => v == 3);
-        var two = ratings.Count(v => v == 2);
-        var one = ratings.Count(v => v == 1);
+        var total = ratingCounts.Sum(x => x.Count);
+        var avg = total > 0
+            ? ratingCounts.Sum(x => (double)x.Rating * x.Count) / total
+            : 0d;
+        var five = ratingCounts.FirstOrDefault(x => x.Rating == 5)?.Count ?? 0;
+        var four = ratingCounts.FirstOrDefault(x => x.Rating == 4)?.Count ?? 0;
+        var three = ratingCounts.FirstOrDefault(x => x.Rating == 3)?.Count ?? 0;
+        var two = ratingCounts.FirstOrDefault(x => x.Rating == 2)?.Count ?? 0;
+        var one = ratingCounts.FirstOrDefault(x => x.Rating == 1)?.Count ?? 0;
 
         return new ReviewSummaryDto
         {

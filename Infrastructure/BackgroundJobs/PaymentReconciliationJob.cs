@@ -67,18 +67,31 @@ public sealed class PaymentReconciliationJob(
         var totalReconciled = 0;
         var totalFailed = 0;
 
-        while (true)
+        // Transactions whose gateway check threw are left Pending; without tracking
+        // them here the same batch would be re-selected forever on a persistent
+        // gateway error. MaxIterations bounds each run as a final safety net.
+        var skippedTransactionIds = new List<Domain.Payment.ValueObjects.PaymentTransactionId>();
+        const int MaxIterations = 50;
+        var iteration = 0;
+
+        while (iteration++ < MaxIterations)
         {
+            var skipIds = skippedTransactionIds.ToList();
+
             var batch = await dbContext.PaymentTransactions
                 .Where(t =>
                     t.Status == Domain.Payment.ValueObjects.PaymentStatus.Pending &&
-                    t.CreatedAt <= threshold)
+                    t.CreatedAt <= threshold &&
+                    !skipIds.Contains(t.Id))
                 .OrderBy(t => t.CreatedAt)
                 .Take(BatchSize)
                 .ToListAsync(ct);
 
             if (batch.Count == 0)
                 break;
+
+            if (batch.Count < BatchSize)
+                iteration = MaxIterations; // last batch: process and exit
 
             var batchReconciled = 0;
             var batchFailed = 0;
@@ -117,6 +130,7 @@ public sealed class PaymentReconciliationJob(
                 }
                 catch (Exception ex)
                 {
+                    skippedTransactionIds.Add(tx.Id);
                     await auditService.LogErrorAsync(
                         $"[Reconciliation] Failed to check transaction {tx.Id.Value}: {ex.Message}", ct);
                 }

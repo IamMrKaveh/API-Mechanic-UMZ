@@ -183,7 +183,11 @@ public sealed class AnalyticsQueryService(DBContext context) : IAnalyticsQuerySe
                 oi => oi.ProductId,
                 p => p.Id,
                 (oi, p) => new { oi, p.Brand })
-            .Where(x => x.Brand != null)
+            // Date filter must match the totalCount query below; without it the
+            // data query scans the entire OrderItems table and disagrees with the count.
+            .Where(x => x.Brand != null
+                        && x.oi.Order.CreatedAt >= fromDate
+                        && x.oi.Order.CreatedAt <= toDate)
             .Join(context.Categories,
                 x => x.Brand!.CategoryId,
                 c => c.Id,

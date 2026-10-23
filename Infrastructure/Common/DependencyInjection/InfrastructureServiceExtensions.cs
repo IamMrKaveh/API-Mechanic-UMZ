@@ -251,10 +251,8 @@ public static class InfrastructureServiceExtensions
                     }
                 });
 
-            options.AddInterceptors(
-                sp.GetRequiredService<AuditableEntityInterceptor>(),
-                sp.GetRequiredService<DomainEventInterceptor>());
-
+            // Interceptors are added once inside DBContext.OnConfiguring via constructor
+            // injection; adding them here as well would run every interceptor twice.
             options.UseResponseCacheAutoEvict(sp);
         });
 

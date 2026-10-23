@@ -19,8 +19,13 @@ public sealed class WalletDebitRequestRepository(DBContext context)
         if (status.HasValue)
             query = query.Where(r => r.Status == status.Value);
 
+        // UI list cap: a user's request history grows without bound and this
+        // feeds a list view, not a data set.
+        const int maxRows = 200;
+
         return await query
             .OrderByDescending(r => r.CreatedAt)
+            .Take(maxRows)
             .ToListAsync(ct);
     }
 

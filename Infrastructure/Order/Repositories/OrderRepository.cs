@@ -35,10 +35,15 @@ public sealed class OrderRepository(DBContext context) : IOrderRepository
     {
         var expiredBefore = DateTime.UtcNow.AddMinutes(-30);
 
+        // Bounded batch: callers drain the backlog batch by batch. Entities are
+        // loaded tracked because every caller mutates and saves them.
+        const int batchSize = 500;
+
         var results = await context.Orders
-            .AsNoTracking()
             .Where(o => ExpirableStatuses.Contains(o.Status)
                         && o.CreatedAt < expiredBefore)
+            .OrderBy(o => o.CreatedAt)
+            .Take(batchSize)
             .ToListAsync(ct);
 
         return results.AsReadOnly();

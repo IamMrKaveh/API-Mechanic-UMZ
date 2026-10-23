@@ -8,15 +8,18 @@ public sealed class WalletRepository(DBContext context)
 {
     public async Task<Domain.Wallet.Aggregates.Wallet?> GetByUserIdAsync(
         UserId userId, CancellationToken ct = default)
+        // Only active reservations are needed (available-balance computation);
+        // loading the full reservation history makes every wallet read slower
+        // as the history grows.
         => await Context.Wallets
-            .Include(w => w.Reservations)
+            .Include(w => w.Reservations.Where(r => r.Status == Domain.Wallet.Enums.WalletReservationStatus.Active))
             .FirstOrDefaultAsync(w => w.OwnerId == userId, ct);
 
     public async Task<Domain.Wallet.Aggregates.Wallet?> GetByUserIdForUpdateAsync(
         UserId userId, CancellationToken ct = default)
     {
         var wallet = await Context.Wallets
-            .Include(w => w.Reservations)
+            .Include(w => w.Reservations.Where(r => r.Status == Domain.Wallet.Enums.WalletReservationStatus.Active))
             .FirstOrDefaultAsync(w => w.OwnerId == userId, ct);
 
         if (wallet is not null)

@@ -29,17 +29,34 @@ public sealed class ExpiredSessionCleanupJob(
                     var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
                     var cutoff = dateTimeProvider.UtcNow;
-                    var expiredSessions = await sessionRepo.GetExpiredActiveSessionsAsync(cutoff, stoppingToken);
 
-                    foreach (var session in expiredSessions)
-                        session.MarkExpired(cutoff);
+                    // Drain loop: each pass handles one bounded batch (the repository
+                    // caps at 1000 rows) so a growing backlog of expired sessions
+                    // drains instead of one batch per hour.
+                    const int batchSize = 1000;
+                    var totalExpired = 0;
 
-                    if (expiredSessions.Any())
+                    while (totalExpired < batchSize * 10)
                     {
+                        var expiredSessions = await sessionRepo.GetExpiredActiveSessionsAsync(cutoff, stoppingToken);
+                        if (expiredSessions.Count == 0)
+                            break;
+
+                        foreach (var session in expiredSessions)
+                            session.MarkExpired(cutoff);
+
                         await unitOfWork.SaveChangesAsync(stoppingToken);
+                        totalExpired += expiredSessions.Count;
+
+                        if (expiredSessions.Count < batchSize)
+                            break;
+                    }
+
+                    if (totalExpired > 0)
+                    {
                         await auditService.LogSystemEventAsync(
                             "ExpiredSessionCleanup",
-                            $"{expiredSessions.Count} نشست منقضی‌شده پاکسازی شد.",
+                            $"{totalExpired} نشست منقضی‌شده پاکسازی شد.",
                             stoppingToken);
                     }
                 }

@@ -21,24 +21,24 @@ public sealed class SessionRepository(DBContext context, IDateTimeProvider dateT
 
     public async Task RevokeAllByUserIdAsync(UserId userId, SessionRevocationReason reason, CancellationToken ct = default)
     {
-        var sessions = await Context.UserSessions
+        // Set-based update: revokes every active session in a single statement
+        // instead of loading entities and issuing one UPDATE per row.
+        await Context.UserSessions
             .Where(s => s.UserId == userId && !s.IsRevoked)
-            .ToListAsync(ct);
-
-        var now = dateTimeProvider.UtcNow;
-        foreach (var session in sessions)
-            session.Revoke(now, reason);
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(s => s.IsRevoked, true)
+                .SetProperty(s => s.RevokedAt, dateTimeProvider.UtcNow)
+                .SetProperty(s => s.RevocationReason, reason), ct);
     }
 
     public async Task RevokeAllExceptAsync(UserId userId, SessionId exceptSessionId, SessionRevocationReason reason, CancellationToken ct = default)
     {
-        var sessions = await Context.UserSessions
+        await Context.UserSessions
             .Where(s => s.UserId == userId && !s.IsRevoked && s.Id != exceptSessionId)
-            .ToListAsync(ct);
-
-        var now = dateTimeProvider.UtcNow;
-        foreach (var session in sessions)
-            session.Revoke(now, reason);
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(s => s.IsRevoked, true)
+                .SetProperty(s => s.RevokedAt, dateTimeProvider.UtcNow)
+                .SetProperty(s => s.RevocationReason, reason), ct);
     }
 
     public async Task<IReadOnlyList<UserSession>> GetActiveByUserIdAsync(UserId userId, CancellationToken ct = default)
@@ -64,8 +64,14 @@ public sealed class SessionRepository(DBContext context, IDateTimeProvider dateT
 
     public async Task<IReadOnlyList<UserSession>> GetExpiredActiveSessionsAsync(DateTime cutoffTime, CancellationToken ct = default)
     {
+        // Bounded batch: the expired set grows without bound, so the cleanup job
+        // drains it batch by batch instead of materializing every row at once.
+        const int batchSize = 1000;
+
         var results = await Context.UserSessions
             .Where(s => !s.IsRevoked && s.ExpiresAt < cutoffTime)
+            .OrderBy(s => s.ExpiresAt)
+            .Take(batchSize)
             .ToListAsync(ct);
 
         return results.AsReadOnly();

@@ -12,10 +12,13 @@ public sealed class CheckoutStockValidatorService(IInventoryRepository inventory
     {
         var errors = new List<string>();
 
+        // One batched query for the whole cart instead of one query per item.
+        var variantIds = items.Select(i => i.VariantId).Distinct().ToList();
+        var inventories = await inventoryRepository.GetByVariantIdsAsync(variantIds, ct);
+
         foreach (var item in items)
         {
-            var inventory = await inventoryRepository.GetByVariantIdAsync(
-                item.VariantId, ct);
+            var inventory = inventories.FirstOrDefault(i => i.VariantId == item.VariantId);
 
             if (inventory is null)
             {

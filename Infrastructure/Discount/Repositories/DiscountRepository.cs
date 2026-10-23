@@ -19,9 +19,11 @@ public sealed class DiscountRepository(DBContext context)
     public async Task<DiscountCode?> GetByCodeAsync(string code, CancellationToken ct = default)
     {
         var normalizedCode = code.Trim().ToUpperInvariant();
+        // Usage history is intentionally NOT loaded here: this method sits on the
+        // checkout hot path and a popular code can have thousands of usage rows.
+        // Usage limits are enforced through the denormalized UsageCount column.
         return await Context.DiscountCodes
             .Include(d => d.Restrictions)
-            .Include(d => d.Usages)
             .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Code == normalizedCode, ct);
     }

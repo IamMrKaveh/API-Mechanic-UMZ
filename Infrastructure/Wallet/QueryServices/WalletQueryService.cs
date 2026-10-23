@@ -67,8 +67,14 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         query = query.Where(e => e.OwnerId == userId);
         query = ApplyFilter(query, filter);
 
+        // Hard cap: a long-lived account's ledger grows without bound and each
+        // export serializes the entire result set in-request. Large exports must
+        // use a narrower date range (the filter) or a background job.
+        const int maxExportRows = 10_000;
+
         return await query
             .OrderByDescending(e => e.OccurredAt)
+            .Take(maxExportRows)
             .Select(e => new WalletLedgerEntryDto(
                 e.Id.Value,
                 e.WalletId.Value,
@@ -213,14 +219,20 @@ public sealed class WalletQueryService(DBContext context) : IWalletQueryService
         var today = DateTime.UtcNow.Date;
         var last7 = DateTime.UtcNow.AddDays(-7);
 
-        var wallets = await context.Wallets.AsNoTracking().IgnoreQueryFilters()
-            .Select(w => new { w.Balance.Amount, w.IsActive })
-            .ToListAsync(ct);
+        var walletTotals = await context.Wallets.AsNoTracking().IgnoreQueryFilters()
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                TotalBalance = g.Sum(w => w.Balance.Amount),
+                ActiveCount = g.Count(w => w.IsActive),
+                TotalCount = g.Count()
+            })
+            .SingleOrDefaultAsync(ct);
 
-        var totalBalance = wallets.Sum(x => x.Amount);
-        var activeCount = wallets.Count(x => x.IsActive);
-        var frozenCount = wallets.Count(x => !x.IsActive);
-        var totalCount = wallets.Count;
+        var totalBalance = walletTotals?.TotalBalance ?? 0m;
+        var activeCount = walletTotals?.ActiveCount ?? 0;
+        var totalCount = walletTotals?.TotalCount ?? 0;
+        var frozenCount = totalCount - activeCount;
 
         var totalReserved = await context.WalletReservations.AsNoTracking()
             .Where(r => r.Status == WalletReservationStatus.Active)

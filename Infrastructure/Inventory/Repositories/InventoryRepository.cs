@@ -34,8 +34,10 @@ public sealed class InventoryRepository(DBContext context)
     public async Task<IReadOnlyList<Domain.Inventory.Aggregates.Inventory>> GetByReferenceNumberAsync(
         string referenceNumber, CancellationToken ct = default)
     {
+        // Filtered include: only the ledger entries for this reference are loaded,
+        // not each matching inventory's entire (append-only) ledger history.
         var results = await Context.Inventories
-            .Include(i => i.LedgerEntries)
+            .Include(i => i.LedgerEntries.Where(e => e.ReferenceNumber == referenceNumber))
             .Where(i => i.LedgerEntries.Any(e => e.ReferenceNumber == referenceNumber))
             .ToListAsync(ct);
         return results.AsReadOnly();

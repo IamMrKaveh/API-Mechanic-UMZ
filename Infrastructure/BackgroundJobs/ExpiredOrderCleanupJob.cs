@@ -27,20 +27,36 @@ public sealed class ExpiredOrderCleanupJob(
                     var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                     var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
-                    var expiredOrders = await orderRepo.FindPendingExpiredAsync(stoppingToken);
+                    // Drain loop: each pass handles one bounded batch; run repeatedly
+                    // while the repository keeps returning full batches so a backlog
+                    // can actually shrink instead of one batch per 30 minutes.
+                    const int batchSize = 500;
+                    var totalExpired = 0;
 
-                    foreach (var order in expiredOrders)
+                    while (totalExpired < batchSize * 10)
                     {
-                        order.Expire(order.Status);
-                        orderRepo.Update(order);
+                        var expiredOrders = await orderRepo.FindPendingExpiredAsync(stoppingToken);
+                        if (expiredOrders.Count == 0)
+                            break;
+
+                        foreach (var order in expiredOrders)
+                        {
+                            order.Expire(order.Status);
+                            orderRepo.Update(order);
+                        }
+
+                        await unitOfWork.SaveChangesAsync(stoppingToken);
+                        totalExpired += expiredOrders.Count;
+
+                        if (expiredOrders.Count < batchSize)
+                            break;
                     }
 
-                    if (expiredOrders.Any())
+                    if (totalExpired > 0)
                     {
-                        await unitOfWork.SaveChangesAsync(stoppingToken);
                         await auditService.LogSystemEventAsync(
                             "ExpiredOrderCleanup",
-                            $"{expiredOrders.Count} سفارش منقضی‌شده پردازش شد.",
+                            $"{totalExpired} سفارش منقضی‌شده پردازش شد.",
                             stoppingToken);
                     }
                 }
