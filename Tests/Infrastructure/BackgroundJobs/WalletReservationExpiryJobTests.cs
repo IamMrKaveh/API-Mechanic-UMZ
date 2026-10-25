@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Application.Wallet.Features.Commands.ReleaseWalletReservation;
 using Domain.Wallet.ValueObjects;
 using Infrastructure.BackgroundJobs;
@@ -37,7 +37,7 @@ public class WalletReservationExpiryJobTests(PostgresContainerFixture fixture) :
         provider.GetService(typeof(IMediator)).Returns(_mediator);
         provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
-        return new WalletReservationExpiryJob(scopeFactory, _distributedLock, DateTimeProvider);
+        return new WalletReservationExpiryJob(scopeFactory, DateTimeProvider);
     }
 
     private async Task<(Guid UserId, Guid ReservationId)> SeedReservationAsync(

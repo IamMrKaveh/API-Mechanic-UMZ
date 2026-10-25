@@ -62,7 +62,6 @@ public sealed class DBContext(
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
     public DbSet<ReviewVote> ReviewVotes => Set<ReviewVote>();
-    public DbSet<RateLimitEntry> RateLimitEntries => Set<RateLimitEntry>();
     public DbSet<Domain.Shipping.Aggregates.Shipping> Shippings => Set<Domain.Shipping.Aggregates.Shipping>();
     public DbSet<StockLedgerEntry> StockLedgerEntries => Set<StockLedgerEntry>();
     public DbSet<Ticket> Tickets => Set<Ticket>();

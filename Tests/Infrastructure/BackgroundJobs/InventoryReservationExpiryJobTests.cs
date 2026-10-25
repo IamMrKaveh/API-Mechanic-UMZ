@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Application.Inventory.Contracts;
 using Domain.Inventory.ValueObjects;
 using Domain.Variant.ValueObjects;
@@ -41,7 +41,6 @@ public class InventoryReservationExpiryJobTests(PostgresContainerFixture fixture
 
         return new InventoryReservationExpiryJob(
             scopeFactory,
-            _distributedLock,
             Microsoft.Extensions.Options.Options.Create(new ReservationExpiryOptions { ExpiryMinutes = expiryMinutes }),
             DateTimeProvider);
     }

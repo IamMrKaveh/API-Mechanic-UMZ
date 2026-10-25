@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Domain.User.ValueObjects;
 using Domain.Wallet.ValueObjects;
 using Infrastructure.BackgroundJobs;
@@ -31,7 +31,7 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
         provider.GetService(typeof(IDistributedLock)).Returns(_distributedLock);
         provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
-        return new WalletReconciliationJob(scopeFactory, _distributedLock);
+        return new WalletReconciliationJob(scopeFactory);
     }
 
     private async Task<global::Domain.Wallet.Aggregates.Wallet> SeedWalletWithLedgerAsync(
@@ -105,7 +105,7 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
             .AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(handle);
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
-        var job = new WalletReconciliationJob(scopeFactory, _distributedLock);
+        var job = new WalletReconciliationJob(scopeFactory);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         try { await job.StartAsync(cts.Token); }        catch (OperationCanceledException) { }

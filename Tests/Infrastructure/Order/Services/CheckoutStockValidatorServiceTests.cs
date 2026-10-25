@@ -1,4 +1,4 @@
-using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
+﻿using Application.Order.Features.Commands.CheckoutFromCart.Interfaces;
 using Domain.Inventory.Aggregates;
 using Domain.Inventory.Interfaces;
 using Domain.Order.ValueObjects;
@@ -29,7 +29,7 @@ public class CheckoutStockValidatorServiceTests
         var result = await _sut.ValidateAsync([], CancellationToken.None);
 
         result.ShouldBeSuccess();
-        await _inventoryRepository.DidNotReceiveWithAnyArgs().GetByVariantIdAsync(default!, default);
+        await _inventoryRepository.DidNotReceiveWithAnyArgs().GetByVariantIdsAsync(default!, default);
     }
 
     [Fact]
@@ -41,8 +41,8 @@ public class CheckoutStockValidatorServiceTests
             .WithInitialStock(10)
             .Build();
         _inventoryRepository
-            .GetByVariantIdAsync(item.VariantId, Arg.Any<CancellationToken>())
-            .Returns(inventory);
+            .GetByVariantIdsAsync(Arg.Any<IEnumerable<global::Domain.Variant.ValueObjects.VariantId>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<global::Domain.Inventory.Aggregates.Inventory> { inventory });
 
         var result = await _sut.ValidateAsync([item], CancellationToken.None);
 
@@ -54,8 +54,8 @@ public class CheckoutStockValidatorServiceTests
     {
         var item = NewSnapshot();
         _inventoryRepository
-            .GetByVariantIdAsync(Arg.Any<global::Domain.Variant.ValueObjects.VariantId>(), Arg.Any<CancellationToken>())
-            .Returns((global::Domain.Inventory.Aggregates.Inventory?)null);
+            .GetByVariantIdsAsync(Arg.Any<IEnumerable<global::Domain.Variant.ValueObjects.VariantId>>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<global::Domain.Inventory.Aggregates.Inventory>());
 
         var result = await _sut.ValidateAsync([item], CancellationToken.None);
 
@@ -74,8 +74,8 @@ public class CheckoutStockValidatorServiceTests
             .WithInitialStock(2)
             .Build();
         _inventoryRepository
-            .GetByVariantIdAsync(item.VariantId, Arg.Any<CancellationToken>())
-            .Returns(inventory);
+            .GetByVariantIdsAsync(Arg.Any<IEnumerable<global::Domain.Variant.ValueObjects.VariantId>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<global::Domain.Inventory.Aggregates.Inventory> { inventory });
 
         var result = await _sut.ValidateAsync([item], CancellationToken.None);
 
@@ -92,8 +92,8 @@ public class CheckoutStockValidatorServiceTests
             .AsUnlimited()
             .Build();
         _inventoryRepository
-            .GetByVariantIdAsync(item.VariantId, Arg.Any<CancellationToken>())
-            .Returns(inventory);
+            .GetByVariantIdsAsync(Arg.Any<IEnumerable<global::Domain.Variant.ValueObjects.VariantId>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<global::Domain.Inventory.Aggregates.Inventory> { inventory });
 
         var result = await _sut.ValidateAsync([item], CancellationToken.None);
 
@@ -106,8 +106,8 @@ public class CheckoutStockValidatorServiceTests
         var first = NewSnapshot();
         var second = NewSnapshot();
         _inventoryRepository
-            .GetByVariantIdAsync(Arg.Any<global::Domain.Variant.ValueObjects.VariantId>(), Arg.Any<CancellationToken>())
-            .Returns((global::Domain.Inventory.Aggregates.Inventory?)null);
+            .GetByVariantIdsAsync(Arg.Any<IEnumerable<global::Domain.Variant.ValueObjects.VariantId>>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<global::Domain.Inventory.Aggregates.Inventory>());
 
         var result = await _sut.ValidateAsync([first, second], CancellationToken.None);
 

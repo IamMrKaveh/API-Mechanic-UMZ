@@ -142,6 +142,9 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Domain.Order
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => new { e.Status, e.CreatedAt });
         builder.HasIndex(e => new { e.UserId, e.Status });
+        // Date-range reports and exports filter only on CreatedAt.
+        builder.HasIndex(e => e.CreatedAt)
+            .HasDatabaseName("IX_Orders_CreatedAt");
 
         builder.HasQueryFilter(e => !e.IsDeleted);
     }

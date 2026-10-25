@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Application.Payment.Features.Commands.ExpireStalePayments;
 using Infrastructure.BackgroundJobs;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +39,7 @@ public class PaymentCleanupJobTests : HandlerTestBase
         scope.ServiceProvider.Returns(provider);
         provider.GetService(typeof(IMediator)).Returns(mediator);
         provider.GetService(typeof(IAuditService)).Returns(AuditService);
+        provider.GetService(typeof(IDistributedLock)).Returns(distributedLock);
 
         return new TestContext
         {
@@ -66,7 +67,7 @@ public class PaymentCleanupJobTests : HandlerTestBase
     public async Task ExecuteAsync_WhenLockNotAcquired_DoesNotSendCommand()
     {
         var ctx = BuildContext(lockAcquired: false);
-        var job = new PaymentCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, ctx.DateTimeProvider);
+        var job = new PaymentCleanupJob(ctx.ScopeFactory, ctx.DateTimeProvider);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         await RunWithTimeoutAsync(job, timeout.Token);
@@ -88,7 +89,7 @@ public class PaymentCleanupJobTests : HandlerTestBase
                 ctx.Cts.Cancel();
                 return Task.CompletedTask;
             });
-        var job = new PaymentCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, ctx.DateTimeProvider);
+        var job = new PaymentCleanupJob(ctx.ScopeFactory, ctx.DateTimeProvider);
 
         try { await job.StartAsync(ctx.Cts.Token); }
         catch (OperationCanceledException) { }
@@ -110,7 +111,7 @@ public class PaymentCleanupJobTests : HandlerTestBase
         ctx.Mediator
             .Send(Arg.Any<ExpireStalePaymentsCommand>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(ServiceResult<int>.Success(0)));
-        var job = new PaymentCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, ctx.DateTimeProvider);
+        var job = new PaymentCleanupJob(ctx.ScopeFactory, ctx.DateTimeProvider);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         try { await job.StartAsync(timeout.Token); }        catch (OperationCanceledException) { }
@@ -135,7 +136,7 @@ public class PaymentCleanupJobTests : HandlerTestBase
             .Send(Arg.Do<ExpireStalePaymentsCommand>(c => captured = c), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(ServiceResult<int>.Success(0)));
         var before = FixedNow;
-        var job = new PaymentCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, ctx.DateTimeProvider);
+        var job = new PaymentCleanupJob(ctx.ScopeFactory, ctx.DateTimeProvider);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         try { await job.StartAsync(timeout.Token); }        catch (OperationCanceledException) { }
@@ -158,7 +159,7 @@ public class PaymentCleanupJobTests : HandlerTestBase
         ctx.Mediator
             .Send(Arg.Any<ExpireStalePaymentsCommand>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<int>.Success(0));
-        var job = new PaymentCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, ctx.DateTimeProvider);
+        var job = new PaymentCleanupJob(ctx.ScopeFactory, ctx.DateTimeProvider);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         await RunWithTimeoutAsync(job, timeout.Token);

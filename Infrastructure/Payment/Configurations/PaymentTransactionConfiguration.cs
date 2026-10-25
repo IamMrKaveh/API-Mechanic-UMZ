@@ -67,6 +67,12 @@ public sealed class PaymentTransactionConfiguration : IEntityTypeConfiguration<P
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => new { e.Status, e.CreatedAt });
 
+        // The expiry sweep only ever looks at Pending rows; a partial index stays
+        // small no matter how large the settled history grows.
+        builder.HasIndex(e => e.ExpiresAt)
+            .HasFilter("\"Status\" = 'Pending'")
+            .HasDatabaseName("IX_PaymentTransactions_Pending_ExpiresAt");
+
         builder.HasQueryFilter(e => !e.Order.IsDeleted);
     }
 }

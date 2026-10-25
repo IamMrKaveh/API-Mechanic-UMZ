@@ -59,8 +59,13 @@ internal sealed class VariantAttributeConfiguration
             .IsUnique()
             .HasDatabaseName("IX_ProductVariantAttributes_Variant_Type");
 
-        builder.HasIndex(e => e.VariantId)
-            .HasDatabaseName("IX_ProductVariantAttributes_VariantId");
+        // FK-side indexes: both parents use DeleteBehavior.Restrict, so without
+        // these every parent delete validates children with a sequential scan.
+        builder.HasIndex(e => e.ValueId)
+            .HasDatabaseName("IX_ProductVariantAttributes_ValueId");
+
+        builder.HasIndex(e => e.AttributeTypeId)
+            .HasDatabaseName("IX_ProductVariantAttributes_AttributeTypeId");
 
         builder.HasQueryFilter(e => !e.AttributeType.IsDeleted);
     }

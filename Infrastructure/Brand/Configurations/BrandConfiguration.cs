@@ -28,6 +28,12 @@ public sealed class BrandConfiguration : IEntityTypeConfiguration<Domain.Brand.A
                 .IsRequired();
 
             nb.HasIndex(n => n.Value);
+
+            // Trigram index for admin "%term%" brand search (requires pg_trgm).
+            nb.HasIndex(n => n.Value)
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops")
+                .HasDatabaseName("IX_Brands_Name_trgm");
         });
 
         builder.OwnsOne(e => e.Slug, sb =>

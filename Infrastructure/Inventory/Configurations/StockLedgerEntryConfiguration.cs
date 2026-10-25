@@ -18,6 +18,15 @@ public sealed class StockLedgerEntryConfiguration : IEntityTypeConfiguration<Sto
         builder.HasIndex(e => e.VariantId);
         builder.HasIndex(e => new { e.VariantId, e.CreatedAt }).IsDescending(false, true);
 
+        // Reservation-expiry job filters EventType + CreatedAt; admin report filters
+        // a CreatedAt range; reference lookups resolve by ReferenceNumber.
+        builder.HasIndex(e => new { e.EventType, e.CreatedAt })
+            .HasDatabaseName("IX_StockLedgerEntries_EventType_CreatedAt");
+        builder.HasIndex(e => e.CreatedAt)
+            .HasDatabaseName("IX_StockLedgerEntries_CreatedAt");
+        builder.HasIndex(e => e.ReferenceNumber)
+            .HasDatabaseName("IX_StockLedgerEntries_ReferenceNumber");
+
         builder.HasOne(e => e.ProductVariant)
             .WithMany()
             .HasForeignKey(e => e.VariantId)

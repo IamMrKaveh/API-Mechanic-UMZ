@@ -2,7 +2,6 @@ using System.Reflection;
 using Application.Search.Features.Shared;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Outbox;
-using Infrastructure.Security.Models;
 using Infrastructure.Wallet.Configurations;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -48,7 +47,6 @@ public class DBContextTests
     [InlineData(typeof(global::Domain.Wallet.Entities.WalletReservation))]
     [InlineData(typeof(global::Domain.Wishlist.Aggregates.Wishlist))]
     [InlineData(typeof(OutboxMessage))]
-    [InlineData(typeof(RateLimitEntry))]
     [InlineData(typeof(FailedElasticOperation))]
     [InlineData(typeof(WalletReconciliationAudit))]
     public void Model_ContainsExpectedEntityType(Type entityType)
@@ -76,7 +74,6 @@ public class DBContextTests
         context.OutboxMessages.ShouldNotBeNull();
         context.PaymentTransactions.ShouldNotBeNull();
         context.Products.ShouldNotBeNull();
-        context.RateLimitEntries.ShouldNotBeNull();
         context.Shippings.ShouldNotBeNull();
         context.Tickets.ShouldNotBeNull();
         context.TicketMessages.ShouldNotBeNull();
@@ -211,16 +208,6 @@ public class DBContextTests
         var entityType = context.Model.FindEntityType(typeof(FailedElasticOperation));
         entityType.ShouldNotBeNull();
         entityType!.GetTableName().ShouldBe("FailedElasticOperations");
-    }
-
-    [Fact]
-    public void Model_RateLimitEntries_MappedToExpectedTable()
-    {
-        using var context = CreateContext();
-
-        var entityType = context.Model.FindEntityType(typeof(RateLimitEntry));
-        entityType.ShouldNotBeNull();
-        entityType!.GetTableName().ShouldBe("RateLimitEntries");
     }
 
     [Fact]

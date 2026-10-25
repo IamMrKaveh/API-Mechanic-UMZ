@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Application.Media.Contracts;
 using Domain.User.ValueObjects;
 using Infrastructure.BackgroundJobs;
@@ -33,7 +33,7 @@ public class OrphanedFileCleanupJobTests(PostgresContainerFixture fixture) : Int
         provider.GetService(typeof(IStorageService)).Returns(_storageService);
         provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
-        return new OrphanedFileCleanupJob(scopeFactory, _distributedLock, DateTimeProvider);
+        return new OrphanedFileCleanupJob(scopeFactory, DateTimeProvider);
     }
 
     private async Task<global::Domain.Media.Aggregates.Media> SeedDeletedMediaAsync(

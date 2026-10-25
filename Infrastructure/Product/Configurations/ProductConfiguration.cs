@@ -29,6 +29,13 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
                 .IsRequired();
 
             nb.HasIndex(n => n.Value);
+
+            // Trigram index keeps admin/catalog "%term%" searches (ILike) from
+            // degrading into sequential scans as the catalog grows. Requires pg_trgm.
+            nb.HasIndex(n => n.Value)
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops")
+                .HasDatabaseName("IX_Products_Name_trgm");
         });
 
         builder.OwnsOne(e => e.Slug, sb =>
@@ -87,7 +94,20 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
 
         builder.HasIndex(p => p.BrandId);
         builder.HasIndex(p => p.CategoryId);
-        builder.HasIndex(p => p.IsActive);
-        builder.HasIndex(p => p.IsDeleted);
+
+        // Composite indexes matching the real admin/catalog filter+sort shapes
+        // (every paged list orders by CreatedAt). Standalone boolean indexes
+        // (IsActive / IsDeleted) are near-zero selectivity and never chosen.
+        builder.HasIndex(p => new { p.IsDeleted, p.CreatedAt })
+            .HasDatabaseName("IX_Products_IsDeleted_CreatedAt");
+
+        builder.HasIndex(p => new { p.IsActive, p.IsDeleted, p.CreatedAt })
+            .HasDatabaseName("IX_Products_IsActive_IsDeleted_CreatedAt");
+
+        builder.HasIndex(p => new { p.CategoryId, p.CreatedAt })
+            .HasDatabaseName("IX_Products_CategoryId_CreatedAt");
+
+        builder.HasIndex(p => new { p.BrandId, p.CreatedAt })
+            .HasDatabaseName("IX_Products_BrandId_CreatedAt");
     }
 }

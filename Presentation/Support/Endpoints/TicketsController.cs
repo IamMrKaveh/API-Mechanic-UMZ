@@ -1,4 +1,4 @@
-using Application.Support.Features.Commands.CloseTicket;
+﻿using Application.Support.Features.Commands.CloseTicket;
 using Application.Support.Features.Commands.CreateTicket;
 using Application.Support.Features.Commands.ReplyToTicket;
 using Application.Support.Features.Queries.GetTicketDetails;
@@ -30,7 +30,7 @@ public sealed class TicketsController(IMediator mediator) : BaseApiController(me
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTicketDetails(Guid id, CancellationToken ct)
     {
-        return await Send(new GetTicketDetailsQuery(id, false), ct);
+        return await Send(new GetTicketDetailsQuery(id), ct);
     }
 
     [HttpPost]

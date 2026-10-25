@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Domain.Wallet.Aggregates;
 using Domain.Wallet.Interfaces;
 using Infrastructure.BackgroundJobs;
@@ -41,6 +41,7 @@ public class WalletTopUpCleanupJobTests : HandlerTestBase
         scope.ServiceProvider.Returns(provider);
         provider.GetService(typeof(IWalletTopUpRepository)).Returns(repository);
         provider.GetService(typeof(IUnitOfWork)).Returns(UnitOfWork);
+        provider.GetService(typeof(IDistributedLock)).Returns(distributedLock);
 
         return new TestContext
         {
@@ -55,7 +56,7 @@ public class WalletTopUpCleanupJobTests : HandlerTestBase
     }
 
     private static WalletTopUpCleanupJob BuildJob(TestContext ctx) =>
-        new(ctx.ScopeFactory, ctx.DistributedLock, ctx.Logger, ctx.DateTimeProvider);
+        new(ctx.ScopeFactory, ctx.Logger, ctx.DateTimeProvider);
 
     private static async Task RunWithTimeoutAsync(WalletTopUpCleanupJob job, CancellationToken token)
     {

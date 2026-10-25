@@ -77,6 +77,18 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<ProductReview
         builder.Property(e => e.DislikeCount).IsRequired();
         builder.Property(e => e.CreatedAt).IsRequired();
 
+        // Trigram indexes for admin "%term%" review search (requires pg_trgm);
+        // otherwise each search is a sequential scan over a large text table.
+        builder.HasIndex(e => e.Title)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops")
+            .HasDatabaseName("IX_ProductReviews_Title_trgm");
+
+        builder.HasIndex(e => e.Comment)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops")
+            .HasDatabaseName("IX_ProductReviews_Comment_trgm");
+
         builder.HasOne(e => e.User)
             .WithMany()
             .HasForeignKey(e => e.UserId)

@@ -97,6 +97,9 @@ public sealed class WalletLedgerEntryConfiguration : IEntityTypeConfiguration<Wa
 
         builder.HasIndex(e => new { e.WalletId, e.OccurredAt }).IsDescending(false, true).HasDatabaseName("IX_WalletLedgerEntries_WalletId_OccurredAt");
         builder.HasIndex(e => new { e.OwnerId, e.OccurredAt }).IsDescending(false, true).HasDatabaseName("IX_WalletLedgerEntries_UserId_OccurredAt");
+        // Direct lookup of the payment entry for an order without a text LIKE scan
+        // over the owner's ledger history.
+        builder.HasIndex(e => new { e.OwnerId, e.ReferenceId }).HasDatabaseName("IX_WalletLedgerEntries_UserId_ReferenceId");
         builder.HasIndex(e => e.IdempotencyKey).IsUnique().HasFilter("\"IdempotencyKey\" IS NOT NULL").HasDatabaseName("IX_WalletLedgerEntries_IdempotencyKey");
         builder.HasIndex(e => e.CorrelationId).HasFilter("\"CorrelationId\" IS NOT NULL").HasDatabaseName("IX_WalletLedgerEntries_CorrelationId");
         builder.HasIndex(e => e.DebitRequestId).HasFilter("\"DebitRequestId\" IS NOT NULL").HasDatabaseName("IX_WalletLedgerEntries_DebitRequestId");

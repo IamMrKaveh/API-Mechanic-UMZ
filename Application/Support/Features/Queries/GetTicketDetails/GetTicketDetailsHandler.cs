@@ -1,4 +1,4 @@
-using Application.Support.Features.Shared;
+﻿using Application.Support.Features.Shared;
 using Domain.Support.Interfaces;
 using Domain.Support.Services;
 using Domain.Support.ValueObjects;
@@ -23,7 +23,7 @@ public sealed class GetTicketDetailsHandler(
         if (ticketResult.IsFailure) return ticketResult.Error;
         var ticket = ticketResult.Value;
 
-        var result = TicketDomainService.ValidateUserAccess(ticket, userId, request.IsAdmin);
+        var result = TicketDomainService.ValidateUserAccess(ticket, userId, currentUserService.IsAdmin);
         if (!result.HasAccess)
             return ServiceResult<TicketDto>.Forbidden("شما دسترسی به این تیکت را ندارید");
 

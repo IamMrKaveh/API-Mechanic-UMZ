@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Infrastructure.BackgroundJobs;
 using Microsoft.Extensions.DependencyInjection;
 using SharedKernel.Abstractions.Interfaces;
@@ -17,12 +17,13 @@ public class FraudDetectionJobTests : HandlerTestBase
         _scopeFactory.CreateScope().Returns(scope);
         scope.ServiceProvider.Returns(provider);
         provider.GetService(typeof(IAuditService)).Returns(AuditService);
+        provider.GetService(typeof(IDistributedLock)).Returns(_distributedLock);
     }
 
     [Fact]
     public async Task ExecuteAsync_OnStart_LogsServiceStartedAndWaitsForInitialDelay()
     {
-        var job = new FraudDetectionJob(_scopeFactory, _distributedLock, DateTimeProvider);
+        var job = new FraudDetectionJob(_scopeFactory, DateTimeProvider);
 
         // .NET 10: StartAsync with an already-cancelled token never starts ExecuteAsync, so pass a live token.
         try { await job.StartAsync(CancellationToken.None); }        catch (OperationCanceledException) { }

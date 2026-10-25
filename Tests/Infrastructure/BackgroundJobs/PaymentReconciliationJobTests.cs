@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Application.Payment.Contracts;
 using Application.Payment.Features.Shared;
 using Domain.Payment.Aggregates;
@@ -48,7 +48,7 @@ public class PaymentReconciliationJobTests(PostgresContainerFixture fixture) : I
 
         provider.GetService(typeof(IAuditService)).Returns(AuditService);
 
-        return new PaymentReconciliationJob(scopeFactory, _distributedLock, DateTimeProvider);
+        return new PaymentReconciliationJob(scopeFactory, DateTimeProvider);
     }
 
     private async Task<PaymentTransaction> SeedOldPendingTransactionAsync(CancellationToken ct = default)

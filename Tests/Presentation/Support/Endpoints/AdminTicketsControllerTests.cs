@@ -1,4 +1,4 @@
-using Application.Support.Features.Commands.CloseTicket;
+﻿using Application.Support.Features.Commands.CloseTicket;
 using Application.Support.Features.Commands.ReplyToTicket;
 using Application.Support.Features.Queries.GetAdminTickets;
 using Application.Support.Features.Queries.GetTicketDetails;
@@ -81,7 +81,7 @@ public class AdminTicketsControllerTests
         var ok = result.ShouldBeOfType<OkObjectResult>();
         ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
         await _mediator.Received(1).Send(
-            Arg.Is<GetTicketDetailsQuery>(q => q!.TicketId == id && q!.IsAdmin),
+            Arg.Is<GetTicketDetailsQuery>(q => q!.TicketId == id),
             Arg.Any<CancellationToken>());
     }
 

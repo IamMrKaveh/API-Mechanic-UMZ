@@ -55,5 +55,10 @@ public sealed class SessionConfiguration : IEntityTypeConfiguration<UserSession>
             .HasDatabaseName("IX_UserSessions_UserId_DeviceInfo_Active");
 
         builder.HasIndex(e => new { e.UserId, e.IsRevoked, e.ExpiresAt });
+
+        // The hourly cleanup sweep filters IsRevoked + ExpiresAt without a UserId;
+        // the (UserId, ...) composite above cannot serve it.
+        builder.HasIndex(e => new { e.IsRevoked, e.ExpiresAt })
+            .HasDatabaseName("IX_UserSessions_IsRevoked_ExpiresAt");
     }
 }

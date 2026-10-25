@@ -1,4 +1,4 @@
-using Application.Common.Interfaces;
+﻿using Application.Common.Interfaces;
 using Application.Support.Contracts;
 using Application.Support.Features.Queries.GetTicketDetails;
 using Application.Support.Features.Shared;
@@ -29,7 +29,7 @@ public class GetTicketDetailsHandlerTests : HandlerTestBase
             .GetByIdWithMessagesAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns((Ticket?)null);
 
-        var query = new GetTicketDetailsQuery(Guid.NewGuid(), IsAdmin: false);
+        var query = new GetTicketDetailsQuery(Guid.NewGuid());
 
         var result = await _sut.Handle(query, CancellationToken.None);
 
@@ -48,7 +48,7 @@ public class GetTicketDetailsHandlerTests : HandlerTestBase
             .GetByIdWithMessagesAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns(ticket);
 
-        var query = new GetTicketDetailsQuery(ticket.Id.Value, IsAdmin: false);
+        var query = new GetTicketDetailsQuery(ticket.Id.Value);
 
         var result = await _sut.Handle(query, CancellationToken.None);
 
@@ -70,7 +70,7 @@ public class GetTicketDetailsHandlerTests : HandlerTestBase
             .GetTicketDetailAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns((TicketDto?)null);
 
-        var query = new GetTicketDetailsQuery(ticket.Id.Value, IsAdmin: false);
+        var query = new GetTicketDetailsQuery(ticket.Id.Value);
 
         var result = await _sut.Handle(query, CancellationToken.None);
 
@@ -91,7 +91,7 @@ public class GetTicketDetailsHandlerTests : HandlerTestBase
             .GetTicketDetailAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns(dto);
 
-        var query = new GetTicketDetailsQuery(ticket.Id.Value, IsAdmin: false);
+        var query = new GetTicketDetailsQuery(ticket.Id.Value);
 
         var result = await _sut.Handle(query, CancellationToken.None);
 
@@ -100,8 +100,10 @@ public class GetTicketDetailsHandlerTests : HandlerTestBase
     }
 
     [Fact]
-    public async Task Handle_WhenAdminAndDtoExists_ReturnsSuccessRegardlessOfOwnership()
+    public async Task Handle_WhenAdminPerClaimsAndDtoExists_ReturnsSuccessRegardlessOfOwnership()
     {
+        // SEC-22: the admin role comes from the authenticated principal.
+        CurrentUserService.IsAdmin.Returns(true);
         var otherOwnerId = UserId.NewId();
         var ticket = new TicketBuilder().WithCustomerId(otherOwnerId).Build();
         var dto = new TicketDto { Id = ticket.Id.Value, UserId = otherOwnerId.Value };
@@ -113,11 +115,42 @@ public class GetTicketDetailsHandlerTests : HandlerTestBase
             .GetTicketDetailAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
             .Returns(dto);
 
-        var query = new GetTicketDetailsQuery(ticket.Id.Value, IsAdmin: true);
+        var query = new GetTicketDetailsQuery(ticket.Id.Value);
 
         var result = await _sut.Handle(query, CancellationToken.None);
 
         result.ShouldBeSuccess();
         result.Value.ShouldBe(dto);
+    }
+
+    [Fact]
+    public async Task Handle_WhenNonAdminPerClaimsAndNotOwner_ReturnsForbidden()
+    {
+        // SEC-22: no payload flag can elevate the caller to admin.
+        CurrentUserService.IsAdmin.Returns(false);
+        var otherOwnerId = UserId.NewId();
+        var ticket = new TicketBuilder().WithCustomerId(otherOwnerId).Build();
+
+        _ticketRepository
+            .GetByIdWithMessagesAsync(Arg.Any<TicketId>(), Arg.Any<CancellationToken>())
+            .Returns(ticket);
+
+        var result = await _sut.Handle(new GetTicketDetailsQuery(ticket.Id.Value), CancellationToken.None);
+
+        result.ShouldFailWith(ErrorCode.Forbidden);
+    }
+
+    [Fact]
+    public void Query_DoesNotCarryAnyRoleOrUserFlags()
+    {
+        // Invariant: authorization data must never travel in the query payload.
+        var properties = typeof(GetTicketDetailsQuery)
+            .GetProperties()
+            .Select(p => p.Name)
+            .ToList();
+
+        properties.ShouldNotContain("IsAdmin");
+        properties.ShouldNotContain("RequestingUserId");
+        properties.ShouldNotContain("UserId");
     }
 }

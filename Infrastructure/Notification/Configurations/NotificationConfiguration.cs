@@ -40,6 +40,10 @@ public sealed class NotificationConfiguration : IEntityTypeConfiguration<Domain.
 
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => new { e.UserId, e.IsRead });
+        // Admin notification pages order by CreatedAt; user-scoped composites above
+        // cannot serve a global CreatedAt sort as the table grows.
+        builder.HasIndex(e => e.CreatedAt)
+            .HasDatabaseName("IX_Notifications_CreatedAt");
         builder.HasQueryFilter(e => e.User.IsActive);
     }
 }

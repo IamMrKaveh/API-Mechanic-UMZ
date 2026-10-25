@@ -12,6 +12,10 @@ public sealed class CheckoutStockValidatorService(IInventoryRepository inventory
     {
         var errors = new List<string>();
 
+        // Nothing to validate: skip the round-trip entirely.
+        if (items.Count == 0)
+            return ServiceResult.Success();
+
         // One batched query for the whole cart instead of one query per item.
         var variantIds = items.Select(i => i.VariantId).Distinct().ToList();
         var inventories = await inventoryRepository.GetByVariantIdsAsync(variantIds, ct);

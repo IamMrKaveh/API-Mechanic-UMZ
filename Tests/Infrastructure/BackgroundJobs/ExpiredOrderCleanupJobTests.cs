@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Domain.Order.Interfaces;
 using Domain.User.ValueObjects;
 using Infrastructure.BackgroundJobs;
@@ -37,6 +37,7 @@ public class ExpiredOrderCleanupJobTests : HandlerTestBase
         provider.GetService(typeof(IOrderRepository)).Returns(orderRepository);
         provider.GetService(typeof(IUnitOfWork)).Returns(UnitOfWork);
         provider.GetService(typeof(IAuditService)).Returns(AuditService);
+        provider.GetService(typeof(IDistributedLock)).Returns(distributedLock);
 
         return new TestContext
         {
@@ -76,7 +77,7 @@ public class ExpiredOrderCleanupJobTests : HandlerTestBase
     public async Task ExecuteAsync_WhenLockNotAcquired_DoesNothing()
     {
         var ctx = BuildContext(lockAcquired: false);
-        var job = new ExpiredOrderCleanupJob(ctx.ScopeFactory, ctx.DistributedLock);
+        var job = new ExpiredOrderCleanupJob(ctx.ScopeFactory);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         try { await job.StartAsync(timeout.Token); }        catch (OperationCanceledException) { }
@@ -99,7 +100,7 @@ public class ExpiredOrderCleanupJobTests : HandlerTestBase
         ctx.OrderRepository
             .FindPendingExpiredAsync(Arg.Any<CancellationToken>())
             .Returns([order]);
-        var job = new ExpiredOrderCleanupJob(ctx.ScopeFactory, ctx.DistributedLock);
+        var job = new ExpiredOrderCleanupJob(ctx.ScopeFactory);
 
         await RunUntilSavedAsync(job, ctx);
 
@@ -117,7 +118,7 @@ public class ExpiredOrderCleanupJobTests : HandlerTestBase
         ctx.OrderRepository
             .FindPendingExpiredAsync(Arg.Any<CancellationToken>())
             .Returns([]);
-        var job = new ExpiredOrderCleanupJob(ctx.ScopeFactory, ctx.DistributedLock);
+        var job = new ExpiredOrderCleanupJob(ctx.ScopeFactory);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         try { await job.StartAsync(timeout.Token); }        catch (OperationCanceledException) { }
@@ -141,7 +142,7 @@ public class ExpiredOrderCleanupJobTests : HandlerTestBase
         ctx.OrderRepository
             .FindPendingExpiredAsync(Arg.Any<CancellationToken>())
             .Returns([]);
-        var job = new ExpiredOrderCleanupJob(ctx.ScopeFactory, ctx.DistributedLock);
+        var job = new ExpiredOrderCleanupJob(ctx.ScopeFactory);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         try { await job.StartAsync(timeout.Token); }        catch (OperationCanceledException) { }
@@ -167,7 +168,7 @@ public class ExpiredOrderCleanupJobTests : HandlerTestBase
             .FindPendingExpiredAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromException<IReadOnlyList<global::Domain.Order.Aggregates.Order>>(
                 new InvalidOperationException("db down")));
-        var job = new ExpiredOrderCleanupJob(ctx.ScopeFactory, ctx.DistributedLock);
+        var job = new ExpiredOrderCleanupJob(ctx.ScopeFactory);
 
         try { await job.StartAsync(ctx.Cts.Token); }
         catch (OperationCanceledException) { }

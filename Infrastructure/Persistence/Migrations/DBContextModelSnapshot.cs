@@ -236,7 +236,7 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp(6) with time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Details")
                         .HasColumnType("text");
@@ -286,15 +286,18 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CreatedAt");
 
+                    b.HasIndex("Details")
+                        .HasDatabaseName("IX_AuditLogs_Details_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Details"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Details"), new[] { "gin_trgm_ops" });
+
                     b.HasIndex("EntityType")
                         .HasDatabaseName("IX_AuditLogs_EntityType");
 
-                    b.HasIndex("EventType");
-
-                    b.HasIndex("HashVersion");
-
                     b.HasIndex("IsArchived")
-                        .HasDatabaseName("IX_AuditLogs_IsArchived");
+                        .HasDatabaseName("IX_AuditLogs_Unarchived")
+                        .HasFilter("\"IsArchived\" = false");
 
                     b.HasIndex("UserId");
 
@@ -780,6 +783,9 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_StockLedgerEntries_CreatedAt");
+
                     b.HasIndex("IdempotencyKey")
                         .IsUnique();
 
@@ -787,11 +793,17 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OrderItemId");
 
+                    b.HasIndex("ReferenceNumber")
+                        .HasDatabaseName("IX_StockLedgerEntries_ReferenceNumber");
+
                     b.HasIndex("UserId");
 
                     b.HasIndex("VariantId");
 
                     b.HasIndex("WarehouseId");
+
+                    b.HasIndex("EventType", "CreatedAt")
+                        .HasDatabaseName("IX_StockLedgerEntries_EventType_CreatedAt");
 
                     b.HasIndex("VariantId", "CreatedAt")
                         .IsDescending(false, true);
@@ -905,6 +917,9 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_Notifications_CreatedAt");
+
                     b.HasIndex("UserId");
 
                     b.HasIndex("UserId", "IsRead");
@@ -1000,6 +1015,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AppliedDiscountCodeId");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_Orders_CreatedAt");
 
                     b.HasIndex("IdempotencyKey")
                         .IsUnique();
@@ -1249,6 +1267,10 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("Authority")
                         .IsUnique();
 
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_PaymentTransactions_Pending_ExpiresAt")
+                        .HasFilter("\"Status\" = 'Pending'");
+
                     b.HasIndex("OrderId");
 
                     b.HasIndex("UserId");
@@ -1315,9 +1337,17 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("IsActive");
+                    b.HasIndex("BrandId", "CreatedAt")
+                        .HasDatabaseName("IX_Products_BrandId_CreatedAt");
 
-                    b.HasIndex("IsDeleted");
+                    b.HasIndex("CategoryId", "CreatedAt")
+                        .HasDatabaseName("IX_Products_CategoryId_CreatedAt");
+
+                    b.HasIndex("IsDeleted", "CreatedAt")
+                        .HasDatabaseName("IX_Products_IsDeleted_CreatedAt");
+
+                    b.HasIndex("IsActive", "IsDeleted", "CreatedAt")
+                        .HasDatabaseName("IX_Products_IsActive_IsDeleted_CreatedAt");
 
                     b.ToTable("Products", (string)null);
                 });
@@ -1388,6 +1418,12 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Comment")
+                        .HasDatabaseName("IX_ProductReviews_Comment_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Comment"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Comment"), new[] { "gin_trgm_ops" });
+
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("OrderId");
@@ -1396,6 +1432,12 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_ProductReviews_Status");
+
+                    b.HasIndex("Title")
+                        .HasDatabaseName("IX_ProductReviews_Title_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Title"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Title"), new[] { "gin_trgm_ops" });
 
                     b.HasIndex("UserId");
 
@@ -1552,6 +1594,9 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_UserSessions_RefreshTokenHash");
 
+                    b.HasIndex("IsRevoked", "ExpiresAt")
+                        .HasDatabaseName("IX_UserSessions_IsRevoked_ExpiresAt");
+
                     b.HasIndex("UserId", "DeviceInfo")
                         .IsUnique()
                         .HasDatabaseName("IX_UserSessions_UserId_DeviceInfo_Active")
@@ -1678,9 +1723,10 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("Status");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("IX_Tickets_Status_CreatedAt");
 
                     b.HasIndex("Status", "Priority");
 
@@ -1902,12 +1948,11 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AttributeTypeId");
+                    b.HasIndex("AttributeTypeId")
+                        .HasDatabaseName("IX_ProductVariantAttributes_AttributeTypeId");
 
-                    b.HasIndex("ValueId");
-
-                    b.HasIndex("VariantId")
-                        .HasDatabaseName("IX_ProductVariantAttributes_VariantId");
+                    b.HasIndex("ValueId")
+                        .HasDatabaseName("IX_ProductVariantAttributes_ValueId");
 
                     b.HasIndex("VariantId", "AttributeTypeId")
                         .IsUnique()
@@ -2144,19 +2189,16 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("IX_WalletTopUps_CreatedAt");
-
                     b.HasIndex("GatewayAuthority")
                         .IsUnique()
                         .HasDatabaseName("IX_WalletTopUps_GatewayAuthority")
                         .HasFilter("\"GatewayAuthority\" IS NOT NULL");
 
-                    b.HasIndex("Status")
-                        .HasDatabaseName("IX_WalletTopUps_Status");
-
                     b.HasIndex("UserId")
                         .HasDatabaseName("IX_WalletTopUps_UserId");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("IX_WalletTopUps_Status_CreatedAt");
 
                     b.ToTable("WalletTopUps", (string)null);
                 });
@@ -2227,17 +2269,14 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_WalletTransfers_CorrelationId");
 
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("IX_WalletTransfers_CreatedAt");
-
                     b.HasIndex("FromUserId")
                         .HasDatabaseName("IX_WalletTransfers_FromUserId");
 
-                    b.HasIndex("Status")
-                        .HasDatabaseName("IX_WalletTransfers_Status");
-
                     b.HasIndex("ToUserId")
                         .HasDatabaseName("IX_WalletTransfers_ToUserId");
+
+                    b.HasIndex("FromUserId", "CompletedAt")
+                        .HasDatabaseName("IX_WalletTransfers_FromUserId_CompletedAt");
 
                     b.ToTable("WalletTransfers", (string)null);
                 });
@@ -2312,18 +2351,15 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("IX_WalletWithdrawalRequests_CreatedAt");
-
                     b.HasIndex("ReservationId")
                         .IsUnique()
                         .HasDatabaseName("IX_WalletWithdrawalRequests_ReservationId");
 
-                    b.HasIndex("Status")
-                        .HasDatabaseName("IX_WalletWithdrawalRequests_Status");
-
                     b.HasIndex("UserId")
                         .HasDatabaseName("IX_WalletWithdrawalRequests_UserId");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("IX_WalletWithdrawalRequests_Status_CreatedAt");
 
                     b.ToTable("WalletWithdrawalRequests", (string)null);
                 });
@@ -2471,6 +2507,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("OwnerId", "OccurredAt")
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_WalletLedgerEntries_UserId_OccurredAt");
+
+                    b.HasIndex("OwnerId", "ReferenceId")
+                        .HasDatabaseName("IX_WalletLedgerEntries_UserId_ReferenceId");
 
                     b.HasIndex("WalletId", "OccurredAt")
                         .IsDescending(false, true)
@@ -2675,8 +2714,6 @@ namespace Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_OutboxMessages_Pending")
                         .HasFilter("\"processed_at\" IS NULL AND \"is_poisoned\" = false AND \"retry_count\" < 5");
 
-                    b.HasIndex("ProcessedAt");
-
                     b.HasIndex("ProcessedAt", "IsPoisoned", "RetryCount", "CreatedAt", "Sequence")
                         .HasDatabaseName("IX_OutboxMessages_Dispatch");
 
@@ -2741,38 +2778,6 @@ namespace Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_ElasticsearchOutboxMessages_Dispatch");
 
                     b.ToTable("ElasticsearchOutboxMessages", (string)null);
-                });
-
-            modelBuilder.Entity("Infrastructure.Security.Models.RateLimitEntry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Count")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<string>("WindowKey")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Key", "WindowKey")
-                        .IsUnique();
-
-                    b.ToTable("RateLimitEntries");
                 });
 
             modelBuilder.Entity("Infrastructure.Wallet.Configurations.WalletReconciliationAudit", b =>
@@ -2849,7 +2854,11 @@ namespace Infrastructure.Persistence.Migrations
 
                             b1.HasKey("BrandId");
 
-                            b1.HasIndex("Value");
+                            b1.HasIndex("Value")
+                                .HasDatabaseName("IX_Brands_Name_trgm");
+
+                            NpgsqlIndexBuilderExtensions.HasMethod(b1.HasIndex("Value"), "gin");
+                            NpgsqlIndexBuilderExtensions.HasOperators(b1.HasIndex("Value"), new[] { "gin_trgm_ops" });
 
                             b1.ToTable("Brands");
 
@@ -3616,7 +3625,11 @@ namespace Infrastructure.Persistence.Migrations
 
                             b1.HasKey("ProductId");
 
-                            b1.HasIndex("Value");
+                            b1.HasIndex("Value")
+                                .HasDatabaseName("IX_Products_Name_trgm");
+
+                            NpgsqlIndexBuilderExtensions.HasMethod(b1.HasIndex("Value"), "gin");
+                            NpgsqlIndexBuilderExtensions.HasOperators(b1.HasIndex("Value"), new[] { "gin_trgm_ops" });
 
                             b1.ToTable("Products");
 

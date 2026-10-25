@@ -53,8 +53,8 @@ public sealed class WalletTopUpConfiguration : IEntityTypeConfiguration<WalletTo
             .HasDatabaseName("IX_WalletTopUps_GatewayAuthority");
 
         builder.HasIndex(e => e.UserId).HasDatabaseName("IX_WalletTopUps_UserId");
-        builder.HasIndex(e => e.Status).HasDatabaseName("IX_WalletTopUps_Status");
-        builder.HasIndex(e => e.CreatedAt).HasDatabaseName("IX_WalletTopUps_CreatedAt");
+        builder.HasIndex(e => new { e.Status, e.CreatedAt })
+            .HasDatabaseName("IX_WalletTopUps_Status_CreatedAt");
 
         builder.Ignore(e => e.DomainEvents);
     }

@@ -1,4 +1,4 @@
-using Application.Cache.Contracts;
+﻿using Application.Cache.Contracts;
 using Domain.Security.Interfaces;
 using Infrastructure.BackgroundJobs;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +37,7 @@ public class ExpiredSessionCleanupJobTests : HandlerTestBase
         provider.GetService(typeof(ISessionRepository)).Returns(sessionRepository);
         provider.GetService(typeof(IUnitOfWork)).Returns(UnitOfWork);
         provider.GetService(typeof(IAuditService)).Returns(AuditService);
+        provider.GetService(typeof(IDistributedLock)).Returns(distributedLock);
 
         return new TestContext
         {
@@ -64,7 +65,7 @@ public class ExpiredSessionCleanupJobTests : HandlerTestBase
     public async Task ExecuteAsync_WhenLockNotAcquired_DoesNothing()
     {
         var ctx = BuildContext(lockAcquired: false);
-        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, DateTimeProvider);
+        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, DateTimeProvider);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         await RunWithTimeoutAsync(job, timeout.Token);
@@ -81,7 +82,7 @@ public class ExpiredSessionCleanupJobTests : HandlerTestBase
         ctx.SessionRepository
             .GetExpiredActiveSessionsAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns([session]);
-        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, DateTimeProvider);
+        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, DateTimeProvider);
 
         ctx.UnitOfWork
             .SaveChangesAsync(Arg.Any<CancellationToken>())
@@ -116,7 +117,7 @@ public class ExpiredSessionCleanupJobTests : HandlerTestBase
             .GetExpiredActiveSessionsAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns([]);
 
-        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, DateTimeProvider);
+        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, DateTimeProvider);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         await RunWithTimeoutAsync(job, timeout.Token);
 
@@ -133,7 +134,7 @@ public class ExpiredSessionCleanupJobTests : HandlerTestBase
         ctx.SessionRepository
             .GetExpiredActiveSessionsAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns([]);
-        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, DateTimeProvider);
+        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, DateTimeProvider);
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         await RunWithTimeoutAsync(job, timeout.Token);
@@ -153,7 +154,7 @@ public class ExpiredSessionCleanupJobTests : HandlerTestBase
             .GetExpiredActiveSessionsAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<IReadOnlyList<global::Domain.Security.Aggregates.UserSession>>(
                 new InvalidOperationException("db down")));
-        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, ctx.DistributedLock, DateTimeProvider);
+        var job = new ExpiredSessionCleanupJob(ctx.ScopeFactory, DateTimeProvider);
 
         try { await job.StartAsync(ctx.Cts.Token); }
         catch (OperationCanceledException) { }
