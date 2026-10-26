@@ -1,4 +1,5 @@
 using Presentation.Common.Configuration;
+using Tests.TestInfrastructure.Temp;
 
 namespace Tests.Presentation.Common.Configuration;
 
@@ -6,8 +7,7 @@ namespace Tests.Presentation.Common.Configuration;
 [Collection("DBContextFactorySequential")]
 public class DotEnvLoaderTests : IDisposable
 {
-    private readonly string _directory =
-        Path.Combine(Path.GetTempPath(), "dotenv-loader-tests", Guid.NewGuid().ToString("N"));
+    private readonly string _directory = TestTempDirectory.Create("dotenv-loader-tests");
 
     private readonly List<string> _keysToClean = [];
 

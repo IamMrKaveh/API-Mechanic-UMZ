@@ -99,16 +99,17 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
     [SkippableFact]
     public async Task ExecuteAsync_WhenLockNotAcquired_DoesNothing()
     {
+        var job = BuildJob();
+
         var handle = Substitute.For<ILockHandle>();
         handle.IsAcquired.Returns(false);
         _distributedLock
             .AcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(handle);
-        var scopeFactory = Substitute.For<IServiceScopeFactory>();
-        var job = new WalletReconciliationJob(scopeFactory);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        try { await job.StartAsync(cts.Token); }        catch (OperationCanceledException) { }
+        try { await job.StartAsync(cts.Token); }
+        catch (OperationCanceledException) { }
         if (job.ExecuteTask is not null)
         {
             try { await job.ExecuteTask.WaitAsync(TimeSpan.FromSeconds(30)); }
@@ -116,7 +117,8 @@ public class WalletReconciliationJobTests(PostgresContainerFixture fixture) : In
         }
         await job.StopAsync(CancellationToken.None);
 
-        scopeFactory.DidNotReceiveWithAnyArgs().CreateScope();
+        await AuditService.DidNotReceiveWithAnyArgs()
+            .LogSystemEventAsync(default!, default!, default);
     }
 
     [SkippableFact]

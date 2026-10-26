@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Design;
+using Tests.TestInfrastructure.Temp;
 
 namespace Tests.Infrastructure.Persistence.Context;
 
@@ -33,8 +34,7 @@ public class DBContextFactoryTests
         {
             var previousDirectory = Environment.CurrentDirectory;
             var previousEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            var tempDirectory = Path.Combine(Path.GetTempPath(), "dbfactory-tests", Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(tempDirectory);
+            var tempDirectory = TestTempDirectory.Create("dbfactory-tests");
 
             try
             {

@@ -72,6 +72,8 @@ public sealed class WalletWithdrawalRequestConfiguration : IEntityTypeConfigurat
         builder.HasIndex(e => e.UserId).HasDatabaseName("IX_WalletWithdrawalRequests_UserId");
         builder.HasIndex(e => new { e.Status, e.CreatedAt })
             .HasDatabaseName("IX_WalletWithdrawalRequests_Status_CreatedAt");
+        builder.HasIndex(e => e.Status).HasDatabaseName("IX_WalletWithdrawalRequests_Status");
+        builder.HasIndex(e => e.CreatedAt).HasDatabaseName("IX_WalletWithdrawalRequests_CreatedAt");
         builder.HasIndex(e => e.ReservationId).IsUnique().HasDatabaseName("IX_WalletWithdrawalRequests_ReservationId");
 
         builder.Ignore(e => e.DomainEvents);

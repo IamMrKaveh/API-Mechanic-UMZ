@@ -64,6 +64,17 @@ public sealed class PostgresContainerFixture : IAsyncLifetime
         {
             ConnectionString = container.GetConnectionString();
 
+            // EnsureCreatedAsync builds the schema from the model, so the
+            // migrations that create pg_trgm never run. Every gin_trgm_ops index
+            // in the model needs the extension before the index is created.
+            await using (var bootstrapConnection = new NpgsqlConnection(ConnectionString))
+            {
+                await bootstrapConnection.OpenAsync();
+                await using var command = bootstrapConnection.CreateCommand();
+                command.CommandText = "CREATE EXTENSION IF NOT EXISTS pg_trgm;";
+                await command.ExecuteNonQueryAsync();
+            }
+
             await using var context = CreateContext();
             await context.Database.EnsureCreatedAsync();
 

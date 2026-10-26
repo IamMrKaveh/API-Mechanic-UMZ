@@ -236,7 +236,7 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp(6) with time zone");
 
                     b.Property<string>("Details")
                         .HasColumnType("text");
@@ -295,8 +295,14 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("EntityType")
                         .HasDatabaseName("IX_AuditLogs_EntityType");
 
+                    b.HasIndex("EventType")
+                        .HasDatabaseName("IX_AuditLogs_EventType");
+
+                    b.HasIndex("HashVersion")
+                        .HasDatabaseName("IX_AuditLogs_HashVersion");
+
                     b.HasIndex("IsArchived")
-                        .HasDatabaseName("IX_AuditLogs_Unarchived")
+                        .HasDatabaseName("IX_AuditLogs_IsArchived")
                         .HasFilter("\"IsArchived\" = false");
 
                     b.HasIndex("UserId");
@@ -1337,6 +1343,12 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("IX_Products_IsActive");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("IX_Products_IsDeleted");
+
                     b.HasIndex("BrandId", "CreatedAt")
                         .HasDatabaseName("IX_Products_BrandId_CreatedAt");
 
@@ -1723,6 +1735,9 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CustomerId");
 
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_Tickets_Status");
+
                     b.HasIndex("UserId");
 
                     b.HasIndex("Status", "CreatedAt")
@@ -1953,6 +1968,9 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ValueId")
                         .HasDatabaseName("IX_ProductVariantAttributes_ValueId");
+
+                    b.HasIndex("VariantId")
+                        .HasDatabaseName("IX_ProductVariantAttributes_VariantId");
 
                     b.HasIndex("VariantId", "AttributeTypeId")
                         .IsUnique()
@@ -2189,10 +2207,16 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_WalletTopUps_CreatedAt");
+
                     b.HasIndex("GatewayAuthority")
                         .IsUnique()
                         .HasDatabaseName("IX_WalletTopUps_GatewayAuthority")
                         .HasFilter("\"GatewayAuthority\" IS NOT NULL");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_WalletTopUps_Status");
 
                     b.HasIndex("UserId")
                         .HasDatabaseName("IX_WalletTopUps_UserId");
@@ -2269,8 +2293,14 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_WalletTransfers_CorrelationId");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_WalletTransfers_CreatedAt");
+
                     b.HasIndex("FromUserId")
                         .HasDatabaseName("IX_WalletTransfers_FromUserId");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_WalletTransfers_Status");
 
                     b.HasIndex("ToUserId")
                         .HasDatabaseName("IX_WalletTransfers_ToUserId");
@@ -2351,9 +2381,15 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_WalletWithdrawalRequests_CreatedAt");
+
                     b.HasIndex("ReservationId")
                         .IsUnique()
                         .HasDatabaseName("IX_WalletWithdrawalRequests_ReservationId");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_WalletWithdrawalRequests_Status");
 
                     b.HasIndex("UserId")
                         .HasDatabaseName("IX_WalletWithdrawalRequests_UserId");

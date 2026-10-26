@@ -62,6 +62,8 @@ public sealed class WalletTransferConfiguration : IEntityTypeConfiguration<Walle
         // standalone Status/CreatedAt indexes have near-zero selectivity.
         builder.HasIndex(e => new { e.FromUserId, e.CompletedAt })
             .HasDatabaseName("IX_WalletTransfers_FromUserId_CompletedAt");
+        builder.HasIndex(e => e.Status).HasDatabaseName("IX_WalletTransfers_Status");
+        builder.HasIndex(e => e.CreatedAt).HasDatabaseName("IX_WalletTransfers_CreatedAt");
 
         builder.Ignore(e => e.DomainEvents);
     }

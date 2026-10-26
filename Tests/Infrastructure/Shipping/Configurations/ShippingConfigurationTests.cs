@@ -98,8 +98,9 @@ public class ShippingConfigurationTests(PostgresContainerFixture fixture) : Inte
         await Context.SaveChangesAsync();
         Context.ChangeTracker.Clear();
 
-        var reloaded = await Context.Shippings.FirstAsync(s => s.Id == shipping.Id);
+        var reloaded = await Context.Shippings.IgnoreQueryFilters().FirstAsync(s => s.Id == shipping.Id);
         reloaded.IsActive.ShouldBeFalse();
+        reloaded.IsDeleted.ShouldBeTrue();
     }
 
     [SkippableFact]

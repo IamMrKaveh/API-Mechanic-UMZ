@@ -44,7 +44,7 @@ public sealed class ShippingQueryService(DBContext context) : IShippingQueryServ
     public async Task<IReadOnlyList<ShippingListItemDto>> GetAllShippingsAsync(
         bool includeInactive = false, CancellationToken ct = default)
     {
-        var query = context.Shippings.AsNoTracking().AsQueryable();
+        var query = context.Shippings.AsNoTracking().IgnoreQueryFilters().AsQueryable();
 
         if (!includeInactive)
             query = query.Where(s => s.IsActive);

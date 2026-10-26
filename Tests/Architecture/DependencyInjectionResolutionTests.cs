@@ -15,6 +15,7 @@ using IElasticDeadLetterQueue = Application.Search.Contracts.IElasticDeadLetterQ
 using IRateLimitService = Application.Security.Contracts.IRateLimitService;
 using ISearchService = Application.Search.Contracts.ISearchService;
 using ISearchStatsService = Application.Search.Contracts.ISearchStatsService;
+using Tests.TestInfrastructure.Temp;
 
 namespace Tests.Architecture;
 
@@ -190,7 +191,7 @@ public class DependencyInjectionResolutionTests
                 ["Elasticsearch:DefaultIndex"] = "products",
                 ["OpenTelemetry:OtlpEndpoint"] = string.Empty,
                 ["Swagger:Enabled"] = "false",
-                ["Audit:ArchivePath"] = Path.Combine(Path.GetTempPath(), "ledka-architecture-tests")
+                ["Audit:ArchivePath"] = TestTempDirectory.CreateRoot("ledka-architecture-tests")
             });
 
         foreach (var flag in FeatureFlags.All)

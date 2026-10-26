@@ -52,6 +52,6 @@ public class GetTopSellingProductsIntegrationTests(PostgresContainerFixture fixt
         result.ShouldNotBeNull();
         result.Items.ShouldBeEmpty();
         result.TotalCount.ShouldBe(0);
-        result.PageSize.ShouldBe(5);
+        result.PageSize.ShouldBe(10);
     }
 }

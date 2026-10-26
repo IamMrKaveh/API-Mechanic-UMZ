@@ -30,12 +30,19 @@ public sealed class WalletReconciliationJob(
             }
             catch (Exception ex)
             {
-                using var errorScope = scopeFactory.CreateScope();
-                await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
-                    .LogSystemEventAsync(
-                        "WalletReconciliationError",
-                        $"خطا در سرویس انطباق کیف پول: {ex.Message}",
-                        ct);
+                // A failure to report must never take the background service down.
+                try
+                {
+                    using var errorScope = scopeFactory.CreateScope();
+                    await errorScope.ServiceProvider.GetRequiredService<IAuditService>()
+                        .LogSystemEventAsync(
+                            "WalletReconciliationError",
+                            $"خطا در سرویس انطباق کیف پول: {ex.Message}",
+                            ct);
+                }
+                catch
+                {
+                }
             }
 
             await Task.Delay(CheckInterval, ct);

@@ -62,6 +62,11 @@ public sealed class DomainEventInterceptor(
                 continue;
             }
 
+            // An unresolvable type name cannot produce an outbox message; dropping
+            // the event keeps the transaction alive (same contract as the catch).
+            if (string.IsNullOrWhiteSpace(typeName))
+                continue;
+
             outboxMessages.Add(OutboxMessage.Create(
                 typeName,
                 payload,

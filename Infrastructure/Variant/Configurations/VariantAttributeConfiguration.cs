@@ -67,6 +67,9 @@ internal sealed class VariantAttributeConfiguration
         builder.HasIndex(e => e.AttributeTypeId)
             .HasDatabaseName("IX_ProductVariantAttributes_AttributeTypeId");
 
+        builder.HasIndex(e => e.VariantId)
+            .HasDatabaseName("IX_ProductVariantAttributes_VariantId");
+
         builder.HasQueryFilter(e => !e.AttributeType.IsDeleted);
     }
 }

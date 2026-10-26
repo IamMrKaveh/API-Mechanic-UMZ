@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+        <DOCKER_HOST>tcp://localhost:2375</DOCKER_HOST>
+        <TESTCONTAINERS_RYUK_DISABLED>true</TESTCONTAINERS_RYUK_DISABLED>
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>

@@ -4,6 +4,7 @@ using Domain.Audit.Entities;
 using Domain.User.ValueObjects;
 using Infrastructure.Audit.Storage;
 using Microsoft.Extensions.Configuration;
+using Tests.TestInfrastructure.Temp;
 
 namespace Tests.Infrastructure.Audit.Storage;
 
@@ -15,7 +16,7 @@ public class FileSystemAuditArchiveStorageTests : IDisposable
 
     public FileSystemAuditArchiveStorageTests()
     {
-        _root = Path.Combine(Path.GetTempPath(), "audit-archive-tests", Guid.NewGuid().ToString("N"));
+        _root = TestTempDirectory.Create("audit-archive-tests");
         var configuration = Substitute.For<IConfiguration>();
         configuration["Audit:ArchivePath"].Returns(_root);
         _sut = new FileSystemAuditArchiveStorage(configuration, _logger);

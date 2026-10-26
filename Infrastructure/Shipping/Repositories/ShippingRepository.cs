@@ -11,11 +11,17 @@ public sealed class ShippingRepository(DBContext context)
     public async Task<ICollection<Domain.Shipping.Aggregates.Shipping>> GetAllAsync(
         bool includeInactive = false, CancellationToken ct = default)
     {
-        var query = Context.Shippings.AsQueryable();
+        // A requested deletion also deactivates the row, so the soft-delete
+        // filter is redundant here: filtering on IsActive covers both states.
+        var query = Context.Shippings.IgnoreQueryFilters().AsQueryable();
         if (includeInactive is false)
             query = query.Where(s => s.IsActive);
         return await query.OrderBy(s => s.SortOrder).ToListAsync(ct);
     }
+
+    public override Task<Domain.Shipping.Aggregates.Shipping?> GetByIdAsync(
+        ShippingId id, CancellationToken ct = default)
+        => Context.Shippings.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id.Equals(id), ct);
 
     public async Task<ICollection<Domain.Shipping.Aggregates.Shipping>> GetByIdsAsync(
         IEnumerable<ShippingId> ids, CancellationToken ct = default)

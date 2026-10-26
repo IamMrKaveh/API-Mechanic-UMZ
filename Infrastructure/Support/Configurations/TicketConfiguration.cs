@@ -45,6 +45,7 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Domain.Supp
 
         builder.HasIndex(e => e.CustomerId);
         builder.HasIndex(e => e.AssignedAgentId);
+        builder.HasIndex(e => e.Status).HasDatabaseName("IX_Tickets_Status");
         builder.HasIndex(e => new { e.Status, e.Priority });
         // Admin ticket queues filter by status and page over CreatedAt ordering.
         builder.HasIndex(e => new { e.Status, e.CreatedAt })

@@ -30,10 +30,14 @@ public sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .IsRequired()
             .HasDefaultValue(1);
 
-        builder.Property(e => e.CreatedAt).IsRequired();
+        builder.Property(e => e.CreatedAt)
+            .IsRequired()
+            .HasColumnType("timestamp(6) with time zone");
 
         builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => e.CreatedAt);
+        builder.HasIndex(e => e.EventType).HasDatabaseName("IX_AuditLogs_EventType");
+        builder.HasIndex(e => e.HashVersion).HasDatabaseName("IX_AuditLogs_HashVersion");
 
         builder.HasIndex(e => e.EntityType)
             .HasDatabaseName("IX_AuditLogs_EntityType");
@@ -43,6 +47,9 @@ public sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.HasIndex(e => e.IsArchived)
             .HasFilter("\"IsArchived\" = false")
             .HasDatabaseName("IX_AuditLogs_Unarchived");
+
+        builder.HasIndex(e => e.IsArchived)
+            .HasDatabaseName("IX_AuditLogs_IsArchived");
 
         builder.HasIndex(e => new { e.CreatedAt, e.IsArchived, e.EventType })
             .HasDatabaseName("IX_AuditLogs_CreatedAt_IsArchived_EventType");

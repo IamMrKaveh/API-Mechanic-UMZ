@@ -94,6 +94,8 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Domain.Produ
 
         builder.HasIndex(p => p.BrandId);
         builder.HasIndex(p => p.CategoryId);
+        builder.HasIndex(p => p.IsActive).HasDatabaseName("IX_Products_IsActive");
+        builder.HasIndex(p => p.IsDeleted).HasDatabaseName("IX_Products_IsDeleted");
 
         // Composite indexes matching the real admin/catalog filter+sort shapes
         // (every paged list orders by CreatedAt). Standalone boolean indexes
