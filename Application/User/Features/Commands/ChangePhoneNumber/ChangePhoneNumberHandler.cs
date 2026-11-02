@@ -40,6 +40,13 @@ public class ChangePhoneNumberHandler(
         if (otp is null)
             return ServiceResult.NotFound("کد OTP فعالی یافت نشد.");
 
+        // The challenge must belong to the number being claimed. Returning
+        // before Verify keeps the attempt counter untouched, so a mismatched
+        // number never burns the user's remaining attempts.
+        if (otp.TargetPhoneNumber is null ||
+            !string.Equals(otp.TargetPhoneNumber.Value, phoneNumber.Value, StringComparison.Ordinal))
+            return ServiceResult.Failure("کد تأیید برای این شماره صادر نشده است.");
+
         var now = dateTimeProvider.UtcNow;
         try
         {

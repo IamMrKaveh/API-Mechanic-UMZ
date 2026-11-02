@@ -34,6 +34,15 @@ public sealed class OtpConfiguration : IEntityTypeConfiguration<UserOtp>
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.VerifiedAt);
 
+        // Phone-change challenges carry the number they were issued for. Null
+        // for every other purpose, so this must stay optional.
+        builder.OwnsOne(e => e.TargetPhoneNumber, tp =>
+        {
+            tp.Property(p => p.Value)
+                .HasColumnName("TargetPhoneNumber")
+                .HasMaxLength(20);
+        });
+
         builder.HasIndex(e => new { e.UserId, e.Purpose, e.ExpiresAt });
         builder.HasIndex(e => e.CreatedAt);
     }

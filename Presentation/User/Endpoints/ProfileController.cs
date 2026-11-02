@@ -2,6 +2,7 @@ using Application.Review.Features.Shared;
 using Application.User.Features.Commands.ChangePassword;
 using Application.User.Features.Commands.ChangePhoneNumber;
 using Application.User.Features.Commands.DeactivateAccount;
+using Application.User.Features.Commands.RequestPhoneChangeOtp;
 using Application.User.Features.Commands.UpdateProfile;
 using Application.User.Features.Queries.GetCurrentUser;
 using Application.User.Features.Shared;
@@ -68,5 +69,16 @@ public sealed class ProfileController(IMediator mediator) : BaseApiController(me
         CancellationToken ct)
     {
         return await Send(new ChangePhoneNumberCommand(request.NewPhoneNumber, request.OtpCode), ct);
+    }
+
+    [HttpPost("phone/otp")]
+    [OtpRateLimit]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RequestPhoneChangeOtp(
+        [FromBody] RequestPhoneChangeOtpRequest request,
+        CancellationToken ct)
+    {
+        return await Send(new RequestPhoneChangeOtpCommand(request.NewPhoneNumber), ct);
     }
 }

@@ -13,6 +13,7 @@ public class UserOtpBuilder
     private OtpCode _code = OtpCode.Create(Faker.Random.ReplaceNumbers("######"));
     private OtpPurpose _purpose = OtpPurpose.Login;
     private TimeSpan _validity = TimeSpan.FromMinutes(5);
+    private PhoneNumber? _targetPhoneNumber;
 
     public UserOtpBuilder WithUserId(UserId userId)
     {
@@ -44,5 +45,23 @@ public class UserOtpBuilder
         return this;
     }
 
-    public UserOtp Build(DateTime? now = null) => UserOtp.Create(_userId, _code, _purpose, _validity, now ?? DateTime.UtcNow);
+    /// <summary>
+    /// Issues the challenge as a phone-change challenge bound to <paramref name="target"/>.
+    /// </summary>
+    public UserOtpBuilder WithTargetPhoneNumber(PhoneNumber target)
+    {
+        _targetPhoneNumber = target;
+        return this;
+    }
+
+    public UserOtpBuilder WithTargetPhoneNumber(string target) => WithTargetPhoneNumber(PhoneNumber.Create(target));
+
+    public UserOtp Build(DateTime? now = null)
+    {
+        var timestamp = now ?? DateTime.UtcNow;
+
+        return _targetPhoneNumber is null
+            ? UserOtp.Create(_userId, _code, _purpose, _validity, timestamp)
+            : UserOtp.CreateForPhoneChange(_userId, _code, _targetPhoneNumber, _validity, timestamp);
+    }
 }

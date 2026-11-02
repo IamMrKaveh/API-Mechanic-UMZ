@@ -3761,6 +3761,30 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Domain.Security.Aggregates.UserOtp", b =>
+                {
+                    b.OwnsOne("Domain.User.ValueObjects.PhoneNumber", "TargetPhoneNumber", b1 =>
+                        {
+                            b1.Property<Guid>("UserOtpId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("TargetPhoneNumber");
+
+                            b1.HasKey("UserOtpId");
+
+                            b1.ToTable("UserOtps");
+
+                            b1.WithOwner()
+                                .HasForeignKey("UserOtpId");
+                        });
+
+                    b.Navigation("TargetPhoneNumber");
+                });
+
             modelBuilder.Entity("Domain.Shipping.Aggregates.Shipping", b =>
                 {
                     b.OwnsOne("SharedKernel.ValueObjects.Money", "BaseCost", b1 =>

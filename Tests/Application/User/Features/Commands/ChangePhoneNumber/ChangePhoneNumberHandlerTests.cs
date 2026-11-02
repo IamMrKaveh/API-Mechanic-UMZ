@@ -84,6 +84,7 @@ public class ChangePhoneNumberHandlerTests : HandlerTestBase
             .WithUserId(UserId.From(_userGuid))
             .WithCode("123456")
             .WithPurpose(OtpPurpose.PhoneVerification)
+            .WithTargetPhoneNumber("09123456789")
             .WithValidity(TimeSpan.FromMinutes(5))
             .Build();
         _otpRepository.GetLatestActiveByUserIdAsync(Arg.Any<UserId>(), OtpPurpose.PhoneVerification, Arg.Any<CancellationToken>())
@@ -107,6 +108,7 @@ public class ChangePhoneNumberHandlerTests : HandlerTestBase
             .WithUserId(UserId.From(_userGuid))
             .WithCode("123456")
             .WithPurpose(OtpPurpose.PhoneVerification)
+            .WithTargetPhoneNumber("09123456789")
             .WithValidity(TimeSpan.FromMinutes(5))
             .Build();
         _otpRepository.GetLatestActiveByUserIdAsync(Arg.Any<UserId>(), OtpPurpose.PhoneVerification, Arg.Any<CancellationToken>())
@@ -123,6 +125,54 @@ public class ChangePhoneNumberHandlerTests : HandlerTestBase
             Arg.Any<IpAddress>(),
             Arg.Is<UserId>(u => u != null && u!.Value == _userGuid),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenOtpTargetsAnotherNumber_ReturnsFailureWithoutBurningAttempts()
+    {
+        var user = new UserBuilder().WithPhoneNumber(PhoneNumber.Create("09120000001")).Build();
+        _userRepository.ExistsByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<UserId?>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+        _userRepository.GetByIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(user);
+        var otp = new UserOtpBuilder()
+            .WithUserId(UserId.From(_userGuid))
+            .WithCode("123456")
+            .WithPurpose(OtpPurpose.PhoneVerification)
+            .WithValidity(TimeSpan.FromMinutes(5))
+            .WithTargetPhoneNumber("09129999999")
+            .Build();
+        _otpRepository.GetLatestActiveByUserIdAsync(Arg.Any<UserId>(), OtpPurpose.PhoneVerification, Arg.Any<CancellationToken>())
+            .Returns(otp);
+
+        var result = await _sut.Handle(new ChangePhoneNumberCommand("09123456789", "123456"), CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error!.Message.ShouldBe("کد تأیید برای این شماره صادر نشده است.");
+        otp.VerificationAttempts.ShouldBe(0);
+        _otpRepository.DidNotReceiveWithAnyArgs().Update(default!);
+        _userRepository.DidNotReceiveWithAnyArgs().Update(default!);
+    }
+
+    [Fact]
+    public async Task Handle_WhenOtpHasNoTarget_ReturnsFailure()
+    {
+        var user = new UserBuilder().WithPhoneNumber(PhoneNumber.Create("09120000001")).Build();
+        _userRepository.ExistsByPhoneNumberAsync(Arg.Any<PhoneNumber>(), Arg.Any<UserId?>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+        _userRepository.GetByIdAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>()).Returns(user);
+        var otp = new UserOtpBuilder()
+            .WithUserId(UserId.From(_userGuid))
+            .WithCode("123456")
+            .WithPurpose(OtpPurpose.PhoneVerification)
+            .WithValidity(TimeSpan.FromMinutes(5))
+            .Build();
+        _otpRepository.GetLatestActiveByUserIdAsync(Arg.Any<UserId>(), OtpPurpose.PhoneVerification, Arg.Any<CancellationToken>())
+            .Returns(otp);
+
+        var result = await _sut.Handle(new ChangePhoneNumberCommand("09123456789", "123456"), CancellationToken.None);
+
+        result.IsSuccess.ShouldBeFalse();
+        _otpRepository.DidNotReceiveWithAnyArgs().Update(default!);
     }
 }
 

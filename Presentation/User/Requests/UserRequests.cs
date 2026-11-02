@@ -42,6 +42,8 @@ public record ChangePhoneNumberRequest(
     string OtpCode
 );
 
+public record RequestPhoneChangeOtpRequest(string NewPhoneNumber);
+
 public record ChangeUserRoleRequest(bool IsAdmin);
 
 public record ChangeUserStatusRequest(bool IsActive);
