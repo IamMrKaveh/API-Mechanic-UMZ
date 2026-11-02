@@ -66,8 +66,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
-.vs/API/DesignTimeBuild/.dtbcache.v2
-.vs/API/config/applicationhost.config
 
 **/logs/
 extract.txt
