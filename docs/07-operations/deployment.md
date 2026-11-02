@@ -1,8 +1,8 @@
 # استقرار و عملیات
 
 این سند وضعیت واقعی ابزارهای استقرار ریپو را تحلیل می‌کند: Dockerfile موجود، docker-compose،
-متغیرهای محیطی و نکات انتشار. زنجیرهٔ build داکر در فاز ۴ ممیزی امنیتی اصلاح شد؛ تنها ناهماهنگی
-باقی‌مانده، پروایدر دیتابیس compose (SQL Server) در برابر کد (PostgreSQL) است.
+متغیرهای محیطی و نکات انتشار. زنجیرهٔ build داکر در فاز ۴ ممیزی امنیتی اصلاح شد و در بازبینی
+پایان ۱۴۰۴ (audit P3-001/P3-002) compose محلی به PostgreSQL برگشت و تصاویر پایه با digest پین شدند.
 
 ## Dockerfile
 
@@ -10,8 +10,12 @@
 
 | مرحله | ایمیج | اقدامات |
 |---|---|---|
-| `build` | `mcr.microsoft.com/dotnet/sdk:10.0` | کپی کل context فیلترشده (`.dockerignore`)، `dotnet restore Presentation/Presentation.csproj`، سپس publish با `-c ${BUILD_CONFIGURATION}` (پیش‌فرض Release) و `/p:PublishTrimmed=true` / `/p:PublishSingleFile=true` |
-| `final` | `mcr.microsoft.com/dotnet/aspnet:10.0-alpine` | کپی خروجی به `/app`، کاربر غیر root `appuser` (uid 1000)، `EXPOSE 8080`، `HEALTHCHECK` روی `http://localhost:8080/health/live` هر ۳۰ ثانیه، `ENTRYPOINT ["dotnet", "Presentation.dll"]` |
+| `build` | `mcr.microsoft.com/dotnet/sdk:10.0@sha256:9ef70f...` (digest پین‌شده) | کپی کل context فیلترشده (`.dockerignore`)، `dotnet restore Presentation/Presentation.csproj`، سپس publish با `-c ${BUILD_CONFIGURATION}` (پیش‌فرض Release) و `/p:PublishTrimmed=true` / `/p:PublishSingleFile=true` |
+| `final` | `mcr.microsoft.com/dotnet/aspnet:10.0-alpine@sha256:a34617c...` (digest پین‌شده) | کپی خروجی به `/app`، کاربر غیر root `appuser` (uid 1000)، `EXPOSE 8080`، `HEALTHCHECK` روی `http://localhost:8080/health/live` هر ۳۰ ثانیه، `ENTRYPOINT ["dotnet", "Presentation.dll"]` |
+
+تصاویر با digest پین شده‌اند (تگ‌های mcr قابل force-push هستند؛ نمونهٔ TeamPCP februar 2026).
+`docker/db-init.Dockerfile` همان digest مرحلهٔ build را برای جاب مایگریشن محلی استفاده می‌کند؛
+بعد از ارتقای SDK/runtime هر دو digest را با هم به‌روز کنید.
 
 مسائل زنجیرهٔ قبلی که در فاز ۴ رفع شدند:
 
@@ -29,17 +33,16 @@
 
 | سرویس | تصویر | نقش |
 |---|---|---|
-| `db` | `mcr.microsoft.com/mssql/server:2022-latest` | SQL Server 2022 با `MSSQL_PID=Developer`، پورت ۱۴۳۳، volume `mssql-data` و healthcheck با `sqlcmd -C` و رمز از `SQLCMDPASSWORD` (رمز در process list دیده نمی‌شود) |
-| `db-init` | `mcr.microsoft.com/mssql-tools` | پس از سالم‌شدن `db`، دیتابیس `${DB_NAME}`، لاگین/کاربر `${DB_USER}` و نقش `db_owner` را می‌سازد |
-| `api` | build از context ریشه | پورت ۸۰۸۰، `ASPNETCORE_URLS=http://+:8080`، `ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}` و `ConnectionStrings__DefaultConnection` به `db` با `Encrypt=True` |
+| `db` | `postgres:16-alpine@sha256:0cefaabd...` | PostgreSQL 16 (digest پین‌شده)، پورت ۵۴۳۲، volume `postgres-data`، healthcheck با `pg_isready`؛ کاربر/رمز/نام پایگاه‌داده از `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB` |
+| `db-init` | build از `docker/db-init.Dockerfile` | پس از سالم‌شدن `db` با `dotnet ef database update` تاریخچهٔ مایگریشن‌های EF را اعمال می‌کند (جای migrate.sql که قدیمی است) |
+| `api` | build از context ریشه | پورت ۸۰۸۰، `ASPNETCORE_URLS=http://+:8080`، `ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}` و `ConnectionStrings__DefaultConnection=Host=db;Port=5432;...` |
 
 نکات:
 
 - **پروایدر دیتابیس:** کد با Npgsql به PostgreSQL وصل می‌شود (`options.UseNpgsql(...)` در `InfrastructureServiceExtensions.cs`)؛
-  دیتابیس SQL Server این compose به API سرویس نمی‌دهد. برای اجرای واقعی به PostgreSQL نیاز است
-  (see [setup-and-run.md](../01-getting-started/setup-and-run.md)).
-- **TLS دیتابیس:** `Encrypt=True` روشن است؛ `TrustServerCertificate=True` فقط برای گواهی self-signed کانتینر محلی
-  است و در استقرار واقعی باید با CA معتبر و `TrustServerCertificate=False` جایگزین شود.
+  استک compose اکنون همان پروایدر را سرو می‌کند (اسکریپت قدیمی SQL Server حذف شد).
+- **TLS دیتابیس:** در استقرار واقعی با CA معتبر حتماً TLS را روشن کنید؛ استک محلی Postgres نیازی به
+  `TrustServerCertificate` ندارد.
 - **محیط پیش‌فرض Production است** تا صفحه‌های خطای Development در کانتینر سرو نشوند؛ برای استک محلی
   در `.env` مقدار `ASPNETCORE_ENVIRONMENT=Development` را فعال کنید (اعتبارسنجی Production به Redis با TLS نیاز دارد).
 - همهٔ رازها از `.env` (gitignored، قالب `.env.example`) می‌آیند؛ هیچ فایل compose دیگری وجود ندارد.
@@ -48,7 +51,7 @@
 
 | متغیر | منبع مصرف | نقش |
 |---|---|---|
-| `SA_PASSWORD`، `DB_NAME`، `DB_USER`، `DB_USER_PASSWORD` | فقط `docker-compose.yml` | راه‌اندازی SQL Server و ساخت دیتابیس/کاربر |
+| `POSTGRES_USER`، `POSTGRES_PASSWORD`، `POSTGRES_DB` | فقط `docker-compose.yml` | راه‌اندازی دیتابیس محلی، اعمال مایگریشن و رشته اتصال `api` |
 | `ASPNETCORE_URLS`، `ASPNETCORE_ENVIRONMENT` | compose و `launchSettings.json` | آدرس گوش‌دادن و محیط |
 | `ConnectionStrings__DefaultConnection` | compose → کد (قرارداد `__`) | رشته اتصال زمان اجرا |
 | `Jwt__Key`، `Auth__OtpPepper`، `Storage__*`، `Kavenegar__ApiKey`، `ConnectionStrings__*` | `.env` → `DotEnvLoader` → کانفیگ | رازها (فاز ۰) |

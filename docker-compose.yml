@@ -1,47 +1,39 @@
 version: '3.8'
 
-# Local development stack. All secrets come from the gitignored .env file
-# (see .env.example). NEVER commit real values here.
+# Local development stack. PostgreSQL matches the application, its EF migrations
+# and CI (the previous MSSQL stack was stale - security audit P3-001).
+# All secrets come from the gitignored .env file (see .env.example).
+# NEVER commit real values here. Images are pinned by digest (tag kept for
+# readability); refresh digests from the registry manifest list after upgrades.
 services:
   db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: mssql_local
+    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+    container_name: postgres_local
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=${SA_PASSWORD}
-      - MSSQL_PID=Developer
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-ledka}
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - mssql-data:/var/opt/mssql
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      # Password is passed via the SQLCMDPASSWORD environment variable (not -P)
-      # so it never appears in the container's process list.
-      # -C trusts the container's self-signed cert; the channel is still encrypted.
-      test: ["CMD-SHELL", "SQLCMDPASSWORD=\"$$SA_PASSWORD\" /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -C -Q \"SELECT 1\" > /dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-ledka}"]
       interval: 10s
       timeout: 5s
       retries: 30
 
+  # Applies the canonical EF Core migration history on a healthy database.
+  # Runs one shot; see docker/db-init.Dockerfile.
   db-init:
-    image: mcr.microsoft.com/mssql-tools
+    build:
+      context: .
+      dockerfile: docker/db-init.Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB:-ledka};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      - SA_PASSWORD=${SA_PASSWORD}
-    entrypoint: >
-      /bin/bash -c "
-      echo waiting for db...;
-      sleep 20;
-      SQLCMDPASSWORD=\"$$SA_PASSWORD\" /opt/mssql-tools/bin/sqlcmd -S db -U sa -C -Q
-      \"CREATE DATABASE [${DB_NAME}];
-        IF NOT EXISTS (SELECT * FROM sys.sql_logins WHERE name = '${DB_USER}')
-        BEGIN
-          CREATE LOGIN [${DB_USER}] WITH PASSWORD = '${DB_USER_PASSWORD}', CHECK_POLICY=OFF;
-        END;
-        CREATE USER [${DB_USER}] FOR LOGIN [${DB_USER}];
-        ALTER ROLE db_owner ADD MEMBER [${DB_USER}];\""
 
   api:
     build:
@@ -61,10 +53,10 @@ services:
       # Production by default (no dev error pages inside a container); developers
       # can still override to Development from the local .env file.
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
-      # Encrypt=True: TLS to the database is on. TrustServerCertificate=True only
-      # accepts the self-signed cert of this local dev container; any real
-      # deployment must use a CA-issued certificate with TrustServerCertificate=False.
-      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=${DB_NAME};User Id=${DB_USER};Password=${DB_USER_PASSWORD};Encrypt=True;TrustServerCertificate=True
+      # Plaintext local connection to the compose database. Production must use a
+      # CA-issued certificate with the standard connection string (see .env.example);
+      # no TrustServerCertificate escape hatch is available for Postgres.
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB:-ledka};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
 
 volumes:
-  mssql-data:
+  postgres-data:

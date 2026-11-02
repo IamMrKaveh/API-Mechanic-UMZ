@@ -1,9 +1,10 @@
 # راه‌اندازی و اجرا
 
 این سند مسیر عملی اجرای پروژه را روی ماشین توسعه می‌دهد: پیش‌نیازها، آماده‌سازی PostgreSQL،
-اعمال مایگریشن‌ها با dotnet-ef و اجرای API. نکته مهم: کد فعلی روی PostgreSQL اجرا می‌شود،
-در حالی که `docker-compose.yml` ریپو یک SQL Server بالا می‌آورد؛ این ناهماهنگی در همین سند و
-[07-operations/deployment.md](../07-operations/deployment.md) به‌صورت صریح توضیح داده شده است.
+اعمال مایگریشن‌ها با dotnet-ef و اجرای API. کد روی PostgreSQL اجرا می‌شود و
+`docker-compose.yml` هم اکنون PostgreSQL (با digest پین‌شده) بالا می‌آورد و
+`migrate.sql` را روی دیتابیس تازه اعمال می‌کند؛ به‌روزرسانی مربوطه در
+[07-operations/deployment.md](../07-operations/deployment.md) آمده است.
 
 ## پیش‌نیازها
 
@@ -14,12 +15,13 @@
 | Docker | هر engine سازگار با API داکر | برای تست‌های یکپارچه (Testcontainers) لازم است؛ جزئیات در [06-testing/testing-strategy.md](../06-testing/testing-strategy.md) |
 | dotnet-ef | `9.0.17` طبق manifest محلی (`dotnet-tools.json`) | با `dotnet tool restore` نصب می‌شود |
 
-> **نکته مهم — ناهماهنگی docker-compose با کد:** سرویس `db` در `docker-compose.yml` تصویر
-> `mcr.microsoft.com/mssql/server:2022-latest` را اجرا می‌کند، اما پروایدر دیتابیس در کد
-> Npgsql/PostgreSQL است (`Infrastructure/Common/DependencyInjection/InfrastructureServiceExtensions.cs`
-> با `options.UseNpgsql(...)`). بنابراین دیتابیس SQL Server این compose در وضعیت فعلی به API سرویس نمی‌دهد.
-> به‌علاوه سرویس `api` به `MainApi/Dockerfile` ارجاع می‌دهد که در ریپو وجود ندارد. تحلیل کامل در
-> [deployment.md](../07-operations/deployment.md) آمده است.
+> **docker-compose محلی:** سرویس `db` تصویر `postgres:16-alpine@sha256:...` (digest پین‌شده)
+> را با کاربر/رمز/نام پایگاه‌دادهٔ متغیرهای `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB`
+> (از `.env`، مقادیر نمونه در `.env.example`) بالا می‌آورد؛ سرویس `db-init` پس از سالم‌شدن
+> دیتابیس تاریخچهٔ مایگریشن‌های EF را با `dotnet ef database update` اعمال می‌کند
+> (`docker/db-init.Dockerfile`) و سرویس `api` رشته‌اتصال Postgres
+> (`Host=db;Port=5432;...`) از همان متغیرها می‌سازد. برای اجرای بدون compose،
+> گام‌های همین سند کافی است.
 
 ## گام ۱: دریافت کد و Build
 
@@ -94,12 +96,13 @@ Redis و Elasticsearch با فلگ خاموش/روشن می‌شوند و نبو
 `Elasticsearch:IsEnabled` برای جست‌وجو (fallbackهای `NoOp*` در `Infrastructure/Search`).
 پیامک OTP به API کاوه‌نگار (`Kavenegar:ApiKey`) و پرداخت به زرین‌پال (`Zarinpal` گزینه Sandbox دارد) وصل می‌شود.
 
-## docker-compose در وضعیت فعلی
+## docker-compose محلی
 
-فایل `docker-compose.yml` سه سرویس تعریف می‌کند: `db` (SQL Server 2022 با healthcheck و volume
-`mssql-data`)، `db-init` (پس از ۲۰ ثانیه دیتابیس و لاگین `DB_USER` می‌سازد) و `api`
-(پورت ۸۰۸۰، `ASPNETCORE_ENVIRONMENT=Development`). متغیرهای محیطی آن (`SA_PASSWORD`،
-`DB_NAME`، `DB_USER`، `DB_USER_PASSWORD`) از فایل `.env` خوانده می‌شوند که در ریپو موجود نیست.
-به دو دلیل ذکرشده در ابتدای این سند (پروایدر دیتابیس و مسیر Dockerfile)، این فایل در حالت فعلی
-راه‌اندازی یک‌جای پروژه را ممکن نمی‌کند؛ تحلیل کامل و نکات انتشار در
-[07-operations/deployment.md](../07-operations/deployment.md) است.
+فایل `docker-compose.yml` سه سرویس تعریف می‌کند: `db` (تصویر پین‌شدهٔ
+`postgres:16-alpine@sha256:...`، healthcheck `pg_isready`، volume `postgres-data`)،
+`db-init` (build از `docker/db-init.Dockerfile`؛ پس از سالم‌شدن `db` با
+`dotnet ef database update` مایگریشن‌ها را اعمال می‌کند) و `api` (پورت ۸۰۸۰،
+`ASPNETCORE_ENVIRONMENT` پیش‌فرض Production که از `.env` قابل override است). متغیرهای محیطی
+(`POSTGRES_USER`، `POSTGRES_PASSWORD`، `POSTGRES_DB` و کلیدهای `.env.example`) از فایل `.env`
+خوانده می‌شوند که در ریپو موجود نیست (الگو: `.env.example`). نکات انتشار در
+[07-operations/deployment.md](../07-operations/deployment.md) آمده است.
