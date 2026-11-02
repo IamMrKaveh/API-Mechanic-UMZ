@@ -46,10 +46,19 @@ public class AuthControllerTests
             _mediator,
             Substitute.For<IMapper>(),
             _googleAuthService,
-            new AuthCookieService(cookieOptions));
+            new AuthCookieService(cookieOptions),
+            Options.Create(new global::Infrastructure.Common.Options.FrontendUrlsOptions
+            {
+                BaseUrl = "http://localhost:4200"
+            }),
+            Options.Create(new global::Infrastructure.Security.Settings.SecuritySettings()));
 
         var services = new ServiceCollection();
         services.AddSingleton<IHttpResultMapper>(new HttpResultMapper());
+        // The Google callback signs out of the external cookie scheme, which
+        // needs the authentication stack to be resolvable from the request.
+        services.AddAuthentication().AddCookie(global::Presentation.Auth.AuthSchemes.External);
+        services.AddLogging();
         _controller.ControllerContext.HttpContext = new DefaultHttpContext
         {
             RequestServices = services.BuildServiceProvider()
@@ -231,29 +240,65 @@ public class AuthControllerTests
         _controller.Url = urlHelper;
 
         // Act
-        var result = _controller.GoogleLogin();
+        var result = _controller.GoogleLogin("/dashboard");
 
         // Assert
         result.ShouldBeOfType<ChallengeResult>();
     }
 
     [Fact]
-    public async Task GoogleCallback_WhenProfileIsNull_ReturnsBadRequest()
+    public void GoogleLogin_WithUnsafeReturnUrl_CarriesTheRootInstead()
+    {
+        // Arrange
+        var urlHelper = Substitute.For<IUrlHelper>();
+        urlHelper.Action(Arg.Any<UrlActionContext>()).Returns("/api/v1/auth/google/callback");
+        _controller.Url = urlHelper;
+
+        // Act
+        var result = _controller.GoogleLogin("//evil.example");
+
+        // Assert — the unsafe value must never reach the redirect target that
+        // Google sends the browser back to.
+        var challenge = result.ShouldBeOfType<ChallengeResult>();
+        var redirectUri = challenge.Properties!.RedirectUri ?? string.Empty;
+        redirectUri.ShouldNotContain("evil.example");
+    }
+
+    [Fact]
+    public async Task GoogleCallback_WhenProfileIsNull_RedirectsToFrontendFailure()
     {
         // Arrange
         _googleAuthService.AuthenticateAsync(Arg.Any<CancellationToken>()).Returns((GoogleProfile?)null);
 
         // Act
-        var result = await _controller.GoogleCallback(CancellationToken.None);
+        var result = await _controller.GoogleCallback("/dashboard", CancellationToken.None);
 
         // Assert
-        var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
-        badRequest.StatusCode.ShouldBe(StatusCodes.Status400BadRequest);
+        var redirect = result.ShouldBeOfType<RedirectResult>();
+        redirect.Url.ShouldContain("/auth?googleError=1");
         await _mediator.DidNotReceiveWithAnyArgs().Send(Arg.Any<GoogleLoginCommand>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task GoogleCallback_WithValidProfile_SendsCommand_AndReturnsOkWithCookie()
+    public async Task GoogleCallback_WhenCommandFails_RedirectsToFrontendFailure()
+    {
+        // Arrange
+        _googleAuthService.AuthenticateAsync(Arg.Any<CancellationToken>())
+            .Returns(new GoogleProfile("user@example.com", "First", "Last", "google-key-1"));
+        _mediator
+            .Send(Arg.Any<GoogleLoginCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(ServiceResult<TokenResultDto>.Failure("blocked")));
+
+        // Act
+        var result = await _controller.GoogleCallback("/dashboard", CancellationToken.None);
+
+        // Assert
+        var redirect = result.ShouldBeOfType<RedirectResult>();
+        redirect.Url.ShouldContain("/auth?googleError=1");
+    }
+
+    [Fact]
+    public async Task GoogleCallback_WithValidProfile_RedirectsToCompletePageWithReturnUrl()
     {
         // Arrange
         _googleAuthService.AuthenticateAsync(Arg.Any<CancellationToken>())
@@ -263,16 +308,34 @@ public class AuthControllerTests
             .Returns(Task.FromResult(ServiceResult<TokenResultDto>.Success(new TokenResultDto("new-access", "new-refresh"))));
 
         // Act
-        var result = await _controller.GoogleCallback(CancellationToken.None);
+        var result = await _controller.GoogleCallback("/dashboard", CancellationToken.None);
 
         // Assert
-        var ok = result.ShouldBeOfType<OkObjectResult>();
-        ok.StatusCode.ShouldBe(StatusCodes.Status200OK);
-        var body = ok.Value.ShouldBeOfType<ApiResponse>();
-        body.Success.ShouldBeTrue();
+        var redirect = result.ShouldBeOfType<RedirectResult>();
+        redirect.Url.ShouldContain("/auth/google/complete");
+        redirect.Url.ShouldContain("returnUrl=%2Fdashboard");
         await _mediator.Received(1).Send(
             Arg.Is<GoogleLoginCommand>(c => c!.Email == "user@example.com" && c!.ProviderKey == "google-key-1"),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GoogleCallback_WithUnsafeReturnUrl_RedirectsToRoot()
+    {
+        // Arrange
+        _googleAuthService.AuthenticateAsync(Arg.Any<CancellationToken>())
+            .Returns(new GoogleProfile("user@example.com", "First", "Last", "google-key-1"));
+        _mediator
+            .Send(Arg.Any<GoogleLoginCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(ServiceResult<TokenResultDto>.Success(new TokenResultDto("a", "r"))));
+
+        // Act
+        var result = await _controller.GoogleCallback("//evil.example", CancellationToken.None);
+
+        // Assert
+        var redirect = result.ShouldBeOfType<RedirectResult>();
+        redirect.Url.ShouldContain("returnUrl=%2F");
+        redirect.Url.ShouldNotContain("evil.example");
     }
 
     [Fact]

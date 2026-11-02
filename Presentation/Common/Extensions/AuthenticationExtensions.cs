@@ -2,7 +2,9 @@
 using Application.Auth.Contracts;
 using Application.Auth.Features.Shared;
 using Infrastructure.Security.Settings;
+using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Presentation.Auth;
 
 namespace Presentation.Common.Extensions;
 
@@ -94,10 +96,25 @@ public static class AuthenticationExtensions
         {
             builder.Services
                 .AddAuthentication()
+                .AddCookie(AuthSchemes.External, options =>
+                {
+                    // Short-lived hand-off cookie that only carries the external
+                    // login result between the Google challenge and our callback.
+                    // It is deliberately separate from the refresh-token cookie.
+                    options.Cookie.Name = "ledka.external";
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.SameSite = SameSiteMode.Lax;
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+                })
                 .AddGoogle(options =>
                 {
                     options.ClientId = googleClientId;
                     options.ClientSecret = googleClientSecret;
+                    // Without an explicit SignInScheme the Google handler tries to
+                    // sign in to the JWT bearer scheme, which cannot persist a
+                    // principal, so the callback found no profile at all.
+                    options.SignInScheme = AuthSchemes.External;
                     options.SaveTokens = true;
                 });
         }

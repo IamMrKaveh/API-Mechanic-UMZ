@@ -13,4 +13,8 @@ public sealed class FrontendUrlsOptions
     public string PaymentFailurePath { get; set; } = "/payment/failure";
 
     public string WalletTopUpCallbackPath { get; set; } = "/dashboard/wallet/topup/callback";
+
+    public string GoogleAuthCompletePath { get; set; } = "/auth/google/complete";
+
+    public string GoogleAuthFailurePath { get; set; } = "/auth?googleError=1";
 }

@@ -6,7 +6,11 @@ using Application.Auth.Features.Commands.RefreshToken;
 using Application.Auth.Features.Commands.SendOtp;
 using Application.Auth.Features.Commands.VerifyOtp;
 using Application.Auth.Features.Shared;
+using Infrastructure.Common.Options;
+using Infrastructure.Security.Settings;
+using Presentation.Auth;
 using Presentation.Auth.Requests;
+using Presentation.Auth.Support;
 using Presentation.Common.Cookies;
 
 namespace Presentation.Auth.Endpoints;
@@ -17,17 +21,25 @@ public class AuthController(
     IMediator mediator,
     IMapper mapper,
     IGoogleAuthenticationService googleAuthService,
-    IAuthCookieService cookieService)
+    IAuthCookieService cookieService,
+    IOptions<FrontendUrlsOptions> frontendOptions,
+    IOptions<SecuritySettings> securityOptions)
     : BaseApiController(mediator, mapper)
 {
+    private readonly FrontendUrlsOptions _frontendOptions = frontendOptions.Value;
+    private readonly List<string> _allowedOrigins = securityOptions.Value.AllowedOrigins;
+
     [HttpGet("google")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
-    public IActionResult GoogleLogin()
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    public IActionResult GoogleLogin([FromQuery] string? returnUrl)
     {
+        // The frontend wants the browser back on its own origin after the
+        // round trip; the callback receives this as a query parameter.
+        var safeReturnUrl = ReturnUrlPolicy.Sanitize(returnUrl);
         var properties = new AuthenticationProperties
         {
-            RedirectUri = Url.Action(nameof(GoogleCallback))
+            RedirectUri = Url.Action(nameof(GoogleCallback), new { returnUrl = safeReturnUrl })
         };
 
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
@@ -35,13 +47,16 @@ public class AuthController(
 
     [HttpGet("google/callback")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GoogleCallback(CancellationToken ct)
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    public async Task<IActionResult> GoogleCallback(
+        [FromQuery] string? returnUrl,
+        CancellationToken ct)
     {
+        var safeReturnUrl = ReturnUrlPolicy.Sanitize(returnUrl);
         var profile = await googleAuthService.AuthenticateAsync(ct);
 
         if (profile is null)
-            return BadRequest("Google authentication failed.");
+            return Redirect(BuildFrontendUrl(_frontendOptions.GoogleAuthFailurePath));
 
         var command = new GoogleLoginCommand(
             profile.Email,
@@ -51,7 +66,21 @@ public class AuthController(
 
         var result = await Mediator.Send(command, ct);
 
-        return HandleAuthResult(result);
+        if (!result.IsSuccess)
+            return Redirect(BuildFrontendUrl(_frontendOptions.GoogleAuthFailurePath));
+
+        cookieService.WriteRefreshToken(Response, result.Value.RefreshToken);
+
+        // The external cookie has served its purpose; dropping it here keeps
+        // the browser from carrying a stale principal into a later attempt.
+        await HttpContext.SignOutAsync(AuthSchemes.External);
+
+        var completePath = _frontendOptions.GoogleAuthCompletePath;
+        var separator = completePath.Contains('?') ? '&' : '?';
+
+        return Redirect(
+            BuildFrontendUrl(
+                $"{completePath}{separator}returnUrl={Uri.EscapeDataString(safeReturnUrl)}"));
     }
 
     [HttpPost("otp")]
@@ -141,13 +170,30 @@ public class AuthController(
         return StatusCode(statusCode, new ApiResponse<AuthResultResponse>(AuthResultResponse.FromAuthResult(auth), true, null));
     }
 
-    private IActionResult HandleAuthResult(ServiceResult<TokenResultDto> result)
+    /// <summary>
+    /// Resolves the frontend origin for a browser redirect.
+    /// </summary>
+    /// <remarks>
+    /// Only an allow-listed Origin header is honored; otherwise the configured
+    /// frontend base URL is used. Accepting an arbitrary Origin here would turn
+    /// the callback into an open redirect.
+    /// </remarks>
+    private string BuildFrontendUrl(string path)
+        => ResolveFrontendBaseUrl().TrimEnd('/') + path;
+
+    private string ResolveFrontendBaseUrl()
     {
-        if (!result.IsSuccess)
-            return ToActionResult(result);
+        var origin = Request.Headers["Origin"].ToString();
+        if (!string.IsNullOrWhiteSpace(origin) &&
+            Uri.IsWellFormedUriString(origin, UriKind.Absolute) &&
+            _allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
+        {
+            return origin;
+        }
 
-        cookieService.WriteRefreshToken(Response, result.Value.RefreshToken);
+        if (!string.IsNullOrWhiteSpace(_frontendOptions.BaseUrl))
+            return _frontendOptions.BaseUrl;
 
-        return Ok(new ApiResponse(true, null));
+        return _frontendOptions.LocalHostUrl;
     }
 }
