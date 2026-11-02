@@ -7,7 +7,7 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 
-.vs/*
+.vs/
 
 # Root-anchored: a local database data folder. Without the leading slash this
 # rule also ignored Tests/TestInfrastructure/Database/ (the Testcontainers
