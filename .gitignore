@@ -71,3 +71,6 @@ nunit-*.xml
 extract.txt
 extract.py
 /skills
+
+# Local audit reports contain vulnerability details
+docs/local/
