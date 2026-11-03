@@ -30,7 +30,11 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
                 Arg.Any<CancellationToken>())
             .Returns(new Dictionary<Guid, MediaDto>());
 
-        _sut = new CartQueryService(_context, _mediaService);
+        _sut = new CartQueryService(
+            _context,
+            _mediaService,
+            Substitute.For<global::Domain.Inventory.Interfaces.IInventoryRepository>(),
+            Substitute.For<global::Domain.Variant.Interfaces.IVariantRepository>());
         return Task.CompletedTask;
     }
 
@@ -203,7 +207,7 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     }
 
     [SkippableFact]
-    public async Task ValidateCartForCheckoutAsync_UserWithNonEmptyCart_ReturnsValid()
+    public async Task ValidateCartForCheckoutAsync_UserWithNonEmptyCart_ReportsMissingInventory()
     {
         var userId = await SeedUserAsync();
         var cart = CreateUserCartWithItems(userId,
@@ -215,8 +219,58 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
 
         var result = await _sut.ValidateCartForCheckoutAsync(userId, guestToken: null);
 
-        result.IsValid.ShouldBeTrue();
+        // The variant has no inventory row at all, so checkout must not report
+        // the cart as ready: the stock issue is surfaced before order creation.
+        result.IsValid.ShouldBeFalse();
+        result.StockIssues.Count.ShouldBe(1);
+        result.StockIssues[0].AvailableStock.ShouldBe(0);
         result.Errors.Count.ShouldBe(0);
+    }
+
+    [SkippableFact]
+    public async Task ValidateCartForCheckoutAsync_WhenStockIsShort_ReportsIssueWithAvailableQuantity()
+    {
+        var userId = await SeedUserAsync();
+        var variantId = VariantId.NewId();
+        var cart = CreateUserCartWithItems(userId,
+            (variantId, ProductId.NewId(), "Scarce", "SKU-S", 100m, 100m, 5));
+
+        _context.Carts.Add(cart);
+        await _context.SaveChangesAsync();
+
+        var inventory = new InventoryBuilder().WithVariantId(variantId).WithInitialStock(2).Build();
+        _context.Inventories.Add(inventory);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var result = await _sut.ValidateCartForCheckoutAsync(userId, guestToken: null);
+
+        result.IsValid.ShouldBeFalse();
+        result.StockIssues.Count.ShouldBe(1);
+        result.StockIssues[0].VariantId.ShouldBe(variantId.Value);
+        result.StockIssues[0].RequestedQuantity.ShouldBe(5);
+        result.StockIssues[0].AvailableStock.ShouldBe(2);
+    }
+
+    [SkippableFact]
+    public async Task ValidateCartForCheckoutAsync_WhenUnlimitedStockProvided_NoStockIssue()
+    {
+        var userId = await SeedUserAsync();
+        var variantId = VariantId.NewId();
+        var cart = CreateUserCartWithItems(userId,
+            (variantId, ProductId.NewId(), "Endless", "SKU-E", 100m, 100m, 999));
+
+        _context.Carts.Add(cart);
+        await _context.SaveChangesAsync();
+
+        var inventory = new InventoryBuilder().WithVariantId(variantId).AsUnlimited().Build();
+        _context.Inventories.Add(inventory);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var result = await _sut.ValidateCartForCheckoutAsync(userId, guestToken: null);
+
+        result.StockIssues.Count.ShouldBe(0);
     }
 }
 

@@ -2,13 +2,18 @@ using Application.Cart.Contracts;
 using Application.Cart.Features.Shared;
 using Application.Media.Features.Shared;
 using Domain.Cart.ValueObjects;
+using Domain.Inventory.Interfaces;
 using Domain.User.ValueObjects;
+using Domain.Variant.Interfaces;
+using Domain.Variant.ValueObjects;
 
 namespace Infrastructure.Cart.QueryServices;
 
 public sealed class CartQueryService(
     DBContext context,
-    IMediaQueryService mediaService) : ICartQueryService
+    IMediaQueryService mediaService,
+    IInventoryRepository inventoryRepository,
+    IVariantRepository variantRepository) : ICartQueryService
 {
     private const string ProductEntityType = "Product";
 
@@ -152,7 +157,72 @@ public sealed class CartQueryService(
             };
         }
 
-        return new CartCheckoutValidationDto { IsValid = true };
+        var variantIds = cart.Items.Select(i => i.VariantId).Distinct().ToList();
+        var variantIdValues = variantIds.Select(VariantId.From).ToList();
+
+        // Same sources the checkout command uses: inventory availability comes
+        // from IInventoryRepository and the current price from IVariantRepository,
+        // so a cart that passes here also passes CheckoutFromCart.
+        var inventories = await inventoryRepository.GetByVariantIdsAsync(variantIdValues, ct);
+        var stockIssues = new List<CartStockIssueDto>();
+
+        foreach (var item in cart.Items)
+        {
+            var inventory = inventories.FirstOrDefault(i => i.VariantId == item.VariantId);
+
+            if (inventory is null)
+            {
+                // Unknown variant: report it as unavailable rather than letting
+                // checkout fail later with a less specific message.
+                stockIssues.Add(new CartStockIssueDto
+                {
+                    VariantId = item.VariantId,
+                    ProductName = item.ProductName,
+                    RequestedQuantity = item.Quantity,
+                    AvailableStock = 0
+                });
+                continue;
+            }
+
+            if (!inventory.CanFulfill(item.Quantity))
+            {
+                stockIssues.Add(new CartStockIssueDto
+                {
+                    VariantId = item.VariantId,
+                    ProductName = item.ProductName,
+                    RequestedQuantity = item.Quantity,
+                    AvailableStock = inventory.IsUnlimited ? int.MaxValue : inventory.AvailableQuantity
+                });
+            }
+        }
+
+        var priceChanges = new List<CartPriceChangeDto>();
+        var variants = await variantRepository.GetByIdsAsync(
+            cart.Items.Select(i => VariantId.From(i.VariantId)).Distinct().ToList(),
+            ct);
+
+        foreach (var item in cart.Items)
+        {
+            var variant = variants.FirstOrDefault(v => v.Id == VariantId.From(item.VariantId));
+            if (variant is null) continue;
+
+            var currentPrice = variant.SellingPrice.Amount;
+            if (currentPrice != item.UnitPrice)
+            {
+                priceChanges.Add(new CartPriceChangeDto(
+                    item.VariantId,
+                    item.ProductName,
+                    item.UnitPrice,
+                    currentPrice));
+            }
+        }
+
+        return new CartCheckoutValidationDto
+        {
+            IsValid = stockIssues.Count == 0 && priceChanges.Count == 0,
+            StockIssues = stockIssues,
+            PriceChanges = priceChanges
+        };
     }
 
     private IQueryable<Domain.Cart.Aggregates.Cart> BuildBaseCartQuery(

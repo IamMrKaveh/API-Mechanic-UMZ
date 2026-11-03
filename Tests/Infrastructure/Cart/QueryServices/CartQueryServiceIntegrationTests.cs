@@ -23,7 +23,11 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
             .GetPrimaryByEntitiesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(new Dictionary<Guid, MediaDto>());
 
-        _sut = new CartQueryService(Context, _mediaQueryService);
+        _sut = new CartQueryService(
+            Context,
+            _mediaQueryService,
+            Substitute.For<global::Domain.Inventory.Interfaces.IInventoryRepository>(),
+            Substitute.For<global::Domain.Variant.Interfaces.IVariantRepository>());
         return Task.CompletedTask;
     }
 
