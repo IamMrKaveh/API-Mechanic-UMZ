@@ -5,6 +5,9 @@ using Domain.Product.ValueObjects;
 using Domain.User.ValueObjects;
 using Domain.Variant.ValueObjects;
 using Infrastructure.Cart.QueryServices;
+using Infrastructure.Inventory.Repositories;
+using Infrastructure.Variant.Repositories;
+using Tests.TestInfrastructure.Helpers;
 using Carts = Domain.Cart.Aggregates.Cart;
 
 namespace Tests.Infrastructure.Cart.QueryServices;
@@ -30,11 +33,14 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
                 Arg.Any<CancellationToken>())
             .Returns(new Dictionary<Guid, MediaDto>());
 
+        // The validation reads availability and current price from the same
+        // repositories the checkout command uses, so they must be backed by
+        // the seeded database context rather than substitutes.
         _sut = new CartQueryService(
             _context,
             _mediaService,
-            Substitute.For<global::Domain.Inventory.Interfaces.IInventoryRepository>(),
-            Substitute.For<global::Domain.Variant.Interfaces.IVariantRepository>());
+            new InventoryRepository(_context),
+            new VariantRepository(_context));
         return Task.CompletedTask;
     }
 
@@ -231,12 +237,20 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     public async Task ValidateCartForCheckoutAsync_WhenStockIsShort_ReportsIssueWithAvailableQuantity()
     {
         var userId = await SeedUserAsync();
+        var (_, _, product) = await CatalogSeeder.SeedProductAsync(_context);
         var variantId = VariantId.NewId();
         var cart = CreateUserCartWithItems(userId,
-            (variantId, ProductId.NewId(), "Scarce", "SKU-S", 100m, 100m, 5));
+            (variantId, product.Id, "Scarce", "SKU-S", 100m, 100m, 5));
 
         _context.Carts.Add(cart);
-        await _context.SaveChangesAsync();
+
+        var variant = new ProductVariantBuilder()
+            .WithId(variantId)
+            .WithProductId(product.Id)
+            .WithSellingPrice(100m)
+            .Build();
+        variant.ClearDomainEvents();
+        _context.ProductVariants.Add(variant);
 
         var inventory = new InventoryBuilder().WithVariantId(variantId).WithInitialStock(2).Build();
         _context.Inventories.Add(inventory);
@@ -256,12 +270,20 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     public async Task ValidateCartForCheckoutAsync_WhenUnlimitedStockProvided_NoStockIssue()
     {
         var userId = await SeedUserAsync();
+        var (_, _, product) = await CatalogSeeder.SeedProductAsync(_context);
         var variantId = VariantId.NewId();
         var cart = CreateUserCartWithItems(userId,
-            (variantId, ProductId.NewId(), "Endless", "SKU-E", 100m, 100m, 999));
+            (variantId, product.Id, "Endless", "SKU-E", 100m, 100m, 999));
 
         _context.Carts.Add(cart);
-        await _context.SaveChangesAsync();
+
+        var variant = new ProductVariantBuilder()
+            .WithId(variantId)
+            .WithProductId(product.Id)
+            .WithSellingPrice(100m)
+            .Build();
+        variant.ClearDomainEvents();
+        _context.ProductVariants.Add(variant);
 
         var inventory = new InventoryBuilder().WithVariantId(variantId).AsUnlimited().Build();
         _context.Inventories.Add(inventory);
@@ -277,24 +299,23 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     public async Task ValidateCartForCheckoutAsync_WhenVariantPriceIncreased_ReportsPriceChange()
     {
         var userId = await SeedUserAsync();
+        var (_, _, product) = await CatalogSeeder.SeedProductAsync(_context);
         var variantId = VariantId.NewId();
-        var productId = ProductId.NewId();
         // The cart stores the old unit price (100) while the variant now sells at 150.
         var cart = CreateUserCartWithItems(userId,
-            (variantId, productId, "ChangedPrice", "SKU-P", 100m, 100m, 1));
+            (variantId, product.Id, "ChangedPrice", "SKU-P", 100m, 100m, 1));
 
         _context.Carts.Add(cart);
-        await _context.SaveChangesAsync();
 
         var inventory = new InventoryBuilder().WithVariantId(variantId).WithInitialStock(5).Build();
         _context.Inventories.Add(inventory);
 
         // Stock is fine, so the only blocker is the drifted price.
-        var variant = global::Domain.Variant.Aggregates.ProductVariant.Create(
-            variantId,
-            productId,
-            Sku.Create("SKU-P"),
-            150m);
+        var variant = new ProductVariantBuilder()
+            .WithId(variantId)
+            .WithProductId(product.Id)
+            .WithSellingPrice(150m)
+            .Build();
         variant.ClearDomainEvents();
         _context.ProductVariants.Add(variant);
 
@@ -316,23 +337,22 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
     public async Task ValidateCartForCheckoutAsync_WithStockAndMatchingPrice_ReturnsHealthyCart()
     {
         var userId = await SeedUserAsync();
+        var (_, _, product) = await CatalogSeeder.SeedProductAsync(_context);
         var variantId = VariantId.NewId();
-        var productId = ProductId.NewId();
         var cart = CreateUserCartWithItems(userId,
-            (variantId, productId, "Healthy", "SKU-H", 100m, 100m, 2));
+            (variantId, product.Id, "Healthy", "SKU-H", 100m, 100m, 2));
 
         _context.Carts.Add(cart);
-        await _context.SaveChangesAsync();
 
         var inventory = new InventoryBuilder().WithVariantId(variantId).WithInitialStock(10).Build();
         _context.Inventories.Add(inventory);
 
         // Current selling price equals the stored unit price, so nothing blocks.
-        var variant = global::Domain.Variant.Aggregates.ProductVariant.Create(
-            variantId,
-            productId,
-            Sku.Create("SKU-H"),
-            100m);
+        var variant = new ProductVariantBuilder()
+            .WithId(variantId)
+            .WithProductId(product.Id)
+            .WithSellingPrice(100m)
+            .Build();
         variant.ClearDomainEvents();
         _context.ProductVariants.Add(variant);
 

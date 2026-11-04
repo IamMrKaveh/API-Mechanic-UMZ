@@ -4,7 +4,10 @@ using Domain.Cart.ValueObjects;
 using Domain.User.ValueObjects;
 using Infrastructure.Cart.QueryServices;
 using Infrastructure.Cart.Repositories;
+using Infrastructure.Inventory.Repositories;
+using Infrastructure.Variant.Repositories;
 using Tests.TestInfrastructure.Base;
+using Tests.TestInfrastructure.Helpers;
 using Carts = Domain.Cart.Aggregates.Cart;
 
 namespace Tests.Infrastructure.Cart.QueryServices;
@@ -23,11 +26,14 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
             .GetPrimaryByEntitiesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<Guid>>(), Arg.Any<CancellationToken>())
             .Returns(new Dictionary<Guid, MediaDto>());
 
+        // The validation reads availability and current price from the same
+        // repositories the checkout command uses, so they must be backed by
+        // the database context rather than substitutes.
         _sut = new CartQueryService(
             Context,
             _mediaQueryService,
-            Substitute.For<global::Domain.Inventory.Interfaces.IInventoryRepository>(),
-            Substitute.For<global::Domain.Variant.Interfaces.IVariantRepository>());
+            new InventoryRepository(Context),
+            new VariantRepository(Context));
         return Task.CompletedTask;
     }
 
@@ -244,10 +250,29 @@ public class CartQueryServiceIntegrationTests(PostgresContainerFixture fixture) 
     public async Task ValidateCartForCheckoutAsync_WhenCartHasItems_ReturnsValid()
     {
         var user = await SeedUserAsync();
+        var (_, _, product) = await CatalogSeeder.SeedProductAsync(Context);
         var cart = new CartBuilder().ForUser(user.Id).Build();
-        new CartItemParametersBuilder().AddTo(cart);
+        new CartItemParametersBuilder()
+            .WithProductId(product.Id)
+            .AddTo(cart);
 
-        await SeedCartAsync(cart);
+        // Seed the catalogue rows the checkout validation queries: an inventory
+        // row must exist and the variant selling price must match the cart item.
+        var variantId = cart.CartItems.Single().VariantId;
+        var variant = new ProductVariantBuilder()
+            .WithId(variantId)
+            .WithProductId(product.Id)
+            .WithSellingPrice(100m)
+            .Build();
+        variant.ClearDomainEvents();
+        Context.ProductVariants.Add(variant);
+
+        var inventory = new InventoryBuilder().WithVariantId(variantId).WithInitialStock(10).Build();
+        Context.Inventories.Add(inventory);
+
+        Context.Add(cart);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
 
         var validation = await _sut.ValidateCartForCheckoutAsync(user.Id, null, CancellationToken.None);
 
