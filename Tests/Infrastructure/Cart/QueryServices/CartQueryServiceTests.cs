@@ -272,5 +272,79 @@ public class CartQueryServiceTests(PostgresContainerFixture fixture) : IAsyncLif
 
         result.StockIssues.Count.ShouldBe(0);
     }
+
+    [SkippableFact]
+    public async Task ValidateCartForCheckoutAsync_WhenVariantPriceIncreased_ReportsPriceChange()
+    {
+        var userId = await SeedUserAsync();
+        var variantId = VariantId.NewId();
+        var productId = ProductId.NewId();
+        // The cart stores the old unit price (100) while the variant now sells at 150.
+        var cart = CreateUserCartWithItems(userId,
+            (variantId, productId, "ChangedPrice", "SKU-P", 100m, 100m, 1));
+
+        _context.Carts.Add(cart);
+        await _context.SaveChangesAsync();
+
+        var inventory = new InventoryBuilder().WithVariantId(variantId).WithInitialStock(5).Build();
+        _context.Inventories.Add(inventory);
+
+        // Stock is fine, so the only blocker is the drifted price.
+        var variant = global::Domain.Variant.Aggregates.ProductVariant.Create(
+            variantId,
+            productId,
+            Sku.Create("SKU-P"),
+            150m);
+        variant.ClearDomainEvents();
+        _context.ProductVariants.Add(variant);
+
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var result = await _sut.ValidateCartForCheckoutAsync(userId, guestToken: null);
+
+        result.IsValid.ShouldBeFalse();
+        result.StockIssues.Count.ShouldBe(0);
+        result.PriceChanges.Count.ShouldBe(1);
+        result.PriceChanges[0].VariantId.ShouldBe(variantId.Value);
+        result.PriceChanges[0].ProductName.ShouldBe("ChangedPrice");
+        result.PriceChanges[0].OldPrice.ShouldBe(100m);
+        result.PriceChanges[0].NewPrice.ShouldBe(150m);
+    }
+
+    [SkippableFact]
+    public async Task ValidateCartForCheckoutAsync_WithStockAndMatchingPrice_ReturnsHealthyCart()
+    {
+        var userId = await SeedUserAsync();
+        var variantId = VariantId.NewId();
+        var productId = ProductId.NewId();
+        var cart = CreateUserCartWithItems(userId,
+            (variantId, productId, "Healthy", "SKU-H", 100m, 100m, 2));
+
+        _context.Carts.Add(cart);
+        await _context.SaveChangesAsync();
+
+        var inventory = new InventoryBuilder().WithVariantId(variantId).WithInitialStock(10).Build();
+        _context.Inventories.Add(inventory);
+
+        // Current selling price equals the stored unit price, so nothing blocks.
+        var variant = global::Domain.Variant.Aggregates.ProductVariant.Create(
+            variantId,
+            productId,
+            Sku.Create("SKU-H"),
+            100m);
+        variant.ClearDomainEvents();
+        _context.ProductVariants.Add(variant);
+
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
+        var result = await _sut.ValidateCartForCheckoutAsync(userId, guestToken: null);
+
+        result.IsValid.ShouldBeTrue();
+        result.StockIssues.ShouldBeEmpty();
+        result.PriceChanges.ShouldBeEmpty();
+        result.Errors.ShouldBeEmpty();
+    }
 }
 
